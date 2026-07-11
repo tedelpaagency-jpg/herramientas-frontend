@@ -214,7 +214,7 @@ class Patients extends CI_Controller {
             exit;
         }
 
-        $response = $this->crud_model->save_patient();
+        $response = $this->Patients_model->save_patient();
 
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($response);

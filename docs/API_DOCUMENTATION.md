@@ -491,4 +491,55 @@ Response Body (Success):
 }
 ```
 
+---
 
+### 15. Save Patient (Create / Update)
+URL: `/portal/patients/save`  
+Método: `POST`  
+Autenticación: Sí (Sesión de Portal)  
+
+Headers:
+- Content-Type: application/x-www-form-urlencoded
+
+Request Body (POST Parameters):
+- `patient_id` (opcional, ID del paciente para actualizar. Si no se envía, se crea uno nuevo)
+- `name` (obligatorio, nombre)
+- `last_name` (obligatorio, apellido)
+- `email` (opcional, correo electrónico)
+- `phone` (opcional, teléfono)
+- `birthday` (opcional, fecha de nacimiento `YYYY-MM-DD`)
+- `address` (opcional, dirección)
+
+Response Body (Success - Create):
+```json
+{
+  "status": "success",
+  "message": "Paciente registrado correctamente.",
+  "patient_id": 12
+}
+```
+
+Response Body (Success - Update):
+```json
+{
+  "status": "success",
+  "message": "Paciente actualizado correctamente.",
+  "patient_id": "12"
+}
+```
+
+Response Body (Error - Missing Fields):
+```json
+{
+  "status": "error",
+  "message": "El nombre y apellido son obligatorios."
+}
+```
+
+Response Body (Error - Email Already Exists):
+```json
+{
+  "status": "error",
+  "message": "El correo electrónico ya se encuentra registrado por otro usuario."
+}
+```

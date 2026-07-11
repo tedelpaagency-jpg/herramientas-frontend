@@ -305,6 +305,41 @@ class Patients extends CI_Controller
         ], 200);
     }
 
+    /**
+     * POST /api/patients/save
+     * POST /api/patients/save/{id}
+     * Create or update a patient via REST API.
+     */
+    public function save($id = null) 
+    {
+        if (strtolower($this->input->method()) !== 'post') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use POST.'], 405);
+        }
+
+        $user_data = $this->validate_request();
+        $agency_id = $user_data['agency_id'];
+
+        // Get inputs (support both JSON body and standard form post/JSON inputs)
+        $raw_input = json_decode($this->input->raw_input_stream, true);
+        if (is_array($raw_input)) {
+            foreach ($raw_input as $key => $val) {
+                $_POST[$key] = $val;
+            }
+        }
+
+        if (!empty($id)) {
+            $_POST['patient_id'] = $id;
+        }
+
+        $response = $this->Patients_model->save_patient($agency_id);
+
+        if ($response['status'] === 'success') {
+            $this->response_json($response, 200);
+        } else {
+            $this->response_json($response, 400);
+        }
+    }
+
     // --- Private Helper Methods for JWT ---
 
     private function base64UrlEncode($text) 
