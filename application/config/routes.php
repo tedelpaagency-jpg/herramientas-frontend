@@ -81,5 +81,9 @@ $route['api/appointments/patient/(:num)'] = 'api/appointments/patient/$1';
 $route['api/appointments/(:num)'] = 'api/appointments/handle_appointment/$1';
 $route['api/appointments/(:num)/cancel'] = 'api/appointments/cancel/$1';
 
-
-
+$route['api/prescriptions'] = 'api/prescriptions/index';
+$route['api/prescriptions/patient/(:num)'] = 'api/prescriptions/patient/$1';
+$route['api/prescriptions/doctor/(:num)'] = 'api/prescriptions/doctor/$1';
+$route['api/prescriptions/(:num)'] = 'api/prescriptions/handle_prescription/$1';
+$route['api/prescriptions/(:num)/pdf'] = 'api/prescriptions/pdf/$1';
+$route['api/prescriptions/(:num)/share'] = 'api/prescriptions/share/$1';

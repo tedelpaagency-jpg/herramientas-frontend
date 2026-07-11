@@ -4896,6 +4896,95 @@ Contraseña : '.$page_data['password'] = base64_decode($user['code']).'
         return FALSE;
     }
 
-
+    /**
+     * Get prescriptions with advanced filtering and pagination.
+     */
+    public function get_prescriptions_filtered($agency_id, $filters = [], $limit = null, $offset = 0)
+    {
+        $this->db->select("
+            prescription.*,
+            patient.name as patient_name,
+            patient.last_name as patient_last_name,
+            patient.phone as patient_phone,
+            doctor.name as doctor_name,
+            doctor.last_name as doctor_last_name
+        ");
+        $this->db->from('prescription');
+        $this->db->join('user patient', 'patient.user_id = prescription.patient_id', 'left');
+        
+        $this->db->join('medical_consultations mc', 'mc.id = prescription.consultation_id', 'left');
+        $this->db->join('user doctor', 'doctor.user_id = mc.doctor_id', 'left');
+        
+        $this->db->where('prescription.agency_id', $agency_id);
+        
+        if (!empty($filters['patient_id'])) {
+            $this->db->where('prescription.patient_id', $filters['patient_id']);
+        }
+        if (!empty($filters['doctor_id'])) {
+            $this->db->where('mc.doctor_id', $filters['doctor_id']);
+        }
+        if (!empty($filters['search'])) {
+            $search = trim($filters['search']);
+            $this->db->group_start();
+            $this->db->like('patient.name', $search);
+            $this->db->or_like('patient.last_name', $search);
+            $this->db->or_like("CONCAT(patient.name,' ',patient.last_name)", $search);
+            $this->db->or_like('prescription.comment', $search);
+            $this->db->group_end();
+        }
+        if (!empty($filters['date_from'])) {
+            $this->db->where('prescription.created_at >=', $filters['date_from'] . ' 00:00:00');
+        }
+        if (!empty($filters['date_to'])) {
+            $this->db->where('prescription.created_at <=', $filters['date_to'] . ' 23:59:59');
+        }
+        
+        $total = $this->db->count_all_results('', FALSE);
+        
+        $allowed_order_cols = [
+            'id' => 'prescription.id',
+            'created_at' => 'prescription.created_at',
+            'patient_name' => 'patient.name'
+        ];
+        
+        $order_by = 'prescription.id';
+        if (!empty($filters['order_by']) && isset($allowed_order_cols[$filters['order_by']])) {
+            $order_by = $allowed_order_cols[$filters['order_by']];
+        }
+        
+        $order = 'DESC';
+        if (!empty($filters['order']) && in_array(strtoupper($filters['order']), ['ASC', 'DESC'])) {
+            $order = strtoupper($filters['order']);
+        }
+        
+        $this->db->order_by($order_by, $order);
+        
+        if ($limit !== null) {
+            $this->db->limit($limit, $offset);
+        }
+        
+        $rows = $this->db->get()->result_array();
+        
+        foreach ($rows as &$row) {
+            $row['meds'] = $this->db
+                ->where([
+                    'prescription_id' => $row['id'],
+                    'type' => 'med'
+                ])
+                ->count_all_results('prescription_details');
+    
+            $row['labs'] = $this->db
+                ->where([
+                    'prescription_id' => $row['id'],
+                    'type' => 'lab'
+                ])
+                ->count_all_results('prescription_details');
+        }
+        
+        return [
+            'total' => $total,
+            'rows'  => $rows
+        ];
+    }
 
 }

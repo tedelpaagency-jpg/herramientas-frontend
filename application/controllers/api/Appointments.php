@@ -186,8 +186,8 @@ class Appointments extends CI_Controller
 
         // Validate doctor existence in same agency (roles 2 or 7)
         $this->db->group_start();
-        $this->db->where('rol_id', 2);
-        $this->db->or_where('rol_id', 7);
+        $this->db->where('rol_id', 1);
+        $this->db->or_where('rol_id', 3);
         $this->db->group_end();
         $this->db->where('user_id', $doctor_id);
         $this->db->where('agency_id', $agency_id);

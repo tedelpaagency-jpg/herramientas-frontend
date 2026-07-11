@@ -938,7 +938,275 @@ Response Body (Success):
 
 ---
 
+## Módulo de Recetas Médicas (Prescriptions)
+
+### 26. List Prescriptions
+URL: `/api/prescriptions`  
+Método: `GET`  
+Autenticación: Sí  
+
+Filtros opcionales (Query Params):
+- `page` (int, default: 1)
+- `limit` (int, default: 10)
+- `patient_id` (int)
+- `doctor_id` (int)
+- `search` (string)
+- `date_from` (string, YYYY-MM-DD)
+- `date_to` (string, YYYY-MM-DD)
+- `order_by` (string: `id`, `created_at`, `patient_name`)
+- `order` (string: `ASC` o `DESC`)
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "1",
+      "agency_id": "1",
+      "patient_id": "8",
+      "consultation_id": "5",
+      "comment": "Tratamiento por 7 días",
+      "next_appointment": "2026-07-20",
+      "created_at": "2026-07-11 10:00:00",
+      "patient_name": "Juan",
+      "patient_last_name": "Pérez",
+      "patient_phone": "5551234",
+      "doctor_name": "Dr. Carlos",
+      "doctor_last_name": "Gómez",
+      "meds": 2,
+      "labs": 1
+    }
+  ],
+  "pagination": {
+    "total_results": 1,
+    "per_page": 10,
+    "current_page": 1,
+    "total_pages": 1
+  }
+}
+```
+
+---
+
+### 27. Get Prescription
+URL: `/api/prescriptions/{id}`  
+Método: `GET`  
+Autenticación: Sí  
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": {
+    "prescription": {
+      "id": "1",
+      "agency_id": "1",
+      "patient_id": "8",
+      "consultation_id": "5",
+      "comment": "Tratamiento por 7 días",
+      "next_appointment": "2026-07-20",
+      "created_at": "2026-07-11 10:00:00"
+    },
+    "patient": {
+      "user_id": "8",
+      "name": "Juan",
+      "last_name": "Pérez",
+      "phone": "5551234",
+      "birthday": "1990-05-15",
+      "age": 36
+    },
+    "doctor": {
+      "user_id": "2",
+      "name": "Dr. Carlos",
+      "last_name": "Gómez"
+    },
+    "meds": [
+      {
+        "id": "1",
+        "prescription_id": "1",
+        "type": "med",
+        "product_id": "12",
+        "name": "Paracetamol 500mg",
+        "dose": "1 tableta cada 8 horas"
+      }
+    ],
+    "labs": [
+      {
+        "id": "2",
+        "prescription_id": "1",
+        "type": "lab",
+        "name": "Hemograma completo",
+        "dose": "En ayunas"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 28. Create Prescription
+URL: `/api/prescriptions`  
+Método: `POST`  
+Autenticación: Sí  
+
+Request Body:
+```json
+{
+  "patient_id": 8,
+  "consultation_id": 5,
+  "comment": "Tratamiento por 7 días",
+  "next_appointment": "2026-07-20",
+  "medications": [
+    {
+      "id": 12,
+      "n": "Paracetamol 500mg",
+      "d": "1 tableta cada 8 horas"
+    }
+  ],
+  "labs": [
+    {
+      "n": "Hemograma completo",
+      "o": "En ayunas"
+    }
+  ]
+}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Receta médica creada correctamente.",
+  "prescription_id": 1
+}
+```
+
+---
+
+### 29. Update Prescription
+URL: `/api/prescriptions/{id}`  
+Método: `PUT`  
+Autenticación: Sí  
+
+Request Body:
+```json
+{
+  "comment": "Comentario actualizado",
+  "next_appointment": "2026-07-22",
+  "medications": [
+    {
+      "id": 12,
+      "name": "Paracetamol 500mg",
+      "dose": "1 tableta cada 12 horas"
+    }
+  ],
+  "labs": []
+}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Receta médica actualizada correctamente.",
+  "prescription_id": "1"
+}
+```
+
+---
+
+### 30. Delete Prescription
+URL: `/api/prescriptions/{id}`  
+Método: `DELETE`  
+Autenticación: Sí  
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Receta médica eliminada correctamente."
+}
+```
+
+---
+
+### 31. Get Patient Prescriptions
+URL: `/api/prescriptions/patient/{patient_id}`  
+Método: `GET`  
+Autenticación: Sí  
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "1",
+      "comment": "Tratamiento por 7 días",
+      "next_appointment": "2026-07-20",
+      "created_at": "2026-07-11 10:00:00",
+      "meds": 1,
+      "labs": 1
+    }
+  ]
+}
+```
+
+---
+
+### 32. Get Doctor Prescriptions
+URL: `/api/prescriptions/doctor/{doctor_id}`  
+Método: `GET`  
+Autenticación: Sí  
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "1",
+      "comment": "Tratamiento por 7 días",
+      "next_appointment": "2026-07-20",
+      "created_at": "2026-07-11 10:00:00",
+      "meds": 1,
+      "labs": 1
+    }
+  ]
+}
+```
+
+---
+
+### 33. Download PDF
+URL: `/api/prescriptions/{id}/pdf`  
+Método: `GET`  
+Autenticación: Sí  
+
+Response: Archivo binario PDF (`receta_{id}.pdf`).
+
+---
+
+### 34. Share Prescription
+URL: `/api/prescriptions/{id}/share`  
+Método: `POST`  
+Autenticación: Sí  
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Receta compartida exitosamente.",
+  "pdf_url": "https://tu-api.com/uploads/temp/receta_1_1623456789.pdf"
+}
+```
+
+---
+
 ## Especificaciones de Integración y Código
+
 
 ### Postman / REST Client Setup
 Para probar en Postman, añade una variable global `{{JWT_TOKEN}}` obtenida tras autenticarte en `/api/auth/login`. Todas las peticiones al recurso `/api/appointments` deben incluir:
