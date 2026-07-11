@@ -35,6 +35,7 @@ $route['portal/load_more_consultations'] = 'patients/load_more_consultations';
 $route['portal/patients'] = 'patients/index';
 $route['portal/patients/ajax_list/(:num)'] = 'patients/ajax_list/$1';
 $route['portal/patients/search_patient'] = 'patients/search_patient';
+$route['portal/patients/save'] = 'patients/save';
 $route['portal/patient_profile/(:any)'] = 'patients/patient_profile/$1';
 
 $route['portal/patient_backgrounds/(:any)'] = 'patients/patient_backgrounds/$1';

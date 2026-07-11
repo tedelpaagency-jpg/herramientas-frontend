@@ -203,4 +203,22 @@ class Patients extends CI_Controller {
     }
 
 
+    public function save()
+    {
+        if ($this->input->method() !== 'post') {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Método no permitido. Use POST.'
+            ]);
+            exit;
+        }
+
+        $response = $this->crud_model->save_patient();
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($response);
+        exit;
+    }
+
 }

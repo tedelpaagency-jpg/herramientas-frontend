@@ -4896,4 +4896,89 @@ Contraseña : '.$page_data['password'] = base64_decode($user['code']).'
         return FALSE;
     }
 
+    /**
+     * Guarda (crea o actualiza) un usuario con rol de paciente.
+     * 
+     * @return array Estado y mensaje/datos del resultado.
+     */
+    public function save_patient()
+    {
+        $patient_id = $this->input->post('patient_id');
+        $agency_id = $this->session->userdata('current_agency');
+        
+        $name = $this->input->post('name');
+        $last_name = $this->input->post('last_name');
+        $email = $this->input->post('email');
+        $phone = $this->input->post('phone');
+        $birthday = $this->input->post('birthday');
+        $address = $this->input->post('address');
+
+        if (empty($name) || empty($last_name)) {
+            return [
+                'status'  => 'error',
+                'message' => 'El nombre y apellido son obligatorios.'
+            ];
+        }
+
+        // Validar unicidad del correo electrónico si se proporciona
+        if (!empty($email)) {
+            $this->db->where('status', 1);
+            $this->db->group_start()
+                     ->where('email', $email)
+                     ->or_where('username', $email)
+                     ->group_end();
+            if (!empty($patient_id)) {
+                $this->db->where('user_id !=', $patient_id);
+            }
+            $exists = $this->db->get('user')->row();
+            if ($exists) {
+                return [
+                    'status'  => 'error',
+                    'message' => 'El correo electrónico ya se encuentra registrado por otro usuario.'
+                ];
+            }
+        }
+
+        $data = [
+            'name'      => $name,
+            'last_name' => $last_name,
+            'email'     => !empty($email) ? $email : null,
+            'phone'     => !empty($phone) ? $phone : null,
+            'birthday'  => !empty($birthday) ? $birthday : null,
+            'address'   => !empty($address) ? $address : null,
+            'rol_id'    => 8, // Paciente
+            'status'    => 1  // Activo
+        ];
+
+        if (empty($patient_id)) {
+            // Crear paciente
+            $data['agency_id'] = $agency_id;
+            $data['date_register'] = date('Y-m-d H:i:s');
+            
+            if ($this->db->insert('user', $data)) {
+                return [
+                    'status'     => 'success',
+                    'message'    => 'Paciente registrado correctamente.',
+                    'patient_id' => $this->db->insert_id()
+                ];
+            }
+        } else {
+            // Actualizar paciente
+            $this->db->where('user_id', $patient_id);
+            $this->db->where('rol_id', 8);
+            if ($this->db->update('user', $data)) {
+                return [
+                    'status'     => 'success',
+                    'message'    => 'Paciente actualizado correctamente.',
+                    'patient_id' => $patient_id
+                ];
+            }
+        }
+
+        return [
+            'status'  => 'error',
+            'message' => 'Ocurrió un error al guardar el paciente.'
+        ];
+    }
+
 }
