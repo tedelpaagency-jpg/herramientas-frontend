@@ -543,3 +543,58 @@ Response Body (Error - Email Already Exists):
   "message": "El correo electrónico ya se encuentra registrado por otro usuario."
 }
 ```
+
+---
+
+### 16. Save Patient API (Create / Update)
+URL: `/api/patients/save` o `/api/patients/save/{id}`  
+Método: `POST`  
+Autenticación: Sí (JWT Token)  
+
+Headers:
+- Content-Type: application/json o application/x-www-form-urlencoded
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body / Parameters:
+- `patient_id` (opcional, ID del paciente para actualizar. Si se pasa en la URL, se usará el de la URL)
+- `name` (obligatorio, nombre)
+- `last_name` (obligatorio, apellido)
+- `email` (opcional, correo electrónico)
+- `phone` (opcional, teléfono)
+- `birthday` (opcional, fecha de nacimiento `YYYY-MM-DD`)
+- `address` (opcional, dirección)
+
+Response Body (Success - Create):
+```json
+{
+  "status": "success",
+  "message": "Paciente registrado correctamente.",
+  "patient_id": 12
+}
+```
+
+Response Body (Success - Update):
+```json
+{
+  "status": "success",
+  "message": "Paciente actualizado correctamente.",
+  "patient_id": "12"
+}
+```
+
+Response Body (Error - Missing Fields):
+```json
+{
+  "status": "error",
+  "message": "El nombre y apellido son obligatorios."
+}
+```
+
+Response Body (Error - Email Already Exists):
+```json
+{
+  "status": "error",
+  "message": "El correo electrónico ya se encuentra registrado por otro usuario."
+}
+```
+

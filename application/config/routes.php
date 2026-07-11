@@ -70,4 +70,7 @@ $route['api/patients/(:num)'] = 'api/patients/show/$1';
 $route['api/patients/(:num)/backgrounds'] = 'api/patients/backgrounds/$1';
 $route['api/patients/(:num)/save-backgrounds'] = 'api/patients/save_backgrounds/$1';
 $route['api/patients/(:num)/consultations'] = 'api/patients/consultations/$1';
+$route['api/patients/save'] = 'api/patients/save';
+$route['api/patients/save/(:num)'] = 'api/patients/save/$1';
+
 
