@@ -493,60 +493,7 @@ Response Body (Success):
 
 ---
 
-### 15. Save Patient (Create / Update)
-URL: `/portal/patients/save`  
-Método: `POST`  
-Autenticación: Sí (Sesión de Portal)  
-
-Headers:
-- Content-Type: application/x-www-form-urlencoded
-
-Request Body (POST Parameters):
-- `patient_id` (opcional, ID del paciente para actualizar. Si no se envía, se crea uno nuevo)
-- `name` (obligatorio, nombre)
-- `last_name` (obligatorio, apellido)
-- `email` (opcional, correo electrónico)
-- `phone` (opcional, teléfono)
-- `birthday` (opcional, fecha de nacimiento `YYYY-MM-DD`)
-- `address` (opcional, dirección)
-
-Response Body (Success - Create):
-```json
-{
-  "status": "success",
-  "message": "Paciente registrado correctamente.",
-  "patient_id": 12
-}
-```
-
-Response Body (Success - Update):
-```json
-{
-  "status": "success",
-  "message": "Paciente actualizado correctamente.",
-  "patient_id": "12"
-}
-```
-
-Response Body (Error - Missing Fields):
-```json
-{
-  "status": "error",
-  "message": "El nombre y apellido son obligatorios."
-}
-```
-
-Response Body (Error - Email Already Exists):
-```json
-{
-  "status": "error",
-  "message": "El correo electrónico ya se encuentra registrado por otro usuario."
-}
-```
-
----
-
-### 16. Save Patient API (Create / Update)
+### 15. Save Patient API (Create / Update)
 URL: `/api/patients/save` o `/api/patients/save/{id}`  
 Método: `POST`  
 Autenticación: Sí (JWT Token)  
@@ -597,4 +544,468 @@ Response Body (Error - Email Already Exists):
   "message": "El correo electrónico ya se encuentra registrado por otro usuario."
 }
 ```
+
+---
+
+# Módulo de Citas Médicas (Appointments)
+
+## Endpoints de Citas
+
+### 16. List Appointments
+URL: `/api/appointments`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+QueryParams:
+- `page` (opcional, por defecto 1)
+- `limit` (opcional, por defecto 15)
+- `search` (opcional, busca por nombre/apellido del paciente)
+- `doctor_id` (opcional, filtra por ID del doctor)
+- `patient_id` (opcional, filtra por ID del paciente)
+- `status` (opcional, filtra por estado: 1=Pendiente, 2=Confirmada, 3=Reprogramada, 4=Cancelada, 5=Atendida)
+- `date` (opcional, `YYYY-MM-DD`)
+- `date_from` (opcional, `YYYY-MM-DD`)
+- `date_to` (opcional, `YYYY-MM-DD`)
+- `order_by` (opcional, columnas: `id`, `patient_id`, `doctor_id`, `appointment_date`, `appointment_time`, `duration_minutes`, `status`)
+- `order` (opcional, `ASC` o `DESC`)
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "1",
+      "patient_id": "8",
+      "doctor_id": "2",
+      "appointment_date": "2026-07-15",
+      "appointment_time": "10:00:00",
+      "duration_minutes": "30",
+      "reason": "Control general de salud",
+      "status": "1",
+      "notes": "Llegar 10 minutos antes",
+      "cancel_reason": null,
+      "cancelled_by": null,
+      "cancelled_at": null,
+      "name": "Pedro",
+      "last_name": "Pérez",
+      "doctor_name": "Juan",
+      "doctor_last_name": "Gómez"
+    }
+  ],
+  "pagination": {
+    "total_results": 1,
+    "per_page": 15,
+    "current_page": 1,
+    "total_pages": 1
+  }
+}
+```
+
+---
+
+### 17. Get Appointment Details
+URL: `/api/appointments/{id}`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "1",
+    "agency_id": "5",
+    "patient_id": "8",
+    "doctor_id": "2",
+    "appointment_date": "2026-07-15",
+    "appointment_time": "10:00:00",
+    "duration_minutes": "30",
+    "reason": "Control general de salud",
+    "notes": "Llegar 10 minutos antes",
+    "status": "1",
+    "created_by": "1",
+    "created_at": "2026-07-10 18:20:00",
+    "updated_at": null,
+    "cancel_reason": null,
+    "cancelled_by": null,
+    "cancelled_at": null,
+    "patient_name": "Pedro",
+    "patient_last_name": "Pérez",
+    "patient_email": "pedro.perez@example.com",
+    "patient_phone": "+50255554444",
+    "doctor_name": "Juan",
+    "doctor_last_name": "Gómez",
+    "doctor_email": "juan.gomez@example.com"
+  }
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Cita no encontrada."
+}
+```
+
+---
+
+### 18. Create Appointment
+URL: `/api/appointments`  
+Método: `POST`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{
+  "patient_id": 8,
+  "doctor_id": 2,
+  "appointment_date": "2026-07-15",
+  "appointment_time": "10:00:00",
+  "duration_minutes": 30,
+  "reason": "Chequeo médico de rutina",
+  "notes": "Pacientes requiere silla de ruedas",
+  "status": 1
+}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Cita médica creada correctamente.",
+  "appointment_id": 15
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "El doctor tiene un conflicto de agenda en el horario seleccionado."
+}
+```
+
+---
+
+### 19. Update Appointment
+URL: `/api/appointments/{id}`  
+Método: `PUT`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{
+  "appointment_time": "10:30:00",
+  "duration_minutes": 45,
+  "reason": "Consulta de control ajustada"
+}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Cita médica actualizada correctamente.",
+  "appointment_id": "1"
+}
+```
+
+---
+
+### 20. Cancel Appointment
+URL: `/api/appointments/{id}/cancel`  
+Método: `PATCH`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{
+  "cancel_reason": "El paciente llamó para posponer por motivos de trabajo."
+}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Cita médica cancelada correctamente.",
+  "appointment_id": "1"
+}
+```
+
+---
+
+### 21. Delete Appointment
+URL: `/api/appointments/{id}`  
+Método: `DELETE`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Cita médica eliminada correctamente."
+}
+```
+
+---
+
+### 22. Get Doctor's Agenda
+URL: `/api/appointments/doctor/{doctor_id}`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+QueryParams:
+- `date` (opcional, `YYYY-MM-DD`)
+- `date_from` (opcional, `YYYY-MM-DD`)
+- `date_to` (opcional, `YYYY-MM-DD`)
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "1",
+      "patient_id": "8",
+      "doctor_id": "2",
+      "appointment_date": "2026-07-15",
+      "appointment_time": "10:00:00",
+      "duration_minutes": "30",
+      "reason": "Control general de salud",
+      "status": "1",
+      "name": "Pedro",
+      "last_name": "Pérez"
+    }
+  ]
+}
+```
+
+---
+
+### 23. Get Patient's Agenda
+URL: `/api/appointments/patient/{patient_id}`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "1",
+      "patient_id": "8",
+      "doctor_id": "2",
+      "appointment_date": "2026-07-15",
+      "appointment_time": "10:00:00",
+      "duration_minutes": "30",
+      "reason": "Control general de salud",
+      "status": "1",
+      "name": "Pedro",
+      "last_name": "Pérez"
+    }
+  ]
+}
+```
+
+---
+
+### 24. Get Today's Appointments
+URL: `/api/appointments/today`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "1",
+      "patient_id": "8",
+      "doctor_id": "2",
+      "appointment_date": "2026-07-10",
+      "appointment_time": "10:00:00",
+      "duration_minutes": "30",
+      "status": "1"
+    }
+  ]
+}
+```
+
+---
+
+### 25. Get Upcoming Appointments
+URL: `/api/appointments/upcoming`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "2",
+      "patient_id": "8",
+      "doctor_id": "2",
+      "appointment_date": "2026-07-15",
+      "appointment_time": "11:00:00",
+      "duration_minutes": "30",
+      "status": "1"
+    }
+  ]
+}
+```
+
+---
+
+## Especificaciones de Integración y Código
+
+### Postman / REST Client Setup
+Para probar en Postman, añade una variable global `{{JWT_TOKEN}}` obtenida tras autenticarte en `/api/auth/login`. Todas las peticiones al recurso `/api/appointments` deben incluir:
+* **Header**: `Authorization` con valor `Bearer {{JWT_TOKEN}}`
+
+### Cliente Flutter (Ejemplo)
+```dart
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+Future<void> createAppointment(String token) async {
+  final url = Uri.parse('https://tu-api.com/api/appointments');
+  final response = await http.post(
+    url,
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'patient_id': 8,
+      'doctor_id': 2,
+      'appointment_date': '2026-07-15',
+      'appointment_time': '10:00:00',
+      'duration_minutes': 30,
+      'reason': 'Consulta general',
+      'notes': '',
+      'status': 1
+    }),
+  );
+
+  if (response.statusCode == 201) {
+    print('Cita creada con éxito');
+  } else {
+    print('Error: ${response.body}');
+  }
+}
+```
+
+### Cliente React (Ejemplo)
+```javascript
+const saveAppointment = async (token, appointmentData) => {
+  const response = await fetch('https://tu-api.com/api/appointments', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(appointmentData)
+  });
+  
+  const result = await response.json();
+  if (response.status === 201) {
+    return result.appointment_id;
+  } else {
+    throw new Error(result.message);
+  }
+};
+```
+
+---
+
+## Reglas de Negocio y Validaciones
+1. **Multi-tenancy obligatorio**: Todas las operaciones filtran implícitamente por el `agency_id` codificado en el JWT Token de la sesión.
+2. **Conflictos de Agenda**: No se permite agendar citas si los rangos de tiempo (`[hora_inicio, hora_fin]`) se solapan para el mismo doctor o para el mismo paciente en una fecha determinada.
+3. **Auditoría**: Cada creación, actualización o eliminación/cancelación escribe una entrada en el log de auditoría (`binnacle`) del sistema utilizando el ID del usuario del token.
+4. **Tablas Utilizadas**: `appointments` y `user` (para doctores y pacientes).
+5. **Modelos Reutilizados**: `Appointments_model` y `crud_model`.
+
+
 

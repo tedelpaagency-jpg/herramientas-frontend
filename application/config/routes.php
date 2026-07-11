@@ -73,4 +73,13 @@ $route['api/patients/(:num)/consultations'] = 'api/patients/consultations/$1';
 $route['api/patients/save'] = 'api/patients/save';
 $route['api/patients/save/(:num)'] = 'api/patients/save/$1';
 
+$route['api/appointments'] = 'api/appointments/index';
+$route['api/appointments/today'] = 'api/appointments/today';
+$route['api/appointments/upcoming'] = 'api/appointments/upcoming';
+$route['api/appointments/doctor/(:num)'] = 'api/appointments/doctor/$1';
+$route['api/appointments/patient/(:num)'] = 'api/appointments/patient/$1';
+$route['api/appointments/(:num)'] = 'api/appointments/handle_appointment/$1';
+$route['api/appointments/(:num)/cancel'] = 'api/appointments/cancel/$1';
+
+
 
