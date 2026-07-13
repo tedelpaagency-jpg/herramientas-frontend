@@ -282,7 +282,8 @@ class Patients extends CI_Controller
         if ($page <= 0) {
             $page = 1;
         }
-
+ 
+        
         $limit = (int)$this->input->get('limit');
         if ($limit <= 0) {
             $limit = 15; // Standard pagination limit
