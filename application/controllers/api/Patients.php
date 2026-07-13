@@ -282,7 +282,11 @@ class Patients extends CI_Controller
         if ($page <= 0) {
             $page = 1;
         }
-        $limit = 5;
+
+        $limit = (int)$this->input->get('limit');
+        if ($limit <= 0) {
+            $limit = 15; // Standard pagination limit
+        }
         $offset = ($page - 1) * $limit;
 
         $consultations = $this->Patients_model->get_patient_consultations($id, $agency_id, $limit, $offset);
