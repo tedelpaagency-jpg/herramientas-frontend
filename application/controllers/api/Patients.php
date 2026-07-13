@@ -90,6 +90,7 @@ class Patients extends CI_Controller
             $limit = 5; // Standard pagination limit
         }
         $offset = ($page - 1) * $limit;
+        
         // Search filter
         $search = $this->input->get('search');
 
