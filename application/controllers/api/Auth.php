@@ -553,4 +553,308 @@ class Auth extends CI_Controller
         }
         return null;
     }
+
+    // =========================================================================
+    // Perfil del usuario autenticado
+    // =========================================================================
+
+    /**
+     * PUT /api/auth/profile
+     *
+     * Actualiza los datos del usuario autenticado.
+     * Campos permitidos: name, last_name, email, username, phone, password, photo (file)
+     * Campos protegidos (nunca se modifican): rol_id, agency_id, company_id, status
+     * Nota: cuando se sube foto, usar Content-Type: multipart/form-data
+     */
+    public function update_profile()
+    {
+        if (strtolower($this->input->method()) !== 'put') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use PUT.'], 405);
+        }
+
+        $token = $this->get_bearer_token();
+        if (!$token) {
+            $this->response_json(['status' => 'error', 'message' => 'Token no proporcionado.'], 401);
+        }
+
+        $decoded = $this->validate_jwt($token);
+        if (!$decoded) {
+            $this->response_json(['status' => 'error', 'message' => 'Token inválido o expirado.'], 401);
+        }
+
+        $user_id   = $decoded['user_id'];
+        $agency_id = $decoded['agency_id'];
+
+        // Verificar que el usuario existe y está activo
+        $user = $this->db->get_where('user', ['user_id' => $user_id, 'status' => 1])->row();
+        if (!$user) {
+            $this->response_json(['status' => 'error', 'message' => 'Usuario no encontrado.'], 404);
+        }
+
+        // Leer body (soporte JSON y form-data)
+        $raw_input = json_decode($this->input->raw_input_stream, true);
+        if (is_array($raw_input)) {
+            foreach ($raw_input as $key => $val) {
+                $_POST[$key] = $val;
+            }
+        }
+
+        // Solo los campos editables por el propio usuario
+        $data = [];
+
+        $name      = trim($this->input->post('name'));
+        $last_name = trim($this->input->post('last_name'));
+        $email     = trim($this->input->post('email'));
+        $username  = trim($this->input->post('username'));
+        $phone     = trim($this->input->post('phone'));
+        $password  = $this->input->post('password');
+
+        if (!empty($name))      $data['name']      = $name;
+        if (!empty($last_name)) $data['last_name']  = $last_name;
+        if (!empty($phone))     $data['phone']      = $phone;
+
+        // Validar unicidad de email si se cambia
+        if (!empty($email) && $email !== $user->email) {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $this->response_json(['status' => 'error', 'message' => 'El correo electrónico no es válido.'], 400);
+            }
+            $exists = $this->db->where('email', $email)->where('user_id !=', $user_id)->get('user')->num_rows();
+            if ($exists > 0) {
+                $this->response_json(['status' => 'error', 'message' => 'El correo electrónico ya está en uso.'], 409);
+            }
+            $data['email'] = $email;
+        }
+
+        // Validar unicidad de username si se cambia
+        if (!empty($username) && $username !== $user->username) {
+            $exists = $this->db->where('username', $username)->where('user_id !=', $user_id)->get('user')->num_rows();
+            if ($exists > 0) {
+                $this->response_json(['status' => 'error', 'message' => 'El nombre de usuario ya está en uso.'], 409);
+            }
+            $data['username'] = $username;
+        }
+
+        // Cambio de contraseña (solo si se envía)
+        if (!empty($password)) {
+            $data['password'] = $password;
+        }
+
+        // Foto de perfil (opcional) — guardada en public/assets/images/users/
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+            $file     = $_FILES['photo'];
+            $allowed  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+            $max_size = 2 * 1024 * 1024; // 2 MB
+
+            if (!in_array(mime_content_type($file['tmp_name']), $allowed)) {
+                $this->response_json(['status' => 'error', 'message' => 'Formato de imagen no permitido. Use JPG, PNG, WEBP o GIF.'], 400);
+            }
+
+            if ($file['size'] > $max_size) {
+                $this->response_json(['status' => 'error', 'message' => 'La imagen no debe superar 2 MB.'], 400);
+            }
+
+            $upload_dir = FCPATH . 'public/assets/images/users/';
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+
+            $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'user_' . $user_id . '_' . time() . '.' . $ext;
+
+            if (!move_uploaded_file($file['tmp_name'], $upload_dir . $filename)) {
+                $this->response_json(['status' => 'error', 'message' => 'No se pudo guardar la imagen.'], 500);
+            }
+
+            $data['photo'] = $filename;
+        }
+
+        if (empty($data)) {
+            $this->response_json(['status' => 'error', 'message' => 'No se proporcionaron campos para actualizar.'], 400);
+        }
+
+        // Campos protegidos: rol_id, agency_id, company_id, status — NUNCA se tocan
+        $this->db->where('user_id', $user_id)->update('user', $data);
+
+        // Retornar perfil actualizado
+        $updated = $this->db->get_where('user', ['user_id' => $user_id])->row();
+
+        $this->response_json([
+            'status'  => 'success',
+            'message' => 'Perfil actualizado correctamente.',
+            'data'    => [
+                'user_id'   => $updated->user_id,
+                'name'      => $updated->name,
+                'last_name' => $updated->last_name,
+                'email'     => $updated->email,
+                'username'  => $updated->username,
+                'phone'     => $updated->phone,
+                'rol_id'    => $updated->rol_id,
+                'agency_id' => $updated->agency_id,
+                'status'    => $updated->status,
+                'photo_url' => !empty($updated->photo)
+                    ? base_url('public/assets/images/users/' . $updated->photo)
+                    : null
+            ]
+        ], 200);
+    }
+
+    // =========================================================================
+    // Configuración de la clínica
+    // =========================================================================
+
+    /**
+     * GET /api/auth/clinic
+     *
+     * Retorna la configuración actual de la agencia/clínica del usuario autenticado.
+     */
+    public function get_clinic()
+    {
+        if (strtolower($this->input->method()) !== 'get') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use GET.'], 405);
+        }
+
+        $token = $this->get_bearer_token();
+        if (!$token) {
+            $this->response_json(['status' => 'error', 'message' => 'Token no proporcionado.'], 401);
+        }
+
+        $decoded = $this->validate_jwt($token);
+        if (!$decoded) {
+            $this->response_json(['status' => 'error', 'message' => 'Token inválido o expirado.'], 401);
+        }
+
+        $agency_id = $decoded['agency_id'];
+
+        $agency = $this->db->get_where('agency', ['id' => $agency_id])->row_array();
+
+        if (!$agency) {
+            $this->response_json(['status' => 'error', 'message' => 'Clínica no encontrada.'], 404);
+        }
+
+        $this->response_json([
+            'status' => 'success',
+            'data'   => [
+                'id'                   => $agency['id'],
+                'name'                 => $agency['name']                 ?? null,
+                'description'          => $agency['description']          ?? null,
+                'address'              => $agency['address']              ?? null,
+                'phone'                => $agency['phone']                ?? null,
+                'email'                => $agency['email']                ?? null,
+                'facebook'             => $agency['facebook']             ?? null,
+                'instagram'            => $agency['instagram']            ?? null,
+                'ticktock'             => $agency['ticktock']             ?? null,
+                'cost_sale_price'      => $agency['cost_sale_price']      ?? null,
+                'cost_delivery'        => $agency['cost_delivery']        ?? null,
+                'cost_delivery_aditional' => $agency['cost_delivery_aditional'] ?? null,
+                'opening_time'         => $agency['opening_time']         ?? null,
+                'closing_time'         => $agency['closing_time']         ?? null,
+            ]
+        ], 200);
+    }
+
+    /**
+     * PUT /api/auth/clinic
+     *
+     * Actualiza la configuración de la agencia/clínica.
+     * Campos disponibles (todos opcionales):
+     *   name, description, address, phone, email,
+     *   facebook, instagram, ticktock,
+     *   cost_sale_price, cost_delivery, cost_delivery_aditional,
+     *   opening_time (HH:MM), closing_time (HH:MM)
+     *
+     * Campos protegidos: id, logo, favicon (se actualizan por otros medios)
+     */
+    public function update_clinic()
+    {
+        if (strtolower($this->input->method()) !== 'put') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use PUT.'], 405);
+        }
+
+        $token = $this->get_bearer_token();
+        if (!$token) {
+            $this->response_json(['status' => 'error', 'message' => 'Token no proporcionado.'], 401);
+        }
+
+        $decoded = $this->validate_jwt($token);
+        if (!$decoded) {
+            $this->response_json(['status' => 'error', 'message' => 'Token inválido o expirado.'], 401);
+        }
+
+        $agency_id = $decoded['agency_id'];
+
+        // Verificar que la agencia existe
+        $agency = $this->db->get_where('agency', ['id' => $agency_id])->row();
+        if (!$agency) {
+            $this->response_json(['status' => 'error', 'message' => 'Clínica no encontrada.'], 404);
+        }
+
+        // Leer body (soporte JSON y form-data)
+        $raw_input = json_decode($this->input->raw_input_stream, true);
+        if (is_array($raw_input)) {
+            foreach ($raw_input as $key => $val) {
+                $_POST[$key] = $val;
+            }
+        }
+
+        // Campos editables — alineados con settings.php + los dos nuevos
+        $allowed = [
+            'name', 'description', 'address', 'phone', 'email',
+            'facebook', 'instagram', 'ticktock',
+            'cost_sale_price', 'cost_delivery', 'cost_delivery_aditional',
+            'opening_time', 'closing_time'
+        ];
+
+        // Campos protegidos que nunca se deben modificar vía API
+        $protected = ['id', 'logo', 'favicon', 'dropi_suppliers', 'taxes',
+                      'commition_percent', 'gerent_commition_percent', 'fact_value'];
+
+        $data = [];
+        foreach ($allowed as $field) {
+            $value = $this->input->post($field);
+            if ($value !== null && $value !== false) {
+                $data[$field] = trim($value);
+            }
+        }
+
+        // Validar formato HH:MM para horarios si se envían
+        foreach (['opening_time', 'closing_time'] as $time_field) {
+            if (!empty($data[$time_field]) && !preg_match('/^\d{2}:\d{2}$/', $data[$time_field])) {
+                $this->response_json([
+                    'status'  => 'error',
+                    'message' => "El campo {$time_field} debe tener el formato HH:MM (ej. 08:00)."
+                ], 400);
+            }
+        }
+
+        if (empty($data)) {
+            $this->response_json(['status' => 'error', 'message' => 'No se proporcionaron campos para actualizar.'], 400);
+        }
+
+        $this->db->where('id', $agency_id)->update('agency', $data);
+
+        // Retornar la configuración actualizada
+        $updated = $this->db->get_where('agency', ['id' => $agency_id])->row_array();
+
+        $this->response_json([
+            'status'  => 'success',
+            'message' => 'Configuración de la clínica actualizada correctamente.',
+            'data'    => [
+                'id'                      => $updated['id'],
+                'name'                    => $updated['name']                    ?? null,
+                'description'             => $updated['description']             ?? null,
+                'address'                 => $updated['address']                 ?? null,
+                'phone'                   => $updated['phone']                   ?? null,
+                'email'                   => $updated['email']                   ?? null,
+                'facebook'                => $updated['facebook']                ?? null,
+                'instagram'               => $updated['instagram']               ?? null,
+                'ticktock'                => $updated['ticktock']                ?? null,
+                'cost_sale_price'         => $updated['cost_sale_price']         ?? null,
+                'cost_delivery'           => $updated['cost_delivery']           ?? null,
+                'cost_delivery_aditional' => $updated['cost_delivery_aditional'] ?? null,
+                'opening_time'            => $updated['opening_time']            ?? null,
+                'closing_time'            => $updated['closing_time']            ?? null,
+            ]
+        ], 200);
+    }
 }
+

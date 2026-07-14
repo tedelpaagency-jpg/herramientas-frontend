@@ -823,9 +823,7 @@ class Crud_model extends CI_Model
         
         $this->db->where('id', $this->session->userdata('current_agency'));
         $this->db->update('agency', $data);
-    
-        $this->db->insert('agency', $data);
-        
+
        
 
         return true;

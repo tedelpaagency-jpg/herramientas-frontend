@@ -1205,6 +1205,174 @@ Response Body (Success):
 
 ---
 
+### 35. Update User Profile
+URL: `/api/auth/profile`  
+Método: `PUT`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: multipart/form-data
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```
+name       = "Juan"             (opcional)
+last_name  = "Pérez"            (opcional)
+email      = "juan@example.com" (opcional)
+username   = "juanp"            (opcional)
+phone      = "5551234567"       (opcional)
+password   = "nueva_contraseña" (opcional)
+photo      = [archivo imagen]   (opcional, JPG/PNG/WEBP/GIF, máx. 2 MB)
+```
+
+> Todos los campos son opcionales. Solo se actualiza lo que se envíe.  
+> `rol_id`, `agency_id`, `company_id` y `status` nunca se modifican.  
+> Si no se envía foto, se puede usar `Content-Type: application/json` y omitir el campo `photo`.
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Perfil actualizado correctamente.",
+  "data": {
+    "user_id": 3,
+    "name": "Juan",
+    "last_name": "Pérez",
+    "email": "juan@example.com",
+    "username": "juanp",
+    "phone": "5551234567",
+    "rol_id": 2,
+    "agency_id": 1,
+    "status": 1,
+    "photo_url": "https://tu-api.com/public/assets/images/users/user_3_1720990000.jpg"
+  }
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "El correo electrónico ya está en uso."
+}
+```
+
+
+---
+
+### 36. Get Clinic Settings
+URL: `/api/auth/clinic`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "name": "Clínica San Rafael",
+    "description": "Especialistas en medicina general",
+    "address": "Av. Principal 123, Col. Centro",
+    "phone": "5559876543",
+    "email": "clinica@example.com",
+    "facebook": "https://facebook.com/clinica",
+    "instagram": "https://instagram.com/clinica",
+    "ticktock": null,
+    "cost_sale_price": "0",
+    "cost_delivery": "0",
+    "cost_delivery_aditional": "0",
+    "opening_time": "08:00",
+    "closing_time": "18:00"
+  }
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Clínica no encontrada."
+}
+```
+
+---
+
+### 37. Update Clinic Settings
+URL: `/api/auth/clinic/update`  
+Método: `PUT`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{
+  "name": "Clínica San Rafael",
+  "description": "Especialistas en medicina general y familiar",
+  "address": "Av. Principal 123, Col. Centro",
+  "phone": "5559876543",
+  "email": "clinica@example.com",
+  "facebook": "https://facebook.com/clinica",
+  "instagram": "https://instagram.com/clinica",
+  "ticktock": "",
+  "cost_sale_price": "0",
+  "cost_delivery": "0",
+  "cost_delivery_aditional": "0",
+  "opening_time": "08:00",
+  "closing_time": "18:00"
+}
+```
+
+> Todos los campos son opcionales. Solo se actualiza lo que se envíe.  
+> Campos protegidos (nunca se modifican): `id`, `logo`, `favicon`.  
+> `opening_time` y `closing_time` deben tener formato `HH:MM` (ej. `08:00`).
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Configuración de la clínica actualizada correctamente.",
+  "data": {
+    "id": 1,
+    "name": "Clínica San Rafael",
+    "description": "Especialistas en medicina general y familiar",
+    "address": "Av. Principal 123, Col. Centro",
+    "phone": "5559876543",
+    "email": "clinica@example.com",
+    "facebook": "https://facebook.com/clinica",
+    "instagram": "https://instagram.com/clinica",
+    "ticktock": "",
+    "cost_sale_price": "0",
+    "cost_delivery": "0",
+    "cost_delivery_aditional": "0",
+    "opening_time": "08:00",
+    "closing_time": "18:00"
+  }
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "El campo opening_time debe tener el formato HH:MM (ej. 08:00)."
+}
+```
+
+---
+
 ## Especificaciones de Integración y Código
 
 

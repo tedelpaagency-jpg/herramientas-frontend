@@ -64,6 +64,9 @@ $route['api/auth/verify-email'] = 'api/auth/verify_email';
 $route['api/auth/forgot-password'] = 'api/auth/forgot_password';
 $route['api/auth/verify-reset-code'] = 'api/auth/verify_reset_code';
 $route['api/auth/reset-password'] = 'api/auth/reset_password';
+$route['api/auth/profile'] = 'api/auth/update_profile';
+$route['api/auth/clinic'] = 'api/auth/get_clinic';
+$route['api/auth/clinic/update'] = 'api/auth/update_clinic';
 
 $route['api/patients'] = 'api/patients/index';
 $route['api/patients/(:num)'] = 'api/patients/show/$1';
