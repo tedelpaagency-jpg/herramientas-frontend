@@ -803,7 +803,6 @@ class Prescriptions extends CI_Controller
 
         $medicines = $this->db
             ->select('id, name')
-            ->where('agency_id', $user_data['agency_id']) // eliminar si medicines es catálogo global
             ->like('name', $term)
             ->limit(20)
             ->get('medicines')
