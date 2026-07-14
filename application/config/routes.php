@@ -72,6 +72,7 @@ $route['api/patients/(:num)/save-backgrounds'] = 'api/patients/save_backgrounds/
 $route['api/patients/(:num)/consultations'] = 'api/patients/consultations/$1';
 $route['api/patients/save'] = 'api/patients/save';
 $route['api/patients/save/(:num)'] = 'api/patients/save/$1';
+$route['api/patients/search'] = 'api/patients/search_patients';
 
 $route['api/appointments'] = 'api/appointments/index';
 $route['api/appointments/today'] = 'api/appointments/today';
@@ -87,3 +88,6 @@ $route['api/prescriptions/doctor/(:num)'] = 'api/prescriptions/doctor/$1';
 $route['api/prescriptions/(:num)'] = 'api/prescriptions/handle_prescription/$1';
 $route['api/prescriptions/(:num)/pdf'] = 'api/prescriptions/pdf/$1';
 $route['api/prescriptions/(:num)/share'] = 'api/prescriptions/share/$1';
+
+$route['api/medicines/search'] = 'api/prescriptions/search_medicines';
+$route['api/medicines/dose-suggestions'] = 'api/prescriptions/get_dose_suggestions';

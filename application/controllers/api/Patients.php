@@ -90,7 +90,7 @@ class Patients extends CI_Controller
             $limit = 5; // Standard pagination limit
         }
         $offset = ($page - 1) * $limit;
-        
+
         // Search filter
         $search = $this->input->get('search');
 
@@ -346,6 +346,40 @@ class Patients extends CI_Controller
         } else {
             $this->response_json($response, 400);
         }
+    }
+
+    /**
+     * GET /api/patients/search?search=juan
+     */
+    public function search_patients()
+    {
+        if (strtolower($this->input->method()) !== 'get') {
+            $this->response_json([
+                'status' => 'error',
+                'message' => 'Method Not Allowed. Use GET.'
+            ], 405);
+        }
+
+        $user_data = $this->validate_request();
+
+        $search = trim($this->input->get('search', true));
+
+        $patients = $this->Patients_model->search_patients(
+            $search,
+            10,
+            $user_data['agency_id']
+        );
+
+        foreach ($patients as &$patient) {
+            $patient->age = !empty($patient->birthday)
+                ? $this->crud_model->calcularEdad($patient->birthday)
+                : null;
+        }
+
+        $this->response_json([
+            'status' => 'success',
+            'data'   => $patients
+        ]);
     }
 
     // --- Private Helper Methods for JWT ---

@@ -777,4 +777,88 @@ class Prescriptions extends CI_Controller
         }
         return null;
     }
+
+    /**
+     * GET /api/medicines/search?term=para
+     */
+    public function search_medicines()
+    {
+        if (strtolower($this->input->method()) !== 'get') {
+            $this->response_json([
+                'status' => 'error',
+                'message' => 'Method Not Allowed. Use GET.'
+            ], 405);
+        }
+
+        $user_data = $this->validate_request();
+
+        $term = trim($this->input->get('term', true));
+
+        if (strlen($term) < 2) {
+            $this->response_json([
+                'status' => 'success',
+                'data' => []
+            ]);
+        }
+
+        $medicines = $this->db
+            ->select('id, name')
+            ->where('agency_id', $user_data['agency_id']) // eliminar si medicines es catálogo global
+            ->like('name', $term)
+            ->limit(20)
+            ->get('medicines')
+            ->result_array();
+
+        $this->response_json([
+            'status' => 'success',
+            'data' => $medicines
+        ]);
+    }
+    
+    /**
+     * GET /api/medicines/dose-suggestions?product_id=25
+     */
+    public function get_dose_suggestions()
+    {
+        if (strtolower($this->input->method()) !== 'get') {
+            $this->response_json([
+                'status' => 'error',
+                'message' => 'Method Not Allowed. Use GET.'
+            ], 405);
+        }
+
+        $this->validate_request();
+
+        $product_id = (int)$this->input->get('product_id');
+
+        if (!$product_id) {
+            $this->response_json([
+                'status' => 'error',
+                'message' => 'Product ID is required.'
+            ], 400);
+        }
+
+        $sql = "
+            SELECT
+                dose,
+                COUNT(*) AS total
+            FROM prescription_details
+            WHERE product_id = ?
+            AND type = 'med'
+            AND dose IS NOT NULL
+            AND dose <> ''
+            GROUP BY dose
+            ORDER BY total DESC
+            LIMIT 5
+        ";
+
+        $suggestions = $this->db
+            ->query($sql, [$product_id])
+            ->result_array();
+
+        $this->response_json([
+            'status' => 'success',
+            'data' => $suggestions
+        ]);
+    }
 }
