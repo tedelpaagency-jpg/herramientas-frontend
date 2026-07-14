@@ -6,7 +6,7 @@ class Appointments_model extends CI_Model
     function __construct() 
     {
         parent::__construct();
-        $this->run_auto_migrations();
+       
     }
 
     private function run_auto_migrations()

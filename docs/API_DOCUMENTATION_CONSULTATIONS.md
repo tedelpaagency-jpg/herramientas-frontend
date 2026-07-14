@@ -1,317 +1,610 @@
 # API REST — Módulo Consultations
 
-**Base URL:** `{base_url}/api/consultations`  
-**Autenticación:** `Authorization: Bearer {token}` (JWT)  
-**Formato:** `application/json`
+### 35. List Consultations
+URL: `/api/consultations`  
+Método: `GET`  
+Autenticación: Sí  
 
----
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
 
-## Índice de endpoints
+Query Params (opcionales):
+- `search` — Busca en nombre del paciente, motivo, diagnóstico y tratamiento
+- `date_from` + `date_to` — Filtra por rango de fechas (Y-m-d). Si se envía `search`, tiene prioridad.
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/consultations` | Listar consultas |
-| POST | `/api/consultations` | Crear consulta |
-| GET | `/api/consultations/{id}` | Ver detalle |
-| PUT | `/api/consultations/{id}` | Actualizar |
-| DELETE | `/api/consultations/{id}` | Soft-delete |
-| GET | `/api/consultations/patient/{id}` | Historia clínica del paciente |
-| GET | `/api/consultations/doctor/{id}` | Consultas por doctor |
-| GET | `/api/consultations/search?q=` | Buscar |
-| GET | `/api/consultations/recent` | Recientes |
-| GET | `/api/consultations/by-date` | Por rango de fechas |
-| GET | `/api/consultations/{id}/media` | Listar adjuntos |
-| POST | `/api/consultations/{id}/upload-media` | Subir adjunto |
-| DELETE | `/api/consultations/media/{media_id}` | Eliminar adjunto |
-
----
-
-## GET /api/consultations
-
-Lista consultas activas (`status = 1`) de la agencia. Soporta búsqueda y filtro por fechas.
-
-**Query params opcionales:**
-
-| Parámetro | Descripción |
-|-----------|-------------|
-| `search` | Busca en nombre del paciente, motivo, diagnóstico y tratamiento |
-| `date_from` + `date_to` | Filtra por rango de fechas (Y-m-d). Si se envía `search`, tiene prioridad. |
-
-**Modelo reutilizado:** `get_consultations()` / `search_medical_consultations()` / `get_by_date_range()`
-
-**Respuesta `200`:**
+Request Body:
 ```json
-{ "status": "success", "total": 12, "data": [...] }
+{}
 ```
 
----
-
-## POST /api/consultations
-
-Crea una nueva consulta. Acepta JSON body o form-data.
-
-**Body:**
-
-| Campo | Tipo | Req | Descripción |
-|-------|------|-----|-------------|
-| `patient_id` | int | ✅ | Debe pertenecer a la agencia (`rol_id = 8`) |
-| `chief_complaint` | string | — | Motivo de consulta |
-| `history_present_illness` | string | — | Historia de la enfermedad |
-| `physical_examination` | string | — | Exploración física |
-| `diagnosis` | string | — | Diagnóstico |
-| `treatment` | string | — | Tratamiento |
-| `notes` | string | — | Notas |
-| `follow_up_date` | date | — | Fecha de seguimiento |
-| `status` | int | — | `1` activa (default), `0` draft |
-
-> `doctor_id` y `agency_id` se asignan automáticamente desde el token.
-
-**Modelo reutilizado:** `save_consultation()`
-
-**Respuesta `201`:**
-```json
-{ "status": "success", "message": "Consulta creada correctamente.", "consultation_id": 46 }
-```
-
----
-
-## GET /api/consultations/{id}
-
-Detalle completo: consulta + media adjunta + receta vinculada.
-
-**Modelo reutilizado:** `get_consultation()`
-
-**Respuesta `200`:**
-```json
-{
-  "status": "success",
-  "data": {
-    "consultation": {
-      "id": 45, "patient_name": "Ana García", "doctor_name": "Dr. Ramírez",
-      "diagnosis": "Migraña", "treatment": "Ibuprofeno 400mg", ...
-    },
-    "media": [
-      { "id": 5, "file_name": "media_abc.jpg", "url": "https://example.com/uploads/consultations/media_abc.jpg", "note": "Rx cráneo" }
-    ],
-    "prescription": { "id": 20, "comment": "Tomar con alimentos", ... },
-    "prescription_details": [
-      { "type": "med", "name": "Ibuprofeno", "dose": "400mg c/8h" }
-    ]
-  }
-}
-```
-
----
-
-## PUT /api/consultations/{id}
-
-Actualiza campos clínicos y, opcionalmente, parámetros EAV.
-
-**Body (JSON):**
-
-| Campo | Tipo | Req | Descripción |
-|-------|------|-----|-------------|
-| `patient_id` | int | ✅ | — |
-| `chief_complaint` … `follow_up_date` | string | — | Campos clínicos |
-| `values` | object | — | Parámetros EAV: `{"param_id": "valor"}` (ej. `{"1": "120/80", "2": "70"}`) |
-
-**Modelos reutilizados:** `exists()`, `update_consultation()`, `update_clincal_parameters()`
-
-**Respuesta `200`:**
-```json
-{
-  "status": "success",
-  "message": "Consulta actualizada correctamente.",
-  "patient": { "user_id": 10, "name": "Ana", "last_name": "García", "phone": "555..." },
-  "clinical_parameters": "Parámetros clínicos guardados correctamente"
-}
-```
-
-> `clinical_parameters` aparece solo si se envió el campo `values`.
-
----
-
-## DELETE /api/consultations/{id}
-
-**Soft-delete:** `status = 0`. El registro no se elimina físicamente.
-
-**Modelos reutilizados:** `exists()`, `delete_consultation()`
-
-**Respuesta `200`:**
-```json
-{ "status": "success", "message": "Consulta eliminada correctamente." }
-```
-
----
-
-## GET /api/consultations/patient/{patient_id}
-
-Historia clínica de un paciente: todas sus consultas, ordenadas por fecha DESC.
-
-**Modelo reutilizado:** `get_patient_medical_consultations()`
-
-**Respuesta `200`:**
-```json
-{
-  "status": "success",
-  "patient": { "user_id": 10, "name": "Ana", "last_name": "García", ... },
-  "total": 5,
-  "consultations": [...]
-}
-```
-
----
-
-## GET /api/consultations/doctor/{doctor_id}
-
-Consultas atendidas por un doctor específico.
-
-**Modelo reutilizado:** `get_by_doctor()`
-
-**Respuesta `200`:**
-```json
-{ "status": "success", "total": 8, "data": [...] }
-```
-
----
-
-## GET /api/consultations/search?q={keyword}
-
-Búsqueda en nombre del paciente, motivo, diagnóstico y tratamiento.
-
-| Param | Req | Descripción |
-|-------|-----|-------------|
-| `q` | ✅ | Mínimo 2 caracteres |
-
-**Modelo reutilizado:** `search_medical_consultations()`
-
-**Respuesta `200`:**
-```json
-{ "status": "success", "keyword": "migraña", "total": 3, "data": [...] }
-```
-
----
-
-## GET /api/consultations/recent?limit={n}
-
-Últimas N consultas de la agencia.
-
-| Param | Default | Descripción |
-|-------|---------|-------------|
-| `limit` | 10 | Cantidad de resultados |
-
-**Modelo reutilizado:** `get_recent_medical_consultations()`
-
-**Respuesta `200`:**
-```json
-{ "status": "success", "limit": 10, "total": 10, "data": [...] }
-```
-
----
-
-## GET /api/consultations/by-date?date_from=Y-m-d&date_to=Y-m-d
-
-Consultas dentro de un rango de fechas.
-
-| Param | Req | Descripción |
-|-------|-----|-------------|
-| `date_from` | ✅ | Formato `Y-m-d` |
-| `date_to` | ✅ | Formato `Y-m-d`. Debe ser >= `date_from` |
-
-**Modelo reutilizado:** `get_by_date_range()`
-
-**Respuesta `200`:**
-```json
-{ "status": "success", "date_from": "2026-07-01", "date_to": "2026-07-14", "total": 6, "data": [...] }
-```
-
----
-
-## GET /api/consultations/{id}/media
-
-Lista los archivos adjuntos de la consulta. Incluye `url` pública de cada archivo.
-
-**Respuesta `200`:**
+Response Body (Success):
 ```json
 {
   "status": "success",
   "total": 2,
   "data": [
     {
-      "id": 5, "consultation_id": 45, "file_name": "media_abc.jpg",
-      "original_name": "rx_craneo.jpg", "mime_type": "image/jpeg",
-      "file_size": 204800, "note": "Rx de cráneo",
-      "url": "https://example.com/uploads/consultations/media_abc.jpg"
+      "id": 45,
+      "agency_id": 1,
+      "patient_id": 10,
+      "doctor_id": 3,
+      "consultation_date": "2026-07-10 09:00:00",
+      "chief_complaint": "Dolor de cabeza",
+      "history_present_illness": "Inicio hace 3 días",
+      "physical_examination": "Sin alteraciones",
+      "diagnosis": "Migraña",
+      "treatment": "Ibuprofeno 400mg",
+      "notes": "Reposo relativo",
+      "follow_up_date": "2026-07-24",
+      "status": 1,
+      "patient_name": "Ana García",
+      "doctor_name": "Dr. Ramírez"
     }
   ]
 }
 ```
 
----
-
-## POST /api/consultations/{id}/upload-media
-
-Sube un archivo adjunto. **Requiere `multipart/form-data`.**
-
-| Campo | Tipo | Req | Descripción |
-|-------|------|-----|-------------|
-| `file` | file | ✅ | Archivo a subir |
-| `patient_id` | int | ✅ | ID del paciente |
-| `note` | string | — | Descripción del archivo |
-
-**Respuesta `201`:**
+Response Body (Error):
 ```json
 {
-  "status": "success",
-  "message": "Archivo subido correctamente.",
-  "id": 6,
-  "file_name": "media_xyz.jpg",
-  "url": "https://example.com/uploads/consultations/media_xyz.jpg",
-  "note": "Rx lateral"
+  "status": "error",
+  "message": "Token inválido o expirado."
 }
 ```
 
 ---
 
-## DELETE /api/consultations/media/{media_id}
+### 36. Create Consultation
+URL: `/api/consultations`  
+Método: `POST`  
+Autenticación: Sí  
 
-Elimina archivo físico del servidor y su registro en BD.
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
 
-Verifica multitenancy: el archivo debe pertenecer a una consulta de la misma agencia.
-
-**Respuesta `200`:**
+Request Body:
 ```json
-{ "status": "success", "message": "Archivo eliminado correctamente." }
+{
+  "patient_id": 10,
+  "chief_complaint": "Dolor de cabeza",
+  "history_present_illness": "Inicio hace 3 días, intensidad 7/10",
+  "physical_examination": "Sin alteraciones neurológicas",
+  "diagnosis": "Migraña",
+  "treatment": "Ibuprofeno 400mg cada 8 horas",
+  "notes": "Reposo relativo, evitar pantallas",
+  "follow_up_date": "2026-07-24",
+  "status": 1
+}
 ```
 
-**Error `403`:** si el archivo pertenece a otra agencia.
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Consulta creada correctamente.",
+  "consultation_id": 46
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Paciente no encontrado o pertenece a otra sucursal."
+}
+```
 
 ---
 
-## Códigos de error
+### 37. Get Consultation Detail
+URL: `/api/consultations/{id}`  
+Método: `GET`  
+Autenticación: Sí  
 
-| Código | Causa |
-|--------|-------|
-| `400` | Parámetros faltantes o inválidos |
-| `401` | Token ausente o expirado |
-| `403` | Sin permiso (multitenancy) |
-| `404` | Recurso no encontrado |
-| `405` | Método HTTP no permitido |
-| `500` | Error interno del servidor |
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
 
+Request Body:
 ```json
-{ "status": "error", "message": "Descripción del error." }
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": {
+    "consultation": {
+      "id": 45,
+      "agency_id": 1,
+      "patient_id": 10,
+      "patient_name": "Ana García",
+      "patient_email": "ana@example.com",
+      "patient_phone": "5551234567",
+      "doctor_id": 3,
+      "doctor_name": "Dr. Ramírez",
+      "consultation_date": "2026-07-10 09:00:00",
+      "chief_complaint": "Dolor de cabeza",
+      "history_present_illness": "Inicio hace 3 días",
+      "physical_examination": "Sin alteraciones",
+      "diagnosis": "Migraña",
+      "treatment": "Ibuprofeno 400mg",
+      "notes": "Reposo relativo",
+      "follow_up_date": "2026-07-24",
+      "status": 1
+    },
+    "media": [
+      {
+        "id": 5,
+        "consultation_id": 45,
+        "patient_id": 10,
+        "file_name": "media_abc123.jpg",
+        "original_name": "radiografia.jpg",
+        "mime_type": "image/jpeg",
+        "file_size": 204800,
+        "note": "Radiografía de cráneo",
+        "created_at": "2026-07-10 09:15:00",
+        "url": "https://example.com/uploads/consultations/media_abc123.jpg"
+      }
+    ],
+    "prescription": {
+      "id": 20,
+      "consultation_id": 45,
+      "patient_id": 10,
+      "comment": "Tomar con alimentos",
+      "next_appointment": "2026-07-24",
+      "created_at": "2026-07-10 09:20:00"
+    },
+    "prescription_details": [
+      {
+        "id": 50,
+        "prescription_id": 20,
+        "type": "med",
+        "name": "Ibuprofeno",
+        "dose": "400mg cada 8h por 5 días"
+      }
+    ]
+  }
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Consulta no encontrada."
+}
 ```
 
 ---
 
-## Notas técnicas
+### 38. Update Consultation
+URL: `/api/consultations/{id}`  
+Método: `PUT`  
+Autenticación: Sí  
 
-| Tema | Comportamiento |
-|------|---------------|
-| **Soft-delete** | `DELETE` cambia `status = 0`, nunca elimina el registro |
-| **Multitenancy** | `agency_id` proviene exclusivamente del JWT; no se acepta como parámetro |
-| **doctor_id** | Se asigna desde `user_id` del token en `POST` |
-| **Parámetros EAV** | `values` en `PUT` es un objeto `{"param_id": "valor"}` — transacción atómica |
-| **Paciente anónimo** | No soportado en la API; el paciente debe existir antes (`POST /api/patients/save`) |
-| **CORS** | Habilitado para todos los orígenes (`Access-Control-Allow-Origin: *`) |
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{
+  "patient_id": 10,
+  "chief_complaint": "Dolor de cabeza severo",
+  "history_present_illness": "Inicio hace 3 días, intensidad 8/10",
+  "physical_examination": "Sin alteraciones neurológicas",
+  "diagnosis": "Migraña con aura",
+  "treatment": "Ibuprofeno 600mg cada 8 horas",
+  "notes": "Reposo absoluto",
+  "follow_up_date": "2026-07-24",
+  "values": {
+    "1": "120/80",
+    "2": "70",
+    "3": "36.5"
+  }
+}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Consulta actualizada correctamente.",
+  "patient": {
+    "user_id": 10,
+    "name": "Ana",
+    "last_name": "García",
+    "phone": "5551234567"
+  },
+  "clinical_parameters": "Parámetros clínicos guardados correctamente"
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Consulta no encontrada."
+}
+```
+
+---
+
+### 39. Delete Consultation
+URL: `/api/consultations/{id}`  
+Método: `DELETE`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Consulta eliminada correctamente."
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Consulta no encontrada."
+}
+```
+
+---
+
+### 40. Get Patient Medical History
+URL: `/api/consultations/patient/{patient_id}`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "patient": {
+    "user_id": 10,
+    "name": "Ana",
+    "last_name": "García",
+    "email": "ana@example.com",
+    "phone": "5551234567"
+  },
+  "total": 3,
+  "consultations": [
+    {
+      "id": 45,
+      "consultation_date": "2026-07-10 09:00:00",
+      "diagnosis": "Migraña",
+      "treatment": "Ibuprofeno 400mg",
+      "doctor_name": "Dr. Ramírez"
+    }
+  ]
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Paciente no encontrado."
+}
+```
+
+---
+
+### 41. Get Doctor Consultations
+URL: `/api/consultations/doctor/{doctor_id}`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "total": 5,
+  "data": [
+    {
+      "id": 45,
+      "consultation_date": "2026-07-10 09:00:00",
+      "patient_name": "Ana García",
+      "diagnosis": "Migraña",
+      "status": 1
+    }
+  ]
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Token inválido o expirado."
+}
+```
+
+---
+
+### 42. Search Consultations
+URL: `/api/consultations/search`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Query Params:
+- `q` (requerido) — Término de búsqueda, mínimo 2 caracteres. Busca en nombre del paciente, motivo de consulta, diagnóstico y tratamiento.
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "keyword": "migraña",
+  "total": 2,
+  "data": [
+    {
+      "id": 45,
+      "consultation_date": "2026-07-10 09:00:00",
+      "patient_name": "Ana García",
+      "chief_complaint": "Dolor de cabeza",
+      "diagnosis": "Migraña",
+      "doctor_name": "Dr. Ramírez"
+    }
+  ]
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "El parámetro q debe tener al menos 2 caracteres."
+}
+```
+
+---
+
+### 43. Get Recent Consultations
+URL: `/api/consultations/recent`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Query Params:
+- `limit` (opcional, default: 10) — Cantidad de resultados a retornar
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "limit": 5,
+  "total": 5,
+  "data": [
+    {
+      "id": 50,
+      "consultation_date": "2026-07-14 10:00:00",
+      "patient_name": "Carlos López",
+      "diagnosis": "Hipertensión",
+      "status": 1
+    }
+  ]
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Token inválido o expirado."
+}
+```
+
+---
+
+### 44. Get Consultations by Date Range
+URL: `/api/consultations/by-date`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Query Params:
+- `date_from` (requerido) — Fecha de inicio en formato `Y-m-d`
+- `date_to` (requerido) — Fecha de fin en formato `Y-m-d`. Debe ser mayor o igual a `date_from`.
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "date_from": "2026-07-01",
+  "date_to": "2026-07-14",
+  "total": 6,
+  "data": [
+    {
+      "id": 45,
+      "consultation_date": "2026-07-10 09:00:00",
+      "patient_name": "Ana García",
+      "diagnosis": "Migraña",
+      "status": 1
+    }
+  ]
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Los parámetros date_from y date_to son obligatorios (formato Y-m-d)."
+}
+```
+
+---
+
+### 45. Get Consultation Media
+URL: `/api/consultations/{id}/media`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "total": 2,
+  "data": [
+    {
+      "id": 5,
+      "consultation_id": 45,
+      "patient_id": 10,
+      "file_name": "media_abc123.jpg",
+      "original_name": "radiografia.jpg",
+      "mime_type": "image/jpeg",
+      "file_size": 204800,
+      "note": "Radiografía de cráneo",
+      "created_at": "2026-07-10 09:15:00",
+      "url": "https://example.com/uploads/consultations/media_abc123.jpg"
+    }
+  ]
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Consulta no encontrada."
+}
+```
+
+---
+
+### 46. Upload Consultation Media
+URL: `/api/consultations/{id}/upload-media`  
+Método: `POST`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: multipart/form-data
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```
+file      = [archivo binario]  (requerido)
+patient_id = 10               (requerido)
+note       = "Radiografía lateral de cráneo"
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Archivo subido correctamente.",
+  "id": 6,
+  "file_name": "media_xyz789abc.jpg",
+  "url": "https://example.com/uploads/consultations/media_xyz789abc.jpg",
+  "note": "Radiografía lateral de cráneo"
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "No se recibió el archivo."
+}
+```
+
+---
+
+### 47. Delete Consultation Media
+URL: `/api/consultations/media/{media_id}`  
+Método: `DELETE`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Archivo eliminado correctamente."
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "No tiene permiso para eliminar este archivo."
+}
+```
+
+---

@@ -12,6 +12,7 @@ class Patients extends CI_Controller
         parent::__construct();
         $this->load->model('Patients_model');
         $this->load->model('crud_model');
+        $this->load->model('Consultations_model');
         $this->load->database();
         
         // CORS Headers for API accessibility
@@ -97,18 +98,25 @@ class Patients extends CI_Controller
         $total_results = $this->Patients_model->get_patients_count($search, $agency_id);
         $patients = $this->Patients_model->get_patients($limit, $offset, $search, $agency_id);
 
-        // Format patient details (like age)
+        // Format patient details (like age) and enrich with last consultation
         $formatted_patients = [];
         foreach ($patients as $patient) {
+            $last = $this->Consultations_model->get_last_consultation($patient->user_id, $agency_id);
+
             $formatted_patients[] = [
-                'user_id' => $patient->user_id,
-                'name' => $patient->name,
-                'last_name' => $patient->last_name,
-                'email' => $patient->email,
-                'phone' => $patient->phone,
-                'birthday' => $patient->birthday,
-                'age' => !empty($patient->birthday) ? $this->crud_model->calcularEdad($patient->birthday) : null,
-                'status' => $patient->status
+                'user_id'           => $patient->user_id,
+                'name'              => $patient->name,
+                'last_name'         => $patient->last_name,
+                'email'             => $patient->email,
+                'phone'             => $patient->phone,
+                'birthday'          => $patient->birthday,
+                'age'               => !empty($patient->birthday) ? $this->crud_model->calcularEdad($patient->birthday) : null,
+                'status'            => $patient->status,
+                'last_consultation' => $last ? [
+                    'id'                => $last['id'],
+                    'consultation_date' => $last['consultation_date'],
+                    'diagnosis'         => $last['diagnosis'] ?: 'N/A',
+                ] : null
             ];
         }
 
