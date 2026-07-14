@@ -91,3 +91,16 @@ $route['api/prescriptions/(:num)/share'] = 'api/prescriptions/share/$1';
 
 $route['api/medicines/search'] = 'api/prescriptions/search_medicines';
 $route['api/medicines/dose-suggestions'] = 'api/prescriptions/get_dose_suggestions';
+
+// ── Consultations API ──────────────────────────────────────────────────────
+// IMPORTANTE: rutas con segmentos fijos van ANTES que la ruta genérica (:num)
+$route['api/consultations']                            = 'api/consultations/index';
+$route['api/consultations/search']                     = 'api/consultations/search_consultations';
+$route['api/consultations/recent']                     = 'api/consultations/recent_consultations';
+$route['api/consultations/by-date']                    = 'api/consultations/by_date_range';
+$route['api/consultations/patient/(:num)']             = 'api/consultations/patient_consultations/$1';
+$route['api/consultations/doctor/(:num)']              = 'api/consultations/doctor_consultations/$1';
+$route['api/consultations/media/(:num)']               = 'api/consultations/delete_media/$1';
+$route['api/consultations/(:num)']                     = 'api/consultations/handle_consultation/$1';
+$route['api/consultations/(:num)/media']               = 'api/consultations/get_media/$1';
+$route['api/consultations/(:num)/upload-media']        = 'api/consultations/upload_media/$1';
