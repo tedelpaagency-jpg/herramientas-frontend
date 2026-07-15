@@ -34,7 +34,7 @@ class Consultations_model  extends CI_Model {
     /**
      * Update consultation
      */
-    public function update_clincal_parameters($consultation_id, $patient_id, $values)
+    public function update_clincal_parameters($consultation_id, $patient_id, $values, $agency_id = null)
     {
         $this->db->trans_start();
     
@@ -49,9 +49,12 @@ class Consultations_model  extends CI_Model {
             $record_id = $record->id;
     
         } else {
+            if ($agency_id === null) {
+                $agency_id = $this->session->userdata('current_agency');
+            }
     
             $this->db->insert('clinical_records', [
-                'agency_id'       => $this->session->userdata('current_agency'),
+                'agency_id'       => $agency_id,
                 'patient_id'      => $patient_id,
                 'consultation_id' => $consultation_id,
                 'date_record'     => date('Y-m-d')
@@ -492,6 +495,83 @@ class Consultations_model  extends CI_Model {
             'total' => $total,
             'rows'  => $rows
         ];
+    }
+
+    /**
+     * Get clinical records associated with a specific consultation.
+     */
+    public function get_clinical_records_by_consultation($consultation_id, $agency_id)
+    {
+        $record = $this->db
+            ->order_by('id', 'DESC')
+            ->get_where('clinical_records', [
+                'consultation_id' => $consultation_id,
+                'agency_id'       => $agency_id
+            ])
+            ->row();
+
+        if ($record) {
+            $values = $this->db
+                ->select('
+                    p.id AS parameter_id,
+                    p.name,
+                    p.icon,
+                    p.unit,
+                    cv.value
+                ')
+                ->from('clinical_parameters p')
+                ->join(
+                    'clinical_values cv',
+                    'cv.parameter_id = p.id AND cv.record_id = ' . $this->db->escape($record->id),
+                    'left'
+                )
+                ->where('p.status', 1)
+                ->order_by('p.id', 'ASC')
+                ->get()
+                ->result_array();
+
+            return [
+                'has_record'      => true,
+                'record_id'       => (int) $record->id,
+                'consultation_id' => (int) $record->consultation_id,
+                'patient_id'      => (int) $record->patient_id,
+                'date_record'     => $record->date_record,
+                'data'            => $values
+            ];
+        } else {
+            // Get consultation patient details
+            $consultation = $this->db
+                ->select('patient_id')
+                ->where('id', $consultation_id)
+                ->where('agency_id', $agency_id)
+                ->get('medical_consultations')
+                ->row();
+
+            $patient_id = $consultation ? (int) $consultation->patient_id : null;
+
+            $parameters = $this->db
+                ->select('
+                    id AS parameter_id,
+                    name,
+                    icon,
+                    unit,
+                    NULL as value
+                ')
+                ->from('clinical_parameters')
+                ->where('status', 1)
+                ->order_by('id', 'ASC')
+                ->get()
+                ->result_array();
+
+            return [
+                'has_record'      => false,
+                'record_id'       => null,
+                'consultation_id' => (int) $consultation_id,
+                'patient_id'      => $patient_id,
+                'date_record'     => null,
+                'data'            => $parameters
+            ];
+        }
     }
 
     /**

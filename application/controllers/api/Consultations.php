@@ -417,13 +417,17 @@ class Consultations extends CI_Controller
                 ->result_array();
         }
 
+        // Obtener clinical records de la consulta
+        $clinical_records = $this->Consultations_model->get_clinical_records_by_consultation($id, $agency_id);
+
         $this->response_json([
             'status' => 'success',
             'data'   => [
                 'consultation'         => $consultation,
                 'media'                => $media,
                 'prescription'         => $prescription         ?: null,
-                'prescription_details' => $prescription_details
+                'prescription_details' => $prescription_details,
+                'clinical_records'     => $clinical_records
             ]
         ], 200);
     }

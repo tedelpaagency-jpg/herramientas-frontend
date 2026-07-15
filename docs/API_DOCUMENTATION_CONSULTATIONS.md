@@ -10,8 +10,13 @@ Headers:
 - Authorization: Bearer <JWT_TOKEN>
 
 Query Params (opcionales):
-- `search` — Busca en nombre del paciente, motivo, diagnóstico y tratamiento
-- `date_from` + `date_to` — Filtra por rango de fechas (Y-m-d). Si se envía `search`, tiene prioridad.
+- `search` — Busca en nombre y apellido del paciente, motivo de consulta, diagnóstico y tratamiento
+- `date_from` — Filtra consultas a partir de esta fecha de consulta (Y-m-d)
+- `date_to` — Filtra consultas hasta esta fecha de consulta (Y-m-d)
+- `patient_id` — Filtra consultas por un paciente en específico
+- `doctor_id` — Filtra consultas por un doctor en específico
+- `page` — Número de página para paginación (default: 1)
+- `limit` — Cantidad de resultados por página (default: 10)
 
 Request Body:
 ```json
@@ -22,7 +27,6 @@ Response Body (Success):
 ```json
 {
   "status": "success",
-  "total": 2,
   "data": [
     {
       "id": 45,
@@ -39,9 +43,24 @@ Response Body (Success):
       "follow_up_date": "2026-07-24",
       "status": 1,
       "patient_name": "Ana García",
-      "doctor_name": "Dr. Ramírez"
+      "doctor_name": "Dr. Ramírez",
+      "patient": {
+        "user_id": 10,
+        "name": "Ana",
+        "last_name": "García",
+        "email": "ana@example.com",
+        "phone": "5551234567",
+        "birthday": "1990-01-01",
+        "status": 1
+      }
     }
-  ]
+  ],
+  "pagination": {
+    "total_results": 1,
+    "per_page": 10,
+    "current_page": 1,
+    "total_pages": 1
+  }
 }
 ```
 
@@ -166,7 +185,23 @@ Response Body (Success):
         "name": "Ibuprofeno",
         "dose": "400mg cada 8h por 5 días"
       }
-    ]
+    ],
+    "clinical_records": {
+      "has_record": true,
+      "record_id": 12,
+      "consultation_id": 45,
+      "patient_id": 10,
+      "date_record": "2026-07-10",
+      "data": [
+        {
+          "parameter_id": 1,
+          "name": "Presión Arterial",
+          "icon": "heart",
+          "unit": "mmHg",
+          "value": "120/80"
+        }
+      ]
+    }
   }
 }
 ```
