@@ -65,6 +65,8 @@ $route['api/auth/forgot-password'] = 'api/auth/forgot_password';
 $route['api/auth/verify-reset-code'] = 'api/auth/verify_reset_code';
 $route['api/auth/reset-password'] = 'api/auth/reset_password';
 $route['api/auth/profile'] = 'api/auth/update_profile';
+$route['api/auth/profile/photo'] = 'api/auth/update_profile_photo';
+$route['api/auth/profile/password'] = 'api/auth/update_password';
 $route['api/auth/clinic'] = 'api/auth/get_clinic';
 $route['api/auth/clinic/update'] = 'api/auth/update_clinic';
 
@@ -101,9 +103,15 @@ $route['api/consultations']                            = 'api/consultations/inde
 $route['api/consultations/search']                     = 'api/consultations/search_consultations';
 $route['api/consultations/recent']                     = 'api/consultations/recent_consultations';
 $route['api/consultations/by-date']                    = 'api/consultations/by_date_range';
+$route['api/consultations/blank']                      = 'api/consultations/create_blank_consultation';
 $route['api/consultations/patient/(:num)']             = 'api/consultations/patient_consultations/$1';
 $route['api/consultations/doctor/(:num)']              = 'api/consultations/doctor_consultations/$1';
 $route['api/consultations/media/(:num)']               = 'api/consultations/delete_media/$1';
 $route['api/consultations/(:num)']                     = 'api/consultations/handle_consultation/$1';
 $route['api/consultations/(:num)/media']               = 'api/consultations/get_media/$1';
 $route['api/consultations/(:num)/upload-media']        = 'api/consultations/upload_media/$1';
+
+// ── Rewards API ───────────────────────────────────────────────────────────
+$route['api/rewards']                                  = 'api/rewards/index';
+$route['api/rewards/points']                           = 'api/rewards/points';
+$route['api/rewards/roulette']                         = 'api/rewards/roulette';

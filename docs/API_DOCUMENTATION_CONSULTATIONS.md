@@ -117,6 +117,41 @@ Response Body (Error):
 
 ---
 
+### 36b. Create Blank Consultation
+URL: `/api/consultations/blank`  
+Método: `POST`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{
+  "patient_id": 10
+}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Consulta en blanco creada correctamente.",
+  "consultation_id": 47
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "El campo patient_id es obligatorio."
+}
+```
+
+---
+
 ### 37. Get Consultation Detail
 URL: `/api/consultations/{id}`  
 Método: `GET`  
@@ -301,7 +336,7 @@ Response Body (Error):
 
 ---
 
-### 40. Get Patient Medical History
+### 40. Patient Consultations (patient_consultations)
 URL: `/api/consultations/patient/{patient_id}`  
 Método: `GET`  
 Autenticación: Sí  
@@ -326,14 +361,53 @@ Response Body (Success):
     "email": "ana@example.com",
     "phone": "5551234567"
   },
-  "total": 3,
+  "total": 1,
   "consultations": [
     {
       "id": 45,
+      "agency_id": 1,
+      "patient_id": 10,
+      "doctor_id": 3,
       "consultation_date": "2026-07-10 09:00:00",
+      "chief_complaint": "Dolor de cabeza",
+      "history_present_illness": "Inicio hace 3 días",
+      "physical_examination": "Sin alteraciones",
       "diagnosis": "Migraña",
       "treatment": "Ibuprofeno 400mg",
-      "doctor_name": "Dr. Ramírez"
+      "notes": "Reposo relativo",
+      "follow_up_date": "2026-07-24",
+      "status": 1,
+      "doctor_name": "Dr. Ramírez",
+      "prescription": {
+        "id": 20,
+        "comment": "Tomar con alimentos",
+        "next_appointment": "2026-07-24",
+        "created_at": "2026-07-10 09:20:00",
+        "medications": [
+          {
+            "id": 105,
+            "name": "Ibuprofeno",
+            "dose": "400mg cada 8h por 5 días"
+          }
+        ],
+        "labs": [
+          {
+            "id": 51,
+            "name": "Hemograma completo",
+            "observacion": "En ayunas"
+          }
+        ]
+      },
+      "clinical_records": {
+        "date_record": "2026-07-10",
+        "data": [
+          {
+            "name": "Presión Arterial",
+            "unit": "mmHg",
+            "value": "120/80"
+          }
+        ]
+      }
     }
   ]
 }

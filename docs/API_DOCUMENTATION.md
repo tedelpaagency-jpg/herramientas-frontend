@@ -1373,75 +1373,186 @@ Response Body (Error):
 
 ---
 
-## Especificaciones de Integración y Código
+### 38. Update Profile Photo
+URL: `/api/auth/profile/photo`  
+Método: `POST`  
+Autenticación: Sí  
 
+Headers:
+- Content-Type: multipart/form-data
+- Authorization: Bearer <JWT_TOKEN>
 
-### Postman / REST Client Setup
-Para probar en Postman, añade una variable global `{{JWT_TOKEN}}` obtenida tras autenticarte en `/api/auth/login`. Todas las peticiones al recurso `/api/appointments` deben incluir:
-* **Header**: `Authorization` con valor `Bearer {{JWT_TOKEN}}`
+Request Body:
+- `photo` (File): Archivo de imagen (formatos permitidos: JPG, PNG, WEBP, GIF; máx. 2MB).
 
-### Cliente Flutter (Ejemplo)
-```dart
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-Future<void> createAppointment(String token) async {
-  final url = Uri.parse('https://tu-api.com/api/appointments');
-  final response = await http.post(
-    url,
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      'patient_id': 8,
-      'doctor_id': 2,
-      'appointment_date': '2026-07-15',
-      'appointment_time': '10:00:00',
-      'duration_minutes': 30,
-      'reason': 'Consulta general',
-      'notes': '',
-      'status': 1
-    }),
-  );
-
-  if (response.statusCode == 201) {
-    print('Cita creada con éxito');
-  } else {
-    print('Error: ${response.body}');
-  }
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Foto de perfil actualizada correctamente.",
+  "photo_url": "https://tu-api.com/public/assets/images/users/user_123_178493021.jpg"
 }
 ```
 
-### Cliente React (Ejemplo)
-```javascript
-const saveAppointment = async (token, appointmentData) => {
-  const response = await fetch('https://tu-api.com/api/appointments', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(appointmentData)
-  });
-  
-  const result = await response.json();
-  if (response.status === 201) {
-    return result.appointment_id;
-  } else {
-    throw new Error(result.message);
-  }
-};
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Formato de imagen no permitido. Use JPG, PNG, WEBP o GIF."
+}
 ```
 
 ---
 
-## Reglas de Negocio y Validaciones
-1. **Multi-tenancy obligatorio**: Todas las operaciones filtran implícitamente por el `agency_id` codificado en el JWT Token de la sesión.
-2. **Conflictos de Agenda**: No se permite agendar citas si los rangos de tiempo (`[hora_inicio, hora_fin]`) se solapan para el mismo doctor o para el mismo paciente en una fecha determinada.
-3. **Auditoría**: Cada creación, actualización o eliminación/cancelación escribe una entrada en el log de auditoría (`binnacle`) del sistema utilizando el ID del usuario del token.
-4. **Tablas Utilizadas**: `appointments` y `user` (para doctores y pacientes).
-5. **Modelos Reutilizados**: `Appointments_model` y `crud_model`.
+### 39. Update Profile Password
+URL: `/api/auth/profile/password`  
+Método: `POST`  
+Autenticación: Sí  
 
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
 
+Request Body:
+```json
+{
+  "current_password": "contraseña_actual",
+  "new_password": "nueva_contraseña_segura",
+  "confirm_password": "nueva_contraseña_segura"
+}
+```
 
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Contraseña actualizada correctamente."
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "La contraseña actual es incorrecta."
+}
+```
+
+---
+
+### 40. List Available Rewards
+URL: `/api/rewards`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "rewards": [
+    {
+      "id": 1,
+      "name": "Termo ZIIGO",
+      "description": "Termo de acero inoxidable grabado",
+      "status": 1
+    }
+  ]
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Token inválido o expirado."
+}
+```
+
+---
+
+### 41. Get Current User Points
+URL: `/api/rewards/points`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "points": 150.0
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Token inválido o expirado."
+}
+```
+
+---
+
+### 42. Check Roulette Availability
+URL: `/api/rewards/roulette`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success - Roulette Available):
+```json
+{
+  "status": "success",
+  "has_roulette": true,
+  "roulette": {
+    "id": 4,
+    "roulette_id": 1,
+    "title": "Ruleta Navideña",
+    "description": "Gira y gana premios al instante",
+    "assigned_at": "2026-07-15 12:00:00"
+  }
+}
+```
+
+Response Body (Success - No Roulette Available):
+```json
+{
+  "status": "success",
+  "has_roulette": false,
+  "roulette": null
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Token inválido o expirado."
+}
+```

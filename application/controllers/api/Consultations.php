@@ -367,6 +367,76 @@ class Consultations extends CI_Controller
     }
 
     /**
+     * POST /api/consultations/blank
+     *
+     * Crea una consulta médica en blanco asociada a un paciente.
+     * Retorna el ID de la consulta creada para posterior actualización.
+     */
+    public function create_blank_consultation()
+    {
+        if (strtolower($this->input->method()) !== 'post') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use POST.'], 405);
+        }
+
+        $user_data = $this->validate_request();
+        $agency_id = $user_data['agency_id'];
+        $user_id   = $user_data['user_id'];
+        $rol_id    = $user_data['rol_id'];
+
+        // Soporte JSON body + form-data
+        $raw_input = json_decode($this->input->raw_input_stream, true);
+        if (is_array($raw_input)) {
+            foreach ($raw_input as $key => $val) {
+                $_POST[$key] = $val;
+            }
+        }
+
+        $patient_id = (int) $this->input->post('patient_id');
+
+        if (empty($patient_id)) {
+            $this->response_json(['status' => 'error', 'message' => 'El campo patient_id es obligatorio.'], 400);
+        }
+
+        // Verificar que el paciente pertenece a la agencia y tiene rol_id = 8
+        $patient = $this->db->get_where('user', [
+            'user_id'   => $patient_id,
+            'agency_id' => $agency_id,
+            'rol_id'    => 8
+        ])->row();
+
+        if (!$patient) {
+            $this->response_json(['status' => 'error', 'message' => 'Paciente no encontrado o pertenece a otra sucursal.'], 404);
+        }
+
+        $data = [
+            'agency_id'               => $agency_id,
+            'patient_id'              => $patient_id,
+            'doctor_id'               => $user_id,
+            'consultation_date'       => date('Y-m-d H:i:s'),
+            'chief_complaint'         => null,
+            'history_present_illness' => null,
+            'physical_examination'    => null,
+            'diagnosis'               => null,
+            'treatment'               => null,
+            'notes'                   => null,
+            'follow_up_date'          => null,
+            'status'                  => 1
+        ];
+
+        $consultation_id = $this->Consultations_model->save_consultation($data);
+
+        if (!$consultation_id) {
+            $this->response_json(['status' => 'error', 'message' => 'Error al crear la consulta en blanco.'], 500);
+        }
+
+        $this->response_json([
+            'status'          => 'success',
+            'message'         => 'Consulta en blanco creada correctamente.',
+            'consultation_id' => (int) $consultation_id
+        ], 201);
+    }
+
+    /**
      * GET /api/consultations/{id}
      *
      * Detalle completo de una consulta:
@@ -593,7 +663,7 @@ class Consultations extends CI_Controller
             $this->response_json(['status' => 'error', 'message' => 'Paciente no encontrado.'], 404);
         }
 
-        $consultations = $this->Consultations_model->get_patient_medical_consultations($patient_id, $agency_id);
+        $consultations = $this->Consultations_model->get_patient_medical_history_detailed($patient_id, $agency_id);
 
         $this->response_json([
             'status'  => 'success',

@@ -579,6 +579,111 @@ class Consultations_model  extends CI_Model {
     }
 
     /**
+     * Get detailed medical history of a patient including prescriptions, meds, labs, and clinical records.
+     */
+    public function get_patient_medical_history_detailed($patient_id, $agency_id)
+    {
+        // Get all active consultations for the patient
+        $consultations = $this->db
+            ->select("
+                medical_consultations.*,
+                doctor.name as doctor_name,
+                doctor.last_name as doctor_last_name
+            ")
+            ->from('medical_consultations')
+            ->join('user doctor', 'doctor.user_id = medical_consultations.doctor_id', 'left')
+            ->where('medical_consultations.patient_id', $patient_id)
+            ->where('medical_consultations.agency_id', $agency_id)
+            ->where('medical_consultations.status', 1)
+            ->order_by('medical_consultations.consultation_date', 'DESC')
+            ->get()
+            ->result_array();
+
+        foreach ($consultations as &$consultation) {
+            $doctor_name = $consultation['doctor_name'] ?? '';
+            $doctor_last_name = $consultation['doctor_last_name'] ?? '';
+            $consultation['doctor_name'] = trim($doctor_name . ' ' . $doctor_last_name);
+            unset($consultation['doctor_last_name']);
+
+            // Get prescription associated
+            $prescription = $this->db
+                ->where('consultation_id', $consultation['id'])
+                ->where('agency_id', $agency_id)
+                ->order_by('id', 'DESC')
+                ->get('prescription')
+                ->row_array();
+
+            if ($prescription) {
+                // Get medications and labs
+                $details = $this->db
+                    ->where('prescription_id', $prescription['id'])
+                    ->order_by('id', 'ASC')
+                    ->get('prescription_details')
+                    ->result_array();
+
+                $medications = [];
+                $labs = [];
+
+                foreach ($details as $detail) {
+                    if ($detail['type'] === 'med') {
+                        $medications[] = [
+                            'id'   => isset($detail['product_id']) ? (int)$detail['product_id'] : null,
+                            'name' => $detail['name'],
+                            'dose' => $detail['dose']
+                        ];
+                    } elseif ($detail['type'] === 'lab') {
+                        $labs[] = [
+                            'id'          => (int)$detail['id'],
+                            'name'        => $detail['name'],
+                            'observacion' => $detail['dose'] // dose contains observation for labs
+                        ];
+                    }
+                }
+
+                $consultation['prescription'] = [
+                    'id'               => (int)$prescription['id'],
+                    'comment'          => $prescription['comment'],
+                    'next_appointment' => $prescription['next_appointment'],
+                    'created_at'       => $prescription['created_at'],
+                    'medications'      => $medications,
+                    'labs'             => $labs
+                ];
+            } else {
+                $consultation['prescription'] = null;
+            }
+
+            // Get clinical record
+            $clinical = $this->db
+                ->order_by('id', 'DESC')
+                ->get_where('clinical_records', [
+                    'consultation_id' => $consultation['id'],
+                    'agency_id'       => $agency_id
+                ])
+                ->row();
+
+            if ($clinical) {
+                $clinical_values = $this->db
+                    ->select('p.name, p.unit, cv.value')
+                    ->from('clinical_parameters p')
+                    ->join('clinical_values cv', 'cv.parameter_id = p.id AND cv.record_id = ' . $clinical->id)
+                    ->where('p.status', 1)
+                    ->get()
+                    ->result_array();
+                
+                $consultation['clinical_records'] = [
+                    'date_record' => $clinical->date_record,
+                    'data'        => $clinical_values
+                ];
+            } else {
+                $consultation['clinical_records'] = null;
+            }
+        }
+        unset($consultation);
+
+        return $consultations;
+    }
+
+    /**
      * Get patient last consultation
      */
     public function get_last_consultation(

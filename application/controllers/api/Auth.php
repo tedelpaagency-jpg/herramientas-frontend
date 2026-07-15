@@ -559,7 +559,7 @@ class Auth extends CI_Controller
     // =========================================================================
 
     /**
-     * PUT /api/auth/profile
+     * Post /api/auth/profile
      *
      * Actualiza los datos del usuario autenticado.
      * Campos permitidos: name, last_name, email, username, phone, password, photo (file)
@@ -568,8 +568,8 @@ class Auth extends CI_Controller
      */
     public function update_profile()
     {
-        if (strtolower($this->input->method()) !== 'put') {
-            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use PUT.'], 405);
+        if (strtolower($this->input->method()) !== 'post') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use Post.'], 405);
         }
 
         $token = $this->get_bearer_token();
@@ -766,8 +766,8 @@ class Auth extends CI_Controller
      */
     public function update_clinic()
     {
-        if (strtolower($this->input->method()) !== 'put') {
-            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use PUT.'], 405);
+        if (strtolower($this->input->method()) !== 'post') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use Post.'], 405);
         }
 
         $token = $this->get_bearer_token();
@@ -854,6 +854,138 @@ class Auth extends CI_Controller
                 'opening_time'            => $updated['opening_time']            ?? null,
                 'closing_time'            => $updated['closing_time']            ?? null,
             ]
+        ], 200);
+    }
+
+    /**
+     * POST /api/auth/profile/photo
+     *
+     * Actualiza la foto de perfil del usuario autenticado.
+     * Requiere subir un archivo con nombre 'photo'.
+     */
+    public function update_profile_photo()
+    {
+        if (strtolower($this->input->method()) !== 'post') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use POST.'], 405);
+        }
+
+        $token = $this->get_bearer_token();
+        if (!$token) {
+            $this->response_json(['status' => 'error', 'message' => 'Token no proporcionado.'], 401);
+        }
+
+        $decoded = $this->validate_jwt($token);
+        if (!$decoded) {
+            $this->response_json(['status' => 'error', 'message' => 'Token inválido o expirado.'], 401);
+        }
+
+        $user_id = $decoded['user_id'];
+
+        // Verificar que el usuario existe y está activo
+        $user = $this->db->get_where('user', ['user_id' => $user_id, 'status' => 1])->row();
+        if (!$user) {
+            $this->response_json(['status' => 'error', 'message' => 'Usuario no encontrado.'], 404);
+        }
+
+        if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+            $this->response_json(['status' => 'error', 'message' => 'Es necesario subir un archivo de imagen en el campo photo.'], 400);
+        }
+
+        $file     = $_FILES['photo'];
+        $allowed  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        $max_size = 2 * 1024 * 1024; // 2 MB
+
+        if (!in_array(mime_content_type($file['tmp_name']), $allowed)) {
+            $this->response_json(['status' => 'error', 'message' => 'Formato de imagen no permitido. Use JPG, PNG, WEBP o GIF.'], 400);
+        }
+
+        if ($file['size'] > $max_size) {
+            $this->response_json(['status' => 'error', 'message' => 'La imagen no debe superar 2 MB.'], 400);
+        }
+
+        $upload_dir = FCPATH . 'public/assets/images/users/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
+
+        $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'user_' . $user_id . '_' . time() . '.' . $ext;
+
+        if (!move_uploaded_file($file['tmp_name'], $upload_dir . $filename)) {
+            $this->response_json(['status' => 'error', 'message' => 'No se pudo guardar la imagen.'], 500);
+        }
+
+        // Eliminar foto anterior si existe y no es la por defecto
+        if (!empty($user->photo) && file_exists($upload_dir . $user->photo)) {
+            @unlink($upload_dir . $user->photo);
+        }
+
+        $this->db->where('user_id', $user_id)->update('user', ['photo' => $filename]);
+
+        $this->response_json([
+            'status'    => 'success',
+            'message'   => 'Foto de perfil actualizada correctamente.',
+            'photo_url' => base_url('public/assets/images/users/' . $filename)
+        ], 200);
+    }
+
+    /**
+     * POST /api/auth/profile/password
+     *
+     * Actualiza la contraseña del usuario autenticado.
+     * Requiere: current_password, new_password, confirm_password
+     */
+    public function update_password()
+    {
+        if (strtolower($this->input->method()) !== 'post') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use POST.'], 405);
+        }
+
+        $token = $this->get_bearer_token();
+        if (!$token) {
+            $this->response_json(['status' => 'error', 'message' => 'Token no proporcionado.'], 401);
+        }
+
+        $decoded = $this->validate_jwt($token);
+        if (!$decoded) {
+            $this->response_json(['status' => 'error', 'message' => 'Token inválido o expirado.'], 401);
+        }
+
+        $user_id = $decoded['user_id'];
+
+        // Verificar que el usuario existe y está activo
+        $user = $this->db->get_where('user', ['user_id' => $user_id, 'status' => 1])->row();
+        if (!$user) {
+            $this->response_json(['status' => 'error', 'message' => 'Usuario no encontrado.'], 404);
+        }
+
+        // Leer inputs (soporte JSON y form-data)
+        $raw_input = json_decode($this->input->raw_input_stream, true);
+        $current_password = isset($raw_input['current_password']) ? $raw_input['current_password'] : $this->input->post('current_password');
+        $new_password     = isset($raw_input['new_password']) ? $raw_input['new_password'] : $this->input->post('new_password');
+        $confirm_password = isset($raw_input['confirm_password']) ? $raw_input['confirm_password'] : $this->input->post('confirm_password');
+
+        if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
+            $this->response_json(['status' => 'error', 'message' => 'Los campos current_password, new_password y confirm_password son obligatorios.'], 400);
+        }
+
+        if (sha1($current_password) !== $user->password) {
+            $this->response_json(['status' => 'error', 'message' => 'La contraseña actual es incorrecta.'], 400);
+        }
+
+        if ($new_password !== $confirm_password) {
+            $this->response_json(['status' => 'error', 'message' => 'La nueva contraseña y la confirmación no coinciden.'], 400);
+        }
+
+        if (strlen($new_password) < 6) {
+            $this->response_json(['status' => 'error', 'message' => 'La nueva contraseña debe tener al menos 6 caracteres.'], 400);
+        }
+
+        $this->db->where('user_id', $user_id)->update('user', ['password' => sha1($new_password)]);
+
+        $this->response_json([
+            'status'  => 'success',
+            'message' => 'Contraseña actualizada correctamente.'
         ], 200);
     }
 }
