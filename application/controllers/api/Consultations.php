@@ -219,22 +219,74 @@ class Consultations extends CI_Controller
         $user_id   = $user_data['user_id'];
         $rol_id    = $user_data['rol_id'];
 
-        $search    = $this->input->get('search');
-        $date_from = $this->input->get('date_from');
-        $date_to   = $this->input->get('date_to');
-
-        if (!empty($search)) {
-            $consultations = $this->Consultations_model->search_medical_consultations($agency_id, $search);
-        } elseif (!empty($date_from) && !empty($date_to)) {
-            $consultations = $this->Consultations_model->get_by_date_range($agency_id, $date_from, $date_to);
-        } else {
-            $consultations = $this->Consultations_model->get_consultations($agency_id);
+        $page = (int)$this->input->get('page');
+        if ($page <= 0) {
+            $page = 1;
         }
+
+        $limit = (int)$this->input->get('limit');
+        if ($limit <= 0) {
+            $limit = 10;
+        }
+        $offset = ($page - 1) * $limit;
+
+        $filters = [
+            'search'    => $this->input->get('search'),
+            'date_from' => $this->input->get('date_from'),
+            'date_to'   => $this->input->get('date_to'),
+            'patient_id'=> $this->input->get('patient_id'),
+            'doctor_id' => $this->input->get('doctor_id')
+        ];
+
+        $result = $this->Consultations_model->get_consultations_filtered($agency_id, $filters, $limit, $offset);
+
+        $formatted_data = [];
+        foreach ($result['rows'] as $row) {
+            $patient_name = $row['patient_name'] ?? '';
+            $patient_last_name = $row['patient_last_name'] ?? '';
+            $full_patient_name = trim($patient_name . ' ' . $patient_last_name);
+
+            // Maintain the patient name (full name) at flat level for compatibility
+            $row['patient_name'] = $full_patient_name;
+
+            // Form nested patient details
+            $row['patient'] = [
+                'user_id'   => $row['patient_id'],
+                'name'      => $patient_name,
+                'last_name' => $patient_last_name,
+                'email'     => $row['patient_email'] ?? '',
+                'phone'     => $row['patient_phone'] ?? '',
+                'birthday'  => $row['patient_birthday'] ?? '',
+                'status'    => isset($row['patient_status']) ? (int)$row['patient_status'] : null
+            ];
+
+            // Maintain doctor name at flat level for compatibility
+            $doctor_name = $row['doctor_name'] ?? '';
+            $doctor_last_name = $row['doctor_last_name'] ?? '';
+            $row['doctor_name'] = trim($doctor_name . ' ' . $doctor_last_name);
+
+            // Clean up extra flat fields to keep the response output clean
+            unset($row['patient_last_name']);
+            unset($row['patient_email']);
+            unset($row['patient_phone']);
+            unset($row['patient_birthday']);
+            unset($row['patient_status']);
+            unset($row['doctor_last_name']);
+
+            $formatted_data[] = $row;
+        }
+
+        $total_pages = ceil($result['total'] / $limit);
 
         $this->response_json([
             'status' => 'success',
-            'total'  => count($consultations),
-            'data'   => $consultations
+            'data'   => $formatted_data,
+            'pagination' => [
+                'total_results' => $result['total'],
+                'per_page'      => $limit,
+                'current_page'  => $page,
+                'total_pages'   => $total_pages
+            ]
         ], 200);
     }
 

@@ -423,6 +423,78 @@ class Consultations_model  extends CI_Model {
     }
 
     /**
+     * Get consultations with advanced filtering, pagination, and patient/doctor details.
+     */
+    public function get_consultations_filtered($agency_id, $filters = [], $limit = null, $offset = 0)
+    {
+        $this->db->select("
+            medical_consultations.*,
+            patient.user_id as patient_id,
+            patient.name as patient_name,
+            patient.last_name as patient_last_name,
+            patient.email as patient_email,
+            patient.phone as patient_phone,
+            patient.birthday as patient_birthday,
+            patient.status as patient_status,
+            doctor.user_id as doctor_id,
+            doctor.name as doctor_name,
+            doctor.last_name as doctor_last_name
+        ");
+        $this->db->from('medical_consultations');
+        $this->db->join('user patient', 'patient.user_id = medical_consultations.patient_id', 'left');
+        $this->db->join('user doctor', 'doctor.user_id = medical_consultations.doctor_id', 'left');
+
+        $this->db->where('medical_consultations.agency_id', $agency_id);
+        $this->db->where('medical_consultations.status', 1);
+
+        if (!empty($filters['patient_id'])) {
+            $this->db->where('medical_consultations.patient_id', $filters['patient_id']);
+        }
+
+        if (!empty($filters['doctor_id'])) {
+            $this->db->where('medical_consultations.doctor_id', $filters['doctor_id']);
+        }
+
+        if (!empty($filters['date_from'])) {
+            $this->db->where('DATE(medical_consultations.consultation_date) >=', $filters['date_from']);
+        }
+
+        if (!empty($filters['date_to'])) {
+            $this->db->where('DATE(medical_consultations.consultation_date) <=', $filters['date_to']);
+        }
+
+        if (!empty($filters['search'])) {
+            $search = trim($filters['search']);
+            $this->db->group_start();
+            $this->db->like('patient.name', $search);
+            $this->db->or_like('patient.last_name', $search);
+            $this->db->or_like("CONCAT(patient.name, ' ', patient.last_name)", $search);
+            $this->db->or_like('medical_consultations.chief_complaint', $search);
+            $this->db->or_like('medical_consultations.diagnosis', $search);
+            $this->db->or_like('medical_consultations.treatment', $search);
+            $this->db->group_end();
+        }
+
+        // Count total results for pagination
+        $count_db = clone $this->db;
+        $total = $count_db->count_all_results();
+        unset($count_db);
+
+        $this->db->order_by('medical_consultations.consultation_date', 'DESC');
+
+        if ($limit !== null) {
+            $this->db->limit($limit, $offset);
+        }
+
+        $rows = $this->db->get()->result_array();
+
+        return [
+            'total' => $total,
+            'rows'  => $rows
+        ];
+    }
+
+    /**
      * Get patient last consultation
      */
     public function get_last_consultation(
