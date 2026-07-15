@@ -554,14 +554,18 @@ class Consultations_model  extends CI_Model {
                     id AS parameter_id,
                     name,
                     icon,
-                    unit,
-                    NULL as value
+                    unit
                 ')
                 ->from('clinical_parameters')
                 ->where('status', 1)
                 ->order_by('id', 'ASC')
                 ->get()
                 ->result_array();
+
+            foreach ($parameters as &$p) {
+                $p['value'] = null;
+            }
+            unset($p);
 
             return [
                 'has_record'      => false,
