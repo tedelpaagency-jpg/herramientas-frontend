@@ -112,6 +112,7 @@ class Patients extends CI_Controller
                 'birthday'          => $patient->birthday,
                 'age'               => !empty($patient->birthday) ? $this->crud_model->calcularEdad($patient->birthday) : null,
                 'status'            => $patient->status,
+                'photo_url'         => !empty($patient->photo) ? base_url('public/assets/images/users/' . $patient->photo) : null,
                 'last_consultation' => $last ? [
                     'id'                => $last['id'],
                     'consultation_date' => $last['consultation_date'],
@@ -165,7 +166,8 @@ class Patients extends CI_Controller
             'phone' => $patient['phone'],
             'birthday' => $patient['birthday'],
             'age' => !empty($patient['birthday']) ? $this->crud_model->calcularEdad($patient['birthday']) : null,
-            'status' => $patient['status']
+            'status' => $patient['status'],
+            'photo_url' => !empty($patient['photo']) ? base_url('public/assets/images/users/' . $patient['photo']) : null
         ];
 
         $this->response_json([

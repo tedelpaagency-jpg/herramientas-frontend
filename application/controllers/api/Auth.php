@@ -203,6 +203,7 @@ class Auth extends CI_Controller
             'agency_id'  => $user->agency_id,
             'company_id' => $user->company_id,
             'status'     => $user->status,
+            'photo_url'  => !empty($user->photo) ? base_url('public/assets/images/users/' . $user->photo) : null
         ];
 
         $this->response_json([
