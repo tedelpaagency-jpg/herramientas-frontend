@@ -37,6 +37,7 @@
                         <ul class="mb-3">
                             <li><a href="<?= base_url(); ?>portal/comissions" class="nav-content-bttn open-font"><i class="font-xl text-current feather-box me-3"></i><span>Comisiones</span></a></li>
                             <li><a href="<?= base_url(); ?>portal/points" class="nav-content-bttn open-font"><i class="font-xl text-current feather-briefcase me-3"></i><span>Puntos</span></a></li>
+                            <li><a href="<?= base_url(); ?>portal/agency_rewards_requests" class="nav-content-bttn open-font"><i class="font-xl text-current feather-gift me-3"></i><span>Canjes Clínicas</span></a></li>
                                                    
                         </ul>
                     </div>

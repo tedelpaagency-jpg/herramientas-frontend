@@ -39,8 +39,9 @@
 }
 </style>
 <?php 
-    $agency = $this->db->get_where('agency',['id'=>$id])->row_array(); 
+    $agency = $this->crud_model->getAgencyData($id); 
     if(isset($agency)):
+        $total_points = $this->crud_model->getUserPointsTotal('agency', $agency['id']);
 ?>
 <div class="middle-sidebar-bottom">
     <div class="middle-sidebar-left">
@@ -60,6 +61,7 @@
                         <ul class="nav nav-tabs h55 d-flex product-info-tab border-bottom-0 ps-4" id="pills-tab" role="tablist">
                             <li class="active list-inline-item me-5"><a class="fw-700 font-xssss text-grey-500 pt-3 pb-3 ls-1 d-inline-block active" href="#navtabs1" data-bs-toggle="tab">Estadísticas</a></li>
                             <li class="list-inline-item me-5"><a class="fw-700 font-xssss text-grey-500 pt-3 pb-3 ls-1 d-inline-block" href="#navtabs2" data-bs-toggle="tab">Usuarios</a></li>
+                            <li class="list-inline-item me-5"><a class="fw-700 font-xssss text-grey-500 pt-3 pb-3 ls-1 d-inline-block" href="#navRewards" data-bs-toggle="tab">Recompenzas</a></li>
                             <li class="list-inline-item me-5"><a class="fw-700 font-xssss text-grey-500 pt-3 pb-3 ls-1 d-inline-block" href="#navtabs3" data-bs-toggle="tab">Editar</a></li>
                             <li class="list-inline-item me-5"><a class="fw-700 font-xssss text-danger pt-3 pb-3 ls-1 d-inline-block" href="#navDelete" data-bs-toggle="tab">Eliminar</a></li>
                         </ul>
@@ -388,6 +390,113 @@
                         </div>
                     </div>
                     
+                    <div class="tab-pane fade p-3" id="navRewards" role="tabpanel">
+                        <!-- Tarjeta de Puntos de la Agencia -->
+                        <div class="card shadow-xss rounded-xxl border-0 mb-3 mt-3">
+                            <div class="card-body d-flex align-items-center p-4">
+                                <h4 class="fw-700 mb-0 font-xssss text-grey-900">Puntos de la Clínica</h4>
+                                <span class="ms-auto badge bg-primary font-xssss text-white p-2" style="font-size: 14px !important;">
+                                    Balance Actual: <?= number_format($total_points, 2); ?> pts
+                                </span>
+                            </div>
+                            <div class="card-body pt-0 ps-4 pe-4 pb-3">
+                                <form method="post" action="<?= base_url('portal/agency_rewards/change_points'); ?>">
+                                    <input type="hidden" name="agency_id" value="<?= $agency['id']; ?>">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">Acción</label>
+                                                <select class="form-select" name="type" required>
+                                                    <option value="1">Aumentar (Ingreso)</option>
+                                                    <option value="0">Disminuir (Descuento)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">Cantidad de Puntos</label>
+                                                <input type="number" class="form-control" name="amount" min="1" step="any" required placeholder="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">Motivo / Descripción</label>
+                                                <input type="text" class="form-control" name="description" required placeholder="Ej. Ajuste de puntos">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end mb-3">
+                                            <button type="submit" class="btn btn-success text-white w-100" style="height: 44px; border-radius: 14px;">Actualizar</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta de Premios de la Agencia -->
+                        <div class="card  shadow-xss rounded-xxl border-0 mb-3 mt-3">
+                            <div class="card-body d-flex align-items-center p-4">
+                                <h4 class="fw-700 mb-0 font-xssss text-grey-900">Recompenzas</h4>
+                            
+                                <a href="javascript:void(0)" 
+                                   onclick="showAjaxModal('<?= base_url(); ?>modal/popup/agency_rewards_form/0/<?= $agency['id']; ?>')" 
+                                   data-toggle="modal"
+                                   class="ms-auto btn-round-md bg-success theme-dark-bg rounded-3 text-white">
+                                    <i class="feather-plus-circle font-xss"></i>
+                                </a>
+                            </div>
+                            <div class="card-body  pt-0 ps-4 pe-4 pb-3 ">
+                                <div class="table-responsive">
+                                   <table class="table " id="sale_data">
+                                        <thead>
+                                            <tr class="fw-700 font-xssss text-grey-900 pt-3 pb-3 ">
+                                                <th>Premio</th>
+                                                <th>Puntos</th>
+                                                <th>Status</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php 
+                                                $rewards = $this->crud_model->getAgencyRewards($agency['id']); 
+                                                foreach($rewards as $reward): 
+                                                    $reward_detail = $this->crud_model->getReward($reward->reward_id);
+                                            ?>
+                                                <tr>
+                                                    <td><strong><?= $reward_detail ? htmlspecialchars($reward_detail->name) : 'Premio Eliminado'; ?></strong></td>
+                                                    <td><?= $reward->points; ?> pts</td>
+                                                    <td>
+                                                        <?php 
+                                                            if ($reward->status == 1) {
+                                                                echo '<span class="badge border border-success text-success bg-transparent">Activo</span>';
+                                                            } elseif ($reward->status == 2) {
+                                                                echo '<span class="badge border border-warning text-warning bg-transparent">Solicitado</span>';
+                                                            } elseif ($reward->status == 3) {
+                                                                echo '<span class="badge border border-info text-info bg-transparent">Canjeado</span>';
+                                                            } else {
+                                                                echo '<span class="badge border border-secondary text-secondary bg-transparent">Desactivado</span>';
+                                                            }
+                                                        ?>
+                                                    </td>
+                                                    <td>
+                                                        <a href="javascript:void(0)" 
+                                                           onclick="showAjaxModal('<?= base_url('modal/popup/agency_rewards_form/'.$reward->id.'/'.$agency['id']) ?>')" 
+                                                           class="badge border border-warning text-warning bg-transparent icon-btn b-r-4 me-2">
+                                                            <i class="ti ti-pencil"></i>
+                                                        </a>
+                                                        <a href="javascript:void(0)" 
+                                                           onclick="if(confirm('¿Deseas eliminar este premio de la clínica?')) { window.location.href = '<?= base_url(); ?>portal/agency_rewards/delete/<?= base64_encode($reward->id); ?>'; }" 
+                                                           class="badge border border-danger text-danger bg-transparent icon-btn b-r-4">
+                                                            <i class="ti ti-trash"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="tab-pane fade p-3" id="navtabs3" role="tabpanel">
                         <div class="card  shadow-xss rounded-xxl border-0 mb-3 mt-3">
                             <div class="card-body p-4 w-100 bg-current border-0 d-flex rounded-3">

@@ -1543,6 +1543,55 @@
             $this->load->view('backend/index', $page_data);
         }
 
+        function agency_rewards($param1 = '', $param2 = '', $param3 = '')
+        {
+            $this->is_login();
+            
+            if($param1 == 'save')
+            {
+                $response = $this->crud_model->saveAgencyReward($param2);
+                $this->session->set_flashdata('success',$response);
+                redirect($this->agent->referrer(),'refresh');
+            }
+            
+            if($param1 == 'delete')
+            {
+                $response = $this->crud_model->deleteAgencyReward(base64_decode($param2));
+                $this->session->set_flashdata('success',$response);
+                redirect($this->agent->referrer(),'refresh');
+            }
+
+            if($param1 == 'change_points')
+            {
+                $response = $this->crud_model->changeAgencyPoints();
+                $this->session->set_flashdata('success',$response);
+                redirect($this->agent->referrer(),'refresh');
+            }
+        }
+
+        function agency_rewards_requests($param1 = '', $param2 = '')
+        {
+            $this->is_login();
+            
+            if($param1 == 'approve')
+            {
+                $response = $this->crud_model->approveAgencyRewardRedemption(base64_decode($param2));
+                $this->session->set_flashdata('success',$response);
+                redirect($this->agent->referrer(),'refresh');
+            }
+            
+            if($param1 == 'reject')
+            {
+                $response = $this->crud_model->rejectAgencyRewardRedemption(base64_decode($param2));
+                $this->session->set_flashdata('success',$response);
+                redirect($this->agent->referrer(),'refresh');
+            }
+            
+            $page_data['page_name']  = 'agency_rewards_requests';
+            $page_data['page_title'] = "Solicitudes de Canje";
+            $this->load->view('backend/index', $page_data);
+        }
+
 
         /* Detalle de cada ventas*/
         function roulettes($param1 = '', $param2 = '')

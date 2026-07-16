@@ -932,6 +932,111 @@ class Crud_model extends CI_Model
         return 'Eliminado';
        
     }
+    
+    function saveAgencyReward($id = '')
+    {
+        $data = array(
+            'agency_id' => $this->input->post('agency_id'),
+            'reward_id' => $this->input->post('reward_id'),
+            'points'    => $this->input->post('points'),
+            'status'    => 1,
+        );
+        
+        if($id != '' && $id != '0')
+        {
+            $this->db->where('id', $id);
+            $this->db->update('agency_rewards', $data);
+            return 'Premio de clínica actualizado';
+        } else {
+            $this->db->insert('agency_rewards', $data);
+            return 'Premio de clínica asignado';
+        }
+    }
+
+    function deleteAgencyReward($id = '')
+    {
+        $data = array(
+            'status' => 0,
+        );
+        $this->db->where('id', $id);
+        $this->db->update('agency_rewards', $data);
+        return 'Premio de clínica eliminado';
+    }
+
+    function changeAgencyPoints()
+    {
+        $data = [
+            'user_type'          => 'agency',
+            'user_id'            => $this->input->post('agency_id'),
+            'type'               => $this->input->post('type'),
+            'amount'             => $this->input->post('amount'),
+            'reject_description' => $this->input->post('description'),
+            'status'             => 1,
+            'date'               => date('Y-m-d H:i:s')
+        ];
+        
+        $this->db->insert('points', $data);
+        return 'Puntos actualizados';
+    }
+
+    function approveAgencyRewardRedemption($id)
+    {
+        $redemption = $this->db->get_where('agency_rewards', ['id' => $id])->row();
+        if ($redemption) {
+            $this->db->where('id', $id);
+            $this->db->update('agency_rewards', ['status' => 3]);
+            
+            $data = [
+                'user_type'          => 'agency',
+                'user_id'            => $redemption->agency_id,
+                'type'               => 0,
+                'amount'             => $redemption->points,
+                'reject_description' => 'Canje de Premio aprobado',
+                'status'             => 1,
+                'date'               => date('Y-m-d H:i:s')
+            ];
+            $this->db->insert('points', $data);
+            return 'Solicitud de canje aprobada y puntos descontados';
+        }
+        return 'Solicitud no encontrada';
+    }
+
+    function rejectAgencyRewardRedemption($id)
+    {
+        $this->db->where('id', $id);
+        $this->db->update('agency_rewards', ['status' => 1]);
+        return 'Solicitud de canje rechazada';
+    }
+
+    function getRewardsActive()
+    {
+        return $this->db->get_where('rewards', ['status' => 1])->result();
+    }
+
+    function getAgencyReward($id)
+    {
+        return $this->db->get_where('agency_rewards', ['id' => $id])->row();
+    }
+
+    function getAgencyRewards($agency_id)
+    {
+        return $this->db->get_where('agency_rewards', ['agency_id' => $agency_id, 'status' => 1])->result();
+    }
+
+    function getReward($id)
+    {
+        return $this->db->get_where('rewards', ['id' => $id])->row();
+    }
+
+    function getAgencyData($id)
+    {
+        return $this->db->get_where('agency', ['id' => $id])->row_array();
+    }
+
+    function getAgencyRewardsRequests()
+    {
+        return $this->db->get_where('agency_rewards', ['status' => 2])->result();
+    }
 
 
     function saveRoulette($id = '')
