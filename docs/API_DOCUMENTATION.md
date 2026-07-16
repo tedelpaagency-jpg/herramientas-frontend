@@ -1440,7 +1440,7 @@ Response Body (Error):
 
 ---
 
-### 40. List Available Rewards
+### 40. List Available Agency Rewards
 URL: `/api/rewards`  
 Método: `GET`  
 Autenticación: Sí  
@@ -1460,9 +1460,11 @@ Response Body (Success):
   "status": "success",
   "rewards": [
     {
-      "id": 1,
+      "agency_reward_id": 5,
+      "reward_id": 1,
       "name": "Termo ZIIGO",
       "description": "Termo de acero inoxidable grabado",
+      "points": 100.0,
       "status": 1
     }
   ]
@@ -1479,7 +1481,7 @@ Response Body (Error):
 
 ---
 
-### 41. Get Current User Points
+### 41. Get Agency Points Balance
 URL: `/api/rewards/points`  
 Método: `GET`  
 Autenticación: Sí  
@@ -1554,5 +1556,39 @@ Response Body (Error):
 {
   "status": "error",
   "message": "Token inválido o expirado."
+}
+```
+
+---
+
+### 43. Request Reward Redemption
+URL: `/api/rewards/redeem`  
+Método: `POST`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{
+  "agency_reward_id": 5
+}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Solicitud de canje enviada con éxito."
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Puntos insuficientes para realizar el canje."
 }
 ```

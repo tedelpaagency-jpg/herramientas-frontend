@@ -1038,6 +1038,41 @@ class Crud_model extends CI_Model
         return $this->db->get_where('agency_rewards', ['status' => 2])->result();
     }
 
+    function getAgencyRewardsWithDetails($agency_id)
+    {
+        return $this->db
+            ->select('agency_rewards.id, agency_rewards.reward_id, agency_rewards.points, rewards.name, rewards.description, agency_rewards.status')
+            ->from('agency_rewards')
+            ->join('rewards', 'rewards.id = agency_rewards.reward_id')
+            ->where('agency_rewards.agency_id', $agency_id)
+            ->where('agency_rewards.status', 1)
+            ->get()
+            ->result_array();
+    }
+
+    function requestAgencyRewardRedemption($agency_reward_id, $agency_id)
+    {
+        $ar = $this->db->get_where('agency_rewards', [
+            'id' => $agency_reward_id,
+            'agency_id' => $agency_id,
+            'status' => 1
+        ])->row();
+
+        if (!$ar) {
+            return ['status' => 'error', 'message' => 'Premio no disponible o no pertenece a la clínica.'];
+        }
+
+        $current_points = $this->getUserPointsTotal('agency', $agency_id);
+        if ($current_points < $ar->points) {
+            return ['status' => 'error', 'message' => 'Puntos insuficientes para realizar el canje.'];
+        }
+
+        $this->db->where('id', $agency_reward_id);
+        $this->db->update('agency_rewards', ['status' => 2]);
+
+        return ['status' => 'success', 'message' => 'Solicitud de canje enviada con éxito.'];
+    }
+
 
     function saveRoulette($id = '')
     {

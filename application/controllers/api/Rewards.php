@@ -68,7 +68,7 @@ class Rewards extends CI_Controller
     /**
      * GET /api/rewards
      *
-     * List all available rewards/prizes (where status is active/not deleted).
+     * List all available rewards/prizes of the authenticated user's agency.
      */
     public function index()
     {
@@ -77,22 +77,21 @@ class Rewards extends CI_Controller
         }
 
         // Authenticate request
-        $this->validate_request();
+        $user_data = $this->validate_request();
+        $agency_id = $user_data['agency_id'];
 
-        // Query active rewards
-        $rewards = $this->db
-            ->order_by('id', 'DESC')
-            ->where('status !=', 0)
-            ->get('rewards')
-            ->result_array();
+        // Query active rewards for the agency
+        $rewards = $this->crud_model->getAgencyRewardsWithDetails($agency_id);
 
         $formatted_rewards = [];
         foreach ($rewards as $row) {
             $formatted_rewards[] = [
-                'id'          => (int)$row['id'],
-                'name'        => $row['name'],
-                'description' => $row['description'],
-                'status'      => (int)$row['status']
+                'agency_reward_id' => (int)$row['id'],
+                'reward_id'        => (int)$row['reward_id'],
+                'name'             => $row['name'],
+                'description'      => $row['description'],
+                'points'           => (float)$row['points'],
+                'status'           => (int)$row['status']
             ];
         }
 
@@ -105,7 +104,7 @@ class Rewards extends CI_Controller
     /**
      * GET /api/rewards/points
      *
-     * Retrieve the current point balance of the authenticated user.
+     * Retrieve the current point balance of the authenticated agency.
      */
     public function points()
     {
@@ -115,15 +114,47 @@ class Rewards extends CI_Controller
 
         // Authenticate request
         $user_data = $this->validate_request();
-        $user_id   = $user_data['user_id'];
+        $agency_id = $user_data['agency_id'];
 
-        // Get points total using model method
-        $points_total = $this->crud_model->getUserPointsTotal('user', $user_id);
+        // Get points total using model method for the agency
+        $points_total = $this->crud_model->getUserPointsTotal('agency', $agency_id);
 
         $this->response_json([
             'status' => 'success',
             'points' => (float)$points_total
         ], 200);
+    }
+
+    /**
+     * POST /api/rewards/redeem
+     *
+     * Request redemption of a specific agency reward.
+     */
+    public function redeem()
+    {
+        if (strtolower($this->input->method()) !== 'post') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use POST.'], 405);
+        }
+
+        // Authenticate request
+        $user_data = $this->validate_request();
+        $agency_id = $user_data['agency_id'];
+
+        // Get POST/JSON inputs
+        $raw_input = json_decode(file_get_contents('php://input'), true);
+        $agency_reward_id = isset($raw_input['agency_reward_id']) ? (int)$raw_input['agency_reward_id'] : (int)$this->input->post('agency_reward_id');
+
+        if (!$agency_reward_id) {
+            $this->response_json(['status' => 'error', 'message' => 'Falta el parámetro agency_reward_id.'], 400);
+        }
+
+        $result = $this->crud_model->requestAgencyRewardRedemption($agency_reward_id, $agency_id);
+
+        if ($result['status'] === 'success') {
+            $this->response_json($result, 200);
+        } else {
+            $this->response_json($result, 400);
+        }
     }
 
     /**
