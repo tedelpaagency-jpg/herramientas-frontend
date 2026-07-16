@@ -107,6 +107,7 @@ $route['api/consultations/blank']                      = 'api/consultations/crea
 $route['api/consultations/patient/(:num)']             = 'api/consultations/patient_consultations/$1';
 $route['api/consultations/doctor/(:num)']              = 'api/consultations/doctor_consultations/$1';
 $route['api/consultations/media/(:num)']               = 'api/consultations/delete_media/$1';
+$route['api/consultations/details/(:num)']             = 'api/consultations/show_consultation/$1';
 $route['api/consultations/(:num)']                     = 'api/consultations/handle_consultation/$1';
 $route['api/consultations/(:num)/media']               = 'api/consultations/get_media/$1';
 $route['api/consultations/(:num)/upload-media']        = 'api/consultations/upload_media/$1';
