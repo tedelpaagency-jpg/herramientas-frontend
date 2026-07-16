@@ -637,7 +637,7 @@ class Auth extends CI_Controller
 
         // Cambio de contraseña (solo si se envía)
         if (!empty($password)) {
-            $data['password'] = $password;
+            $data['password'] = sha1($password);
         }
 
         // Foto de perfil (opcional) — guardada en public/assets/images/users/
