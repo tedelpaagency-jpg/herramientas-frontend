@@ -1593,3 +1593,69 @@ Response Body (Error):
   "message": "Puntos insuficientes para realizar el canje."
 }
 ```
+
+---
+
+### 44. Get Rewards and Points History
+URL: `/api/rewards/history`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Query Params:
+- `page` (opcional, por defecto 1) — Número de página
+- `limit` (opcional, por defecto 5) — Cantidad de resultados por página
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "item_type": "reward",
+      "item_id": 5,
+      "amount": 100.0,
+      "title": "Termo ZIIGO",
+      "status": 3,
+      "date": "2026-07-16 14:30:00",
+      "reward_id": 1,
+      "photo": "https://tu-api.com/public/assets/images/rewards/e10adc3949ba59abbe56e057f20f883eTermo.jpg"
+    },
+    {
+      "item_type": "point",
+      "item_id": 12,
+      "amount": 250.0,
+      "title": "Puntos cargados por administración",
+      "status": 1,
+      "date": "2026-07-15 09:00:00",
+      "points_type": 1
+    }
+  ],
+  "pagination": {
+    "total_results": 2,
+    "per_page": 5,
+    "current_page": 1,
+    "total_pages": 1
+  }
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Token inválido o expirado."
+}
+```
+
+---
+
+

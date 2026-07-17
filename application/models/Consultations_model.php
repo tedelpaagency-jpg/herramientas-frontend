@@ -700,4 +700,35 @@ class Consultations_model  extends CI_Model {
             ->row_array();
     }
 
+    /**
+     * Get list of active clinical parameters.
+     */
+    public function get_clinical_parameters()
+    {
+        $parameters = $this->db
+            ->select('
+                p.id,
+                p.name,
+                p.icon,
+                p.unit,
+                p.type as specialty_id,
+                s.name as specialty_name
+            ')
+            ->from('clinical_parameters p')
+            ->join('specialties s', 's.id = p.type', 'left')
+            ->where('p.status', 1)
+            ->order_by('p.id', 'ASC')
+            ->get()
+            ->result_array();
+
+        foreach ($parameters as &$p) {
+            $p['id'] = (int) $p['id'];
+            $p['specialty_id'] = $p['specialty_id'] !== '' && $p['specialty_id'] !== null ? (int) $p['specialty_id'] : null;
+            $p['specialty_name'] = $p['specialty_name'] ?? 'General';
+        }
+        unset($p);
+
+        return $parameters;
+    }
+
 }

@@ -5147,4 +5147,85 @@ Contraseña : '.$page_data['password'] = base64_decode($user['code']).'
         ];
     }
 
+    /**
+     * Get unified and paginated history of points and reward redemptions.
+     * Rewards status: 2 = Pending Request, 3 = Approved/Completed Redemption
+     */
+    public function getAgencyRewardsHistory($agency_id, $limit = 5, $offset = 0)
+    {
+        $date_column = 'NULL';
+        if ($this->db->field_exists('created_at', 'agency_rewards')) {
+            $date_column = 'ar.created_at';
+        } elseif ($this->db->field_exists('date', 'agency_rewards')) {
+            $date_column = 'ar.date';
+        }
+
+        $base_sql = "
+            SELECT 
+                'point' as item_type,
+                id as item_id,
+                amount,
+                type as points_type,
+                reject_description as title,
+                status,
+                date as item_date,
+                NULL as reward_id,
+                NULL as reward_name,
+                NULL as reward_photo
+            FROM points
+            WHERE user_type = 'agency' AND user_id = ? AND status = 1
+
+            UNION ALL
+
+            SELECT 
+                'reward' as item_type,
+                ar.id as item_id,
+                ar.points as amount,
+                NULL as points_type,
+                r.name as title,
+                ar.status,
+                {$date_column} as item_date,
+                ar.reward_id,
+                r.name as reward_name,
+                r.photo as reward_photo
+            FROM agency_rewards ar
+            JOIN rewards r ON r.id = ar.reward_id
+            WHERE ar.agency_id = ? AND ar.status IN (2, 3)
+        ";
+
+        // Count query
+        $count_sql = "SELECT COUNT(*) as total FROM ({$base_sql}) as temp";
+        $total = (int)$this->db->query($count_sql, [$agency_id, $agency_id])->row()->total;
+
+        // Data query
+        $data_sql = $base_sql . " ORDER BY item_date DESC, item_id DESC LIMIT ? OFFSET ?";
+        $rows = $this->db->query($data_sql, [$agency_id, $agency_id, (int)$limit, (int)$offset])->result_array();
+
+        $formatted = [];
+        foreach ($rows as $row) {
+            $item = [
+                'item_type'   => $row['item_type'],
+                'item_id'     => (int)$row['item_id'],
+                'amount'      => (float)$row['amount'],
+                'title'       => $row['title'] ?? '',
+                'status'      => (int)$row['status'],
+                'date'        => $row['item_date']
+            ];
+
+            if ($row['item_type'] === 'point') {
+                $item['points_type'] = (int)$row['points_type']; // 1 = added, 0 = discounted
+            } else {
+                $item['reward_id'] = (int)$row['reward_id'];
+                $item['photo'] = $this->getPhotoReward($row['reward_id']);
+            }
+
+            $formatted[] = $item;
+        }
+
+        return [
+            'total' => $total,
+            'rows'  => $formatted
+        ];
+    }
+
 }

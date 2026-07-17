@@ -206,6 +206,51 @@ class Rewards extends CI_Controller
         }
     }
 
+    /**
+     * GET /api/rewards/history
+     *
+     * List all points history and redeemed rewards for the authenticated agency in a unified paginated feed.
+     * Default limit: 5 results.
+     */
+    public function history()
+    {
+        if (strtolower($this->input->method()) !== 'get') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use GET.'], 405);
+        }
+
+        // Authenticate request
+        $user_data = $this->validate_request();
+        $agency_id = $user_data['agency_id'];
+
+        // Pagination inputs
+        $page = (int)$this->input->get('page');
+        if ($page <= 0) {
+            $page = 1;
+        }
+
+        $limit = (int)$this->input->get('limit');
+        if ($limit <= 0) {
+            $limit = 5; // Default: 5 results
+        }
+
+        $offset = ($page - 1) * $limit;
+
+        $result = $this->crud_model->getAgencyRewardsHistory($agency_id, $limit, $offset);
+
+        $total_pages = ceil($result['total'] / $limit);
+
+        $this->response_json([
+            'status'     => 'success',
+            'data'       => $result['rows'],
+            'pagination' => [
+                'total_results' => $result['total'],
+                'per_page'      => $limit,
+                'current_page'  => $page,
+                'total_pages'   => $total_pages
+            ]
+        ], 200);
+    }
+
     // --- Private Helper Methods for JWT ---
 
     private function base64UrlEncode($text) 

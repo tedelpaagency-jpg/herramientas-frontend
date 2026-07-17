@@ -104,6 +104,7 @@ $route['api/consultations/search']                     = 'api/consultations/sear
 $route['api/consultations/recent']                     = 'api/consultations/recent_consultations';
 $route['api/consultations/by-date']                    = 'api/consultations/by_date_range';
 $route['api/consultations/blank']                      = 'api/consultations/create_blank_consultation';
+$route['api/consultations/clinical-parameters']        = 'api/consultations/clinical_parameters';
 $route['api/consultations/patient/(:num)']             = 'api/consultations/patient_consultations/$1';
 $route['api/consultations/doctor/(:num)']              = 'api/consultations/doctor_consultations/$1';
 $route['api/consultations/media/(:num)']               = 'api/consultations/delete_media/$1';
@@ -115,4 +116,5 @@ $route['api/consultations/(:num)/upload-media']        = 'api/consultations/uplo
 // ── Rewards API ───────────────────────────────────────────────────────────
 $route['api/rewards']                                  = 'api/rewards/index';
 $route['api/rewards/points']                           = 'api/rewards/points';
+$route['api/rewards/history']                          = 'api/rewards/history';
 $route['api/rewards/roulette']                         = 'api/rewards/roulette';

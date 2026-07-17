@@ -717,3 +717,62 @@ Response Body (Error):
 ```
 
 ---
+
+### 48. Get Clinical Parameters
+URL: `/api/consultations/clinical-parameters`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "total": 3,
+  "data": [
+    {
+      "id": 1,
+      "name": "Peso",
+      "icon": "fa-weight-scale",
+      "unit": "kg",
+      "specialty_id": null,
+      "specialty_name": "General"
+    },
+    {
+      "id": 2,
+      "name": "Presión Arterial",
+      "icon": "fa-heart-pulse",
+      "unit": "mmHg",
+      "specialty_id": null,
+      "specialty_name": "General"
+    },
+    {
+      "id": 3,
+      "name": "Agudeza Visual",
+      "icon": "fa-eye",
+      "unit": "D",
+      "specialty_id": 5,
+      "specialty_name": "Oftalmología"
+    }
+  ]
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Token inválido o expirado."
+}
+```
+
+---
+

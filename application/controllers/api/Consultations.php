@@ -577,7 +577,8 @@ class Consultations extends CI_Controller
             $parameters_result = $this->Consultations_model->update_clincal_parameters(
                 $id,
                 $patient_id,
-                $values
+                $values,
+                $agency_id
             );
         }
 
@@ -828,6 +829,32 @@ class Consultations extends CI_Controller
             'date_to'   => $date_to,
             'total'     => count($consultations),
             'data'      => $consultations
+        ], 200);
+    }
+
+    /**
+     * GET /api/consultations/clinical-parameters
+     *
+     * Obtiene el listado de parámetros clínicos activos en el sistema.
+     * Mismo esquema de autenticación (JWT) que los demás endpoints del API.
+     */
+    public function clinical_parameters()
+    {
+        if (strtolower($this->input->method()) !== 'get') {
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use GET.'], 405);
+        }
+
+        $user_data = $this->validate_request();
+        $agency_id = $user_data['agency_id'];
+        $user_id   = $user_data['user_id'];
+        $rol_id    = $user_data['rol_id'];
+
+        $parameters = $this->Consultations_model->get_clinical_parameters();
+
+        $this->response_json([
+            'status' => 'success',
+            'total'  => count($parameters),
+            'data'   => $parameters
         ], 200);
     }
 
