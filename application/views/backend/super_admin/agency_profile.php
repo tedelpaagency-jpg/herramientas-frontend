@@ -462,7 +462,12 @@
                                                     $reward_detail = $this->crud_model->getReward($reward->reward_id);
                                             ?>
                                                 <tr>
-                                                    <td><strong><?= $reward_detail ? htmlspecialchars($reward_detail->name) : 'Premio Eliminado'; ?></strong></td>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <img src="<?= $this->crud_model->getPhotoReward($reward->reward_id); ?>" alt="" class="avatar-xs rounded-3 me-2" style="width: 35px; height: 35px; object-fit: cover;">
+                                                            <strong><?= $reward_detail ? htmlspecialchars($reward_detail->name) : 'Premio Eliminado'; ?></strong>
+                                                        </div>
+                                                    </td>
                                                     <td><?= $reward->points; ?> pts</td>
                                                     <td>
                                                         <?php 

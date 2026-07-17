@@ -175,7 +175,7 @@ class Consultations extends CI_Controller
     /**
      * Router para /api/consultations/{id}
      * GET    -> show_consultation()
-     * PUT    -> update_consultation()
+     * POST   -> update_consultation()
      * DELETE -> delete_consultation()
      */
     public function handle_consultation($id = null)
@@ -188,12 +188,12 @@ class Consultations extends CI_Controller
 
         if ($method === 'get') {
             $this->show_consultation($id);
-        } elseif ($method === 'put') {
+        } elseif ($method === 'post') {
             $this->update_consultation($id);
         } elseif ($method === 'delete') {
             $this->delete_consultation($id);
         } else {
-            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use GET, PUT o DELETE.'], 405);
+            $this->response_json(['status' => 'error', 'message' => 'Method Not Allowed. Use GET, POST o DELETE.'], 405);
         }
     }
 
@@ -445,7 +445,7 @@ class Consultations extends CI_Controller
      * Modelo: get_consultation()
      * Origen web: Consultations::view() + Consultations::edit()
      */
-    private function show_consultation($id)
+    public function show_consultation($id)
     {
         $user_data = $this->validate_request();
         $agency_id = $user_data['agency_id'];
@@ -503,7 +503,7 @@ class Consultations extends CI_Controller
     }
 
     /**
-     * PUT /api/consultations/{id}
+     * POST /api/consultations/{id}
      *
      * Actualiza los campos clínicos y, opcionalmente, los parámetros EAV.
      *
@@ -529,7 +529,7 @@ class Consultations extends CI_Controller
             $this->response_json(['status' => 'error', 'message' => 'Consulta no encontrada.'], 404);
         }
 
-        // PUT no popula $_POST en PHP; leemos del raw input
+        // Soporta lectura del cuerpo JSON o variables de la petición POST
         $raw_input = json_decode($this->input->raw_input_stream, true);
         if (is_array($raw_input)) {
             foreach ($raw_input as $key => $val) {

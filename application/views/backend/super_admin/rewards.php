@@ -24,6 +24,7 @@
                                             <thead>
                                                 <tr class="fw-700 font-xssss text-grey-900 pt-3 pb-3 ">
                                                     <th>No.</th>
+                                                    <th>Imagen</th>
                                                     <th>Nombre</th>
                                                     <th>Descripción</th>
                                                     <th class="text-center">Acciones</th>
@@ -31,13 +32,14 @@
                                             </thead>
                                             <tbody>
                                                 <?php
-                                                    $this->db->order_by('id','DESC');
-                                                    $this->db->where('status !=' ,0);
-                                                    $rewards = $this->db->get('rewards')->result_array();
+                                                    $rewards = $this->crud_model->getRewardsList();
                                                     foreach($rewards as $row):
                                                         ?>
                                                         <tr>
                                                             <td><?= $row['id'] ?></td>
+                                                            <td>
+                                                                <img src="<?= $this->crud_model->getPhotoReward($row['id']); ?>" alt="" class="rounded-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                                            </td>
                                                             <td><?= htmlspecialchars($row['name']) ?></td>
                                                             <td><?= htmlspecialchars($row['description']) ?></td>
                                                             <td class="text-center">

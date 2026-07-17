@@ -906,6 +906,14 @@ class Crud_model extends CI_Model
             'status'       => 1,
         );
         
+        $md5 = md5(date('d-m-y H:i:s'));
+        if(isset($_FILES['photo']) && $_FILES['photo']['size'] > 0)
+        {
+            $photo = $md5.str_replace(' ', '', $_FILES['photo']['name']);
+            move_uploaded_file($_FILES['photo']['tmp_name'], 'public/assets/images/rewards/' . $photo);
+            $data['photo'] = $photo;
+        }
+        
         if($id != '')
         {
             $this->db->where('id', $id);
@@ -1028,6 +1036,15 @@ class Crud_model extends CI_Model
         return $this->db->get_where('rewards', ['id' => $id])->row();
     }
 
+    function getPhotoReward($ID)
+    {
+        $reward = $this->db->get_where('rewards', array('id' => $ID))->row();
+        if ($reward && !empty($reward->photo)) {
+            return base_url('public/assets/images/rewards/' . $reward->photo);
+        }
+        return base_url('public/assets/images/users/dummy-avatar.jpg');
+    }
+
     function getAgencyData($id)
     {
         return $this->db->get_where('agency', ['id' => $id])->row_array();
@@ -1038,10 +1055,15 @@ class Crud_model extends CI_Model
         return $this->db->get_where('agency_rewards', ['status' => 2])->result();
     }
 
+    function getRewardsList()
+    {
+        return $this->db->order_by('id', 'DESC')->get_where('rewards', ['status !=' => 0])->result_array();
+    }
+
     function getAgencyRewardsWithDetails($agency_id)
     {
         return $this->db
-            ->select('agency_rewards.id, agency_rewards.reward_id, agency_rewards.points, rewards.name, rewards.description, agency_rewards.status')
+            ->select('agency_rewards.id, agency_rewards.reward_id, agency_rewards.points, rewards.name, rewards.description, rewards.photo, agency_rewards.status')
             ->from('agency_rewards')
             ->join('rewards', 'rewards.id = agency_rewards.reward_id')
             ->where('agency_rewards.agency_id', $agency_id)

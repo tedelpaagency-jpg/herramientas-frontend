@@ -42,7 +42,12 @@
                                                         <?= number_format($current_points, 2); ?> pts
                                                     </span>
                                                 </td>
-                                                <td><?= $reward ? htmlspecialchars($reward->name) : 'Premio Eliminado'; ?></td>
+                                                <td>
+                                                     <div class="d-flex align-items-center">
+                                                         <img src="<?= $this->crud_model->getPhotoReward($req->reward_id); ?>" alt="" class="avatar-xs rounded-3 me-2" style="width: 35px; height: 35px; object-fit: cover;">
+                                                         <strong><?= $reward ? htmlspecialchars($reward->name) : 'Premio Eliminado'; ?></strong>
+                                                     </div>
+                                                 </td>
                                                 <td>
                                                     <span class="badge border border-warning text-warning bg-transparent font-xssss">
                                                         <?= number_format($req->points); ?> pts

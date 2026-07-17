@@ -144,7 +144,7 @@ class Whatsapp_model extends CI_Model
     }  
     */
     
-    function sendWhatsapp($number,$message,$sender = 'Angel')
+    function sendWhatsapp($number,$message,$sender = 'Francisco')
     {
         
             $url = 'https://evolution-api-l1qi.srv1795502.hstgr.cloud/message/sendText/'.$sender;
@@ -222,7 +222,7 @@ class Whatsapp_model extends CI_Model
     {
         $file = $file . '?v=' . time(); // 🔥 rompe cache
     
-        $url = 'https://evolution-api-l1qi.srv1795502.hstgr.cloud/message/sendMedia/Angel';
+        $url = 'https://evolution-api-l1qi.srv1795502.hstgr.cloud/message/sendMedia/Francisco';
         $apiKey = '8rZxPmuBaAfXTusKfQIn4P8vC3lrT2qR';
     
         $number = ltrim($number, '0');

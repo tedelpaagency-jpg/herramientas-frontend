@@ -1465,7 +1465,8 @@ Response Body (Success):
       "name": "Termo ZIIGO",
       "description": "Termo de acero inoxidable grabado",
       "points": 100.0,
-      "status": 1
+      "status": 1,
+      "photo_url": "https://tu-api.com/public/assets/images/rewards/e10adc3949ba59abbe56e057f20f883eTermo.jpg"
     }
   ]
 }
