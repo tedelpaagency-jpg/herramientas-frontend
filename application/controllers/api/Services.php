@@ -4,6 +4,8 @@
  * Services API Controller
  *
  * Módulo de Catálogo de Servicios para usuarios de la sucursal/agencia autenticada.
+ * Incluye soporte opcional para imagen/foto del servicio.
+ * Métodos HTTP utilizados: únicamente GET y POST (sin PUT ni DELETE).
  */
 class Services extends CI_Controller 
 {
@@ -14,11 +16,12 @@ class Services extends CI_Controller
         parent::__construct();
         $this->load->model('Services_model');
         $this->load->database();
+        $this->load->helper('url');
 
         // CORS Headers
         $this->output->set_header('Access-Control-Allow-Origin: *');
         $this->output->set_header('Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method, Authorization');
-        $this->output->set_header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        $this->output->set_header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 
         // Handle CORS OPTIONS preflight
         if (strtolower($this->input->method()) === 'options') {
@@ -37,52 +40,23 @@ class Services extends CI_Controller
     }
 
     /**
-     * Enrutador principal para /api/services
-     * GET  -> Obtener servicios
-     * POST -> Crear servicio
+     * GET /api/services
+     * Obtener todos los servicios activos de la agencia autenticada (con búsqueda opcional).
+     * Si se recibe un POST en /api/services, se redirige al método de creación.
      */
     public function index() 
     {
         $method = strtolower($this->input->method());
-        if ($method === 'get') {
-            $this->get_all();
-        } elseif ($method === 'post') {
+
+        if ($method === 'post') {
             $this->create();
-        } else {
+            return;
+        }
+
+        if ($method !== 'get') {
             $this->response_json(['status' => 'error', 'message' => 'Método no permitido. Use GET o POST.'], 405);
         }
-    }
 
-    /**
-     * Enrutador para /api/services/{id}
-     * GET    -> Obtener servicio específico
-     * PUT    -> Actualizar servicio
-     * DELETE -> Soft delete de servicio
-     */
-    public function handle_service($id = null) 
-    {
-        if (empty($id) || !is_numeric($id)) {
-            $this->response_json(['status' => 'error', 'message' => 'ID de servicio no válido o no proporcionado.'], 400);
-        }
-
-        $method = strtolower($this->input->method());
-        if ($method === 'get') {
-            $this->get_one($id);
-        } elseif ($method === 'put') {
-            $this->update($id);
-        } elseif ($method === 'delete') {
-            $this->delete($id);
-        } else {
-            $this->response_json(['status' => 'error', 'message' => 'Método no permitido. Use GET, PUT o DELETE.'], 405);
-        }
-    }
-
-    /**
-     * GET /api/services
-     * Obtener todos los servicios activos de la agencia autenticada (con búsqueda opcional).
-     */
-    private function get_all() 
-    {
         $user_data = $this->validate_request();
         $agency_id = $user_data['agency_id'];
 
@@ -90,18 +64,36 @@ class Services extends CI_Controller
 
         $services = $this->Services_model->get_services($agency_id, $search);
 
+        $formatted_services = array_map([$this, 'format_service'], $services);
+
         $this->response_json([
             'status' => 'success',
-            'data'   => $services
+            'data'   => $formatted_services
         ], 200);
     }
 
     /**
      * GET /api/services/{id}
      * Obtener un servicio específico por ID.
+     * Si se recibe un POST en /api/services/{id}, se redirige al método de actualización.
      */
-    private function get_one($id) 
+    public function show($id = null) 
     {
+        if (empty($id) || !is_numeric($id)) {
+            $this->response_json(['status' => 'error', 'message' => 'ID de servicio no válido o no proporcionado.'], 400);
+        }
+
+        $method = strtolower($this->input->method());
+
+        if ($method === 'post') {
+            $this->update($id);
+            return;
+        }
+
+        if ($method !== 'get') {
+            $this->response_json(['status' => 'error', 'message' => 'Método no permitido. Use GET o POST.'], 405);
+        }
+
         $user_data = $this->validate_request();
         $agency_id = $user_data['agency_id'];
 
@@ -116,16 +108,20 @@ class Services extends CI_Controller
 
         $this->response_json([
             'status' => 'success',
-            'data'   => $service
+            'data'   => $this->format_service($service)
         ], 200);
     }
 
     /**
-     * POST /api/services
-     * Crear un nuevo servicio.
+     * POST /api/services/create (o POST /api/services)
+     * Crear un nuevo servicio. Soporta imagen opcional.
      */
-    private function create() 
+    public function create() 
     {
+        if (strtolower($this->input->method()) !== 'post') {
+            $this->response_json(['status' => 'error', 'message' => 'Método no permitido. Use POST.'], 405);
+        }
+
         $user_data = $this->validate_request();
         $agency_id = $user_data['agency_id'];
 
@@ -149,11 +145,17 @@ class Services extends CI_Controller
             ], 400);
         }
 
+        $photo_filename = $this->handle_photo_upload();
+        if ($photo_filename === null && isset($data['photo']) && !empty($data['photo'])) {
+            $photo_filename = trim($data['photo']);
+        }
+
         $insert_data = [
             'agency_id'   => $agency_id,
             'name'        => $name,
             'description' => $description,
             'price'       => number_format((float)$price, 2, '.', ''),
+            'photo'       => $photo_filename,
             'status'      => 1,
             'created_at'  => date('Y-m-d H:i:s'),
             'updated_at'  => date('Y-m-d H:i:s')
@@ -166,7 +168,7 @@ class Services extends CI_Controller
             $this->response_json([
                 'status'  => 'success',
                 'message' => 'Servicio creado correctamente.',
-                'data'    => $new_service
+                'data'    => $this->format_service($new_service)
             ], 201);
         } else {
             $this->response_json([
@@ -177,11 +179,19 @@ class Services extends CI_Controller
     }
 
     /**
-     * PUT /api/services/{id}
-     * Actualizar un servicio existente.
+     * POST /api/services/update/{id} (o POST /api/services/{id})
+     * Actualizar un servicio existente. Soporta actualización de foto opcional.
      */
-    private function update($id) 
+    public function update($id = null) 
     {
+        if (empty($id) || !is_numeric($id)) {
+            $this->response_json(['status' => 'error', 'message' => 'ID de servicio no válido o no proporcionado.'], 400);
+        }
+
+        if (strtolower($this->input->method()) !== 'post') {
+            $this->response_json(['status' => 'error', 'message' => 'Método no permitido. Use POST.'], 405);
+        }
+
         $user_data = $this->validate_request();
         $agency_id = $user_data['agency_id'];
 
@@ -234,6 +244,14 @@ class Services extends CI_Controller
             $update_data['status'] = $status;
         }
 
+        // Manejo opcional de foto subida o enviada por string
+        $photo_uploaded = $this->handle_photo_upload();
+        if ($photo_uploaded !== null) {
+            $update_data['photo'] = $photo_uploaded;
+        } elseif (array_key_exists('photo', $data)) {
+            $update_data['photo'] = !empty($data['photo']) ? trim($data['photo']) : null;
+        }
+
         if (empty($update_data)) {
             $this->response_json([
                 'status'  => 'error',
@@ -249,16 +267,24 @@ class Services extends CI_Controller
         $this->response_json([
             'status'  => 'success',
             'message' => 'Servicio actualizado correctamente.',
-            'data'    => $updated_service
+            'data'    => $this->format_service($updated_service)
         ], 200);
     }
 
     /**
-     * DELETE /api/services/{id}
+     * POST /api/services/delete/{id} (o POST /api/services/{id}/delete)
      * Realiza Soft Delete (status = 0).
      */
-    private function delete($id) 
+    public function delete($id = null) 
     {
+        if (empty($id) || !is_numeric($id)) {
+            $this->response_json(['status' => 'error', 'message' => 'ID de servicio no válido o no proporcionado.'], 400);
+        }
+
+        if (strtolower($this->input->method()) !== 'post') {
+            $this->response_json(['status' => 'error', 'message' => 'Método no permitido. Use POST.'], 405);
+        }
+
         $user_data = $this->validate_request();
         $agency_id = $user_data['agency_id'];
 
@@ -286,6 +312,62 @@ class Services extends CI_Controller
     }
 
     // --- Helpers privados ---
+
+    private function format_service($service) 
+    {
+        if (!$service) {
+            return null;
+        }
+
+        $photo = !empty($service['photo']) ? $service['photo'] : null;
+        $photo_url = null;
+
+        if ($photo) {
+            if (filter_var($photo, FILTER_VALIDATE_URL)) {
+                $photo_url = $photo;
+            } else {
+                $photo_url = base_url('uploads/services/' . $photo);
+            }
+        }
+
+        $service['photo']     = $photo;
+        $service['photo_url'] = $photo_url;
+
+        return $service;
+    }
+
+    private function handle_photo_upload() 
+    {
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['photo'];
+            $allowed_mimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+            $max_size = 5 * 1024 * 1024; // 5 MB
+
+            if ($file['size'] > $max_size) {
+                $this->response_json(['status' => 'error', 'message' => 'La foto no debe superar los 5 MB.'], 400);
+            }
+
+            $upload_dir = FCPATH . 'uploads/services/';
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
+                $this->response_json(['status' => 'error', 'message' => 'Formato de foto no permitido. Use JPG, PNG, WEBP o GIF.'], 400);
+            }
+
+            $filename = 'service_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
+
+            if (move_uploaded_file($file['tmp_name'], $upload_dir . $filename)) {
+                return $filename;
+            } else {
+                $this->response_json(['status' => 'error', 'message' => 'Error al subir la foto del servicio.'], 500);
+            }
+        }
+
+        return null;
+    }
 
     private function get_request_data() 
     {

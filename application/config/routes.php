@@ -124,4 +124,8 @@ $route['api/dashboard/totals']                         = 'api/dashboard/totals';
 
 // ── Services API ───────────────────────────────────────────────────────────
 $route['api/services']                                 = 'api/services/index';
-$route['api/services/(:num)']                          = 'api/services/handle_service/$1';
+$route['api/services/create']                          = 'api/services/create';
+$route['api/services/update/(:num)']                   = 'api/services/update/$1';
+$route['api/services/delete/(:num)']                   = 'api/services/delete/$1';
+$route['api/services/(:num)/delete']                   = 'api/services/delete/$1';
+$route['api/services/(:num)']                          = 'api/services/show/$1';

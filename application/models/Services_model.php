@@ -25,7 +25,7 @@ class Services_model extends CI_Model
      */
     public function get_services($agency_id, $search = null)
     {
-        $this->db->select('id, agency_id, name, description, price, status, created_at, updated_at');
+        $this->db->select('id, agency_id, name, description, price, photo, status, created_at, updated_at');
         $this->db->from($this->table);
         $this->db->where('agency_id', $agency_id);
         $this->db->where('status', 1);
@@ -50,7 +50,7 @@ class Services_model extends CI_Model
      */
     public function get_by_id($id, $agency_id)
     {
-        $this->db->select('id, agency_id, name, description, price, status, created_at, updated_at');
+        $this->db->select('id, agency_id, name, description, price, photo, status, created_at, updated_at');
         $this->db->from($this->table);
         $this->db->where('id', $id);
         $this->db->where('agency_id', $agency_id);
@@ -69,7 +69,7 @@ class Services_model extends CI_Model
      */
     public function get_by_id_any_status($id, $agency_id)
     {
-        $this->db->select('id, agency_id, name, description, price, status, created_at, updated_at');
+        $this->db->select('id, agency_id, name, description, price, photo, status, created_at, updated_at');
         $this->db->from($this->table);
         $this->db->where('id', $id);
         $this->db->where('agency_id', $agency_id);

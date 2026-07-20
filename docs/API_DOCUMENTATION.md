@@ -1727,4 +1727,227 @@ Response Body (Error):
 
 ---
 
+### 46. Get All Active Services
+URL: `/api/services`  
+Método: `GET`  
+Autenticación: Sí  
+
+Query Parameters (Opcional):
+- `search`: Texto a buscar en los campos `name` y `description`.
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "1",
+      "agency_id": "1",
+      "name": "Consulta médica",
+      "description": "Consulta médica general",
+      "price": "150.00",
+      "photo": "service_1721500000_1234.png",
+      "photo_url": "https://tu-api.com/uploads/services/service_1721500000_1234.png",
+      "status": "1",
+      "created_at": "2026-07-20 10:00:00",
+      "updated_at": "2026-07-20 10:00:00"
+    }
+  ]
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Token no proporcionado."
+}
+```
+
+---
+
+### 47. Get Service Details
+URL: `/api/services/{id}`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "1",
+    "agency_id": "1",
+    "name": "Consulta médica",
+    "description": "Consulta médica general",
+    "price": "150.00",
+    "photo": "service_1721500000_1234.png",
+    "photo_url": "https://tu-api.com/uploads/services/service_1721500000_1234.png",
+    "status": "1",
+    "created_at": "2026-07-20 10:00:00",
+    "updated_at": "2026-07-20 10:00:00"
+  }
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Servicio no encontrado o no pertenece a la agencia."
+}
+```
+
+---
+
+### 48. Create Service
+URL: `/api/services/create` (o `/api/services`)  
+Método: `POST`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json (o `multipart/form-data` si envía archivo)
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body (Opcional `photo` como string o archivo multipart):
+```json
+{
+  "name": "Consulta médica",
+  "description": "Consulta médica general",
+  "price": 150.00,
+  "photo": "service_1721500000_1234.png"
+}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Servicio creado correctamente.",
+  "data": {
+    "id": "1",
+    "agency_id": "1",
+    "name": "Consulta médica",
+    "description": "Consulta médica general",
+    "price": "150.00",
+    "photo": "service_1721500000_1234.png",
+    "photo_url": "https://tu-api.com/uploads/services/service_1721500000_1234.png",
+    "status": "1",
+    "created_at": "2026-07-20 10:00:00",
+    "updated_at": "2026-07-20 10:00:00"
+  }
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "El campo \"name\" es obligatorio."
+}
+```
+
+---
+
+### 49. Update Service
+URL: `/api/services/update/{id}` (o `/api/services/{id}`)  
+Método: `POST`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json (o `multipart/form-data` si envía archivo)
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body (Opcional `photo`):
+```json
+{
+  "name": "Consulta médica especial",
+  "description": "Consulta médica de especialidad",
+  "price": 200.00,
+  "photo": "service_new_1234.png",
+  "status": 1
+}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Servicio actualizado correctamente.",
+  "data": {
+    "id": "1",
+    "agency_id": "1",
+    "name": "Consulta médica especial",
+    "description": "Consulta médica de especialidad",
+    "price": "200.00",
+    "photo": "service_new_1234.png",
+    "photo_url": "https://tu-api.com/uploads/services/service_new_1234.png",
+    "status": "1",
+    "created_at": "2026-07-20 10:00:00",
+    "updated_at": "2026-07-20 10:05:00"
+  }
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Servicio no encontrado o no pertenece a la agencia."
+}
+```
+
+---
+
+### 50. Delete Service (Soft Delete)
+URL: `/api/services/delete/{id}` (o `/api/services/{id}/delete`)  
+Método: `POST`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "message": "Servicio eliminado correctamente."
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Servicio no encontrado o ya ha sido eliminado."
+}
+```
+
+
+
+
 
