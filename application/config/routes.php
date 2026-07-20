@@ -12,7 +12,9 @@ $route['portal/prescription/save']                      = 'prescriptions/save';
 $route['portal/prescription/get_prescription_detail']   = 'prescriptions/get_prescription_detail';
 $route['portal/prescription/download_pdf/(:any)']              = 'prescriptions/download_pdf/$1';
 $route['portal/prescription/send_whatsapp/(:any)']             = 'prescriptions/send_whatsapp/$1';
+$route['portal/prescription/update_status']             = 'prescriptions/update_status';
 $route['portal/prescriptions/ajax_recipe/(:num)'] = 'prescriptions/ajax_recipe/$1';
+
 $route['portal/prescriptions/ajax_history/(:num)'] = 'prescriptions/ajax_history/$1';
 
 $route['portal/consultations'] = 'consultations/index';

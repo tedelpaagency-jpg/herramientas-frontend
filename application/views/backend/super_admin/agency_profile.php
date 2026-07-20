@@ -61,9 +61,11 @@
                         <ul class="nav nav-tabs h55 d-flex product-info-tab border-bottom-0 ps-4" id="pills-tab" role="tablist">
                             <li class="active list-inline-item me-5"><a class="fw-700 font-xssss text-grey-500 pt-3 pb-3 ls-1 d-inline-block active" href="#navtabs1" data-bs-toggle="tab">Estadísticas</a></li>
                             <li class="list-inline-item me-5"><a class="fw-700 font-xssss text-grey-500 pt-3 pb-3 ls-1 d-inline-block" href="#navtabs2" data-bs-toggle="tab">Usuarios</a></li>
+                            <li class="list-inline-item me-5"><a class="fw-700 font-xssss text-grey-500 pt-3 pb-3 ls-1 d-inline-block" href="#navServices" data-bs-toggle="tab">Servicios</a></li>
                             <li class="list-inline-item me-5"><a class="fw-700 font-xssss text-grey-500 pt-3 pb-3 ls-1 d-inline-block" href="#navRewards" data-bs-toggle="tab">Recompenzas</a></li>
                             <li class="list-inline-item me-5"><a class="fw-700 font-xssss text-grey-500 pt-3 pb-3 ls-1 d-inline-block" href="#navtabs3" data-bs-toggle="tab">Editar</a></li>
                             <li class="list-inline-item me-5"><a class="fw-700 font-xssss text-danger pt-3 pb-3 ls-1 d-inline-block" href="#navDelete" data-bs-toggle="tab">Eliminar</a></li>
+
                         </ul>
                     </div>
                 </div>
@@ -502,7 +504,64 @@
                             </div>
                         </div>
                     </div>
+                    <div class="tab-pane fade p-3" id="navServices" role="tabpanel">
+                        <div class="card shadow-xss rounded-xxl border-0 mb-3 mt-3">
+                            <div class="card-body p-4 w-100 bg-current border-0 d-flex rounded-3 justify-content-between align-items-center">
+                                <div class="border-0 d-flex align-items-center">
+                                    <h4 class="font-xs text-white fw-600 ms-2 mb-0">Catálogo de Servicios de la Agencia</h4>    
+                                </div>
+                            </div>
+                            <div class="card-body pt-3 ps-4 pe-4 pb-3">
+                                <?php 
+                                    $agency_services = $this->db->get_where('services', ['agency_id' => $agency['id'], 'status' => 1])->result_array();
+                                ?>
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th class="border-0 font-xssss fw-700 text-grey-600">ID</th>
+                                                <th class="border-0 font-xssss fw-700 text-grey-600">Imagen</th>
+                                                <th class="border-0 font-xssss fw-700 text-grey-600">Nombre</th>
+                                                <th class="border-0 font-xssss fw-700 text-grey-600">Descripción</th>
+                                                <th class="border-0 font-xssss fw-700 text-grey-600">Precio</th>
+                                                <th class="border-0 font-xssss fw-700 text-grey-600">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if (!empty($agency_services)): ?>
+                                                <?php foreach ($agency_services as $srv): 
+                                                    $photo_src = !empty($srv['photo']) 
+                                                        ? (filter_var($srv['photo'], FILTER_VALIDATE_URL) ? $srv['photo'] : base_url('uploads/services/' . $srv['photo']))
+                                                        : base_url('public/assets/images/logo/ziigo.png');
+                                                ?>
+                                                    <tr>
+                                                        <td class="font-xssss fw-600 align-middle">#<?= $srv['id']; ?></td>
+                                                        <td class="align-middle">
+                                                            <img src="<?= $photo_src; ?>" alt="<?= htmlspecialchars($srv['name']); ?>" class="rounded-3" style="width: 42px; height: 42px; object-fit: cover; border: 1px solid #e2e8f0;">
+                                                        </td>
+                                                        <td class="font-xssss fw-700 text-grey-800 align-middle"><?= htmlspecialchars($srv['name']); ?></td>
+                                                        <td class="font-xssss text-grey-600 align-middle"><?= htmlspecialchars($srv['description']); ?></td>
+                                                        <td class="font-xssss fw-700 text-success align-middle">$<?= number_format($srv['price'], 2); ?></td>
+                                                        <td class="align-middle">
+                                                            <span class="badge bg-success font-xssss px-2 py-1">Activo</span>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <tr>
+                                                    <td colspan="6" class="text-center py-4 font-xssss text-grey-500">
+                                                        No hay servicios registrados para esta agencia.
+                                                    </td>
+                                                </tr>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="tab-pane fade p-3" id="navtabs3" role="tabpanel">
+
                         <div class="card  shadow-xss rounded-xxl border-0 mb-3 mt-3">
                             <div class="card-body p-4 w-100 bg-current border-0 d-flex rounded-3">
                                 <div class="border-0 d-flex">

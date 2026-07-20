@@ -188,15 +188,31 @@
             border: 1px solid rgba(226, 232, 240, 0.6);
             box-shadow: var(--cw-shadow-soft);
             display: grid;
-            grid-template-columns: 2.2fr 1.8fr 1fr auto;
+            grid-template-columns: 2fr 1.5fr 0.9fr 1.3fr auto;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1.25rem;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             
             /* Estado inicial para la animación */
             opacity: 0;
             animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+
+        .cw-status-select {
+            padding: 5px 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .cw-status-select[data-status="1"] { background-color: #fffbeb; color: #b45309; border-color: #fde68a; }
+        .cw-status-select[data-status="2"] { background-color: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
+        .cw-status-select[data-status="3"] { background-color: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+        .cw-status-select[data-status="4"] { background-color: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+
 
         /* Efecto Cascada (Stagger) automático para las tarjetas */
         .cw-recipe-card:nth-child(1) { animation-delay: 0.15s; }
@@ -586,6 +602,22 @@
             </span>
     
         </div>
+
+        <div class="cw-status-col d-flex flex-column gap-1">
+            <span class="cw-lbl">
+                Estado
+            </span>
+            <?php $st = isset($p['status']) ? (int)$p['status'] : 1; ?>
+            <select class="form-select form-select-sm cw-status-select" 
+                    data-status="<?= $st; ?>"
+                    onchange="changePrescriptionStatus(<?= $p['id']; ?>, this.value, this)">
+                <option value="1" <?= $st == 1 ? 'selected' : ''; ?>>1. Pendiente</option>
+                <option value="2" <?= $st == 2 ? 'selected' : ''; ?>>2. Compra parcial</option>
+                <option value="3" <?= $st == 3 ? 'selected' : ''; ?>>3. Compra completa</option>
+                <option value="4" <?= $st == 4 ? 'selected' : ''; ?>>4. No completado</option>
+            </select>
+        </div>
+
     
         <div class="cw-actions-col">
                 <button
@@ -736,9 +768,31 @@
         
     });
 
-
-
-
-
+    function changePrescriptionStatus(id, statusVal, elem) {
+        if(elem) {
+            elem.setAttribute('data-status', statusVal);
+        }
+        $.ajax({
+            url: '<?= base_url("portal/prescription/update_status"); ?>',
+            type: 'POST',
+            data: { id: id, status: statusVal },
+            dataType: 'json',
+            success: function(res) {
+                if(res.status) {
+                    if(typeof showToast === 'function') {
+                        showToast('Estado actualizado a: ' + (statusVal == 1 ? 'Pendiente' : statusVal == 2 ? 'Compra parcial' : statusVal == 3 ? 'Compra completa' : 'No completado'), 'send');
+                    } else {
+                        alert(res.message);
+                    }
+                } else {
+                    alert(res.message || 'Error al actualizar el estado.');
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error de conexión al actualizar estado.');
+            }
+        });
+    }
 
 </script>
+

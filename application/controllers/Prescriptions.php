@@ -442,4 +442,32 @@ class Prescriptions extends CI_Controller {
         );
     }
 
-}
+    /**
+     * Update prescription status
+     * Status: 1 = Pendiente, 2 = Compra parcial, 3 = Compra completa, 4 = No completado
+     */
+    public function update_status()
+    {
+        if (!$this->db->field_exists('status', 'prescription')) {
+            $this->db->query("ALTER TABLE prescription ADD COLUMN status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1: pendiente, 2: compra parcial, 3: compra completa, 4: no completado'");
+        }
+
+        $id = $this->input->post('id');
+        $status = (int)$this->input->post('status');
+
+        if (empty($id) || !in_array($status, [1, 2, 3, 4], true)) {
+            echo json_encode(['status' => false, 'message' => 'Parámetros inválidos.']);
+            return;
+        }
+
+        $this->db->where('id', $id);
+        $updated = $this->db->update('prescription', ['status' => $status]);
+
+        if ($updated) {
+            echo json_encode(['status' => true, 'message' => 'Estado actualizado correctamente.']);
+        } else {
+            echo json_encode(['status' => false, 'message' => 'Error al actualizar el estado.']);
+        }
+    }
+
+}
