@@ -1658,4 +1658,73 @@ Response Body (Error):
 
 ---
 
+### 45. Get Dashboard Totals
+URL: `/api/dashboard/totals`  
+Método: `GET`  
+Autenticación: Sí  
+
+Headers:
+- Content-Type: application/json
+- Authorization: Bearer <JWT_TOKEN>
+
+Request Body:
+```json
+{}
+```
+
+Response Body (Success):
+```json
+{
+  "status": "success",
+  "data": {
+    "total_patients": 150,
+    "total_today_appointments": 4,
+    "next_appointment": "2026-07-18 14:30:00",
+    "points_balance": 350.0,
+    "newest_patients": [
+      {
+        "user_id": 124,
+        "name": "Carlos",
+        "last_name": "Gomez",
+        "email": "carlos.gomez@example.com",
+        "phone": "+50255554444",
+        "date_register": "2026-07-18 10:15:00",
+        "status": 1,
+        "photo_url": "https://tu-api.com/public/assets/images/users/default.png"
+      },
+      {
+        "user_id": 123,
+        "name": "Maria",
+        "last_name": "Lopez",
+        "email": "maria.lopez@example.com",
+        "phone": "+50255553333",
+        "date_register": "2026-07-17 16:45:00",
+        "status": 1,
+        "photo_url": null
+      },
+      {
+        "user_id": 122,
+        "name": "Ana",
+        "last_name": "Martinez",
+        "email": "ana.martinez@example.com",
+        "phone": "+50255552222",
+        "date_register": "2026-07-17 11:20:00",
+        "status": 1,
+        "photo_url": null
+      }
+    ]
+  }
+}
+```
+
+Response Body (Error):
+```json
+{
+  "status": "error",
+  "message": "Token inválido o expirado."
+}
+```
+
+---
+
 

@@ -235,4 +235,27 @@ class Patients_model extends CI_Model {
             'message' => 'Ocurrió un error al guardar el paciente.'
         ];
     }
+
+    /**
+     * Get the newest patient records.
+     *
+     * @param int $limit
+     * @param int|null $agency_id
+     * @return array
+     */
+    public function get_newest_patients($limit = 3, $agency_id = null)
+    {
+        $this->db->from('user');
+        $this->db->where('rol_id', 8);
+        $this->db->where('status !=', 0);
+
+        if ($agency_id !== null) {
+            $this->db->where('agency_id', $agency_id);
+        }
+
+        $this->db->order_by('user_id', 'DESC');
+        $this->db->limit($limit);
+
+        return $this->db->get()->result();
+    }
 }

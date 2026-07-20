@@ -343,5 +343,41 @@ class Appointments_model extends CI_Model
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
     }
+
+    public function get_today_count($agency_id)
+    {
+        $this->db->from('appointments');
+        $this->db->where('agency_id', $agency_id);
+        $this->db->where('appointment_date', date('Y-m-d'));
+        $this->db->where('status !=', 4); // not cancelled
+        return $this->db->count_all_results();
+    }
+
+    public function get_next_appointment($agency_id)
+    {
+        $current_date = date('Y-m-d');
+        $current_time = date('H:i:s');
+
+        $this->db->select('appointment_date, appointment_time');
+        $this->db->from('appointments');
+        $this->db->where('agency_id', $agency_id);
+        $this->db->where('status !=', 4); // not cancelled
+        $this->db->group_start();
+        $this->db->where('appointment_date >', $current_date);
+        $this->db->or_group_start();
+        $this->db->where('appointment_date', $current_date);
+        $this->db->where('appointment_time >', $current_time);
+        $this->db->group_end();
+        $this->db->group_end();
+        $this->db->order_by('appointment_date', 'ASC');
+        $this->db->order_by('appointment_time', 'ASC');
+        $this->db->limit(1);
+
+        $row = $this->db->get()->row();
+        if ($row) {
+            return $row->appointment_date . ' ' . $row->appointment_time;
+        }
+        return null;
+    }
     
 }

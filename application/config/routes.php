@@ -118,3 +118,10 @@ $route['api/rewards']                                  = 'api/rewards/index';
 $route['api/rewards/points']                           = 'api/rewards/points';
 $route['api/rewards/history']                          = 'api/rewards/history';
 $route['api/rewards/roulette']                         = 'api/rewards/roulette';
+
+// ── Dashboard API ─────────────────────────────────────────────────────────
+$route['api/dashboard/totals']                         = 'api/dashboard/totals';
+
+// ── Services API ───────────────────────────────────────────────────────────
+$route['api/services']                                 = 'api/services/index';
+$route['api/services/(:num)']                          = 'api/services/handle_service/$1';
