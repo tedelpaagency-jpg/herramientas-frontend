@@ -175,24 +175,6 @@ class Patients_model extends CI_Model {
             ];
         }
 
-        // Validar unicidad del correo electrónico si se proporciona
-        if (!empty($email)) {
-            $this->db->where('status', 1);
-            $this->db->group_start()
-                     ->where('email', $email)
-                     ->or_where('username', $email)
-                     ->group_end();
-            if (!empty($patient_id)) {
-                $this->db->where('user_id !=', $patient_id);
-            }
-            $exists = $this->db->get('user')->row();
-            if ($exists) {
-                return [
-                    'status'  => 'error',
-                    'message' => 'El correo electrónico ya se encuentra registrado por otro usuario.'
-                ];
-            }
-        }
 
         $data = [
             'name'      => $name,

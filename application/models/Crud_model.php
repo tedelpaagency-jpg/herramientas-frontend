@@ -4836,6 +4836,8 @@ Contraseña : '.$page_data['password'] = base64_decode($user['code']).'
     
     public function get_prescriptions($agency_id,$limit=10,$offset=0)
     {
+        log_message('error',$agency_id);
+        
         $prescriptions = $this->db
             ->select("
                 prescription.*,
@@ -4847,8 +4849,8 @@ Contraseña : '.$page_data['password'] = base64_decode($user['code']).'
             ->from('prescription')
             ->join('user','user.user_id = prescription.patient_id')
             ->where('prescription.agency_id',$agency_id)
-            ->order_by('prescription.id','ASC')
-            ->limit($limit,$offset)
+            ->order_by('prescription.id','DESC')
+            
             ->get()
             ->result_array();
     

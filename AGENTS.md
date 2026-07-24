@@ -1,6 +1,8 @@
 # Proyecto
 Sistema ERP en CodeIgniter 3.2
 
+Antes de modificar código, revisa `docs/PROJECT_CONTEXT.md` y respeta la arquitectura, convenciones y decisiones documentadas allí.
+
 ## Stack
 - PHP 8.2
 - CodeIgniter 3.2

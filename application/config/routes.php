@@ -131,3 +131,14 @@ $route['api/services/update/(:num)']                   = 'api/services/update/$1
 $route['api/services/delete/(:num)']                   = 'api/services/delete/$1';
 $route['api/services/(:num)/delete']                   = 'api/services/delete/$1';
 $route['api/services/(:num)']                          = 'api/services/show/$1';
+
+// ── Treatments & Packages API ──────────────────────────────────────────────
+$route['api/treatment-plans']                         = 'api/treatments/plans_index';
+$route['api/treatment-plans/(:num)']                  = 'api/treatments/plans_handle/$1';
+
+$route['api/patient-treatments']                      = 'api/treatments/patient_treatments_index';
+$route['api/patient-treatments/(:num)/sessions']      = 'api/treatments/patient_treatments_sessions/$1';
+$route['api/patient-treatments/sessions/(:num)']      = 'api/treatments/delete_session/$1';
+$route['api/patient-treatments/(:num)/extras']        = 'api/treatments/patient_treatments_extras/$1';
+$route['api/patient-treatments/extras/(:num)']        = 'api/treatments/delete_extra/$1';
+$route['api/patient-treatments/(:num)']               = 'api/treatments/patient_treatments_handle/$1';

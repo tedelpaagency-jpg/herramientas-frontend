@@ -345,6 +345,40 @@ class Prescriptions extends CI_Controller
         // Log to binnacle
         $this->crud_model->log_binnacle($user_id, $role_name);
 
+        // Enviar receta por WhatsApp al crear
+        $p = $this->db->where('id', $prescription_id)->get('prescription')->row();
+        if ($p && !empty($patient) && !empty($patient->phone)) {
+            $p->age = !empty($patient->birthday) ? $this->crud_model->calcularEdad($patient->birthday) : 'N/A';
+            $details = $this->db->where('prescription_id', $prescription_id)->get('prescription_details')->result();
+            $meds = [];
+            $labs = [];
+            foreach ($details as $d) {
+                if ($d->type == 'med') { $meds[] = $d; } else { $labs[] = $d; }
+            }
+            $this->load->library('dom_pdf');
+            $this->dom_pdf->load_view('pdf/prescription', [
+                'p'       => $p,
+                'patient' => $patient,
+                'meds'    => $meds,
+                'labs'    => $labs
+            ])->set_paper('A4', 'portrait')->render();
+            $pdf_content = $this->dom_pdf->dompdf->output();
+            $file_name = 'receta_' . $prescription_id . '_' . time() . '.pdf';
+            $folder = FCPATH . 'uploads/temp/';
+            if (!is_dir($folder)) { mkdir($folder, 0777, true); }
+            file_put_contents($folder . $file_name, $pdf_content);
+            $pdf_url = base_url('uploads/temp/' . $file_name);
+
+            $this->load->model('whatsapp_model');
+            $this->whatsapp_model->sendWhatsappFile(
+                $patient->phone,
+                $file_name,
+                $pdf_url,
+                $file_name,
+                'document'
+            );
+        }
+
         $this->response_json([
             'status' => 'success',
             'message' => 'Receta médica creada correctamente.',
@@ -435,6 +469,43 @@ class Prescriptions extends CI_Controller
         }
 
         $this->crud_model->log_binnacle($user_id, $role_name);
+
+        // Enviar receta por WhatsApp al actualizar
+        $p = $this->db->where('id', $id)->get('prescription')->row();
+        if ($p) {
+            $patient = $this->db->where('user_id', $p->patient_id)->get('user')->row();
+            if ($patient && !empty($patient->phone)) {
+                $p->age = !empty($patient->birthday) ? $this->crud_model->calcularEdad($patient->birthday) : 'N/A';
+                $details = $this->db->where('prescription_id', $id)->get('prescription_details')->result();
+                $meds = [];
+                $labs = [];
+                foreach ($details as $d) {
+                    if ($d->type == 'med') { $meds[] = $d; } else { $labs[] = $d; }
+                }
+                $this->load->library('dom_pdf');
+                $this->dom_pdf->load_view('pdf/prescription', [
+                    'p'       => $p,
+                    'patient' => $patient,
+                    'meds'    => $meds,
+                    'labs'    => $labs
+                ])->set_paper('A4', 'portrait')->render();
+                $pdf_content = $this->dom_pdf->dompdf->output();
+                $file_name = 'receta_' . $id . '_' . time() . '.pdf';
+                $folder = FCPATH . 'uploads/temp/';
+                if (!is_dir($folder)) { mkdir($folder, 0777, true); }
+                file_put_contents($folder . $file_name, $pdf_content);
+                $pdf_url = base_url('uploads/temp/' . $file_name);
+
+                $this->load->model('whatsapp_model');
+                $this->whatsapp_model->sendWhatsappFile(
+                    $patient->phone,
+                    $file_name,
+                    $pdf_url,
+                    $file_name,
+                    'document'
+                );
+            }
+        }
 
         $this->response_json([
             'status' => 'success',
@@ -802,11 +873,43 @@ class Prescriptions extends CI_Controller
         }
 
         $medicines = $this->db
-            ->select('id, name')
             ->like('name', $term)
             ->limit(20)
             ->get('medicines')
             ->result_array();
+
+        $default_image = base_url('public/assets/images/no_image.webp');
+
+        foreach ($medicines as &$med) {
+            $raw_photo = null;
+            if (!empty($med['photo'])) {
+                $raw_photo = $med['photo'];
+            } elseif (!empty($med['image'])) {
+                $raw_photo = $med['image'];
+            } elseif (!empty($med['image_url'])) {
+                $raw_photo = $med['image_url'];
+            } elseif (!empty($med['picture'])) {
+                $raw_photo = $med['picture'];
+            } elseif (!empty($med['file_name'])) {
+                $raw_photo = $med['file_name'];
+            }
+
+            $photo_url = $default_image;
+
+            if (!empty($raw_photo)) {
+                if (filter_var($raw_photo, FILTER_VALIDATE_URL)) {
+                    $photo_url = $raw_photo;
+                } elseif (strpos($raw_photo, 'public/') === 0 || strpos($raw_photo, 'uploads/') === 0) {
+                    $photo_url = base_url($raw_photo);
+                } else {
+                    $photo_url = base_url('uploads/medicines/' . ltrim($raw_photo, '/'));
+                }
+            }
+
+            $med['photo_url'] = $photo_url;
+            $med['photo']     = $photo_url;
+        }
+        unset($med);
 
         $this->response_json([
             'status' => 'success',
