@@ -165,6 +165,7 @@ class Patients_model extends CI_Model {
         $last_name = $this->input->post('last_name');
         $email = $this->input->post('email');
         $phone = $this->input->post('phone');
+        $code_area = $this->input->post('code_area');
         $birthday = $this->input->post('birthday');
         $address = $this->input->post('address');
 
@@ -175,12 +176,18 @@ class Patients_model extends CI_Model {
             ];
         }
 
+        // Filtro para eliminar el cero inicial del número de teléfono
+        if (!empty($phone)) {
+            $phone = trim((string)$phone);
+            $phone = ltrim($phone, '0');
+        }
 
         $data = [
             'name'      => $name,
             'last_name' => $last_name,
             'email'     => !empty($email) ? $email : null,
             'phone'     => !empty($phone) ? $phone : null,
+            'code_area' => !empty($code_area) ? $code_area : null,
             'birthday'  => !empty($birthday) ? $birthday : null,
             'address'   => !empty($address) ? $address : null,
             'rol_id'    => 8, // Paciente

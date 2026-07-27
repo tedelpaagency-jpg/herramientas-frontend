@@ -507,7 +507,8 @@ Request Body / Parameters:
 - `name` (obligatorio, nombre)
 - `last_name` (obligatorio, apellido)
 - `email` (opcional, correo electrónico)
-- `phone` (opcional, teléfono)
+- `phone` (opcional, número de teléfono. Si el número inicia con '0', la API filtrará y eliminará automáticamente los ceros iniciales)
+- `code_area` (opcional, código de área telefónico)
 - `birthday` (opcional, fecha de nacimiento `YYYY-MM-DD`)
 - `address` (opcional, dirección)
 

@@ -202,7 +202,7 @@ class Prescriptions extends CI_Controller {
 
             if (!empty($patient) && !empty($patient->phone)) {
                 $this->whatsapp_model->sendWhatsappFile(
-                    $patient->phone,
+                    $patient->code_area.$patient->phone,
                     'Receta médica',
                     $pdf_url,
                     $file_name,
@@ -368,7 +368,7 @@ class Prescriptions extends CI_Controller {
         log_message('error','id de receta '.$pdf_url);
         
         $responseWhatsapp = $this->whatsapp_model->sendWhatsappFile(
-            $patient->phone,
+            $patient->code_area.$patient->phone,
             $file_name,
             $pdf_url,
             $file_name,
@@ -571,4 +571,4 @@ class Prescriptions extends CI_Controller {
         }
     }
 
-}
+}

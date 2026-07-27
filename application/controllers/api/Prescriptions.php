@@ -371,7 +371,7 @@ class Prescriptions extends CI_Controller
 
             $this->load->model('whatsapp_model');
             $this->whatsapp_model->sendWhatsappFile(
-                $patient->phone,
+                $patient->code_area.$patient->phone,
                 $file_name,
                 $pdf_url,
                 $file_name,
@@ -498,7 +498,7 @@ class Prescriptions extends CI_Controller
 
                 $this->load->model('whatsapp_model');
                 $this->whatsapp_model->sendWhatsappFile(
-                    $patient->phone,
+                    $patient->code_area.$patient->phone,
                     $file_name,
                     $pdf_url,
                     $file_name,
@@ -755,7 +755,7 @@ class Prescriptions extends CI_Controller
 
         $this->load->model('whatsapp_model');
         $responseWhatsapp = $this->whatsapp_model->sendWhatsappFile(
-            $patient->phone,
+            $patient->code_area.$patient->phone,
             $file_name,
             $pdf_url,
             $file_name,

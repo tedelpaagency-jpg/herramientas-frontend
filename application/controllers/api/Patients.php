@@ -109,6 +109,7 @@ class Patients extends CI_Controller
                 'last_name'         => $patient->last_name,
                 'email'             => $patient->email,
                 'phone'             => $patient->phone,
+                'code_area'         => isset($patient->code_area) ? $patient->code_area : null,
                 'birthday'          => $patient->birthday,
                 'age'               => !empty($patient->birthday) ? $this->crud_model->calcularEdad($patient->birthday) : null,
                 'status'            => $patient->status,
@@ -159,14 +160,15 @@ class Patients extends CI_Controller
         }
 
         $patient_profile = [
-            'user_id' => $patient['user_id'],
-            'name' => $patient['name'],
+            'user_id'   => $patient['user_id'],
+            'name'      => $patient['name'],
             'last_name' => $patient['last_name'],
-            'email' => $patient['email'],
-            'phone' => $patient['phone'],
-            'birthday' => $patient['birthday'],
-            'age' => !empty($patient['birthday']) ? $this->crud_model->calcularEdad($patient['birthday']) : null,
-            'status' => $patient['status'],
+            'email'     => $patient['email'],
+            'phone'     => $patient['phone'],
+            'code_area' => isset($patient['code_area']) ? $patient['code_area'] : null,
+            'birthday'  => $patient['birthday'],
+            'age'       => !empty($patient['birthday']) ? $this->crud_model->calcularEdad($patient['birthday']) : null,
+            'status'    => $patient['status'],
             'photo_url' => !empty($patient['photo']) ? base_url('public/assets/images/users/' . $patient['photo']) : null
         ];
 
