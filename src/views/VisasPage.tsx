@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Visa } from '../types';
 import visaService from '../services/visaService';
 import { FileCheck, Plus, Search, Trash2, Edit3 } from 'lucide-react';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export const VisasPage: React.FC = () => {
   const [visas, setVisas] = useState<Visa[]>([]);
@@ -61,7 +62,7 @@ export const VisasPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="py-12 flex justify-center"><div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>
+        <TableSkeleton rows={5} />
       ) : (
         <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
           <table className="w-full text-left text-sm text-slate-300">

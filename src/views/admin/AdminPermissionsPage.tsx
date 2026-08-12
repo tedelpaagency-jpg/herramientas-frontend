@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import adminService from '../../services/adminService';
 import { Permission } from '../../types';
 import { KeyRound, Plus, Edit3, Trash2, Search, X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export const AdminPermissionsPage: React.FC = () => {
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -144,9 +145,7 @@ export const AdminPermissionsPage: React.FC = () => {
       {/* Table */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 text-xs animate-pulse">
-            Cargando lista de permisos...
-          </div>
+          <TableSkeleton rows={5} />
         ) : filteredPermissions.length === 0 ? (
           <div className="p-12 text-center text-slate-500 text-xs">
             No se encontraron permisos definidos.

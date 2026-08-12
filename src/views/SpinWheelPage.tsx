@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { SpinWheel, SpinResult } from '../types';
 import spinWheelService from '../services/spinWheelService';
 import { Gift, RotateCw, Trophy } from 'lucide-react';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export const SpinWheelPage: React.FC = () => {
   const [wheels, setWheels] = useState<SpinWheel[]>([]);
@@ -36,16 +37,16 @@ export const SpinWheelPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center space-x-3">
-            <Gift className="w-7 h-7 text-emerald-500" />
+          <h1 className="text-2xl font-black text-on-surface flex items-center space-x-3">
+            <Gift className="w-7 h-7 text-secondary" />
             <span>Ruletas de Premios SANTUN</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">Gamificación conectada a `/v1/spin-wheels/{'{id}'}/spin`</p>
+          <p className="text-xs text-on-surface-variant mt-1">Gamificación conectada a `/v1/spin-wheels/{'{id}'}/spin`</p>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="py-12 flex justify-center"><div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>
+        <TableSkeleton rows={4} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {wheels.map((w) => (

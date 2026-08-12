@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Product } from '../types';
 import productService from '../services/productService';
 import { ShoppingBag, Plus, Search, Tag, DollarSign, Package } from 'lucide-react';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -19,16 +20,16 @@ export const ProductsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center space-x-3">
-            <ShoppingBag className="w-7 h-7 text-sky-500" />
+          <h1 className="text-2xl font-black text-on-surface flex items-center space-x-3">
+            <ShoppingBag className="w-7 h-7 text-primary" />
             <span>Productos & Inventario</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">Gestión de catálogo conectado a `/v1/products`</p>
+          <p className="text-xs text-on-surface-variant mt-1">Gestión de catálogo conectado a `/v1/products`</p>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="py-12 flex justify-center"><div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>
+        <TableSkeleton rows={4} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {products.map((p) => (

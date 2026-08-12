@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Client } from '../types';
 import crmService from '../services/crmService';
 import { Users, Plus, Search, Mail, Phone, Edit3, Trash2 } from 'lucide-react';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export const ClientsPage: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -121,9 +122,7 @@ export const ClientsPage: React.FC = () => {
 
       {/* Data Table Container */}
       {isLoading ? (
-        <div className="py-12 flex justify-center">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <TableSkeleton rows={5} />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
           <div className="overflow-x-auto">

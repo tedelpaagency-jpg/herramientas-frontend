@@ -22,6 +22,7 @@ import {
   FileText,
 } from 'lucide-react';
 import Link from 'next/link';
+import { TableSkeleton } from '@/components/Skeleton';
 
 interface AgencyDetailPageProps {
   agencyId: number;
@@ -66,14 +67,7 @@ export const AgencyDetailPage: React.FC<AgencyDetailPageProps> = ({ agencyId }) 
   }, [agencyId]);
 
   if (isLoading) {
-    return (
-      <div className="p-12 flex items-center justify-center text-slate-400">
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-xs font-bold">Cargando perfil de agencia...</span>
-        </div>
-      </div>
-    );
+    return <TableSkeleton rows={5} />;
   }
 
   if (error || !agency) {

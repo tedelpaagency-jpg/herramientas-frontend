@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { W8Form } from '../types';
 import w8Service from '../services/w8Service';
 import { FileText, Download, Plus } from 'lucide-react';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export const W8FormsPage: React.FC = () => {
   const [forms, setForms] = useState<W8Form[]>([]);
@@ -21,16 +22,16 @@ export const W8FormsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-white flex items-center space-x-3">
-            <FileText className="w-7 h-7 text-sky-500" />
+          <h1 className="text-2xl font-black text-on-surface flex items-center space-x-3">
+            <FileText className="w-7 h-7 text-primary" />
             <span>Formularios Fiscales W-8BEN</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">Generación y descarga de PDF vía `/v1/w8-forms`</p>
+          <p className="text-xs text-on-surface-variant mt-1">Generación y descarga de PDF vía `/v1/w8-forms`</p>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="py-12 flex justify-center"><div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>
+        <TableSkeleton rows={4} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {forms.map((f) => (

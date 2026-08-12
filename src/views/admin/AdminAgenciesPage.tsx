@@ -18,6 +18,7 @@ import {
   CreditCard,
   Globe
 } from 'lucide-react';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export const AdminAgenciesPage: React.FC = () => {
   const [agencies, setAgencies] = useState<Agency[]>([]);
@@ -205,9 +206,7 @@ export const AdminAgenciesPage: React.FC = () => {
       {/* Table */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 text-xs animate-pulse">
-            Cargando lista de agencias...
-          </div>
+          <TableSkeleton rows={5} />
         ) : filteredAgencies.length === 0 ? (
           <div className="p-12 text-center text-slate-500 text-xs">
             No se encontraron agencias registradas.

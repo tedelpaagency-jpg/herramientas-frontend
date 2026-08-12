@@ -1,0 +1,23 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/admin/agencies/page": "app/admin/agencies/page.js",
+  "/admin/permissions/page": "app/admin/permissions/page.js",
+  "/admin/plans/page": "app/admin/plans/page.js",
+  "/admin/subscriptions/page": "app/admin/subscriptions/page.js",
+  "/agencies/[id]/page": "app/agencies/[id]/page.js",
+  "/clients/page": "app/clients/page.js",
+  "/crm/page": "app/crm/page.js",
+  "/estates/[id]/edit/page": "app/estates/[id]/edit/page.js",
+  "/estates/new/page": "app/estates/new/page.js",
+  "/estates/page": "app/estates/page.js",
+  "/lexvault/page": "app/lexvault/page.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/products/page": "app/products/page.js",
+  "/spin-wheel/page": "app/spin-wheel/page.js",
+  "/pos/page": "app/pos/page.js",
+  "/travel-reports/page": "app/travel-reports/page.js",
+  "/visas/page": "app/visas/page.js",
+  "/w8-forms/page": "app/w8-forms/page.js",
+  "/users/page": "app/users/page.js"
+}

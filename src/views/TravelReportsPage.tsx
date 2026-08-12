@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { TravelReport } from '../types';
 import travelReportService from '../services/travelReportService';
 import { Plane, Plus } from 'lucide-react';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export const TravelReportsPage: React.FC = () => {
   const [reports, setReports] = useState<TravelReport[]>([]);
@@ -61,7 +62,7 @@ export const TravelReportsPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="py-12 flex justify-center"><div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div></div>
+        <TableSkeleton rows={5} />
       ) : (
         <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
           <table className="w-full text-left text-sm text-slate-300">

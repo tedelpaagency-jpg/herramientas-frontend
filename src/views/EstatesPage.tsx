@@ -17,7 +17,15 @@ import {
   List,
   LayoutGrid,
   Copy,
+  MoreVertical,
+  MessageSquare,
+  FileText,
+  Layout,
+  Download
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { TableSkeleton } from '@/components/Skeleton';
+import { EstateCanvasModal } from '@/components/EstateCanvasModal';
 
 export const EstatesPage: React.FC = () => {
   const router = useRouter();
@@ -35,6 +43,12 @@ export const EstatesPage: React.FC = () => {
     per_page: 10,
     last_page: 1
   });
+
+  // Action Menu & Modal States
+  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+  const [canvasModalOpen, setCanvasModalOpen] = useState(false);
+  const [canvasData, setCanvasData] = useState<any | null>(null);
+  const [activeEstateForPdf, setActiveEstateForPdf] = useState<Estate | null>(null);
 
   const fetchEstates = async () => {
     setIsLoading(true);
@@ -69,8 +83,10 @@ export const EstatesPage: React.FC = () => {
     try {
       await estateService.deleteEstate(id);
       setEstates(estates.filter(e => e.id !== id));
+      toast.success('Inmueble eliminado con éxito');
     } catch (err) {
       console.error('Error deleting estate:', err);
+      toast.error('Error al eliminar el inmueble');
     }
   };
 
@@ -78,6 +94,56 @@ export const EstatesPage: React.FC = () => {
     const slug = (estate as any).slug || estate.id;
     const publicUrl = `${window.location.origin}/estate/${slug}`;
     navigator.clipboard.writeText(publicUrl);
+    toast.success('¡Enlace copiado al portapapeles!');
+  };
+
+  // WhatsApp Action Handler
+  const handleCopyWhatsApp = async (estate: Estate) => {
+    setActiveMenuId(null);
+    const toastId = toast.loading('Obteniendo plantilla WhatsApp...');
+    try {
+      const res = await estateService.getWhatsAppInfo(estate.id);
+      const textToCopy = res.formatted_text || res.whatsapp_text || res.copy_text;
+      
+      if (textToCopy) {
+        await navigator.clipboard.writeText(textToCopy);
+        toast.success('¡Información copiada al portapapeles para WhatsApp!', { id: toastId });
+      } else {
+        toast.error('No se pudo generar el texto de WhatsApp', { id: toastId });
+      }
+    } catch (err) {
+      console.error('Error fetching WhatsApp info:', err);
+      toast.error('Error al consultar información para WhatsApp', { id: toastId });
+    }
+  };
+
+  // PDF Download Action Handler
+  const handleDownloadPdf = async (estate: Estate) => {
+    setActiveMenuId(null);
+    const toastId = toast.loading('Generando PDF del inmueble...');
+    try {
+      await estateService.downloadPdf(estate.id, estate.slug);
+      toast.success('¡PDF descargado exitosamente!', { id: toastId });
+    } catch (err) {
+      console.error('Error downloading PDF:', err);
+      toast.error('Error al descargar el PDF de la propiedad', { id: toastId });
+    }
+  };
+
+  // Canvas View Action Handler
+  const handleViewCanvas = async (estate: Estate) => {
+    setActiveMenuId(null);
+    setActiveEstateForPdf(estate);
+    const toastId = toast.loading('Cargando Canvas del inmueble...');
+    try {
+      const data = await estateService.getCanvasInfo(estate.id);
+      setCanvasData(data);
+      setCanvasModalOpen(true);
+      toast.dismiss(toastId);
+    } catch (err) {
+      console.error('Error loading Canvas info:', err);
+      toast.error('Error al cargar el Canvas de la propiedad', { id: toastId });
+    }
   };
 
   const getEstateImageUrl = (estate: Estate): string | null => {
@@ -101,7 +167,7 @@ export const EstatesPage: React.FC = () => {
             Directorio Inmobiliario SANTUN
           </h2>
           <p className="text-sm text-slate-500 font-medium mt-1">
-            Gestión y listado de propiedades de Inmosoft (Formato Lista).
+            Gestión de propiedades con exportación para WhatsApp, Canvas y PDF.
           </p>
         </div>
 
@@ -190,9 +256,7 @@ export const EstatesPage: React.FC = () => {
 
       {/* Main Content Area */}
       {isLoading ? (
-        <div className="py-16 flex justify-center items-center">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <TableSkeleton rows={5} />
       ) : estates.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center border border-slate-200/80 shadow-sm">
           <Building2 className="w-12 h-12 text-slate-400 mx-auto mb-3" />
@@ -202,7 +266,7 @@ export const EstatesPage: React.FC = () => {
       ) : (
         <div className="space-y-6">
           {viewMode === 'table' ? (
-            /* Table View Mode (Estilo Inmosoft) */
+            /* Table View Mode */
             <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm text-slate-700 border-collapse">
@@ -210,16 +274,19 @@ export const EstatesPage: React.FC = () => {
                     <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-500 tracking-wider">
                       <th className="py-3.5 px-4 w-16 text-center">ID</th>
                       <th className="py-3.5 px-4">Título</th>
+                      <th className="py-3.5 px-4">Asesor</th>
                       <th className="py-3.5 px-4">Dirección</th>
                       <th className="py-3.5 px-4">Precio</th>
                       <th className="py-3.5 px-4">Publicada</th>
                       <th className="py-3.5 px-4 text-center">Estado</th>
-                      <th className="py-3.5 px-4 text-center w-36">Acciones</th>
+                      <th className="py-3.5 px-4 text-center min-w-[200px]">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {estates.map((estate) => {
                       const imgUrl = getEstateImageUrl(estate);
+                      const isMenuOpen = activeMenuId === estate.id;
+
                       return (
                         <tr key={estate.id} className="hover:bg-slate-50/80 transition-colors">
                           {/* ID */}
@@ -259,6 +326,22 @@ export const EstatesPage: React.FC = () => {
                             </div>
                           </td>
 
+                          {/* Asesor / Agente Comercial */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center flex-shrink-0 overflow-hidden border border-blue-200 shadow-2xs">
+                                {estate.user?.avatarUrl ? (
+                                  <img src={estate.user.avatarUrl} alt={estate.user.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span>{estate.user?.name ? estate.user.name.charAt(0).toUpperCase() : 'A'}</span>
+                                )}
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 truncate max-w-[130px]" title={estate.user?.name || 'Asesor Inmobiliario'}>
+                                {estate.user?.name || 'Asesor Inmobiliario'}
+                              </span>
+                            </div>
+                          </td>
+
                           {/* Dirección / Ubicación */}
                           <td className="py-3.5 px-4 text-xs text-slate-600 max-w-xs truncate">
                             {estate.full_address || estate.address || `${estate.city || estate.province || 'Ecuador'}`}
@@ -288,32 +371,124 @@ export const EstatesPage: React.FC = () => {
                             </span>
                           </td>
 
-                          {/* Acciones */}
-                          <td className="py-3.5 px-4 text-center">
-                            <div className="flex items-center justify-center gap-1">
+                          {/* Acciones Prominentes Directas + Menú (⋮) */}
+                          <td className="py-3.5 px-4 text-center relative">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* WhatsApp Direct Icon */}
                               <button
-                                onClick={() => handleCopyLink(estate)}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors"
-                                title="Copiar enlace"
+                                onClick={() => handleCopyWhatsApp(estate)}
+                                className="p-2 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-all active:scale-95 shadow-2xs"
+                                title="Copiar información para WhatsApp"
                               >
-                                <Copy className="w-4 h-4" />
+                                <MessageSquare className="w-4 h-4" />
                               </button>
 
+                              {/* PDF Direct Icon */}
+                              <button
+                                onClick={() => handleDownloadPdf(estate)}
+                                className="p-2 rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 transition-all active:scale-95 shadow-2xs"
+                                title="Descargar PDF de la propiedad"
+                              >
+                                <FileText className="w-4 h-4" />
+                              </button>
+
+                              {/* Canvas Direct Icon */}
+                              <button
+                                onClick={() => handleViewCanvas(estate)}
+                                className="p-2 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 transition-all active:scale-95 shadow-2xs"
+                                title="Ver Canvas de la propiedad"
+                              >
+                                <Layout className="w-4 h-4" />
+                              </button>
+
+                              {/* Direct Edit Button */}
                               <button
                                 onClick={() => handleOpenEditModal(estate)}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-slate-100 transition-colors"
-                                title="Editar"
+                                className="p-2 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition-all active:scale-95 shadow-2xs"
+                                title="Editar Inmueble"
                               >
                                 <Edit3 className="w-4 h-4" />
                               </button>
 
-                              <button
-                                onClick={() => handleDelete(estate.id)}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-slate-100 transition-colors"
-                                title="Eliminar"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {/* Options Dropdown Menu Button (⋮) */}
+                              <div className="relative">
+                                <button
+                                  onClick={() => setActiveMenuId(isMenuOpen ? null : estate.id)}
+                                  className={`p-2 rounded-lg border transition-all active:scale-95 shadow-2xs ${
+                                    isMenuOpen ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
+                                  }`}
+                                  title="Más opciones (⋮)"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+
+                                {/* Dropdown Menu (⋮) */}
+                                {isMenuOpen && (
+                                  <>
+                                    <div
+                                      className="fixed inset-0 z-30"
+                                      onClick={() => setActiveMenuId(null)}
+                                    />
+                                    <div className="absolute right-0 top-full mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left animate-slide-up-fade">
+                                      <button
+                                        onClick={() => handleCopyWhatsApp(estate)}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                      >
+                                        <MessageSquare className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                        <span>Copiar información para WhatsApp</span>
+                                      </button>
+
+                                      <button
+                                        onClick={() => handleDownloadPdf(estate)}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-50 transition-colors"
+                                      >
+                                        <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                        <span>Descargar PDF</span>
+                                      </button>
+
+                                      <button
+                                        onClick={() => handleViewCanvas(estate)}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-50 transition-colors"
+                                      >
+                                        <Layout className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                                        <span>Ver Canvas</span>
+                                      </button>
+
+                                      <div className="h-px bg-slate-100 my-1"></div>
+
+                                      <button
+                                        onClick={() => handleCopyLink(estate)}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                                      >
+                                        <Copy className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                                        <span>Copiar Enlace Público</span>
+                                      </button>
+
+                                      <button
+                                        onClick={() => {
+                                          setActiveMenuId(null);
+                                          handleOpenEditModal(estate);
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                                      >
+                                        <Edit3 className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                        <span>Editar Inmueble</span>
+                                      </button>
+
+                                      <button
+                                        onClick={() => {
+                                          setActiveMenuId(null);
+                                          handleDelete(estate.id);
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+                                      >
+                                        <Trash2 className="w-4 h-4 flex-shrink-0" />
+                                        <span>Eliminar Inmueble</span>
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -328,10 +503,12 @@ export const EstatesPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {estates.map((estate) => {
                 const imgUrl = getEstateImageUrl(estate);
+                const isMenuOpen = activeMenuId === estate.id;
+
                 return (
                   <div
                     key={estate.id}
-                    className="bg-white rounded-xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group"
+                    className="bg-white rounded-xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group relative"
                   >
                     <div>
                       <div className="h-48 bg-slate-100 relative flex items-center justify-center overflow-hidden">
@@ -353,6 +530,72 @@ export const EstatesPage: React.FC = () => {
                             {estate.type || 'Inmueble'}
                           </span>
                         </div>
+
+                        {/* Top-Right Menu Button (⋮) in Grid View */}
+                        <div className="absolute top-3 right-3">
+                          <button
+                            onClick={() => setActiveMenuId(isMenuOpen ? null : estate.id)}
+                            className="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white flex items-center justify-center backdrop-blur-md shadow-md transition-all active:scale-95"
+                            title="Opciones (⋮)"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+
+                          {isMenuOpen && (
+                            <>
+                              <div className="fixed inset-0 z-30" onClick={() => setActiveMenuId(null)} />
+                              <div className="absolute right-0 top-full mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left text-xs animate-slide-up-fade">
+                                <button
+                                  onClick={() => handleCopyWhatsApp(estate)}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                >
+                                  <MessageSquare className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                  <span>Copiar información para WhatsApp</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleDownloadPdf(estate)}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-blue-700 hover:bg-blue-50 transition-colors"
+                                >
+                                  <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                  <span>Descargar PDF</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleViewCanvas(estate)}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-indigo-700 hover:bg-indigo-50 transition-colors"
+                                >
+                                  <Layout className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                                  <span>Ver Canvas</span>
+                                </button>
+
+                                <div className="h-px bg-slate-100 my-1"></div>
+
+                                <button
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    handleOpenEditModal(estate);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                                >
+                                  <Edit3 className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                  <span>Editar Inmueble</span>
+                                </button>
+
+                                <button
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    handleDelete(estate.id);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4 flex-shrink-0" />
+                                  <span>Eliminar Inmueble</span>
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
 
                       <div className="p-5">
@@ -362,14 +605,67 @@ export const EstatesPage: React.FC = () => {
                         </div>
 
                         <h3 className="text-base font-bold text-slate-900 mt-1 line-clamp-1">{estate.title}</h3>
+
+                        {/* Asesor / Agente Comercial Info */}
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden border border-blue-200 shadow-2xs">
+                            {estate.user?.avatarUrl ? (
+                              <img src={estate.user.avatarUrl} alt={estate.user.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span>{estate.user?.name ? estate.user.name.charAt(0).toUpperCase() : 'A'}</span>
+                            )}
+                          </div>
+                          <span className="text-xs font-medium text-slate-600 truncate" title={estate.user?.name || 'Asesor Inmobiliario'}>
+                            {estate.user?.name || 'Asesor Inmobiliario'}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
+                    {/* Card Footer Direct Quick Action Icons */}
                     <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
                       <span className="text-slate-400 font-mono">ID: #{estate.id}</span>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => handleOpenEditModal(estate)} className="p-1 rounded text-slate-500 hover:text-blue-600"><Edit3 className="w-4 h-4" /></button>
-                        <button onClick={() => handleDelete(estate.id)} className="p-1 rounded text-slate-500 hover:text-rose-600"><Trash2 className="w-4 h-4" /></button>
+                      
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleCopyWhatsApp(estate)}
+                          className="p-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-colors"
+                          title="Copiar información para WhatsApp"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDownloadPdf(estate)}
+                          className="p-1.5 rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 transition-colors"
+                          title="Descargar PDF"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleViewCanvas(estate)}
+                          className="p-1.5 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 transition-colors"
+                          title="Ver Canvas"
+                        >
+                          <Layout className="w-4 h-4" />
+                        </button>
+
+                        <button 
+                          onClick={() => handleOpenEditModal(estate)} 
+                          className="p-1.5 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition-colors"
+                          title="Editar"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+
+                        <button 
+                          onClick={() => handleDelete(estate.id)} 
+                          className="p-1.5 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -410,10 +706,16 @@ export const EstatesPage: React.FC = () => {
         </div>
       )}
 
-      {/* End Main Content Area */}
+      {/* Canvas Flyer Modal */}
+      <EstateCanvasModal
+        isOpen={canvasModalOpen}
+        onClose={() => setCanvasModalOpen(false)}
+        canvasData={canvasData}
+        onCopyWhatsApp={() => activeEstateForPdf && handleCopyWhatsApp(activeEstateForPdf)}
+        onDownloadPdf={() => activeEstateForPdf && handleDownloadPdf(activeEstateForPdf)}
+      />
     </div>
   );
 };
 
 export default EstatesPage;
-

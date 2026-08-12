@@ -15,6 +15,7 @@ import {
   X,
   AlertCircle
 } from 'lucide-react';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export const AdminPlansPage: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -238,9 +239,7 @@ export const AdminPlansPage: React.FC = () => {
       {/* Table */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 text-xs animate-pulse">
-            Cargando lista de planes...
-          </div>
+          <TableSkeleton rows={5} />
         ) : filteredPlans.length === 0 ? (
           <div className="p-12 text-center text-slate-500 text-xs">
             No se encontraron planes configurados.

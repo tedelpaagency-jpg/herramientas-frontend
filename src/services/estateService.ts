@@ -79,6 +79,32 @@ export const estateService = {
     const response = await apiClient.patch(`/v1/estates/${estateId}/status`, { status });
     return response.data?.data || response.data;
   },
+
+  getWhatsAppInfo: async (estateId: number): Promise<any> => {
+    const response = await apiClient.get(`/v1/estates/${estateId}/whatsapp`);
+    return response.data?.data || response.data;
+  },
+
+  getCanvasInfo: async (estateId: number): Promise<any> => {
+    const response = await apiClient.get(`/v1/estates/${estateId}/canvas`);
+    return response.data?.data || response.data;
+  },
+
+  downloadPdf: async (estateId: number, fileNameSlug?: string): Promise<void> => {
+    const response = await apiClient.get(`/v1/estates/${estateId}/pdf`, {
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileNameSlug ? `propiedad-${estateId}-${fileNameSlug}.pdf` : `propiedad-${estateId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  },
 };
 
 export default estateService;

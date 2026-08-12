@@ -1,96 +1,170 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { Menu, LogOut, Search, Shield, Building, User as UserIcon } from 'lucide-react';
 
 interface NavbarProps {
-  setMobileOpen: (open: boolean) => void;
+  leftSidebarOpen: boolean;
+  setLeftSidebarOpen: (open: boolean) => void;
+  isSidebarCollapsed: boolean;
+  setIsSidebarCollapsed: (collapsed: boolean) => void;
+  rightSidebarOpen: boolean;
+  setRightSidebarOpen: (open: boolean) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ setMobileOpen }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  leftSidebarOpen,
+  setLeftSidebarOpen,
+  isSidebarCollapsed,
+  setIsSidebarCollapsed,
+  rightSidebarOpen,
+  setRightSidebarOpen,
+}) => {
   const { user, logout } = useAuth();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 w-full h-16 border-b border-slate-200 flex justify-between items-center px-4 lg:px-6 gap-4">
-      {/* Search Bar & Mobile Menu Toggle */}
-      <div className="flex items-center gap-3 flex-1 max-w-lg">
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="w-10 h-10 flex items-center justify-center text-slate-700 hover:bg-slate-100 rounded-full lg:hidden"
+    <header className="bg-surface/80 backdrop-blur-md sticky top-0 z-30 w-full h-16 border-b border-outline-variant flex justify-between items-center px-2 lg:px-6 gap-2 print:hidden">
+      {/* Menu Toggle & Search Bar */}
+      <div className="flex items-center gap-1 lg:gap-4 flex-1 lg:flex-none min-w-0">
+        <button 
+          className="w-11 h-11 flex-shrink-0 flex items-center justify-center text-on-surface hover:bg-surface-container rounded-full active:scale-95 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-label="Abrir menú principal"
+          aria-expanded={leftSidebarOpen}
+          onClick={() => {
+            if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+              setLeftSidebarOpen(!leftSidebarOpen);
+            } else {
+              setIsSidebarCollapsed(!isSidebarCollapsed);
+            }
+          }}
         >
-          <Menu className="w-5 h-5" />
+          <span className="material-symbols-outlined">menu</span>
         </button>
 
-        <div className="flex items-center gap-2 bg-slate-100 rounded-full px-4 py-2 w-full">
-          <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar propiedades, clientes, módulos..."
+        <div className="flex items-center gap-2 bg-surface-container-high rounded-full px-3 lg:px-4 py-2 w-full lg:w-96 min-w-0">
+          <span className="material-symbols-outlined text-on-surface-variant flex-shrink-0">search</span>
+          <input 
+            className="bg-transparent border-none focus:ring-0 outline-none text-body-md w-full min-w-0 truncate text-on-surface placeholder-on-surface-variant/60" 
+            placeholder="Buscar propiedades, clientes, módulos..." 
+            type="text" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none outline-none text-xs sm:text-sm text-slate-800 w-full placeholder-slate-400"
           />
         </div>
       </div>
+      
+      {/* Right Header Actions */}
+      <div className="flex items-center gap-1 lg:gap-4 flex-shrink-0">
+        {/* Right Sidebar Toggle Button */}
+        <button 
+          onClick={() => setRightSidebarOpen(!rightSidebarOpen)} 
+          className={`w-11 h-11 flex items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${rightSidebarOpen ? 'bg-primary text-white shadow-md' : 'hover:bg-surface-container-high text-on-surface'}`}
+          title="Menú Lateral"
+          aria-label="Abrir menú secundario"
+          aria-expanded={rightSidebarOpen}
+        >
+          <span className={`material-symbols-outlined ${rightSidebarOpen ? 'text-white' : 'text-primary'}`}>menu_open</span>
+        </button>
 
-      {/* User Actions & Dropdown */}
-      <div className="flex items-center gap-3 flex-shrink-0">
-        {user?.agency && (
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-xs font-semibold text-blue-700">
-            <Building className="w-3.5 h-3.5" />
-            <span>Agencia: <strong>{user.agency.name}</strong></span>
-          </div>
-        )}
-
+        {/* Notifications Dropdown Button & Popover */}
         <div className="relative">
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <p className="font-bold text-xs text-slate-900 truncate max-w-[140px]">{user?.name || 'Usuario SANTUN'}</p>
-              <p className="text-[10px] font-semibold text-slate-500">{user?.email}</p>
-            </div>
-            
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-10 h-10 rounded-full border-2 border-blue-600 bg-blue-600 flex items-center justify-center text-white font-bold text-sm hover:ring-2 hover:ring-blue-600/30 transition-all"
-            >
-              {user?.name ? user.name.substring(0, 2).toUpperCase() : 'ST'}
-            </button>
-          </div>
-
-          {/* Dropdown Menu */}
-          {dropdownOpen && (
-            <>
-              <div 
-                className="fixed inset-0 z-40" 
-                onClick={() => setDropdownOpen(false)} 
-              />
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden py-1 animate-slide-up-fade">
-                <div className="p-3 border-b border-slate-100 bg-slate-50 sm:hidden">
-                  <p className="font-bold text-xs text-slate-900">{user?.name}</p>
-                  <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
-                </div>
-
-                <div className="px-4 py-2.5 text-xs font-semibold text-slate-600 flex items-center gap-2 border-b border-slate-100">
-                  <Shield className="w-4 h-4 text-emerald-600" />
-                  <span>Sesión Sanctum Activa</span>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    logout();
-                  }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+          <button 
+            onClick={() => setShowNotifications(!showNotifications)} 
+            className={`hidden lg:flex w-11 h-11 items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${showNotifications ? 'bg-primary text-white shadow-md' : 'hover:bg-surface-container-high text-on-surface'}`}
+            aria-label="Notificaciones"
+            aria-expanded={showNotifications}
+          >
+            <span className={`material-symbols-outlined ${showNotifications ? 'text-white' : 'text-primary'}`}>notifications</span>
+          </button>
+          
+          <AnimatePresence>
+            {showNotifications && (
+              <>
+                <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setShowNotifications(false)} aria-hidden="true"></div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 mt-3 w-80 bg-surface border border-outline-variant rounded-2xl shadow-xl z-[70] overflow-hidden"
                 >
-                  <LogOut className="w-4 h-4" />
-                  <span>Cerrar Sesión</span>
-                </button>
-              </div>
-            </>
-          )}
+                  <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+                    <h4 className="font-bold text-on-surface">Notificaciones</h4>
+                    <button onClick={() => setShowNotifications(false)} className="text-xs font-bold text-primary hover:underline">Marcar leídas</button>
+                  </div>
+                  <div className="p-8 flex flex-col items-center justify-center text-center text-on-surface-variant">
+                    <span className="material-symbols-outlined text-4xl mb-3 opacity-50">notifications_paused</span>
+                    <p className="text-sm font-medium">No tienes notificaciones recientes</p>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* User Profile Menu */}
+        <div className="flex items-center gap-3 ml-1 lg:ml-4 relative">
+          <div className="text-right hidden sm:block">
+            <p className="font-label-md font-bold text-on-surface truncate max-w-[140px]">{user?.name || 'Usuario SANTUN'}</p>
+            <p className="text-[10px] font-semibold text-on-surface-variant">{user?.role || user?.email || 'Specialist'}</p>
+          </div>
+          <button 
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="w-11 h-11 rounded-full border-2 border-primary bg-primary flex items-center justify-center text-white font-bold hover:ring-2 hover:ring-primary/50 transition-all active:scale-95 focus:outline-none overflow-hidden flex-shrink-0"
+            aria-label="Menú de usuario"
+            aria-expanded={showUserMenu}
+          >
+            {user?.name ? user.name.substring(0, 2).toUpperCase() : 'ST'}
+          </button>
+          
+          <AnimatePresence>
+            {showUserMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} aria-hidden="true"></div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 top-full mt-2 w-56 bg-surface border border-outline-variant rounded-xl shadow-xl z-[70] overflow-hidden"
+                >
+                  <div className="p-3 border-b border-outline-variant sm:hidden">
+                    <p className="font-bold text-on-surface">{user?.name || 'Usuario SANTUN'}</p>
+                    <p className="text-xs text-on-surface-variant">{user?.role || user?.email || 'Specialist'}</p>
+                  </div>
+                  <div className="py-2">
+                    <Link href="/estates/new" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-surface-container text-sm text-primary font-bold transition-colors">
+                      <span className="material-symbols-outlined text-lg">add_circle</span>
+                      Nueva Propiedad
+                    </Link>
+                    <div className="h-px bg-outline-variant my-1"></div>
+                    <Link href="/users" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-surface-container text-sm text-on-surface transition-colors">
+                      <span className="material-symbols-outlined text-[20px]">person</span>
+                      Mi Perfil
+                    </Link>
+                    <Link href="/admin/permissions" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-surface-container text-sm text-on-surface transition-colors">
+                      <span className="material-symbols-outlined text-[20px]">settings</span>
+                      Configuración
+                    </Link>
+                    <div className="h-px bg-outline-variant my-2"></div>
+                    <button 
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2 hover:bg-error-container/20 text-sm text-error transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">logout</span>
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </header>

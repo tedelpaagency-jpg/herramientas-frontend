@@ -68,8 +68,11 @@ export interface Permission {
 export interface User {
   id: number;
   name: string;
+  last_name?: string;
   email: string;
   role?: string;
+  points?: number;
+  avatarUrl?: string;
   agency_id?: number;
   agency?: Agency;
   roles?: Role[];
@@ -111,6 +114,8 @@ export interface Estate {
   is_verified: boolean;
   agency_id?: number;
   agency?: Agency;
+  user_id?: number;
+  user?: User;
   images?: EstateImage[] | string[];
   attributes_json?: Record<string, any>;
   created_at?: string;
@@ -122,7 +127,10 @@ export interface Client {
   first_name: string;
   last_name: string;
   email: string;
+  name?: string;
   phone?: string;
+  identification_number?: string;
+  document_number?: string;
   address?: string;
   city?: string;
   country?: string;
@@ -208,23 +216,38 @@ export interface W8Form {
 
 export interface LexvaultTemplate {
   id: number;
+  agency_id?: number;
   title: string;
   category?: string;
   description?: string;
-  template_body: string;
+  html_content?: string;
+  template_body?: string;
+  tokens_json?: string[];
   fields_json?: Record<string, string>;
+  is_active?: boolean;
+  status?: number;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface LexvaultDocument {
   id: number;
-  template_id: number;
+  agency_id?: number;
+  template_id?: number;
   template?: LexvaultTemplate;
-  title: string;
-  filled_content?: string;
+  client_id?: number;
+  client?: Client;
   document_number?: string;
+  title: string;
+  rendered_html?: string;
+  filled_content?: string;
+  field_values_json?: Record<string, any>;
+  pdf_path?: string;
   pdf_url?: string;
+  status: 'draft' | 'signed' | 'declined' | string;
+  signed_at?: string | null;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface SpinReward {

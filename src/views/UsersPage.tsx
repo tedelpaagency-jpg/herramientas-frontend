@@ -22,6 +22,7 @@ import {
   ChevronRight,
   UserCheck,
 } from 'lucide-react';
+import { TableSkeleton } from '@/components/Skeleton';
 
 export const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -265,12 +266,7 @@ export const UsersPage: React.FC = () => {
       {/* Users Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-12 flex items-center justify-center text-slate-400">
-            <div className="flex items-center gap-3">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-xs font-bold">Cargando usuarios...</span>
-            </div>
-          </div>
+          <TableSkeleton rows={5} />
         ) : users.length === 0 ? (
           <div className="p-12 text-center text-slate-500">
             <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
