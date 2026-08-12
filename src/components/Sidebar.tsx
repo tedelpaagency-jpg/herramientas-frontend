@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { 
   Building2, 
@@ -27,15 +30,30 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
+  const pathname = usePathname();
   const { user } = useAuth();
 
   const isSuperAdmin =
     user?.role === 'super_admin' ||
     user?.roles?.some((r) => r.name === 'super_admin');
 
+  const isGerenteComercial =
+    user?.role === 'gerente_comercial' ||
+    user?.roles?.some((r) => r.name === 'gerente_comercial');
+
+  const isAdmin =
+    user?.role === 'admin' ||
+    user?.roles?.some((r) => r.name === 'admin');
+
   const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
     { label: 'Propiedades / Inmuebles', path: '/estates', icon: Building2, permission: 'view_estates' },
+    ...(isSuperAdmin || isGerenteComercial || isAdmin ? [
+      { label: 'Gestión de Usuarios', path: '/users', icon: Users, permission: 'manage_users' }
+    ] : []),
+    ...(isGerenteComercial || isAdmin ? [
+      { label: isGerenteComercial ? 'Mis Agencias' : 'Mi Agencia', path: '/admin/agencies', icon: Building }
+    ] : []),
     { label: 'CRM & Pipeline', path: '/crm', icon: Kanban, permission: 'view_crm' },
     { label: 'Directorio de Clientes', path: '/clients', icon: Users, permission: 'view_clients' },
     { label: 'Productos & Inventario', path: '/products', icon: ShoppingBag, permission: 'view_products' },
@@ -63,13 +81,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
   const userDirectPermissions = user?.permissions?.map((p) => p.name.toLowerCase()) || [];
 
   const visibleNavItems = navItems.filter((item) => {
-    // Si no requiere permiso específico (ej. Dashboard) o es Super Admin, siempre mostrar
     if (!item.permission || isSuperAdmin) return true;
-
-    // Si el plan no tiene permisos restringidos asignados aún, mostrar por defecto
     if (activePlanPermissions.length === 0 && userDirectPermissions.length === 0) return true;
-
-    // Verificar si el permiso del módulo está presente en el plan o en el usuario
     return (
       activePlanPermissions.includes(item.permission.toLowerCase()) ||
       userDirectPermissions.includes(item.permission.toLowerCase())
@@ -118,22 +131,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
+            const isActive = pathname === item.path;
             return (
-              <NavLink
+              <Link
                 key={item.path}
-                to={item.path}
+                href={item.path}
                 onClick={() => setMobileOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 text-[14px] font-bold rounded-lg transition-colors duration-150 ${
-                    isActive
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-                  }`
-                }
+                className={`flex items-center gap-3 px-4 py-3 text-[14px] font-bold rounded-lg transition-colors duration-150 ${
+                  isActive
+                    ? 'text-blue-600 bg-blue-50'
+                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
                 <span className="truncate">{item.label}</span>
-              </NavLink>
+              </Link>
             );
           })}
 
@@ -147,22 +159,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
 
               {adminNavItems.map((item) => {
                 const Icon = item.icon;
+                const isActive = pathname === item.path;
                 return (
-                  <NavLink
+                  <Link
                     key={item.path}
-                    to={item.path}
+                    href={item.path}
                     onClick={() => setMobileOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-2.5 text-[13px] font-bold rounded-lg transition-colors duration-150 ${
-                        isActive
-                          ? 'text-amber-700 bg-amber-50 border border-amber-200/60'
-                          : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-                      }`
-                    }
+                    className={`flex items-center gap-3 px-4 py-2.5 text-[13px] font-bold rounded-lg transition-colors duration-150 ${
+                      isActive
+                        ? 'text-amber-700 bg-amber-50 border border-amber-200/60'
+                        : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                    }`}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0 text-amber-600" />
                     <span className="truncate">{item.label}</span>
-                  </NavLink>
+                  </Link>
                 );
               })}
             </div>

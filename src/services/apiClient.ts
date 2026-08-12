@@ -2,23 +2,25 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // Resolución dinámica del API Base URL según entorno y dominio actual
 export const getApiBaseUrl = (): string => {
-  const metaEnv = (import.meta as any).env || {};
-  
-  if (metaEnv.VITE_API_URL) {
-    return metaEnv.VITE_API_URL;
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+    if (process.env.VITE_API_URL) return process.env.VITE_API_URL;
   }
-
-  if (metaEnv.NEXT_PUBLIC_API_URL) {
-    return metaEnv.NEXT_PUBLIC_API_URL;
+  
+  try {
+    const metaEnv = (import.meta as any).env || {};
+    if (metaEnv.NEXT_PUBLIC_API_URL) return metaEnv.NEXT_PUBLIC_API_URL;
+    if (metaEnv.VITE_API_URL) return metaEnv.VITE_API_URL;
+  } catch (e) {
+    // Ignore error if import.meta is undefined in Next.js SSR
   }
 
   // Si estamos en un navegador, determinar la URL de la API dinámicamente
   if (typeof window !== 'undefined' && window.location) {
-    const { hostname, protocol, origin } = window.location;
+    const { hostname, origin } = window.location;
     
     // Si la aplicación se sirve desde el mismo servidor backend
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      // Retorna la URL relativa o la URL principal de la API
       return `${origin}/api`;
     }
   }

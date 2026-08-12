@@ -1,10 +1,20 @@
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+'use client';
+
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
-export const SuperAdminRoute: React.FC = () => {
+export const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   if (isLoading) {
     return (
@@ -18,7 +28,7 @@ export const SuperAdminRoute: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return null;
   }
 
   const isSuperAdmin =
@@ -38,19 +48,19 @@ export const SuperAdminRoute: React.FC = () => {
           <p className="text-sm text-slate-600 mb-6">
             Esta sección de Administración Global es exclusiva para usuarios con el rol de <strong className="text-slate-900">super_admin</strong>.
           </p>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-colors shadow-md shadow-blue-600/20"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Volver al Dashboard</span>
-          </a>
+          </Link>
         </div>
       </div>
     );
   }
 
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 export default SuperAdminRoute;

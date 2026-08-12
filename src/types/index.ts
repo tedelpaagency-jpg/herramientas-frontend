@@ -44,6 +44,8 @@ export interface Agency {
   domain?: string;
   plan_id?: number;
   plan?: Plan;
+  gerente_id?: number;
+  gerente_comercial?: User;
   current_subscription?: Subscription;
   subscriptions?: Subscription[];
   status?: number;
@@ -72,6 +74,9 @@ export interface User {
   agency?: Agency;
   roles?: Role[];
   permissions?: Permission[];
+  phone?: string;
+  status?: number;
+  deleted_at?: string | null;
   created_at?: string;
 }
 
@@ -101,7 +106,8 @@ export interface Estate {
   bathrooms?: number;
   area_sqm?: number;
   size?: number;
-  status: 'available' | 'reserved' | 'sold' | 'rented' | string;
+  status: 'available' | 'reserved' | 'sold' | 'rented' | string | number;
+  property_status?: number;
   is_verified: boolean;
   agency_id?: number;
   agency?: Agency;

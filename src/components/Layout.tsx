@@ -1,9 +1,10 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
-export const Layout: React.FC = () => {
+export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -14,7 +15,7 @@ export const Layout: React.FC = () => {
         <Navbar setMobileOpen={setMobileOpen} />
         
         <main className="flex-1 p-6 lg:p-8 max-w-[1280px] w-full mx-auto animate-slide-up-fade">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>

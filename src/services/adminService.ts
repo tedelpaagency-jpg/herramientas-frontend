@@ -4,8 +4,13 @@ import { Plan, Permission, Agency, Subscription, PlanPermission } from '../types
 export const adminService = {
   // === PLANES ===
   getPlans: async (): Promise<Plan[]> => {
-    const res = await apiClient.get('/v1/admin/plans');
-    return res.data?.data || res.data || [];
+    try {
+      const res = await apiClient.get('/v1/plans');
+      return res.data?.data || res.data || [];
+    } catch {
+      const res = await apiClient.get('/v1/admin/plans');
+      return res.data?.data || res.data || [];
+    }
   },
 
   getPlan: async (id: number): Promise<Plan> => {
@@ -68,28 +73,61 @@ export const adminService = {
   },
 
   // === AGENCIAS ===
-  getAgencies: async (): Promise<Agency[]> => {
-    const res = await apiClient.get('/v1/admin/agencies');
-    return res.data?.data || res.data || [];
+  getAgencies: async (params?: { with_trashed?: boolean; gerente_id?: number; search?: string }): Promise<Agency[]> => {
+    try {
+      const res = await apiClient.get('/v1/agencies', { params });
+      return res.data?.data || res.data || [];
+    } catch {
+      const res = await apiClient.get('/v1/admin/agencies', { params });
+      return res.data?.data || res.data || [];
+    }
   },
 
   getAgency: async (id: number): Promise<Agency> => {
-    const res = await apiClient.get(`/v1/admin/agencies/${id}`);
-    return res.data?.data || res.data;
+    try {
+      const res = await apiClient.get(`/v1/agencies/${id}`);
+      return res.data?.data || res.data;
+    } catch {
+      const res = await apiClient.get(`/v1/admin/agencies/${id}`);
+      return res.data?.data || res.data;
+    }
+  },
+
+  getAgencyUsers: async (id: number): Promise<any[]> => {
+    try {
+      const res = await apiClient.get(`/v1/agencies/${id}/users`);
+      return res.data?.data || res.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  getAgencyProperties: async (id: number): Promise<any[]> => {
+    try {
+      const res = await apiClient.get(`/v1/agencies/${id}/properties`);
+      return res.data?.data || res.data || [];
+    } catch {
+      return [];
+    }
   },
 
   createAgency: async (data: Partial<Agency>): Promise<Agency> => {
-    const res = await apiClient.post('/v1/admin/agencies', data);
+    const res = await apiClient.post('/v1/agencies', data);
     return res.data?.data || res.data;
   },
 
   updateAgency: async (id: number, data: Partial<Agency>): Promise<Agency> => {
-    const res = await apiClient.put(`/v1/admin/agencies/${id}`, data);
+    const res = await apiClient.post(`/v1/agencies/${id}/update`, data);
     return res.data?.data || res.data;
   },
 
   deleteAgency: async (id: number): Promise<void> => {
-    await apiClient.delete(`/v1/admin/agencies/${id}`);
+    await apiClient.post(`/v1/agencies/${id}/delete`);
+  },
+
+  restoreAgency: async (id: number): Promise<Agency> => {
+    const res = await apiClient.post(`/v1/agencies/${id}/restore`);
+    return res.data?.data || res.data;
   },
 
   // === SUSCRIPCIONES ===
