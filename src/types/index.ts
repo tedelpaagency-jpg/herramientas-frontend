@@ -241,7 +241,10 @@ export interface LexvaultDocument {
   title: string;
   rendered_html?: string;
   filled_content?: string;
+  content?: string;
   field_values_json?: Record<string, any>;
+  fields_json?: Record<string, any>;
+  replacements?: Record<string, any>;
   pdf_path?: string;
   pdf_url?: string;
   status: 'draft' | 'signed' | 'declined' | string;

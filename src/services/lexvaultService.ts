@@ -41,6 +41,11 @@ export const lexvaultService = {
     return response.data?.data || response.data;
   },
 
+  updateDocument: async (id: number, data: Partial<LexvaultDocument>): Promise<LexvaultDocument> => {
+    const response = await apiClient.put(`/v1/lexvault/documents/${id}`, data);
+    return response.data?.data || response.data;
+  },
+
   generateDocument: async (data: {
     template_id: number;
     client_id?: number | null;
@@ -93,6 +98,52 @@ export const lexvaultService = {
 
   deleteDocument: async (documentId: number): Promise<void> => {
     await apiClient.delete(`/v1/lexvault/documents/${documentId}`);
+  },
+
+  // --- PUBLIC UNAUTHENTICATED CLIENT API ---
+  getPublicDocument: async (documentId: number | string): Promise<LexvaultDocument> => {
+    const response = await apiClient.get(`/v1/public/lexvault/documents/${documentId}`);
+    return response.data?.data || response.data;
+  },
+
+  signPublicDocument: async (documentId: number | string, signature: File | string): Promise<LexvaultDocument> => {
+    let payload: any;
+    let headers: any = {};
+
+    if (signature instanceof File) {
+      const formData = new FormData();
+      formData.append('signature', signature);
+      payload = formData;
+      headers['Content-Type'] = 'multipart/form-data';
+    } else {
+      payload = { signature };
+    }
+
+    const response = await apiClient.post(`/v1/public/lexvault/documents/${documentId}/sign`, payload, { headers });
+    return response.data?.data || response.data;
+  },
+
+  declinePublicDocument: async (documentId: number | string, reason: string): Promise<LexvaultDocument> => {
+    const response = await apiClient.post(`/v1/public/lexvault/documents/${documentId}/decline`, {
+      decline_reason: reason,
+    });
+    return response.data?.data || response.data;
+  },
+
+  downloadPublicDocumentPdf: async (documentId: number | string, fileName?: string): Promise<void> => {
+    const response = await apiClient.get(`/v1/public/lexvault/documents/${documentId}/pdf`, {
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName ? `Contrato_${fileName}.pdf` : `Contrato_${documentId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
   },
 
   getDocumentPdfUrl: (documentId: number): string => {

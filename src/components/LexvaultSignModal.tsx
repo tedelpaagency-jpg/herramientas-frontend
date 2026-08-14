@@ -7,6 +7,8 @@ import { LexvaultDocument } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import toast from 'react-hot-toast';
 
+import WordDocumentPaper from './WordDocumentPaper';
+
 interface LexvaultSignModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -136,6 +138,8 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
     }
   };
 
+  const bodyHtml = (document as any).rendered_content || document.rendered_html || document.filled_content || document.template?.html_content || '';
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
@@ -151,16 +155,16 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="bg-white w-full max-w-lg rounded-3xl shadow-2xl relative z-10 border border-slate-200 overflow-hidden my-auto"
+          className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 border border-slate-200 overflow-hidden my-auto flex flex-col max-h-[90vh]"
         >
           {/* Header */}
-          <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+          <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center font-bold text-white">
                 <PenTool className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-extrabold text-sm text-white">Firma Digital de Contrato</h3>
+                <h3 className="font-extrabold text-sm text-white">Firma Digital de Contrato: {document.title}</h3>
                 <p className="text-[11px] text-slate-400 font-mono">Ref: {document.document_number || `#${document.id}`}</p>
               </div>
             </div>
@@ -170,7 +174,16 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
             </button>
           </div>
 
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+            {/* Document Paper Preview */}
+            <div className="max-h-[45vh] overflow-y-auto border border-slate-200 rounded-2xl">
+              <WordDocumentPaper
+                htmlContent={bodyHtml}
+                title={document.title}
+                documentNumber={document.document_number || `#LEX-${document.id}`}
+                watermarkText="DOCUMENTO A FIRMAR"
+              />
+            </div>
             {/* Mode Switcher */}
             <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
               <button

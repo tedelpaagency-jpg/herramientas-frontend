@@ -6,6 +6,7 @@ import { X, FileText, UserCheck, Sparkles, Eye, Download } from 'lucide-react';
 import { LexvaultTemplate, Client } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import clientService from '../services/clientService';
+import WordDocumentPaper from './WordDocumentPaper';
 import toast from 'react-hot-toast';
 
 interface LexvaultGenerateModalProps {
@@ -37,7 +38,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
     // Cargar lista de clientes
     clientService.getClients().then(setClients).catch(console.error);
 
-    // Extraer tokens automáticamente del cuerpo HTML de la plantilla
+    // Extraer tokens automáticamente del cuerpo HTML de la plantilla y combinar con tokens_json
     const bodyHtml = template.html_content || template.template_body || '';
     const regex = /(?:\{\{|\[)([A-Z0-9_]+)(?:\}\}|\])/g;
     let match;
@@ -46,6 +47,22 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
       if (!extracted.includes(match[1]) && !['FIRMA', 'FIRMA_CLIENTE', 'FIRMA_USUARIO'].includes(match[1])) {
         extracted.push(match[1]);
       }
+    }
+
+    if (template.tokens_json && Array.isArray(template.tokens_json)) {
+      template.tokens_json.forEach((tok) => {
+        if (!extracted.includes(tok) && !['FIRMA', 'FIRMA_CLIENTE', 'FIRMA_USUARIO'].includes(tok)) {
+          extracted.push(tok);
+        }
+      });
+    }
+
+    if (template.fields_json) {
+      Object.keys(template.fields_json).forEach((tok) => {
+        if (!extracted.includes(tok) && !['FIRMA', 'FIRMA_CLIENTE', 'FIRMA_USUARIO'].includes(tok)) {
+          extracted.push(tok);
+        }
+      });
     }
 
     setTokens(extracted);
@@ -218,7 +235,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
                       {tokens.map((tok) => (
                         <div key={tok}>
                           <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
-                            {tok.replace(/_/g, ' ')}
+                            {template.fields_json?.[tok] || tok.replace(/_/g, ' ')}
                           </label>
                           <input
                             type="text"
@@ -234,9 +251,14 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
                 </div>
               </>
             ) : (
-              /* Live Preview Tab */
-              <div className="border border-slate-200 rounded-2xl p-6 bg-slate-50 font-serif text-xs text-slate-800 leading-relaxed max-h-[60vh] overflow-y-auto whitespace-pre-line shadow-inner">
-                <div dangerouslySetInnerHTML={{ __html: getRenderedPreviewHtml() }} />
+              /* Live Preview Tab Word Letter Style */
+              <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <WordDocumentPaper
+                  htmlContent={getRenderedPreviewHtml()}
+                  title={docTitle || template.title}
+                  documentNumber={`PROYECTO-${template.id}`}
+                  watermarkText="VISTA PREVIA"
+                />
               </div>
             )}
 

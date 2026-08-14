@@ -17,15 +17,17 @@ export const getApiBaseUrl = (): string => {
 
   // Si estamos en un navegador, determinar la URL de la API dinámicamente
   if (typeof window !== 'undefined' && window.location) {
-    const { hostname, origin } = window.location;
+    const { hostname, protocol } = window.location;
     
-    // Si la aplicación se sirve desde el mismo servidor backend
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return `${origin}/api`;
+    // Si la aplicación se ejecuta localmente en localhost o 127.0.0.1
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `${protocol}//${hostname}:8000/api`;
     }
+
+    return `${window.location.origin}/api`;
   }
 
-  return 'https://santun.tedelpa.com/api';
+  return 'http://127.0.0.1:8000/api';
 };
 
 export const apiClient = axios.create({
@@ -41,7 +43,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 1. Inyectar Token de Autenticación Sanctum si existe en localStorage
-    const token = localStorage.getItem('santun_auth_token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('santun_auth_token') : null;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -64,10 +66,12 @@ apiClient.interceptors.response.use(
       const { status } = error.response;
       
       if (status === 401) {
-        localStorage.removeItem('santun_auth_token');
-        localStorage.removeItem('santun_user');
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          window.location.href = '/login?expired=1';
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('santun_auth_token');
+          localStorage.removeItem('santun_user');
+          if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/contract/show')) {
+            window.location.href = '/login?expired=1';
+          }
         }
       } else if (status === 403) {
         console.error('Acceso prohibido (403): No posee permisos para esta acción.');
