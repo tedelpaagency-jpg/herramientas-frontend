@@ -1,8 +1,7 @@
 {
-  "/lexvault/contracts/[id]/page": "app/lexvault/contracts/[id]/page.js",
-  "/crm/page": "app/crm/page.js",
-  "/users/page": "app/users/page.js",
-  "/admin/agencies/page": "app/admin/agencies/page.js",
+  "/page": "app/page.js",
+  "/landings/page": "app/landings/page.js",
+  "/marketing/page": "app/marketing/page.js",
   "/clients/page": "app/clients/page.js",
-  "/lexvault/page": "app/lexvault/page.js"
+  "/crm/page": "app/crm/page.js"
 }

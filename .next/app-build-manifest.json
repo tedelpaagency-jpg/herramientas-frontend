@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/lexvault/contracts/[id]/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/lexvault/contracts/[id]/page.js"
+      "static/chunks/app/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -11,30 +11,35 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/crm/page": [
+    "/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/crm/page.js"
+      "static/chunks/app/login/page.js"
     ],
-    "/users/page": [
+    "/landings/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/users/page.js"
+      "static/chunks/app/landings/page.js"
     ],
-    "/admin/agencies/page": [
+    "/marketing/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/admin/agencies/page.js"
+      "static/chunks/app/marketing/page.js"
+    ],
+    "/lexvault/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/lexvault/page.js"
     ],
     "/clients/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/clients/page.js"
     ],
-    "/lexvault/page": [
+    "/crm/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/lexvault/page.js"
+      "static/chunks/app/crm/page.js"
     ]
   }
 }

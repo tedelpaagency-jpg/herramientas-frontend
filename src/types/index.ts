@@ -141,29 +141,163 @@ export interface Client {
 
 export interface WorkspaceStage {
   id: number;
+  workspace_id?: number;
   name: string;
-  order: number;
+  sort_order?: number;
+  order?: number;
   color?: string;
+  is_fixed?: boolean;
 }
 
-export interface CrmPipelineItem {
+export interface PipelineTask {
   id: number;
+  client_pipeline_id: number;
   title: string;
-  client_id?: number;
-  client?: Client;
-  stage_id: number;
-  stage?: WorkspaceStage;
-  deal_value: number;
-  currency?: string;
-  expected_close_date?: string;
+  description?: string;
+  due_at?: string;
+  is_completed: boolean;
+  assigned_user_id?: number;
+  created_at?: string;
+}
+
+export interface PipelineProposal {
+  id: number;
+  client_pipeline_id: number;
+  item: string;
+  qty: number;
+  price: number;
+  created_at?: string;
+}
+
+export interface PipelinePayment {
+  id: number;
+  client_pipeline_id: number;
+  name: string;
+  total_amount: number;
+  token: string;
+  proof_file?: string;
+  payment_reference?: string;
+  status: 'pending' | 'review' | 'approved' | 'rejected' | string;
+  proof_uploaded_at?: string;
   created_at?: string;
 }
 
 export interface PipelineActivity {
   id: number;
-  client_id: number;
-  activity_type: string;
-  note: string;
+  client_pipeline_id?: number;
+  client_id?: number;
+  user_id?: number;
+  user?: User;
+  type: string;
+  activity_type?: string;
+  content: string;
+  note?: string;
+  created_at?: string;
+}
+
+export interface CrmPipelineItem {
+  id: number;
+  title: string;
+  agency_id?: number;
+  client_id?: number;
+  client?: Client;
+  workspace_id?: number;
+  stage_id: number;
+  stage?: WorkspaceStage;
+  deal_value?: number;
+  estimated_value?: number;
+  currency?: string;
+  priority?: number | string;
+  due_date?: string;
+  status?: number;
+  assigned_user_id?: number;
+  assignedUser?: User;
+  activities?: PipelineActivity[];
+  tasks?: PipelineTask[];
+  proposals?: PipelineProposal[];
+  payments?: PipelinePayment[];
+  created_at?: string;
+}
+
+export interface LandingEvent {
+  id: number;
+  landing_id: number;
+  name: string;
+  date_start: string;
+  date_end: string;
+  email_remembers?: number;
+  link?: string;
+  status?: number;
+}
+
+export interface LandingRequest {
+  id: number;
+  landing_id: number;
+  name: string;
+  last_name?: string;
+  email: string;
+  phone?: string;
+  motivo?: string;
+  address?: string;
+  date_start?: string;
+  date_end?: string;
+  status?: number;
+  created_at?: string;
+}
+
+export interface LandingTemplate {
+  id: number;
+  agency_id?: number;
+  agency_name?: string;
+  name: string;
+  plantilla: string;
+  files?: any;
+  qr?: string;
+  encoded_id?: string;
+  public_url?: string;
+  status?: number;
+  events?: LandingEvent[];
+  requests_count?: number;
+  created_at?: string;
+}
+
+export interface EmailTemplate {
+  id: number;
+  agency_id?: number;
+  name: string;
+  subject?: string;
+  body_html: string;
+  files_json?: string[];
+  status?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface EmailCampaignLog {
+  id: number;
+  email_campaign_id: number;
+  client_id?: number;
+  client?: Client;
+  email: string;
+  status: 'sent' | 'failed' | string;
+  error_message?: string;
+  created_at?: string;
+}
+
+export interface EmailCampaign {
+  id: number;
+  agency_id?: number;
+  email_template_id?: number;
+  template?: EmailTemplate;
+  name: string;
+  subject: string;
+  body_html: string;
+  stage_id?: number;
+  stage?: WorkspaceStage;
+  recipient_count: number;
+  status: 'draft' | 'sending' | 'sent' | 'failed' | string;
+  sent_at?: string;
+  logs?: EmailCampaignLog[];
   created_at?: string;
 }
 

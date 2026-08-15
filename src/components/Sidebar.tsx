@@ -75,6 +75,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: 'CRM & Pipeline', path: '/crm', icon: 'view_kanban' },
         { label: 'Directorio de Clientes', path: '/clients', icon: 'groups' },
+        { label: 'Landing Pages & Eventos', path: '/landings', icon: 'web' },
+        { label: 'Marketing & Correos', path: '/marketing', icon: 'mail' },
         { label: 'Contratos & Bóveda (LexVault)', path: '/lexvault', icon: 'gavel' },
       ],
     },
