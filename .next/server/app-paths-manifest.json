@@ -1,7 +1,5 @@
 {
-  "/page": "app/page.js",
-  "/landings/page": "app/landings/page.js",
-  "/marketing/page": "app/marketing/page.js",
-  "/clients/page": "app/clients/page.js",
-  "/crm/page": "app/crm/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/crm/page": "app/crm/page.js",
+  "/login/page": "app/login/page.js"
 }

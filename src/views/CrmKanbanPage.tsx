@@ -7,7 +7,7 @@ import {
   Kanban, MessageSquare, DollarSign, Plus, CheckSquare, 
   FileText, Link2, Calendar, Phone, Mail, Clock, Trash2, 
   Check, Layers, Settings, X, ExternalLink, ArrowLeft, ArrowRight,
-  UserPlus
+  UserPlus, MoreVertical, Edit3, FileSpreadsheet
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -19,6 +19,13 @@ export const CrmKanbanPage: React.FC = () => {
   // Detail Modal State
   const [selectedItem, setSelectedItem] = useState<CrmPipelineItem | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'activities' | 'tasks' | 'proposals' | 'payments'>('details');
+
+  // Stage Menu & Edit Stage State
+  const [openStageMenuId, setOpenStageMenuId] = useState<number | null>(null);
+  const [isEditStageOpen, setIsEditStageOpen] = useState(false);
+  const [editingStage, setEditingStage] = useState<WorkspaceStage | null>(null);
+  const [editStageName, setEditStageName] = useState('');
+  const [editStageColor, setEditStageColor] = useState('#3B82F6');
 
   // Create Lead Modal State
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
@@ -57,14 +64,22 @@ export const CrmKanbanPage: React.FC = () => {
   const fetchKanban = async () => {
     setIsLoading(true);
     try {
-      const data = await crmService.getPipelines();
+      const data: any = await crmService.getPipelines();
+      const rawStages = Array.isArray(data?.stages) 
+        ? data.stages 
+        : (Array.isArray(data?.data?.stages) ? data.data.stages : []);
+      const rawPipelines = Array.isArray(data?.pipelines) 
+        ? data.pipelines 
+        : (Array.isArray(data?.data?.pipelines) ? data.data.pipelines : []);
+
       // Ensure stages are sorted by sort_order
-      const sortedStages = [...data.stages].sort((a, b) => (a.sort_order || a.order || 0) - (b.sort_order || b.order || 0));
+      const sortedStages = [...rawStages].sort((a, b) => (a.sort_order || a.order || 0) - (b.sort_order || b.order || 0));
       setStages(sortedStages);
-      setPipelines(data.pipelines);
-    } catch (err) {
+      setPipelines(rawPipelines);
+    } catch (err: any) {
       console.error('Error loading CRM Kanban:', err);
-      toast.error('Error al cargar el CRM Kanban');
+      const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Error al cargar el CRM Kanban';
+      toast.error(errMsg);
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +87,92 @@ export const CrmKanbanPage: React.FC = () => {
 
   useEffect(() => {
     fetchKanban();
+
+    const handleGlobalClick = () => setOpenStageMenuId(null);
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
   }, []);
+
+  const handleExportStageLeads = (stage: WorkspaceStage) => {
+    const itemsInStage = pipelines.filter(p => p.stage_id === stage.id);
+    if (itemsInStage.length === 0) {
+      toast.error(`No hay prospectos en la etapa "${stage.name}" para exportar`);
+      return;
+    }
+
+    const headers = ['ID', 'Nombre', 'Correo', 'Teléfono', 'Valor Estimado ($)', 'Etapa', 'Prioridad', 'Origen', 'Fecha de Registro'];
+    const rows = itemsInStage.map(item => [
+      item.id,
+      `"${(item.client?.name || item.title || '').replace(/"/g, '""')}"`,
+      `"${(item.client?.email || '').replace(/"/g, '""')}"`,
+      `"${(item.client?.phone || '').replace(/"/g, '""')}"`,
+      item.estimated_value || item.deal_value || 0,
+      `"${(stage.name || '').replace(/"/g, '""')}"`,
+      item.priority === 3 ? 'Alta' : item.priority === 2 ? 'Media' : 'Baja',
+      `"${(item.client?.source || 'CRM').replace(/"/g, '""')}"`,
+      `"${(item.created_at || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeName = stage.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    link.href = url;
+    link.setAttribute('download', `leads_${safeName}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Leads de "${stage.name}" exportados exitosamente`);
+  };
+
+  const handleOpenEditStageModal = (stage: WorkspaceStage) => {
+    setEditingStage(stage);
+    setEditStageName(stage.name);
+    setEditStageColor(stage.color || '#3B82F6');
+    setOpenStageMenuId(null);
+    setIsEditStageOpen(true);
+  };
+
+  const handleUpdateStage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStage || !editStageName.trim()) return;
+
+    try {
+      await crmService.updateStage(editingStage.id, {
+        name: editStageName.trim(),
+        color: editStageColor,
+      });
+
+      setStages(prev => prev.map(s => s.id === editingStage.id ? { ...s, name: editStageName.trim(), color: editStageColor } : s));
+      setIsEditStageOpen(false);
+      setEditingStage(null);
+      toast.success('Etapa actualizada exitosamente');
+    } catch (err) {
+      console.error('Error updating stage:', err);
+      toast.error('Error al actualizar la etapa');
+    }
+  };
+
+  const handleDeleteStage = async () => {
+    if (!editingStage) return;
+
+    const confirmed = window.confirm(
+      `¿Estás seguro de que deseas eliminar la etapa "${editingStage.name}"?\n\nEsta acción no se puede deshacer.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await crmService.deleteStage(editingStage.id);
+      setStages(prev => prev.filter(s => s.id !== editingStage.id));
+      setIsEditStageOpen(false);
+      setEditingStage(null);
+      toast.success(`Etapa "${editingStage.name}" eliminada exitosamente`);
+    } catch (err) {
+      console.error('Error deleting stage:', err);
+      toast.error('Error al eliminar la etapa');
+    }
+  };
 
   const handleMoveStage = async (pipelineId: number, newStageId: number) => {
     try {
@@ -356,7 +456,7 @@ export const CrmKanbanPage: React.FC = () => {
                     <h3 className="font-extrabold text-sm text-slate-900 line-clamp-1">{stage.name}</h3>
                   </div>
 
-                  {/* Stage Horizontal Controls & Add Lead in Stage Button */}
+                  {/* Stage Horizontal Controls & 3-Dots Dropdown Menu */}
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleMoveStageHorizontal(idx, 'left')}
@@ -375,13 +475,56 @@ export const CrmKanbanPage: React.FC = () => {
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
 
-                    <button
-                      onClick={() => handleOpenAddLeadModal(stage.id)}
-                      className="p-1 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all ml-1"
-                      title={`Agregar Prospecto en ${stage.name}`}
-                    >
-                      <Plus className="w-3.5 h-3.5 font-bold" />
-                    </button>
+                    {/* 3-Dots Vertical Dropdown Menu */}
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenStageMenuId(openStageMenuId === stage.id ? null : stage.id);
+                        }}
+                        className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-white transition-colors"
+                        title="Opciones de Etapa"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {openStageMenuId === stage.id && (
+                        <div 
+                          className="absolute right-0 top-full mt-1.5 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in zoom-in-95"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => {
+                              setOpenStageMenuId(null);
+                              handleOpenAddLeadModal(stage.id);
+                            }}
+                            className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                          >
+                            <UserPlus className="w-4 h-4 text-emerald-600" />
+                            <span>Agregar Lead</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenEditStageModal(stage)}
+                            className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                          >
+                            <Edit3 className="w-4 h-4 text-blue-600" />
+                            <span>Editar Etapa</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setOpenStageMenuId(null);
+                              handleExportStageLeads(stage);
+                            }}
+                            className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                          >
+                            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                            <span>Descargar Leads (Excel)</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1061,6 +1204,84 @@ export const CrmKanbanPage: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT STAGE MODAL */}
+      {isEditStageOpen && editingStage && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 border border-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-blue-600" />
+                Editar Etapa: {editingStage.name}
+              </h3>
+              <button onClick={() => setIsEditStageOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateStage} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nombre de la Etapa</label>
+                <input
+                  type="text"
+                  required
+                  value={editStageName}
+                  onChange={(e) => setEditStageName(e.target.value)}
+                  placeholder="Ej: Propuesta Aprobada"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Color Identificador</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={editStageColor}
+                    onChange={(e) => setEditStageColor(e.target.value)}
+                    className="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5"
+                  />
+                  <input
+                    type="text"
+                    value={editStageColor}
+                    onChange={(e) => setEditStageColor(e.target.value)}
+                    placeholder="#3B82F6"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={handleDeleteStage}
+                  className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-600 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Eliminar Etapa</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditStageOpen(false)}
+                    className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs transition-colors"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-sm"
+                  >
+                    Guardar Cambios
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}
