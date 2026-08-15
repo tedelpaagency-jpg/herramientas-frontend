@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST='{"views\\\\EstateFormPage.tsx -> ../components/MapPicker":{"id":8251,"files":["static/css/fc1c9daac70c093b.css","static/chunks/d0deef33.e0722780845cf21c.js","static/chunks/8251.d2dfffb3fae5285d.js"]},"views\\\\EstateFormPage.tsx -> react-quill":{"id":5600,"files":["static/chunks/8012d7e2.d1f43b1c03ae50e4.js","static/chunks/1804.94db1bcdaf8eaa7d.js"]}}';

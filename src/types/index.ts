@@ -129,6 +129,9 @@ export interface Client {
   email: string;
   name?: string;
   phone?: string;
+  source?: string;
+  campo1?: string;
+  campo2?: string;
   identification_number?: string;
   document_number?: string;
   address?: string;
@@ -137,6 +140,7 @@ export interface Client {
   status?: string;
   agency_id?: number;
   created_at?: string;
+  [key: string]: any;
 }
 
 export interface WorkspaceStage {
