@@ -1,7 +1,4 @@
 {
-  "/login/page": "app/login/page.js",
-  "/crm/page": "app/crm/page.js",
-  "/workspaces/page": "app/workspaces/page.js",
-  "/clients/page": "app/clients/page.js",
-  "/landings/page": "app/landings/page.js"
+  "/visas/page": "app/visas/page.js",
+  "/visa/show/[id]/page": "app/visa/show/[id]/page.js"
 }

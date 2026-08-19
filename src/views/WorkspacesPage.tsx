@@ -70,10 +70,10 @@ export const WorkspacesPage: React.FC = () => {
     e.preventDefault();
     try {
       if (editingWorkspace) {
-        await workspaceMetaService.updateWorkspaceMeta(editingWorkspace.id, formData);
+        await workspaceMetaService.updateWorkspace(editingWorkspace.id, formData);
         toast.success('Workspace actualizado exitosamente');
       } else {
-        await workspaceMetaService.updateWorkspaceMeta(0, formData); // or workspace create endpoint
+        await workspaceMetaService.createWorkspace(formData);
         toast.success('Workspace creado exitosamente');
       }
       setIsCreateModalOpen(false);
@@ -81,6 +81,20 @@ export const WorkspacesPage: React.FC = () => {
     } catch (err) {
       console.error('Error saving workspace:', err);
       toast.error('Error al guardar el Workspace');
+    }
+  };
+
+  const handleDeleteWorkspace = async (ws: Workspace) => {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el workspace "${ws.name}"?`)) {
+      return;
+    }
+    try {
+      await workspaceMetaService.deleteWorkspace(ws.id);
+      toast.success('Workspace eliminado exitosamente');
+      fetchWorkspaces();
+    } catch (err) {
+      console.error('Error deleting workspace:', err);
+      toast.error('Error al eliminar el Workspace');
     }
   };
 
@@ -276,6 +290,14 @@ export const WorkspacesPage: React.FC = () => {
                           title="Editar Workspace"
                         >
                           <Edit3 className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteWorkspace(ws)}
+                          className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-700"
+                          title="Eliminar Workspace"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>

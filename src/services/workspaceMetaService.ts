@@ -23,6 +23,29 @@ export const workspaceMetaService = {
   },
 
   /**
+   * Create a new workspace.
+   */
+  async createWorkspace(data: Partial<Workspace>): Promise<Workspace> {
+    const response = await apiClient.post('/v1/workspaces', data);
+    return response.data.data;
+  },
+
+  /**
+   * Update existing workspace.
+   */
+  async updateWorkspace(id: number, data: Partial<Workspace>): Promise<Workspace> {
+    const response = await apiClient.post(`/v1/workspaces/${id}/update`, data);
+    return response.data.data;
+  },
+
+  /**
+   * Delete a workspace.
+   */
+  async deleteWorkspace(id: number): Promise<void> {
+    await apiClient.post(`/v1/workspaces/${id}/delete`);
+  },
+
+  /**
    * Save or update Meta configuration for workspace.
    */
   async updateWorkspaceMeta(id: number, data: Partial<Workspace>): Promise<Workspace> {

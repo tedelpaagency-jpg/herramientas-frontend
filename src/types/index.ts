@@ -394,15 +394,33 @@ export interface PosSaleRequest {
   items: PosSaleItem[];
 }
 
+export interface VisaRef {
+  id: number;
+  name: string;
+  agency_id?: number;
+  status?: number;
+  visas_count?: number;
+  created_at?: string;
+}
+
 export interface Visa {
   id: number;
   applicant_name: string;
-  passport_number: string;
+  description?: string;
+  passport_number?: string;
   country_destination: string;
   visa_type: string;
-  status: 'pending' | 'in_process' | 'approved' | 'rejected' | string;
+  visa_ref_id?: number;
+  status: '1' | '2' | '3' | 'pending' | 'confirmed' | 'rejected' | string;
+  fields?: Record<string, any>;
+  passport_file?: string;
+  bank_statements_file?: string;
+  additional_docs_json?: Record<string, any>;
+  notes?: string;
   agency_id?: number;
+  client_id?: number;
   created_at?: string;
+  visa_ref?: VisaRef;
 }
 
 export interface W8Form {
