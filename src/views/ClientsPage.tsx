@@ -1,5 +1,8 @@
-'import React, { useEffect, useState } from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { Client } from '../types';
+
 import crmService from '../services/crmService';
 import { Users, Plus, Search, Mail, Phone, Edit3, Trash2, Info } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -48,9 +51,9 @@ export const ClientsPage: React.FC = () => {
   const handleOpenEdit = (client: Client) => {
     setEditingClient(client);
     setFormData({
-      first_name: client.first_name,
-      last_name: client.last_name,
-      email: client.email,
+      first_name: client.first_name || '',
+      last_name: client.last_name || '',
+      email: client.email || '',
       phone: client.phone || '',
       city: client.city || '',
       country: client.country || 'Ecuador',
@@ -83,9 +86,12 @@ export const ClientsPage: React.FC = () => {
     }
   };
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const getInitials = (firstName?: string, lastName?: string) => {
+    const f = (firstName || '').charAt(0);
+    const l = (lastName || '').charAt(0);
+    return `${f}${l}`.toUpperCase() || 'CL';
   };
+
 
   return (
     <div className="space-y-6">
@@ -263,6 +269,10 @@ export const ClientsPage: React.FC = () => {
                 <button type="submit" className="px-5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm">Guardar</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
       {/* Modal Ficha de Campaña y Custom Fields */}
       <LeadCampaignDetailsModal
         client={selectedClientForDetails}
@@ -274,4 +284,5 @@ export const ClientsPage: React.FC = () => {
 };
 
 export default ClientsPage;
+
 

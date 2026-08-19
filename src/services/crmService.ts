@@ -36,14 +36,16 @@ export const crmService = {
   },
 
   // CRM Pipeline & Kanban
-  getPipelines: async (): Promise<{ stages: WorkspaceStage[]; pipelines: CrmPipelineItem[] }> => {
-    const response = await apiClient.get('/v1/crm/pipelines');
+  getPipelines: async (params?: Record<string, any>): Promise<{ workspace?: any; stages: WorkspaceStage[]; pipelines: CrmPipelineItem[] }> => {
+    const response = await apiClient.get('/v1/crm/pipelines', { params });
     const data = response.data?.data || response.data || {};
     return {
+      workspace: data.workspace || response.data?.workspace || null,
       stages: data.stages || response.data?.stages || [],
       pipelines: data.pipelines || response.data?.pipelines || [],
     };
   },
+
 
   moveStage: async (pipelineId: number, stageId: number, notes?: string): Promise<{ message: string; pipeline: CrmPipelineItem }> => {
     const response = await apiClient.post('/v1/crm/move-stage', {

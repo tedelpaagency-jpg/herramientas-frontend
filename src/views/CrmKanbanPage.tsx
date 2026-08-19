@@ -1,5 +1,10 @@
-'import React, { useEffect, useState } from 'react';
+'use client';
+
+import React, { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Workspace, WorkspaceStage, CrmPipelineItem, PipelineActivity, PipelineTask, PipelineProposal, PipelinePayment, Client } from '../types';
+
 import crmService from '../services/crmService';
 import workspaceMetaService from '../services/workspaceMetaService';
 import { WorkspaceMetaModal } from '../components/WorkspaceMetaModal';
@@ -9,17 +14,51 @@ import {
   Kanban, MessageSquare, DollarSign, Plus, CheckSquare, 
   FileText, Link2, Calendar, Phone, Mail, Clock, Trash2, 
   Check, Layers, Settings, X, ExternalLink, ArrowLeft, ArrowRight,
-  UserPlus, MoreVertical, Edit3, FileSpreadsheet, Share2, Sliders, Info
+  UserPlus, MoreVertical, Edit3, FileSpreadsheet, Share2, Sliders, Info, GripVertical,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const CrmKanbanPage: React.FC = () => {
+  const searchParams = useSearchParams();
+  const workspaceIdFromUrl = searchParams?.get('workspace_id');
+
+  const boardRef = useRef<HTMLDivElement>(null);
+  const stageRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+
   const [stages, setStages] = useState<WorkspaceStage[]>([]);
   const [pipelines, setPipelines] = useState<CrmPipelineItem[]>([]);
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Drag and Drop State
+  const [draggedCardId, setDraggedCardId] = useState<number | null>(null);
+  const [draggedStageIndex, setDraggedStageIndex] = useState<number | null>(null);
+  const [dragOverStageId, setDragOverStageId] = useState<number | null>(null);
+
+  // Scroll Helpers
+  const scrollBoardLeft = () => {
+    if (boardRef.current) {
+      boardRef.current.scrollBy({ left: -350, behavior: 'smooth' });
+    }
+  };
+
+  const scrollBoardRight = () => {
+    if (boardRef.current) {
+      boardRef.current.scrollBy({ left: 350, behavior: 'smooth' });
+    }
+  };
+
+  const scrollToStage = (stageId: number) => {
+    const stageEl = stageRefs.current[stageId];
+    if (stageEl) {
+      stageEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  };
+
+
   // Meta Integration Modals State
+
   const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
   const [isCustomFieldsModalOpen, setIsCustomFieldsModalOpen] = useState(false);
   const [selectedClientForDetails, setSelectedClientForDetails] = useState<Client | null>(null);
@@ -74,7 +113,9 @@ export const CrmKanbanPage: React.FC = () => {
   const fetchKanban = async () => {
     setIsLoading(true);
     try {
-      const data: any = await crmService.getPipelines();
+      const data: any = await crmService.getPipelines(
+        workspaceIdFromUrl ? { workspace_id: workspaceIdFromUrl } : undefined
+      );
       const rawWorkspace = data?.workspace || data?.data?.workspace || null;
       const rawStages = Array.isArray(data?.stages) 
         ? data.stages 
@@ -89,7 +130,6 @@ export const CrmKanbanPage: React.FC = () => {
       setStages(sortedStages);
       setPipelines(rawPipelines);
     } catch (err: any) {
-
       console.error('Error loading CRM Kanban:', err);
       const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Error al cargar el CRM Kanban';
       toast.error(errMsg);
@@ -104,7 +144,8 @@ export const CrmKanbanPage: React.FC = () => {
     const handleGlobalClick = () => setOpenStageMenuId(null);
     window.addEventListener('click', handleGlobalClick);
     return () => window.removeEventListener('click', handleGlobalClick);
-  }, []);
+  }, [workspaceIdFromUrl]);
+
 
   const handleExportStageLeads = (stage: WorkspaceStage) => {
     const itemsInStage = pipelines.filter(p => p.stage_id === stage.id);
@@ -268,6 +309,30 @@ export const CrmKanbanPage: React.FC = () => {
     }
   };
 
+  const handleReorderStagesDrag = async (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= stages.length || toIndex >= stages.length) return;
+
+    const newStages = [...stages];
+    const [movedStage] = newStages.splice(fromIndex, 1);
+    newStages.splice(toIndex, 0, movedStage);
+
+    const updatedStages = newStages.map((s, idx) => ({
+      ...s,
+      sort_order: idx + 1,
+    }));
+
+    setStages(updatedStages);
+
+    try {
+      await crmService.reorderStages(updatedStages.map(s => ({ id: s.id, sort_order: s.sort_order || 1 })));
+      toast.success('Orden de etapas actualizado');
+    } catch (err) {
+      console.error('Error reordering stages:', err);
+      toast.error('No se pudo guardar el nuevo orden de etapas');
+    }
+  };
+
+
   const handleAddStage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStageName.trim()) return;
@@ -424,6 +489,15 @@ export const CrmKanbanPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/workspaces"
+            className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl transition-all active:scale-95 border border-slate-200"
+            title="Volver al Panel de Workspaces"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-600" />
+            <span>Workspaces</span>
+          </Link>
+
           {currentWorkspace && (
             <>
               <button
@@ -438,6 +512,7 @@ export const CrmKanbanPage: React.FC = () => {
                 <Share2 className="w-4 h-4 text-blue-600" />
                 <span>{currentWorkspace.meta_enabled ? 'Meta Conectado' : 'Configurar Meta'}</span>
               </button>
+
 
               <button
                 onClick={() => setIsCustomFieldsModalOpen(true)}
@@ -469,6 +544,53 @@ export const CrmKanbanPage: React.FC = () => {
 
       </div>
 
+      {/* Stage Quick Navigation & Scroll Bar */}
+      {!isLoading && stages.length > 0 && (
+        <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between gap-3 overflow-x-auto custom-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar py-0.5">
+            <span className="text-[11px] font-black uppercase text-slate-400 mr-1 flex-shrink-0 tracking-wider">
+              Ir a Etapa:
+            </span>
+            {stages.map((stage) => {
+              const count = pipelines.filter(p => p.stage_id === stage.id).length;
+              return (
+                <button
+                  key={stage.id}
+                  onClick={() => scrollToStage(stage.id)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 font-extrabold text-xs rounded-xl border border-slate-200/80 hover:border-blue-300 transition-all flex-shrink-0"
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: stage.color || '#3B82F6' }}
+                  />
+                  <span>{stage.name}</span>
+                  <span className="px-1.5 py-0.5 text-[10px] font-extrabold bg-white rounded-md border border-slate-200 text-slate-500">
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-shrink-0 pl-2 border-l border-slate-200">
+            <button
+              onClick={scrollBoardLeft}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 font-bold text-xs transition-colors flex items-center gap-1"
+              title="Desplazar tablero hacia la izquierda"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={scrollBoardRight}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 font-bold text-xs transition-colors flex items-center gap-1"
+              title="Desplazar tablero hacia la derecha"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Kanban Board */}
       {isLoading ? (
         <div className="py-20 flex flex-col justify-center items-center gap-3">
@@ -476,7 +598,15 @@ export const CrmKanbanPage: React.FC = () => {
           <span className="text-xs font-bold text-slate-400">Cargando tablero CRM...</span>
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-6 custom-scrollbar min-h-[70vh]">
+        <div
+          ref={boardRef}
+          onWheel={(e) => {
+            if (boardRef.current && e.deltaY !== 0) {
+              boardRef.current.scrollLeft += e.deltaY * 1.3;
+            }
+          }}
+          className="flex gap-4 overflow-x-auto pb-6 custom-scrollbar min-h-[70vh]"
+        >
           {stages.map((stage, idx) => {
             const itemsInStage = pipelines.filter(p => p.stage_id === stage.id);
             const totalStageValue = itemsInStage.reduce((acc, curr) => acc + Number(curr.estimated_value || curr.deal_value || 0), 0);
@@ -484,11 +614,60 @@ export const CrmKanbanPage: React.FC = () => {
             return (
               <div
                 key={stage.id}
-                className="w-80 flex-shrink-0 bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 flex flex-col max-h-[75vh]"
+                ref={(el) => { stageRefs.current[stage.id] = el; }}
+
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                }}
+                onDragEnter={() => setDragOverStageId(stage.id)}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setDragOverStageId(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverStageId(null);
+                  const dragType = e.dataTransfer.getData('drag_type');
+                  if (dragType === 'card') {
+                    const pipelineId = e.dataTransfer.getData('pipeline_id');
+                    if (pipelineId) {
+                      handleMoveStage(Number(pipelineId), stage.id);
+                    }
+                  } else if (dragType === 'stage') {
+                    const fromIndex = Number(e.dataTransfer.getData('stage_index'));
+                    handleReorderStagesDrag(fromIndex, idx);
+                  }
+                }}
+                className={`w-80 flex-shrink-0 bg-slate-50/80 rounded-2xl p-4 border transition-all flex flex-col max-h-[75vh] ${
+                  dragOverStageId === stage.id
+                    ? 'border-blue-500 ring-2 ring-blue-400 bg-blue-50/50'
+                    : 'border-slate-200/80'
+                } ${
+                  draggedStageIndex === idx ? 'opacity-40 border-dashed border-blue-500' : ''
+                }`}
               >
                 {/* Stage Header */}
                 <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/60">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <div
+                      draggable={true}
+                      onDragStart={(e) => {
+                        e.stopPropagation();
+                        e.dataTransfer.setData('drag_type', 'stage');
+                        e.dataTransfer.setData('stage_index', String(idx));
+                        setDraggedStageIndex(idx);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedStageIndex(null);
+                        setDragOverStageId(null);
+                      }}
+                      className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded"
+                      title="Arrastrar para mover posición de etapa"
+                    >
+                      <GripVertical className="w-4 h-4" />
+                    </div>
                     <div
                       className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: stage.color || '#3B82F6' }}
@@ -597,12 +776,28 @@ export const CrmKanbanPage: React.FC = () => {
                       return (
                         <div
                           key={item.id}
+                          draggable={true}
+                          onDragStart={(e) => {
+                            e.stopPropagation();
+                            e.dataTransfer.setData('drag_type', 'card');
+                            e.dataTransfer.setData('pipeline_id', String(item.id));
+                            setDraggedCardId(item.id);
+                          }}
+                          onDragEnd={() => {
+                            setDraggedCardId(null);
+                            setDragOverStageId(null);
+                          }}
                           onClick={() => {
                             setSelectedItem(item);
                             setActiveTab('details');
                           }}
-                          className="p-4 rounded-xl bg-white border border-slate-200/80 hover:border-blue-600 transition-all shadow-2xs hover:shadow-md cursor-pointer group space-y-3"
+                          className={`p-4 rounded-xl bg-white border transition-all shadow-2xs hover:shadow-md cursor-grab active:cursor-grabbing group space-y-3 ${
+                            draggedCardId === item.id
+                              ? 'opacity-40 scale-95 border-blue-500 border-dashed ring-2 ring-blue-400'
+                              : 'border-slate-200/80 hover:border-blue-600'
+                          }`}
                         >
+
                           <div className="flex items-start justify-between gap-2">
                             <h4 className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                               {item.title}
@@ -1347,6 +1542,11 @@ export const CrmKanbanPage: React.FC = () => {
                   </button>
                 </div>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* META INTEGRATION & CUSTOM FIELDS MODALS */}
       <WorkspaceMetaModal
         workspace={currentWorkspace}
@@ -1372,4 +1572,5 @@ export const CrmKanbanPage: React.FC = () => {
 };
 
 export default CrmKanbanPage;
+
 

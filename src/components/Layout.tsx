@@ -1,15 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import RightSidebar from './RightSidebar';
 import PageTransition from './PageTransition';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const pathname = usePathname();
+  const isKanbanPage = pathname === '/crm';
+
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isKanbanPage);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (isKanbanPage) {
+      setIsSidebarCollapsed(true);
+    }
+  }, [isKanbanPage]);
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -63,11 +74,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         />
 
         {/* Dynamic Page Views */}
-        <div className="p-6 lg:p-8 pb-32 animate-fade-in max-w-[1400px] mx-auto w-full">
+        <div className={isKanbanPage ? 'p-4 lg:p-6 pb-6 animate-fade-in w-full max-w-none' : 'p-6 lg:p-8 pb-32 animate-fade-in max-w-[1400px] mx-auto w-full'}>
           <PageTransition>
             {children}
           </PageTransition>
         </div>
+
       </main>
 
       {/* Right Sidebar */}

@@ -73,12 +73,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: 'contacts',
       color: 'text-teal-600 dark:text-teal-400',
       items: [
-        { label: 'CRM & Pipeline', path: '/crm', icon: 'view_kanban' },
+        { label: 'Workspaces & CRM', path: '/workspaces', icon: 'view_kanban' },
         { label: 'Directorio de Clientes', path: '/clients', icon: 'groups' },
         { label: 'Landing Pages & Eventos', path: '/landings', icon: 'web' },
         { label: 'Marketing & Correos', path: '/marketing', icon: 'mail' },
         { label: 'Contratos & Bóveda (LexVault)', path: '/lexvault', icon: 'gavel' },
       ],
+
     },
     {
       title: 'Actividad Inmobiliaria',

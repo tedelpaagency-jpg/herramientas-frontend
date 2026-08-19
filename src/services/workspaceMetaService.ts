@@ -1,5 +1,6 @@
-import api from '../api/axiosConfig';
+import apiClient from './apiClient';
 import { Workspace, WorkspaceMetaCustomField } from '../types';
+
 
 export const workspaceMetaService = {
   /**
@@ -9,7 +10,7 @@ export const workspaceMetaService = {
     const params: Record<string, any> = {};
     if (agencyId) params.agency_id = agencyId;
 
-    const response = await api.get('/v1/workspaces', { params });
+    const response = await apiClient.get('/v1/workspaces', { params });
     return response.data.data;
   },
 
@@ -17,7 +18,7 @@ export const workspaceMetaService = {
    * Get single workspace by ID.
    */
   async getWorkspace(id: number): Promise<Workspace> {
-    const response = await api.get(`/v1/workspaces/${id}`);
+    const response = await apiClient.get(`/v1/workspaces/${id}`);
     return response.data.data;
   },
 
@@ -25,7 +26,7 @@ export const workspaceMetaService = {
    * Save or update Meta configuration for workspace.
    */
   async updateWorkspaceMeta(id: number, data: Partial<Workspace>): Promise<Workspace> {
-    const response = await api.post(`/v1/workspaces/${id}/meta`, data);
+    const response = await apiClient.post(`/v1/workspaces/${id}/meta`, data);
     return response.data.data;
   },
 
@@ -33,7 +34,7 @@ export const workspaceMetaService = {
    * Disconnect Meta campaign from workspace.
    */
   async disconnectWorkspaceMeta(id: number): Promise<Workspace> {
-    const response = await api.post(`/v1/workspaces/${id}/meta/disconnect`);
+    const response = await apiClient.post(`/v1/workspaces/${id}/meta/disconnect`);
     return response.data.data;
   },
 
@@ -41,7 +42,7 @@ export const workspaceMetaService = {
    * Get list of custom fields for workspace.
    */
   async getCustomFields(workspaceId: number): Promise<WorkspaceMetaCustomField[]> {
-    const response = await api.get(`/v1/workspaces/${workspaceId}/custom-fields`);
+    const response = await apiClient.get(`/v1/workspaces/${workspaceId}/custom-fields`);
     return response.data.data;
   },
 
@@ -52,7 +53,7 @@ export const workspaceMetaService = {
     workspaceId: number,
     data: Partial<WorkspaceMetaCustomField>
   ): Promise<WorkspaceMetaCustomField> {
-    const response = await api.post(`/v1/workspaces/${workspaceId}/custom-fields`, data);
+    const response = await apiClient.post(`/v1/workspaces/${workspaceId}/custom-fields`, data);
     return response.data.data;
   },
 
@@ -63,7 +64,7 @@ export const workspaceMetaService = {
     fieldId: number,
     data: Partial<WorkspaceMetaCustomField>
   ): Promise<WorkspaceMetaCustomField> {
-    const response = await api.post(`/v1/custom-fields/${fieldId}/update`, data);
+    const response = await apiClient.post(`/v1/custom-fields/${fieldId}/update`, data);
     return response.data.data;
   },
 
@@ -71,7 +72,7 @@ export const workspaceMetaService = {
    * Delete custom field.
    */
   async deleteCustomField(fieldId: number): Promise<void> {
-    await api.post(`/v1/custom-fields/${fieldId}/delete`);
+    await apiClient.post(`/v1/custom-fields/${fieldId}/delete`);
   },
 
   /**
@@ -87,7 +88,8 @@ export const workspaceMetaService = {
     meta_form_id?: string;
     meta_campaign_id?: string;
   }> {
-    const response = await api.get(`/v1/workspaces/${workspaceId}/webhook`);
+    const response = await apiClient.get(`/v1/workspaces/${workspaceId}/webhook`);
+
     return response.data.data;
   },
 };
