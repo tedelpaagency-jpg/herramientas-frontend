@@ -122,22 +122,84 @@ export interface Estate {
   updated_at?: string;
 }
 
+export interface WorkspaceMetaCustomField {
+  id: number;
+  workspace_id: number;
+  field_key: string;
+  internal_name: string;
+  label: string;
+  type: 'text' | 'number' | 'select' | 'date' | 'boolean' | string;
+  options?: string[] | null;
+  is_required: boolean;
+  sort_order: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface LeadCustomFieldValue {
+  id: number;
+  client_id: number;
+  workspace_id: number;
+  workspace_meta_custom_field_id?: number | null;
+  field_key: string;
+  field_name: string;
+  value?: string | null;
+  status: 'received' | 'not_received' | 'pending' | string;
+  created_at?: string;
+  updated_at?: string;
+  custom_field?: WorkspaceMetaCustomField;
+}
+
+export interface Workspace {
+  id: number;
+  agency_id?: number;
+  agency?: Agency;
+  name: string;
+  description?: string;
+  color?: string;
+  status?: number;
+  meta_enabled?: boolean;
+  meta_campaign_id?: string | null;
+  meta_campaign_name?: string | null;
+  meta_form_id?: string | null;
+  meta_form_name?: string | null;
+  meta_page_id?: string | null;
+  meta_webhook_enabled?: boolean;
+  meta_webhook_url?: string | null;
+  meta_webhook_secret?: string | null;
+  meta_config?: Record<string, any> | null;
+  custom_fields?: WorkspaceMetaCustomField[];
+  custom_fields_count?: number;
+  clients_count?: number;
+  stages?: WorkspaceStage[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Client {
   id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
   name?: string;
   phone?: string;
-  source?: string;
-  campo1?: string;
-  campo2?: string;
+  source?: string; // 'manual' | 'meta' | string
+  workspace_id?: number;
+  workspace?: Workspace;
+  meta_lead_id?: string | null;
+  meta_form_id?: string | null;
+  meta_campaign_id?: string | null;
+  meta_adset_id?: string | null;
+  meta_ad_id?: string | null;
+  meta_page_id?: string | null;
+  custom_field_values?: LeadCustomFieldValue[];
   identification_number?: string;
   document_number?: string;
   address?: string;
   city?: string;
   country?: string;
-  status?: string;
+  status?: string | number;
   agency_id?: number;
   created_at?: string;
   [key: string]: any;
@@ -152,6 +214,7 @@ export interface WorkspaceStage {
   color?: string;
   is_fixed?: boolean;
 }
+
 
 export interface PipelineTask {
   id: number;

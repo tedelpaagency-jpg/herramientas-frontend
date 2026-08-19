@@ -1,10 +1,9 @@
-'use client';
-
-import React, { useEffect, useState } from 'react';
+'import React, { useEffect, useState } from 'react';
 import { Client } from '../types';
 import crmService from '../services/crmService';
-import { Users, Plus, Search, Mail, Phone, Edit3, Trash2 } from 'lucide-react';
+import { Users, Plus, Search, Mail, Phone, Edit3, Trash2, Info } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
+import { LeadCampaignDetailsModal } from '@/components/LeadCampaignDetailsModal';
 
 export const ClientsPage: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -12,6 +11,8 @@ export const ClientsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [selectedClientForDetails, setSelectedClientForDetails] = useState<Client | null>(null);
+  const [isLeadCampaignModalOpen, setIsLeadCampaignModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -20,6 +21,7 @@ export const ClientsPage: React.FC = () => {
     city: '',
     country: 'Ecuador',
   });
+
 
   const fetchClients = async () => {
     setIsLoading(true);
@@ -174,6 +176,16 @@ export const ClientsPage: React.FC = () => {
 
                     <td className="px-6 py-4 text-right space-x-1">
                       <button 
+                        onClick={() => {
+                          setSelectedClientForDetails(c);
+                          setIsLeadCampaignModalOpen(true);
+                        }} 
+                        className="p-2 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Ver Ficha de Campaña y Custom Fields"
+                      >
+                        <Info className="w-4 h-4" />
+                      </button>
+                      <button 
                         onClick={() => handleOpenEdit(c)} 
                         className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Editar"
@@ -188,6 +200,7 @@ export const ClientsPage: React.FC = () => {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
+
                   </tr>
                 ))}
               </tbody>
@@ -250,11 +263,15 @@ export const ClientsPage: React.FC = () => {
                 <button type="submit" className="px-5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm">Guardar</button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      {/* Modal Ficha de Campaña y Custom Fields */}
+      <LeadCampaignDetailsModal
+        client={selectedClientForDetails}
+        isOpen={isLeadCampaignModalOpen}
+        onClose={() => setIsLeadCampaignModalOpen(false)}
+      />
     </div>
   );
 };
 
 export default ClientsPage;
+

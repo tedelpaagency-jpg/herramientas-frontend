@@ -1,20 +1,30 @@
-'use client';
-
-import React, { useEffect, useState } from 'react';
-import { WorkspaceStage, CrmPipelineItem, PipelineActivity, PipelineTask, PipelineProposal, PipelinePayment } from '../types';
+'import React, { useEffect, useState } from 'react';
+import { Workspace, WorkspaceStage, CrmPipelineItem, PipelineActivity, PipelineTask, PipelineProposal, PipelinePayment, Client } from '../types';
 import crmService from '../services/crmService';
+import workspaceMetaService from '../services/workspaceMetaService';
+import { WorkspaceMetaModal } from '../components/WorkspaceMetaModal';
+import { WorkspaceCustomFieldsModal } from '../components/WorkspaceCustomFieldsModal';
+import { LeadCampaignDetailsModal } from '../components/LeadCampaignDetailsModal';
 import { 
   Kanban, MessageSquare, DollarSign, Plus, CheckSquare, 
   FileText, Link2, Calendar, Phone, Mail, Clock, Trash2, 
   Check, Layers, Settings, X, ExternalLink, ArrowLeft, ArrowRight,
-  UserPlus, MoreVertical, Edit3, FileSpreadsheet
+  UserPlus, MoreVertical, Edit3, FileSpreadsheet, Share2, Sliders, Info
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const CrmKanbanPage: React.FC = () => {
   const [stages, setStages] = useState<WorkspaceStage[]>([]);
   const [pipelines, setPipelines] = useState<CrmPipelineItem[]>([]);
+  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Meta Integration Modals State
+  const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
+  const [isCustomFieldsModalOpen, setIsCustomFieldsModalOpen] = useState(false);
+  const [selectedClientForDetails, setSelectedClientForDetails] = useState<Client | null>(null);
+  const [isLeadCampaignModalOpen, setIsLeadCampaignModalOpen] = useState(false);
+
 
   // Detail Modal State
   const [selectedItem, setSelectedItem] = useState<CrmPipelineItem | null>(null);
@@ -65,6 +75,7 @@ export const CrmKanbanPage: React.FC = () => {
     setIsLoading(true);
     try {
       const data: any = await crmService.getPipelines();
+      const rawWorkspace = data?.workspace || data?.data?.workspace || null;
       const rawStages = Array.isArray(data?.stages) 
         ? data.stages 
         : (Array.isArray(data?.data?.stages) ? data.data.stages : []);
@@ -74,9 +85,11 @@ export const CrmKanbanPage: React.FC = () => {
 
       // Ensure stages are sorted by sort_order
       const sortedStages = [...rawStages].sort((a, b) => (a.sort_order || a.order || 0) - (b.sort_order || b.order || 0));
+      setCurrentWorkspace(rawWorkspace);
       setStages(sortedStages);
       setPipelines(rawPipelines);
     } catch (err: any) {
+
       console.error('Error loading CRM Kanban:', err);
       const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Error al cargar el CRM Kanban';
       toast.error(errMsg);
@@ -410,7 +423,33 @@ export const CrmKanbanPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {currentWorkspace && (
+            <>
+              <button
+                onClick={() => setIsMetaModalOpen(true)}
+                className={`flex items-center gap-2 px-3.5 py-2.5 font-extrabold text-xs rounded-xl border transition-all active:scale-95 ${
+                  currentWorkspace.meta_enabled
+                    ? 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                }`}
+                title="Configurar Integración Meta Leads (Facebook / Instagram)"
+              >
+                <Share2 className="w-4 h-4 text-blue-600" />
+                <span>{currentWorkspace.meta_enabled ? 'Meta Conectado' : 'Configurar Meta'}</span>
+              </button>
+
+              <button
+                onClick={() => setIsCustomFieldsModalOpen(true)}
+                className="flex items-center gap-2 px-3.5 py-2.5 bg-purple-50 text-purple-700 font-extrabold text-xs rounded-xl border border-purple-200/80 hover:bg-purple-100 transition-all active:scale-95"
+                title="Gestionar Campos Personalizados Dinámicos"
+              >
+                <Sliders className="w-4 h-4 text-purple-600" />
+                <span>Custom Fields</span>
+              </button>
+            </>
+          )}
+
           <button
             onClick={() => handleOpenAddLeadModal()}
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-emerald-700 transition-all active:scale-95"
@@ -427,6 +466,7 @@ export const CrmKanbanPage: React.FC = () => {
             Nueva Etapa
           </button>
         </div>
+
       </div>
 
       {/* Main Kanban Board */}
@@ -567,12 +607,38 @@ export const CrmKanbanPage: React.FC = () => {
                             <h4 className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                               {item.title}
                             </h4>
+                            <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex-shrink-0 ${
+                              item.client?.source === 'meta' || item.client?.meta_lead_id
+                                ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}>
+                              {item.client?.source === 'meta' || item.client?.meta_lead_id ? 'Meta' : 'Manual'}
+                            </span>
                           </div>
 
-                          <p className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                            {clientName}
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                              {clientName}
+                            </p>
+
+                            {item.client && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedClientForDetails(item.client || null);
+                                  setIsLeadCampaignModalOpen(true);
+                                }}
+                                className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
+                                title="Ver Ficha de Campaña y Custom Fields"
+                              >
+                                <Info className="w-3 h-3" />
+                                Campaña
+                              </button>
+                            )}
+                          </div>
+
 
                           <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
                             <span className="font-black text-emerald-600 flex items-center">
@@ -1281,12 +1347,29 @@ export const CrmKanbanPage: React.FC = () => {
                   </button>
                 </div>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* META INTEGRATION & CUSTOM FIELDS MODALS */}
+      <WorkspaceMetaModal
+        workspace={currentWorkspace}
+        isOpen={isMetaModalOpen}
+        onClose={() => setIsMetaModalOpen(false)}
+        onSaved={fetchKanban}
+      />
+
+      <WorkspaceCustomFieldsModal
+        workspace={currentWorkspace}
+        isOpen={isCustomFieldsModalOpen}
+        onClose={() => setIsCustomFieldsModalOpen(false)}
+        onUpdated={fetchKanban}
+      />
+
+      <LeadCampaignDetailsModal
+        client={selectedClientForDetails}
+        isOpen={isLeadCampaignModalOpen}
+        onClose={() => setIsLeadCampaignModalOpen(false)}
+      />
     </div>
   );
 };
 
 export default CrmKanbanPage;
+
