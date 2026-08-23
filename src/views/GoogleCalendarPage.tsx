@@ -66,7 +66,13 @@ export const GoogleCalendarPage: React.FC = () => {
       setSettings(data);
       setClientId(data.client_id || '');
       setApiKey(data.api_key || '');
-      setRedirectUri(data.redirect_uri || `${window.location.origin}/calendar`);
+
+      const defaultFrontendUri = `${window.location.origin}/calendar`;
+      if (data.redirect_uri && !data.redirect_uri.includes('santun.tedelpa.com')) {
+        setRedirectUri(data.redirect_uri);
+      } else {
+        setRedirectUri(defaultFrontendUri);
+      }
       setCalendarId(data.calendar_id || 'primary');
     } catch (err) {
       console.error('Error fetching Google settings:', err);
@@ -150,7 +156,8 @@ export const GoogleCalendarPage: React.FC = () => {
 
   const handleConnectGoogle = async () => {
     try {
-      const currentRedirectUri = redirectUri || (window.location.origin + '/calendar');
+      // Force frontend origin for redirect URI to avoid backend 404s
+      const currentRedirectUri = window.location.origin + '/calendar';
       const authUrl = await googleCalendarService.getAuthUrl(currentRedirectUri);
       if (authUrl) {
         // Calculate centered popup dimensions
