@@ -150,8 +150,7 @@ export const GoogleCalendarPage: React.FC = () => {
 
   const handleConnectGoogle = async () => {
     try {
-      // Use /calendar as redirect_uri to prevent 404 errors on web servers
-      const currentRedirectUri = window.location.origin + '/calendar';
+      const currentRedirectUri = redirectUri || (window.location.origin + '/calendar');
       const authUrl = await googleCalendarService.getAuthUrl(currentRedirectUri);
       if (authUrl) {
         // Calculate centered popup dimensions
