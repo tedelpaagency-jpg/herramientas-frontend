@@ -111,9 +111,18 @@ export const crmService = {
     estimated_value?: number;
     priority?: number;
     source?: string;
+    classification?: string;
     notes?: string;
   }): Promise<CrmPipelineItem> => {
     const response = await apiClient.post('/v1/crm/leads', data);
+    return response.data?.data || response.data;
+  },
+
+  // Update Client Classification
+  updateClientClassification: async (clientId: number, classification?: string | null): Promise<Client> => {
+    const response = await apiClient.post(`/v1/crm/clients/${clientId}/classification`, {
+      classification: classification || 'sin_clasificacion',
+    });
     return response.data?.data || response.data;
   },
 

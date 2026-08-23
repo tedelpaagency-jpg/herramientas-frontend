@@ -185,6 +185,7 @@ export interface Client {
   name?: string;
   phone?: string;
   source?: string; // 'manual' | 'meta' | string
+  classification?: 'bueno' | 'facil' | 'urgente' | string | null;
   workspace_id?: number;
   workspace?: Workspace;
   meta_lead_id?: string | null;
@@ -368,17 +369,37 @@ export interface EmailCampaign {
   created_at?: string;
 }
 
-export interface Product {
+export interface ProductCategory {
   id: number;
   name: string;
+  slug?: string;
+  description?: string;
+  image?: string;
+}
+
+export interface Product {
+  id: number;
+  type?: 1 | 2 | 3 | number; // 1: Paquete/Tour, 2: Producto Físico, 3: Servicio
+  name: string;
+  slug?: string;
   sku?: string;
   description?: string;
-  price: number;
+  location?: string;
+  duration?: string;
+  includes?: string;
+  price?: number;
+  sale_price?: number;
+  suggested_price?: number;
+  purchase_price?: number;
   cost?: number;
-  stock: number;
+  stock?: number;
+  main_image?: string;
   category_id?: number;
-  is_active: boolean;
-  images?: string[];
+  category?: ProductCategory;
+  is_active?: boolean;
+  images?: Array<{ id: number; image_path: string }>;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PosSaleItem {
@@ -466,6 +487,9 @@ export interface LexvaultDocument {
   replacements?: Record<string, any>;
   pdf_path?: string;
   pdf_url?: string;
+  p12_certificate_path?: string | null;
+  p12_info_json?: Record<string, any> | null;
+  signature_type?: 'canvas' | 'image' | 'p12' | string;
   status: 'draft' | 'signed' | 'declined' | string;
   signed_at?: string | null;
   created_at?: string;
@@ -498,6 +522,32 @@ export interface TravelReport {
   sale_amount: number;
   commission_amount: number;
   status: string;
+  created_at?: string;
+}
+
+export interface GoogleCalendarSetting {
+  id?: number;
+  client_id: string;
+  client_secret?: string;
+  api_key?: string;
+  redirect_uri?: string;
+  calendar_id?: string;
+  is_connected: boolean;
+  has_secret?: boolean;
+  updated_at?: string;
+}
+
+export interface CalendarEvent {
+  id: number;
+  google_event_id?: string;
+  title: string;
+  description?: string;
+  location?: string;
+  start_datetime: string;
+  end_datetime: string;
+  attendees_json?: string[];
+  event_url?: string;
+  status?: string;
   created_at?: string;
 }
 

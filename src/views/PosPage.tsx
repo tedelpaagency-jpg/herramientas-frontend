@@ -29,7 +29,9 @@ export const PosPage: React.FC = () => {
     setCart(cart.filter(item => item.product.id !== productId));
   };
 
-  const total = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const getItemPrice = (p: Product) => Number(p.sale_price || p.price || 0);
+
+  const total = cart.reduce((sum, item) => sum + getItemPrice(item.product) * item.quantity, 0);
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +45,7 @@ export const PosPage: React.FC = () => {
         items: cart.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,
-          unit_price: item.product.price,
+          unit_price: getItemPrice(item.product),
         })),
       });
       alert('¡Venta registrada con éxito!');
@@ -72,7 +74,7 @@ export const PosPage: React.FC = () => {
               className="bg-slate-900 p-4 rounded-2xl border border-slate-800 hover:border-sky-500 cursor-pointer transition-all"
             >
               <h3 className="font-bold text-sm text-white line-clamp-1">{p.name}</h3>
-              <p className="text-xs text-emerald-400 font-bold mt-1">${Number(p.price).toFixed(2)}</p>
+              <p className="text-xs text-emerald-400 font-bold mt-1">${getItemPrice(p).toFixed(2)}</p>
             </div>
           ))}
         </div>
@@ -89,7 +91,7 @@ export const PosPage: React.FC = () => {
             {cart.map((item) => (
               <div key={item.product.id} className="flex items-center justify-between text-xs text-slate-300">
                 <span>{item.product.name} (x{item.quantity})</span>
-                <span className="font-bold text-white">${(item.product.price * item.quantity).toFixed(2)}</span>
+                <span className="font-bold text-white">${(getItemPrice(item.product) * item.quantity).toFixed(2)}</span>
               </div>
             ))}
           </div>

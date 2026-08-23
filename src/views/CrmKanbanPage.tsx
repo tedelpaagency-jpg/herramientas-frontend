@@ -15,7 +15,7 @@ import {
   FileText, Link2, Calendar, Phone, Mail, Clock, Trash2, 
   Check, Layers, Settings, X, ExternalLink, ArrowLeft, ArrowRight,
   UserPlus, MoreVertical, Edit3, FileSpreadsheet, Share2, Sliders, Info, GripVertical,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -86,6 +86,7 @@ export const CrmKanbanPage: React.FC = () => {
   const [leadStageId, setLeadStageId] = useState<number | ''>('');
   const [leadPriority, setLeadPriority] = useState<number>(1);
   const [leadSource, setLeadSource] = useState<string>('Manual CRM');
+  const [leadClassification, setLeadClassification] = useState<string>('');
 
   // Activity Form State
   const [activityType, setActivityType] = useState('call');
@@ -250,6 +251,7 @@ export const CrmKanbanPage: React.FC = () => {
     setLeadValue(0);
     setLeadPriority(1);
     setLeadSource('Manual CRM');
+    setLeadClassification('');
     setLeadStageId(defaultStageId || (stages[0]?.id ?? ''));
     setIsAddLeadOpen(true);
   };
@@ -268,6 +270,7 @@ export const CrmKanbanPage: React.FC = () => {
         estimated_value: leadValue,
         priority: leadPriority,
         source: leadSource,
+        classification: leadClassification || undefined,
       });
 
       setPipelines(prev => [newPipelineCard, ...prev]);
@@ -648,23 +651,26 @@ export const CrmKanbanPage: React.FC = () => {
                   draggedStageIndex === idx ? 'opacity-40 border-dashed border-blue-500' : ''
                 }`}
               >
-                {/* Stage Header */}
-                <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/60">
+                {/* Stage Header - Entire header draggable while preserving GripVertical Icon */}
+                <div
+                  draggable={true}
+                  onDragStart={(e) => {
+                    e.stopPropagation();
+                    e.dataTransfer.setData('drag_type', 'stage');
+                    e.dataTransfer.setData('stage_index', String(idx));
+                    setDraggedStageIndex(idx);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedStageIndex(null);
+                    setDragOverStageId(null);
+                  }}
+                  className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/60 cursor-grab active:cursor-grabbing hover:bg-slate-200/50 p-1.5 rounded-xl transition-all select-none"
+                  title="Sujeta toda esta cabecera para reordenar la columna del Kanban"
+                >
                   <div className="flex items-center gap-1.5">
                     <div
-                      draggable={true}
-                      onDragStart={(e) => {
-                        e.stopPropagation();
-                        e.dataTransfer.setData('drag_type', 'stage');
-                        e.dataTransfer.setData('stage_index', String(idx));
-                        setDraggedStageIndex(idx);
-                      }}
-                      onDragEnd={() => {
-                        setDraggedStageIndex(null);
-                        setDragOverStageId(null);
-                      }}
-                      className="cursor-grab active:cursor-grabbing p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded"
-                      title="Arrastrar para mover posición de etapa"
+                      className="p-1 text-slate-400 hover:text-slate-700 rounded"
+                      title="Icono de arrastrar etapa"
                     >
                       <GripVertical className="w-4 h-4" />
                     </div>
@@ -676,9 +682,12 @@ export const CrmKanbanPage: React.FC = () => {
                   </div>
 
                   {/* Stage Horizontal Controls & 3-Dots Dropdown Menu */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1" onMouseDown={(e) => e.stopPropagation()}>
                     <button
-                      onClick={() => handleMoveStageHorizontal(idx, 'left')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveStageHorizontal(idx, 'left');
+                      }}
                       disabled={idx === 0}
                       className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent"
                       title="Mover Etapa a la Izquierda"
@@ -686,7 +695,10 @@ export const CrmKanbanPage: React.FC = () => {
                       <ArrowLeft className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => handleMoveStageHorizontal(idx, 'right')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveStageHorizontal(idx, 'right');
+                      }}
                       disabled={idx === stages.length - 1}
                       className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent"
                       title="Mover Etapa a la Derecha"
@@ -770,8 +782,9 @@ export const CrmKanbanPage: React.FC = () => {
                   ) : (
                     itemsInStage.map((item) => {
                       const clientName = item.client?.name || 'Cliente Sin Nombre';
-
                       const cardValue = Number(item.estimated_value || item.deal_value || 0);
+                      const classification = item.client?.classification;
+                      const isUrgent = classification === 'urgente';
 
                       return (
                         <div
@@ -791,24 +804,53 @@ export const CrmKanbanPage: React.FC = () => {
                             setSelectedItem(item);
                             setActiveTab('details');
                           }}
-                          className={`p-4 rounded-xl bg-white border transition-all shadow-2xs hover:shadow-md cursor-grab active:cursor-grabbing group space-y-3 ${
-                            draggedCardId === item.id
-                              ? 'opacity-40 scale-95 border-blue-500 border-dashed ring-2 ring-blue-400'
-                              : 'border-slate-200/80 hover:border-blue-600'
+                          className={`p-4 rounded-xl bg-white border transition-all cursor-grab active:cursor-grabbing group space-y-3 relative overflow-hidden ${
+                            isUrgent
+                              ? 'border-rose-500 ring-2 ring-rose-500/60 shadow-lg shadow-rose-500/20 bg-rose-50/30 animate-pulse hover:animate-none'
+                              : draggedCardId === item.id
+                              ? 'opacity-40 scale-95 border-blue-500 border-dashed ring-2 ring-blue-400 shadow-2xs'
+                              : 'border-slate-200/80 hover:border-blue-600 shadow-2xs hover:shadow-md'
                           }`}
                         >
+                          {/* Urgent Flashing Badge Header */}
+                          {isUrgent && (
+                            <div className="bg-gradient-to-r from-rose-600 to-red-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded-lg flex items-center justify-between shadow-xs animate-bounce mb-1">
+                              <span className="flex items-center gap-1">
+                                <AlertCircle className="w-3.5 h-3.5 text-yellow-300" />
+                                <span>CLIENTE URGENTE</span>
+                              </span>
+                              <span className="text-[9px] bg-rose-900/80 px-1.5 py-0.5 rounded text-yellow-200">¡ATENCIÓN!</span>
+                            </div>
+                          )}
 
                           <div className="flex items-start justify-between gap-2">
                             <h4 className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                               {item.title}
                             </h4>
-                            <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex-shrink-0 ${
-                              item.client?.source === 'meta' || item.client?.meta_lead_id
-                                ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                : 'bg-slate-100 text-slate-600 border border-slate-200'
-                            }`}>
-                              {item.client?.source === 'meta' || item.client?.meta_lead_id ? 'Meta' : 'Manual'}
-                            </span>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {classification === 'bueno' && (
+                                <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                  👍 Bueno
+                                </span>
+                              )}
+                              {classification === 'facil' && (
+                                <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase rounded-md bg-blue-100 text-blue-800 border border-blue-300">
+                                  😊 Fácil
+                                </span>
+                              )}
+                              {classification === 'urgente' && (
+                                <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase rounded-md bg-rose-600 text-white border border-rose-700 animate-pulse">
+                                  ⚡ Urgente
+                                </span>
+                              )}
+                              <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded-full ${
+                                item.client?.source === 'meta' || item.client?.meta_lead_id
+                                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                  : 'bg-slate-100 text-slate-600 border border-slate-200'
+                              }`}>
+                                {item.client?.source === 'meta' || item.client?.meta_lead_id ? 'Meta' : 'Manual'}
+                              </span>
+                            </div>
                           </div>
 
                           <div className="flex items-center justify-between">
@@ -948,6 +990,19 @@ export const CrmKanbanPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Clasificación de Cliente</label>
+                  <select
+                    value={leadClassification}
+                    onChange={(e) => setLeadClassification(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:bg-white"
+                  >
+                    <option value="">Sin Clasificación</option>
+                    <option value="bueno">👍 Bueno</option>
+                    <option value="facil">😊 Fácil de tratar</option>
+                    <option value="urgente">⚡ Urgente</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Etapa Comercial</label>
                   <select
                     required
@@ -959,18 +1014,6 @@ export const CrmKanbanPage: React.FC = () => {
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Valor Estimado ($)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={leadValue}
-                    onChange={(e) => setLeadValue(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white"
-                  />
                 </div>
               </div>
 
@@ -1157,6 +1200,37 @@ export const CrmKanbanPage: React.FC = () => {
                           {stages.map(s => (
                             <option key={s.id} value={s.id}>{s.name}</option>
                           ))}
+                        </select>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                        <span className="text-slate-500 font-medium">Clasificación:</span>
+                        <select
+                          value={selectedItem.client?.classification || ''}
+                          onChange={async (e) => {
+                            const newClass = e.target.value;
+                            if (selectedItem.client?.id) {
+                              try {
+                                await crmService.updateClientClassification(selectedItem.client.id, newClass);
+                                setPipelines(prev => prev.map(p => {
+                                  if (p.id === selectedItem.id && p.client) {
+                                    return { ...p, client: { ...p.client, classification: newClass } };
+                                  }
+                                  return p;
+                                }));
+                                setSelectedItem(prev => prev && prev.client ? { ...prev, client: { ...prev.client, classification: newClass } } : prev);
+                                toast.success('Clasificación de cliente actualizada');
+                              } catch (err) {
+                                toast.error('Error al actualizar clasificación');
+                              }
+                            }
+                          }}
+                          className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-bold text-slate-800"
+                        >
+                          <option value="">Sin Clasificación</option>
+                          <option value="bueno">👍 Bueno</option>
+                          <option value="facil">😊 Fácil de tratar</option>
+                          <option value="urgente">⚡ Urgente</option>
                         </select>
                       </div>
                     </div>

@@ -30,8 +30,10 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
   // Signature state
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [signatureMode, setSignatureMode] = useState<'draw' | 'upload' | 'decline'>('draw');
+  const [signatureMode, setSignatureMode] = useState<'draw' | 'upload' | 'p12' | 'decline'>('draw');
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [p12File, setP12File] = useState<File | null>(null);
+  const [p12Password, setP12Password] = useState<string>('');
   const [declineReason, setDeclineReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -176,8 +178,10 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
         updatedDoc = await lexvaultService.signPublicDocument(document.id, dataUrl);
       } else if (signatureMode === 'upload' && signatureFile) {
         updatedDoc = await lexvaultService.signPublicDocument(document.id, signatureFile);
+      } else if (signatureMode === 'p12' && p12File) {
+        updatedDoc = await lexvaultService.signPublicDocument(document.id, p12File, p12Password);
       } else {
-        toast.error('Por favor dibuje o suba su firma antes de enviar', { id: toastId });
+        toast.error('Por favor dibuje, suba su imagen o seleccione su archivo P12 antes de enviar', { id: toastId });
         setIsSubmitting(false);
         return;
       }
@@ -396,6 +400,16 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
                   </button>
                   <button
                     type="button"
+                    onClick={() => setSignatureMode('p12')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                      signatureMode === 'p12' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Firma P12 (.p12 / .pfx)</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setSignatureMode('decline')}
                     className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
                       signatureMode === 'decline' ? 'bg-rose-600 text-white shadow-sm' : 'text-rose-400 hover:bg-rose-900/30'
@@ -469,6 +483,45 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
                   >
                     <CheckCircle2 className="w-5 h-5" />
                     <span>{isSubmitting ? 'Registrando...' : 'Subir y Registrar Firma'}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Mode: P12 Signature Certificate File */}
+              {signatureMode === 'p12' && (
+                <div className="space-y-4 max-w-xl mx-auto">
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-300 uppercase tracking-wider mb-2">
+                      Archivo de Firma Electrónica Certificada (.p12 o .pfx)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".p12,.pfx"
+                      onChange={(e) => setP12File(e.target.files?.[0] || null)}
+                      className="w-full text-xs text-slate-300 border border-slate-700 rounded-2xl p-4 bg-slate-800 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-300 uppercase tracking-wider mb-2">
+                      Contraseña del Certificado P12 (Opcional)
+                    </label>
+                    <input
+                      type="password"
+                      value={p12Password}
+                      onChange={(e) => setP12Password(e.target.value)}
+                      placeholder="Ingrese la clave de su firma electrónica..."
+                      className="w-full text-xs text-slate-200 border border-slate-700 rounded-2xl p-3.5 bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleSign}
+                    disabled={isSubmitting || !p12File}
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <ShieldCheck className="w-5 h-5" />
+                    <span>{isSubmitting ? 'Verificando y Firmando...' : 'Firmar con Certificado Digital P12'}</span>
                   </button>
                 </div>
               )}

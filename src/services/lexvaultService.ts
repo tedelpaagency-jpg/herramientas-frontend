@@ -72,13 +72,19 @@ export const lexvaultService = {
     window.URL.revokeObjectURL(downloadUrl);
   },
 
-  signDocument: async (documentId: number, signature: File | string): Promise<LexvaultDocument> => {
+  signDocument: async (documentId: number, signature: File | string, p12Password?: string): Promise<LexvaultDocument> => {
     let payload: any;
     let headers: any = {};
 
     if (signature instanceof File) {
       const formData = new FormData();
-      formData.append('signature', signature);
+      const isP12 = signature.name.toLowerCase().endsWith('.p12') || signature.name.toLowerCase().endsWith('.pfx');
+      if (isP12) {
+        formData.append('p12_file', signature);
+        if (p12Password) formData.append('p12_password', p12Password);
+      } else {
+        formData.append('signature', signature);
+      }
       payload = formData;
       headers['Content-Type'] = 'multipart/form-data';
     } else {
@@ -106,13 +112,19 @@ export const lexvaultService = {
     return response.data?.data || response.data;
   },
 
-  signPublicDocument: async (documentId: number | string, signature: File | string): Promise<LexvaultDocument> => {
+  signPublicDocument: async (documentId: number | string, signature: File | string, p12Password?: string): Promise<LexvaultDocument> => {
     let payload: any;
     let headers: any = {};
 
     if (signature instanceof File) {
       const formData = new FormData();
-      formData.append('signature', signature);
+      const isP12 = signature.name.toLowerCase().endsWith('.p12') || signature.name.toLowerCase().endsWith('.pfx');
+      if (isP12) {
+        formData.append('p12_file', signature);
+        if (p12Password) formData.append('p12_password', p12Password);
+      } else {
+        formData.append('signature', signature);
+      }
       payload = formData;
       headers['Content-Type'] = 'multipart/form-data';
     } else {

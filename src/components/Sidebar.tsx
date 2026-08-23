@@ -74,6 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       color: 'text-teal-600 dark:text-teal-400',
       items: [
         { label: 'Workspaces & CRM', path: '/workspaces', icon: 'view_kanban' },
+        { label: 'Google Calendar', path: '/calendar', icon: 'calendar_month' },
         { label: 'Directorio de Clientes', path: '/clients', icon: 'groups' },
         { label: 'Landing Pages & Eventos', path: '/landings', icon: 'web' },
         { label: 'Marketing & Correos', path: '/marketing', icon: 'mail' },

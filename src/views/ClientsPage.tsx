@@ -23,8 +23,8 @@ export const ClientsPage: React.FC = () => {
     phone: '',
     city: '',
     country: 'Ecuador',
+    classification: '',
   });
-
 
   const fetchClients = async () => {
     setIsLoading(true);
@@ -44,7 +44,7 @@ export const ClientsPage: React.FC = () => {
 
   const handleOpenCreate = () => {
     setEditingClient(null);
-    setFormData({ first_name: '', last_name: '', email: '', phone: '', city: '', country: 'Ecuador' });
+    setFormData({ first_name: '', last_name: '', email: '', phone: '', city: '', country: 'Ecuador', classification: '' });
     setShowModal(true);
   };
 
@@ -57,6 +57,7 @@ export const ClientsPage: React.FC = () => {
       phone: client.phone || '',
       city: client.city || '',
       country: client.country || 'Ecuador',
+      classification: client.classification || '',
     });
     setShowModal(true);
   };
@@ -138,6 +139,7 @@ export const ClientsPage: React.FC = () => {
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   <th className="px-6 py-4">Cliente</th>
+                  <th className="px-6 py-4">Clasificación</th>
                   <th className="px-6 py-4">Contacto</th>
                   <th className="px-6 py-4">Ubicación</th>
                   <th className="px-6 py-4 text-right">Acciones</th>
@@ -161,6 +163,27 @@ export const ClientsPage: React.FC = () => {
                           <p className="text-xs text-slate-500 font-medium">Cliente ID: #{c.id}</p>
                         </div>
                       </div>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {c.classification === 'bueno' && (
+                        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          👍 Bueno
+                        </span>
+                      )}
+                      {c.classification === 'facil' && (
+                        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-100 text-blue-800 border border-blue-300">
+                          😊 Fácil de tratar
+                        </span>
+                      )}
+                      {c.classification === 'urgente' && (
+                        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-rose-600 text-white border border-rose-700 animate-pulse">
+                          ⚡ Urgente
+                        </span>
+                      )}
+                      {!c.classification && (
+                        <span className="text-xs text-slate-400 font-medium">Sin clasificar</span>
+                      )}
                     </td>
 
                     <td className="px-6 py-4 space-y-1">
@@ -263,6 +286,19 @@ export const ClientsPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full px-3 py-2 bg-[#F4F5F7] border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/20"
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Clasificación de Cliente</label>
+                <select
+                  value={formData.classification}
+                  onChange={(e) => setFormData({ ...formData, classification: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F4F5F7] border border-slate-200 rounded-lg text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/20 font-bold"
+                >
+                  <option value="">Sin Clasificación</option>
+                  <option value="bueno">👍 Bueno</option>
+                  <option value="facil">😊 Fácil de tratar</option>
+                  <option value="urgente">⚡ Urgente</option>
+                </select>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-xs text-slate-500 font-bold hover:bg-slate-100 rounded-lg">Cancelar</button>

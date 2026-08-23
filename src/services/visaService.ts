@@ -42,6 +42,17 @@ export const visaService = {
     return response.data?.data || response.data;
   },
 
+  uploadVisaFilePublic: async (encodedId: string, field: string, file: File): Promise<{ field: string; file_url: string }> => {
+    const formData = new FormData();
+    formData.append('field', field);
+    formData.append('file', file);
+
+    const response = await apiClient.post(`/v1/visas/public/${encodedId}/upload-file`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data?.data || response.data;
+  },
+
   updateVisaStatus: async (id: number, status: string | number): Promise<Visa> => {
     const response = await apiClient.post(`/v1/visas/${id}/status`, { status });
     return response.data?.data || response.data;

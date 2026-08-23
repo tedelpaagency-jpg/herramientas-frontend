@@ -30,6 +30,24 @@ export const getApiBaseUrl = (): string => {
   return 'http://127.0.0.1:8000/api';
 };
 
+export const normalizeFileUrl = (url: string | undefined | null): string => {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+
+  const apiBase = getApiBaseUrl().replace(/\/api$/, '');
+
+  if (url.startsWith('/storage')) {
+    return `${apiBase}${url}`;
+  }
+
+  if (url.includes('/storage/')) {
+    const pathAfterStorage = url.substring(url.indexOf('/storage/'));
+    return `${apiBase}${pathAfterStorage}`;
+  }
+
+  return url;
+};
+
 export const apiClient = axios.create({
   baseURL: getApiBaseUrl(),
   headers: {
