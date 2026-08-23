@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { CalendarEvent, GoogleCalendarSetting } from '../types';
 import googleCalendarService from '../services/googleCalendarService';
 import { useAuth } from '../context/AuthContext';
@@ -22,17 +22,26 @@ import {
   RefreshCw,
   AlertCircle,
   Mail,
-  Link as LinkIcon
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  List,
+  CalendarDays
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
 
 export const GoogleCalendarPage: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'calendar' | 'developer'>('calendar');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [currentMonthDate, setCurrentMonthDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [settings, setSettings] = useState<GoogleCalendarSetting | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  // Selected event preview modal
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   // Check if current user is Super Admin
   const isSuperAdmin =
@@ -156,11 +165,9 @@ export const GoogleCalendarPage: React.FC = () => {
 
   const handleConnectGoogle = async () => {
     try {
-      // Force frontend origin for redirect URI to avoid backend 404s
       const currentRedirectUri = window.location.origin + '/calendar';
       const authUrl = await googleCalendarService.getAuthUrl(currentRedirectUri);
       if (authUrl) {
-        // Calculate centered popup dimensions
         const width = 600;
         const height = 700;
         const left = window.screenX + (window.outerWidth - width) / 2;
@@ -184,7 +191,6 @@ export const GoogleCalendarPage: React.FC = () => {
         window.addEventListener('message', handleAuthMessage);
 
         if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-          // Fallback if popup blocked
           window.location.href = authUrl;
         }
       }
@@ -246,10 +252,86 @@ export const GoogleCalendarPage: React.FC = () => {
     try {
       await googleCalendarService.deleteEvent(id);
       setEvents((prev) => prev.filter((e) => e.id !== id));
+      if (selectedEvent?.id === id) {
+        setSelectedEvent(null);
+      }
     } catch (err) {
       console.error('Error deleting event:', err);
     }
   };
+
+  // Calendar Monthly Grid Calculation
+  const calendarDays = useMemo(() => {
+    const year = currentMonthDate.getFullYear();
+    const month = currentMonthDate.getMonth();
+
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+
+    const startingDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday
+    const daysInMonth = lastDayOfMonth.getDate();
+
+    const days: { date: Date; isCurrentMonth: boolean; dateString: string }[] = [];
+
+    // Previous month filler days
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+      const prevDate = new Date(year, month - 1, prevMonthLastDay - i);
+      const dateString = prevDate.toISOString().split('T')[0];
+      days.push({ date: prevDate, isCurrentMonth: false, dateString });
+    }
+
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const currDate = new Date(year, month, day);
+      // Format YYYY-MM-DD
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      days.push({ date: currDate, isCurrentMonth: true, dateString });
+    }
+
+    // Next month filler days to complete grid rows
+    const totalCells = days.length;
+    const remainingCells = (7 - (totalCells % 7)) % 7;
+    for (let day = 1; day <= remainingCells; day++) {
+      const nextDate = new Date(year, month + 1, day);
+      const dateString = nextDate.toISOString().split('T')[0];
+      days.push({ date: nextDate, isCurrentMonth: false, dateString });
+    }
+
+    return days;
+  }, [currentMonthDate]);
+
+  // Group events by YYYY-MM-DD
+  const eventsByDate = useMemo(() => {
+    const map: Record<string, CalendarEvent[]> = {};
+    events.forEach((ev) => {
+      if (!ev.start_datetime) return;
+      const dateStr = ev.start_datetime.split(' ')[0] || ev.start_datetime.split('T')[0];
+      if (!map[dateStr]) map[dateStr] = [];
+      map[dateStr].push(ev);
+    });
+    return map;
+  }, [events]);
+
+  const handlePrevMonth = () => {
+    setCurrentMonthDate(new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonthDate(new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() + 1, 1));
+  };
+
+  const handleToday = () => {
+    setCurrentMonthDate(new Date());
+  };
+
+  const handleCellClick = (dateString: string) => {
+    setEventStartDate(dateString);
+    setEventEndDate(dateString);
+    setShowEventModal(true);
+  };
+
+  const todayStr = new Date().toISOString().split('T')[0];
 
   return (
     <div className="space-y-6">
@@ -261,7 +343,7 @@ export const GoogleCalendarPage: React.FC = () => {
             <span>Mi Calendario Personal</span>
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-1">
-            Gestión individual de citas y eventos para {user?.name || 'su usuario'}.
+            Gestión de citas y eventos para {user?.name || 'su usuario'}.
           </p>
         </div>
 
@@ -279,9 +361,8 @@ export const GoogleCalendarPage: React.FC = () => {
           {activeTab === 'calendar' && (
             <button
               onClick={() => {
-                const today = new Date().toISOString().split('T')[0];
-                setEventStartDate(today);
-                setEventEndDate(today);
+                setEventStartDate(todayStr);
+                setEventEndDate(todayStr);
                 setShowEventModal(true);
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-2xl font-extrabold text-xs shadow-md hover:shadow-lg transition-all flex items-center gap-2"
@@ -361,114 +442,233 @@ export const GoogleCalendarPage: React.FC = () => {
             </div>
           )}
 
-          {/* Calendar Events Grid */}
-          {isLoading ? (
-            <TableSkeleton rows={4} />
-          ) : events.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-300 space-y-3">
-              <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto" />
-              <h3 className="text-base font-bold text-slate-800">No tiene eventos agendados en su usuario</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Utilice el botón superior para registrar su primera reunión o cita.
-              </p>
+          {/* Calendar Toolbar Header */}
+          <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Month & Navigation */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                <button
+                  onClick={handlePrevMonth}
+                  className="p-2 hover:bg-white text-slate-600 hover:text-slate-900 rounded-xl transition-all"
+                  title="Mes Anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleToday}
+                  className="px-3 py-1 text-xs font-black text-slate-700 hover:bg-white rounded-xl transition-all"
+                >
+                  Hoy
+                </button>
+                <button
+                  onClick={handleNextMonth}
+                  className="p-2 hover:bg-white text-slate-600 hover:text-slate-900 rounded-xl transition-all"
+                  title="Mes Siguiente"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <h2 className="text-lg font-black text-slate-900 tracking-tight capitalize">
+                {currentMonthDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+              </h2>
+            </div>
+
+            {/* View Switcher (Grid vs List) */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 gap-1 self-start sm:self-auto">
               <button
-                onClick={() => {
-                  const today = new Date().toISOString().split('T')[0];
-                  setEventStartDate(today);
-                  setEventEndDate(today);
-                  setShowEventModal(true);
-                }}
-                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 inline-flex items-center gap-2"
+                onClick={() => setViewMode('grid')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                  viewMode === 'grid' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <Plus className="w-4 h-4" />
-                <span>Crear Evento</span>
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Vista Cuadrícula</span>
+              </button>
+
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                  viewMode === 'list' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>Vista Lista ({events.length})</span>
               </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {events.map((ev) => {
-                const startDate = new Date(ev.start_datetime);
-                const endDate = new Date(ev.end_datetime);
+          </div>
 
-                return (
-                  <div
-                    key={ev.id}
-                    className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start gap-2">
-                        <h3 className="font-extrabold text-base text-slate-900 line-clamp-2">{ev.title}</h3>
-                        {ev.google_event_id && (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-700 border border-emerald-200 shrink-0 flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" /> Sync Google
+          {/* VIEW MODE 1: GRID CALENDAR */}
+          {viewMode === 'grid' && (
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+              {/* Day Names Header */}
+              <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center py-3 text-[11px] font-black uppercase text-slate-500 tracking-wider">
+                <div>Dom</div>
+                <div>Lun</div>
+                <div>Mar</div>
+                <div>Mié</div>
+                <div>Jue</div>
+                <div>Vie</div>
+                <div>Sáb</div>
+              </div>
+
+              {/* Monthly Grid Cells */}
+              <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-slate-200/60 bg-slate-100/40">
+                {calendarDays.map(({ date, isCurrentMonth, dateString }, index) => {
+                  const isToday = dateString === todayStr;
+                  const dayEvents = eventsByDate[dateString] || [];
+
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => handleCellClick(dateString)}
+                      className={`min-h-[110px] p-2 transition-all flex flex-col justify-between cursor-pointer group ${
+                        isCurrentMonth ? 'bg-white hover:bg-blue-50/40' : 'bg-slate-50/60 text-slate-400'
+                      }`}
+                    >
+                      {/* Day Number Header */}
+                      <div className="flex justify-between items-center mb-1">
+                        <span
+                          className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-extrabold transition-all ${
+                            isToday
+                              ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-300'
+                              : isCurrentMonth
+                              ? 'text-slate-800 group-hover:text-blue-600'
+                              : 'text-slate-400'
+                          }`}
+                        >
+                          {date.getDate()}
+                        </span>
+
+                        {dayEvents.length > 0 && (
+                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                            {dayEvents.length}
                           </span>
                         )}
                       </div>
 
-                      {/* Date & Time */}
-                      <div className="space-y-1 text-xs text-slate-600 font-semibold bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <CalendarIcon className="w-4 h-4 text-blue-600 shrink-0" />
-                          <span>{startDate.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-500 font-medium">
-                          <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                          <span>
-                            {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
+                      {/* Day Events Pills */}
+                      <div className="space-y-1 overflow-y-auto max-h-[80px] scrollbar-none">
+                        {dayEvents.map((ev) => {
+                          const eventTime = ev.start_datetime
+                            ? new Date(ev.start_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : '';
+
+                          return (
+                            <div
+                              key={ev.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedEvent(ev);
+                              }}
+                              className="px-2 py-1 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 hover:border-blue-400 rounded-lg text-[10px] font-bold text-blue-900 truncate shadow-2xs hover:shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                              title={`${ev.title} (${eventTime})`}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                              <span className="font-extrabold text-[9px] text-blue-600 shrink-0">{eventTime}</span>
+                              <span className="truncate">{ev.title}</span>
+                            </div>
+                          );
+                        })}
                       </div>
 
-                      {ev.location && (
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                          <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
-                          <span>{ev.location}</span>
-                        </div>
-                      )}
-
-                      {ev.description && (
-                        <p className="text-xs text-slate-500 font-medium line-clamp-2">{ev.description}</p>
-                      )}
-
-                      {ev.attendees_json && ev.attendees_json.length > 0 && (
-                        <div className="pt-2 border-t border-slate-100 text-xs">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Invitados:</span>
-                          <div className="flex flex-wrap gap-1">
-                            {ev.attendees_json.map((email, idx) => (
-                              <span key={idx} className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold">
-                                {email}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      {/* Click to add hint on hover */}
+                      <div className="opacity-0 group-hover:opacity-100 text-[9px] font-bold text-blue-500 pt-1 flex items-center gap-0.5 transition-opacity">
+                        <Plus className="w-3 h-3" /> Agregar
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                      {ev.event_url ? (
-                        <a
-                          href={ev.event_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-600 hover:underline font-bold text-[11px] flex items-center gap-1"
-                        >
-                          Ver en Google <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <span className="text-slate-400 text-[11px]">Calendario Local</span>
-                      )}
+          {/* VIEW MODE 2: LIST CARDS */}
+          {viewMode === 'list' && (
+            <div>
+              {isLoading ? (
+                <TableSkeleton rows={4} />
+              ) : events.length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-300 space-y-3">
+                  <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto" />
+                  <h3 className="text-base font-bold text-slate-800">No tiene eventos agendados</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    Utilice el botón superior para registrar su primera reunión o cita.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {events.map((ev) => {
+                    const startDate = new Date(ev.start_datetime);
+                    const endDate = new Date(ev.end_datetime);
 
-                      <button
-                        onClick={() => handleDeleteEvent(ev.id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
-                        title="Eliminar evento"
+                    return (
+                      <div
+                        key={ev.id}
+                        className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start gap-2">
+                            <h3 className="font-extrabold text-base text-slate-900 line-clamp-2">{ev.title}</h3>
+                            {ev.google_event_id && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-700 border border-emerald-200 shrink-0 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> Sync Google
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="space-y-1 text-xs text-slate-600 font-semibold bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            <div className="flex items-center gap-2">
+                              <CalendarIcon className="w-4 h-4 text-blue-600 shrink-0" />
+                              <span>{startDate.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-500 font-medium">
+                              <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                              <span>
+                                {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          </div>
+
+                          {ev.location && (
+                            <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                              <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
+                              <span>{ev.location}</span>
+                            </div>
+                          )}
+
+                          {ev.description && (
+                            <p className="text-xs text-slate-500 font-medium line-clamp-2">{ev.description}</p>
+                          )}
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                          {ev.event_url ? (
+                            <a
+                              href={ev.event_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:underline font-bold text-[11px] flex items-center gap-1"
+                            >
+                              Ver en Google <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">Calendario Local</span>
+                          )}
+
+                          <button
+                            onClick={() => handleDeleteEvent(ev.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                            title="Eliminar evento"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -592,7 +792,7 @@ export const GoogleCalendarPage: React.FC = () => {
                 </li>
                 <li>Cree un proyecto e ingrese a <strong>API y Servicios</strong> &gt; <strong>Biblioteca</strong> para habilitar <strong>Google Calendar API</strong>.</li>
                 <li>En <strong>Credenciales</strong>, cree un <strong>ID de cliente de OAuth</strong> de tipo <em>Aplicación Web</em>.</li>
-                <li>Agregue el <em>Redirect URI</em> mostrado a la izquierda (`https://santun.tedelpa.com/calendar`).</li>
+                <li>Agregue el <em>Redirect URI</em> oficial de su frontend en Hostinger: `https://peachpuff-giraffe-427261.hostingersite.com/calendar`.</li>
                 <li>Guarde aquí el Client ID y Client Secret. Todos los usuarios de la plataforma podrán vincular su propio calendario con su cuenta de Google.</li>
               </ol>
             </div>
@@ -600,7 +800,7 @@ export const GoogleCalendarPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal: Create Event */}
+      {/* Modal 1: Create Event */}
       {showEventModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg p-6 shadow-2xl space-y-4">
@@ -724,6 +924,103 @@ export const GoogleCalendarPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 2: Event Details Preview */}
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                  <CalendarDays className="w-5 h-5" />
+                </span>
+                <h3 className="text-base font-black text-slate-900">Detalles de la Cita</h3>
+              </div>
+              <button onClick={() => setSelectedEvent(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <h2 className="text-lg font-extrabold text-slate-900">{selectedEvent.title}</h2>
+
+              <div className="space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <div className="flex items-center gap-2 text-slate-700 font-bold">
+                  <CalendarIcon className="w-4 h-4 text-blue-600" />
+                  <span>
+                    {new Date(selectedEvent.start_datetime).toLocaleDateString('es-ES', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-500 font-medium">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  <span>
+                    {new Date(selectedEvent.start_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
+                    {new Date(selectedEvent.end_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+
+              {selectedEvent.location && (
+                <div className="flex items-center gap-2 font-bold text-slate-700 bg-rose-50/50 p-3 rounded-2xl border border-rose-100">
+                  <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
+                  <span>{selectedEvent.location}</span>
+                </div>
+              )}
+
+              {selectedEvent.description && (
+                <div className="space-y-1 pt-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Descripción:</span>
+                  <p className="text-slate-600 leading-relaxed font-medium bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                    {selectedEvent.description}
+                  </p>
+                </div>
+              )}
+
+              {selectedEvent.attendees_json && selectedEvent.attendees_json.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Invitados ({selectedEvent.attendees_json.length}):</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedEvent.attendees_json.map((email, idx) => (
+                      <span key={idx} className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold text-[10px] border border-blue-200/60">
+                        {email}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+                {selectedEvent.event_url ? (
+                  <a
+                    href={selectedEvent.event_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl font-extrabold text-[11px] flex items-center gap-1.5 transition-colors"
+                  >
+                    <span>Ver en Google Calendar</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                ) : (
+                  <span className="text-slate-400 text-[11px] font-medium">Evento Local</span>
+                )}
+
+                <button
+                  onClick={() => handleDeleteEvent(selectedEvent.id)}
+                  className="px-3.5 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-extrabold text-[11px] flex items-center gap-1.5 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Eliminar</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
