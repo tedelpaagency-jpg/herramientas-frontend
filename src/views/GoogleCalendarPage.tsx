@@ -66,7 +66,7 @@ export const GoogleCalendarPage: React.FC = () => {
       setSettings(data);
       setClientId(data.client_id || '');
       setApiKey(data.api_key || '');
-      setRedirectUri(data.redirect_uri || `${window.location.origin}/calendar/callback`);
+      setRedirectUri(data.redirect_uri || `${window.location.origin}/calendar`);
       setCalendarId(data.calendar_id || 'primary');
     } catch (err) {
       console.error('Error fetching Google settings:', err);
@@ -88,6 +88,38 @@ export const GoogleCalendarPage: React.FC = () => {
   useEffect(() => {
     fetchSettings();
     fetchEvents();
+
+    // Check if OAuth code is present in URL (e.g. /calendar?code=...)
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get('code');
+      if (code) {
+        const currentRedirectUri = window.location.origin + '/calendar';
+        googleCalendarService
+          .exchangeCode(code, currentRedirectUri)
+          .then(() => {
+            if (window.opener) {
+              try {
+                window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS' }, '*');
+              } catch (e) {
+                console.error('Error sending postMessage:', e);
+              }
+              setTimeout(() => {
+                window.close();
+              }, 1000);
+            } else {
+              window.history.replaceState({}, '', window.location.pathname);
+              fetchSettings();
+              fetchEvents();
+              alert('¡Cuenta de Google Calendar vinculada exitosamente!');
+            }
+          })
+          .catch((err) => {
+            console.error('Error exchanging OAuth code:', err);
+            alert('Error al vincular la cuenta de Google.');
+          });
+      }
+    }
   }, []);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -118,7 +150,8 @@ export const GoogleCalendarPage: React.FC = () => {
 
   const handleConnectGoogle = async () => {
     try {
-      const currentRedirectUri = window.location.origin + '/calendar/callback';
+      // Use /calendar as redirect_uri to prevent 404 errors on web servers
+      const currentRedirectUri = window.location.origin + '/calendar';
       const authUrl = await googleCalendarService.getAuthUrl(currentRedirectUri);
       if (authUrl) {
         // Calculate centered popup dimensions
@@ -138,7 +171,7 @@ export const GoogleCalendarPage: React.FC = () => {
             window.removeEventListener('message', handleAuthMessage);
             fetchSettings();
             fetchEvents();
-            alert('¡Cuenta de Google Calendar vinculada exitosamente sin salir de la aplicación!');
+            alert('¡Cuenta de Google Calendar vinculada exitosamente!');
           }
         };
 
@@ -553,7 +586,7 @@ export const GoogleCalendarPage: React.FC = () => {
                 </li>
                 <li>Cree un proyecto e ingrese a <strong>API y Servicios</strong> &gt; <strong>Biblioteca</strong> para habilitar <strong>Google Calendar API</strong>.</li>
                 <li>En <strong>Credenciales</strong>, cree un <strong>ID de cliente de OAuth</strong> de tipo <em>Aplicación Web</em>.</li>
-                <li>Agregue el <em>Redirect URI</em> mostrado a la izquierda.</li>
+                <li>Agregue el <em>Redirect URI</em> mostrado a la izquierda (`https://santun.tedelpa.com/calendar`).</li>
                 <li>Guarde aquí el Client ID y Client Secret. Todos los usuarios de la plataforma podrán vincular su propio calendario con su cuenta de Google.</li>
               </ol>
             </div>
