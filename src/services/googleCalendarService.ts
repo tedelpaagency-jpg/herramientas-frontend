@@ -12,13 +12,18 @@ export const googleCalendarService = {
     return response.data?.data || response.data;
   },
 
-  getAuthUrl: async (): Promise<string> => {
-    const response = await apiClient.get('/v1/google-calendar/auth-url');
+  getAuthUrl: async (redirectUri?: string): Promise<string> => {
+    const response = await apiClient.get('/v1/google-calendar/auth-url', {
+      params: redirectUri ? { redirect_uri: redirectUri } : undefined,
+    });
     return response.data?.auth_url;
   },
 
-  exchangeCode: async (code: string): Promise<any> => {
-    const response = await apiClient.post('/v1/google-calendar/exchange-code', { code });
+  exchangeCode: async (code: string, redirectUri?: string): Promise<any> => {
+    const response = await apiClient.post('/v1/google-calendar/exchange-code', {
+      code,
+      redirect_uri: redirectUri,
+    });
     return response.data;
   },
 

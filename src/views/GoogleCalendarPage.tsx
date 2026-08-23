@@ -118,9 +118,36 @@ export const GoogleCalendarPage: React.FC = () => {
 
   const handleConnectGoogle = async () => {
     try {
-      const authUrl = await googleCalendarService.getAuthUrl();
+      const currentRedirectUri = window.location.origin + '/calendar/callback';
+      const authUrl = await googleCalendarService.getAuthUrl(currentRedirectUri);
       if (authUrl) {
-        window.location.href = authUrl;
+        // Calculate centered popup dimensions
+        const width = 600;
+        const height = 700;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+
+        const popup = window.open(
+          authUrl,
+          'GoogleAuthPopup',
+          `width=${width},height=${height},left=${left},top=${top},status=no,toolbar=no,menubar=no,location=no`
+        );
+
+        const handleAuthMessage = (event: MessageEvent) => {
+          if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+            window.removeEventListener('message', handleAuthMessage);
+            fetchSettings();
+            fetchEvents();
+            alert('¡Cuenta de Google Calendar vinculada exitosamente sin salir de la aplicación!');
+          }
+        };
+
+        window.addEventListener('message', handleAuthMessage);
+
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          // Fallback if popup blocked
+          window.location.href = authUrl;
+        }
       }
     } catch (err: any) {
       console.error('Error getting Google Auth URL:', err);

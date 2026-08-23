@@ -19,13 +19,25 @@ function GoogleOAuthCallbackContent() {
       return;
     }
 
+    const currentRedirectUri = window.location.origin + '/calendar/callback';
     googleCalendarService
-      .exchangeCode(code)
+      .exchangeCode(code, currentRedirectUri)
       .then(() => {
         setStatus('success');
-        setTimeout(() => {
-          router.push('/calendar');
-        }, 2000);
+        if (window.opener) {
+          try {
+            window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS' }, '*');
+          } catch (e) {
+            console.error('Error posting message to window.opener:', e);
+          }
+          setTimeout(() => {
+            window.close();
+          }, 1200);
+        } else {
+          setTimeout(() => {
+            router.push('/calendar');
+          }, 2000);
+        }
       })
       .catch((err) => {
         setStatus('error');
@@ -39,7 +51,7 @@ function GoogleOAuthCallbackContent() {
         <>
           <RefreshCw className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
           <h3 className="text-lg font-bold">Vinculando con Google Calendar...</h3>
-          <p className="text-xs text-slate-400">Intercambiando credenciales y autorizando permisos de desarrollador.</p>
+          <p className="text-xs text-slate-400">Intercambiando credenciales de usuario...</p>
         </>
       )}
 
@@ -47,7 +59,7 @@ function GoogleOAuthCallbackContent() {
         <>
           <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
           <h3 className="text-lg font-bold text-emerald-300">¡Cuenta Vinculada con Éxito!</h3>
-          <p className="text-xs text-slate-300">Redirigiendo a su calendario...</p>
+          <p className="text-xs text-slate-300">Cerrando ventana y regresando a la aplicación...</p>
         </>
       )}
 
@@ -57,10 +69,16 @@ function GoogleOAuthCallbackContent() {
           <h3 className="text-lg font-bold text-rose-300">Error de Vinculación</h3>
           <p className="text-xs text-slate-400">{errorMessage}</p>
           <button
-            onClick={() => router.push('/calendar')}
+            onClick={() => {
+              if (window.opener) {
+                window.close();
+              } else {
+                router.push('/calendar');
+              }
+            }}
             className="mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl"
           >
-            Volver al Calendario
+            Cerrar Ventana
           </button>
         </>
       )}
