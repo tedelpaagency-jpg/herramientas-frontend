@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { CalendarEvent, GoogleCalendarSetting } from '../types';
 import googleCalendarService from '../services/googleCalendarService';
+import { useAuth } from '../context/AuthContext';
 import {
   Calendar as CalendarIcon,
   Plus,
@@ -26,11 +27,18 @@ import {
 import { TableSkeleton } from '@/components/Skeleton';
 
 export const GoogleCalendarPage: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'calendar' | 'developer'>('calendar');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [settings, setSettings] = useState<GoogleCalendarSetting | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  // Check if current user is Super Admin
+  const isSuperAdmin =
+    user?.role === 'super_admin' ||
+    user?.roles?.some((r: any) => r.name === 'super_admin') ||
+    (settings as any)?.is_super_admin;
 
   // Developer Form State
   const [clientId, setClientId] = useState('');
@@ -84,6 +92,11 @@ export const GoogleCalendarPage: React.FC = () => {
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSuperAdmin) {
+      alert('Solo el rol super_admin puede guardar credenciales Developer.');
+      return;
+    }
+
     setIsSavingSettings(true);
     try {
       const updated = await googleCalendarService.saveSettings({
@@ -94,10 +107,10 @@ export const GoogleCalendarPage: React.FC = () => {
         calendar_id: calendarId,
       });
       setSettings(updated);
-      alert('¡Credenciales de Google Developer guardadas exitosamente!');
-    } catch (err) {
+      alert('¡Credenciales de Google Developer guardadas exitosamente por el Super Admin!');
+    } catch (err: any) {
       console.error('Error saving Google Developer settings:', err);
-      alert('Ocurrió un error al guardar las credenciales.');
+      alert(err.response?.data?.message || 'Ocurrió un error al guardar las credenciales.');
     } finally {
       setIsSavingSettings(false);
     }
@@ -111,7 +124,7 @@ export const GoogleCalendarPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error getting Google Auth URL:', err);
-      alert(err.response?.data?.message || 'Error al obtener URL de autenticación. Verifique su Client ID.');
+      alert(err.response?.data?.message || 'Error al obtener URL de autenticación. Contacte al Super Admin.');
     }
   };
 
@@ -153,7 +166,7 @@ export const GoogleCalendarPage: React.FC = () => {
       setEventLocation('');
       setEventAttendees('');
       fetchEvents();
-      alert('¡Evento creado y sincronizado exitosamente!');
+      alert('¡Evento creado exitosamente para su usuario!');
     } catch (err) {
       console.error('Error creating event:', err);
       alert('Error al registrar el evento.');
@@ -163,7 +176,7 @@ export const GoogleCalendarPage: React.FC = () => {
   };
 
   const handleDeleteEvent = async (id: number) => {
-    if (!confirm('¿Está seguro de eliminar este evento?')) return;
+    if (!confirm('¿Está seguro de eliminar este evento de su calendario?')) return;
     try {
       await googleCalendarService.deleteEvent(id);
       setEvents((prev) => prev.filter((e) => e.id !== id));
@@ -179,10 +192,10 @@ export const GoogleCalendarPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
             <CalendarIcon className="w-8 h-8 text-blue-600" />
-            <span>Google Calendar & Integración Developer</span>
+            <span>Mi Calendario Personal</span>
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-1">
-            Gestión de eventos, sincronización de Google Calendar y credenciales API Developer.
+            Gestión individual de citas y eventos para {user?.name || 'su usuario'}.
           </p>
         </div>
 
@@ -193,7 +206,7 @@ export const GoogleCalendarPage: React.FC = () => {
             </span>
           ) : (
             <span className="px-3.5 py-1.5 rounded-full text-xs font-black uppercase bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4 text-amber-600" /> No Vinculado
+              <AlertCircle className="w-4 h-4 text-amber-600" /> Sin Vincular
             </span>
           )}
 
@@ -214,55 +227,70 @@ export const GoogleCalendarPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex border-b border-slate-200 bg-white rounded-2xl p-1.5 border border-slate-200/80 shadow-2xs gap-2">
-        <button
-          onClick={() => setActiveTab('calendar')}
-          className={`flex-1 py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'calendar'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-        >
-          <CalendarIcon className="w-4 h-4" />
-          <span>Mi Calendario de Google</span>
-        </button>
+      {/* Tabs Navigation (Developer Tab ONLY for super_admin) */}
+      {isSuperAdmin && (
+        <div className="flex border-b border-slate-200 bg-white rounded-2xl p-1.5 border border-slate-200/80 shadow-2xs gap-2">
+          <button
+            onClick={() => setActiveTab('calendar')}
+            className={`flex-1 py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'calendar'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <CalendarIcon className="w-4 h-4" />
+            <span>Mi Calendario</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('developer')}
-          className={`flex-1 py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'developer'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          <span>Configuración Google Developer</span>
-        </button>
-      </div>
+          <button
+            onClick={() => setActiveTab('developer')}
+            className={`flex-1 py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'developer'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Configuración Google Developer (Super Admin)</span>
+          </button>
+        </div>
+      )}
 
       {/* TAB 1: CALENDAR VIEW */}
       {activeTab === 'calendar' && (
         <div className="space-y-6">
-          {/* Quick Connection Banner if not connected */}
-          {!settings?.is_connected && (
+          {/* Connection Banner */}
+          {!settings?.is_connected ? (
             <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-6 rounded-3xl border border-blue-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="space-y-1">
                 <h3 className="text-base font-black flex items-center gap-2">
                   <Globe className="w-5 h-5 text-blue-400" />
-                  <span>Vincule su cuenta de Google Calendar</span>
+                  <span>Vincular mi Cuenta de Google Calendar</span>
                 </h3>
                 <p className="text-xs text-blue-200 max-w-xl">
-                  Sincronice sus citas, reuniones con clientes y eventos directamente con su cuenta oficial de Google. Primero registre sus datos en la pestaña de Configuración Developer.
+                  Conecte su cuenta personal de Google para sincronizar automáticamente sus citas y reuniones en tiempo real.
                 </p>
               </div>
 
               <button
-                onClick={() => setActiveTab('developer')}
-                className="px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-white rounded-2xl font-extrabold text-xs transition-all shadow-md shrink-0 flex items-center gap-2"
+                onClick={handleConnectGoogle}
+                className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-extrabold text-xs transition-all shadow-md shrink-0 flex items-center gap-2"
               >
-                <Settings className="w-4 h-4" />
-                <span>Configurar Credenciales</span>
+                <Globe className="w-4 h-4" />
+                <span>Vincular mi Cuenta de Google</span>
+              </button>
+            </div>
+          ) : (
+            <div className="bg-emerald-950/40 border border-emerald-800/60 p-4 rounded-2xl flex items-center justify-between text-xs text-emerald-300">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Su cuenta de usuario está vinculada y sincronizada con Google Calendar.</span>
+              </div>
+              <button
+                onClick={handleDisconnect}
+                className="px-3 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 rounded-xl font-bold text-[11px] transition-colors"
+              >
+                Desvincular Mi Cuenta
               </button>
             </div>
           )}
@@ -273,10 +301,22 @@ export const GoogleCalendarPage: React.FC = () => {
           ) : events.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-300 space-y-3">
               <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto" />
-              <h3 className="text-base font-bold text-slate-800">No hay eventos agendados</h3>
+              <h3 className="text-base font-bold text-slate-800">No tiene eventos agendados en su usuario</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Utilice el botón superior para registrar su primera reunión o cita en el calendario.
+                Utilice el botón superior para registrar su primera reunión o cita.
               </p>
+              <button
+                onClick={() => {
+                  const today = new Date().toISOString().split('T')[0];
+                  setEventStartDate(today);
+                  setEventEndDate(today);
+                  setShowEventModal(true);
+                }}
+                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 inline-flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Crear Evento</span>
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -368,8 +408,8 @@ export const GoogleCalendarPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: DEVELOPER SETTINGS */}
-      {activeTab === 'developer' && (
+      {/* TAB 2: DEVELOPER SETTINGS (SUPER_ADMIN ONLY) */}
+      {activeTab === 'developer' && isSuperAdmin && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Credentials Form */}
           <div className="lg:col-span-2 space-y-6">
@@ -378,31 +418,12 @@ export const GoogleCalendarPage: React.FC = () => {
                 <div>
                   <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                     <Key className="w-5 h-5 text-blue-600" />
-                    <span>Datos de Desarrollador (Google Developer Console)</span>
+                    <span>Configuración Global Google Developer (Solo Super Admin)</span>
                   </h3>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    Ingrese sus credenciales de API para activar la integración con Google Calendar.
+                    Ingrese el Client ID y Client Secret del proyecto de Google Cloud para que todos los usuarios puedan vincular su calendario.
                   </p>
                 </div>
-
-                {settings?.is_connected ? (
-                  <button
-                    type="button"
-                    onClick={handleDisconnect}
-                    className="px-3.5 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white font-bold text-xs transition-colors border border-rose-200"
-                  >
-                    Desvincular Cuenta
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleConnectGoogle}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition-all flex items-center gap-1.5"
-                  >
-                    <Globe className="w-4 h-4" />
-                    <span>Vincular Cuenta de Google</span>
-                  </button>
-                )}
               </div>
 
               <form onSubmit={handleSaveSettings} className="space-y-4">
@@ -455,12 +476,12 @@ export const GoogleCalendarPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">ID de Calendario (Calendar ID)</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">ID de Calendario Predeterminado</label>
                     <input
                       type="text"
                       value={calendarId}
                       onChange={(e) => setCalendarId(e.target.value)}
-                      placeholder="primary o su-email@gmail.com"
+                      placeholder="primary"
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600"
                     />
                   </div>
@@ -496,19 +517,17 @@ export const GoogleCalendarPage: React.FC = () => {
             <div className="bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
               <h4 className="font-extrabold text-sm flex items-center gap-2 text-blue-400">
                 <Shield className="w-5 h-5" />
-                <span>¿Cómo obtener las credenciales de Google Developer?</span>
+                <span>Guía para el Super Admin</span>
               </h4>
 
               <ol className="space-y-3 text-xs text-slate-300 list-decimal list-inside font-medium leading-relaxed">
                 <li>
                   Ingrese a la consola de desarrolladores en <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" className="text-blue-400 font-bold underline inline-flex items-center gap-0.5">Google Cloud Console <ExternalLink className="w-3 h-3" /></a>.
                 </li>
-                <li>Cree o seleccione un proyecto en la parte superior.</li>
-                <li>En la barra lateral, vaya a <strong>API y Servicios</strong> &gt; <strong>Biblioteca</strong> y habilite <strong>Google Calendar API</strong>.</li>
-                <li>Vaya a <strong>Credenciales</strong> &gt; <strong>Crear credenciales</strong> &gt; <strong>ID de cliente de OAuth</strong>.</li>
-                <li>Seleccione el tipo de aplicación <em>Aplicación Web</em>.</li>
-                <li>Agregue en <em>URIs de redirección autorizados</em> el enlace mostrado a la izquierda.</li>
-                <li>Copie el <strong>Client ID</strong> y <strong>Client Secret</strong> e ingréselos en esta pantalla.</li>
+                <li>Cree un proyecto e ingrese a <strong>API y Servicios</strong> &gt; <strong>Biblioteca</strong> para habilitar <strong>Google Calendar API</strong>.</li>
+                <li>En <strong>Credenciales</strong>, cree un <strong>ID de cliente de OAuth</strong> de tipo <em>Aplicación Web</em>.</li>
+                <li>Agregue el <em>Redirect URI</em> mostrado a la izquierda.</li>
+                <li>Guarde aquí el Client ID y Client Secret. Todos los usuarios de la plataforma podrán vincular su propio calendario con su cuenta de Google.</li>
               </ol>
             </div>
           </div>
@@ -522,7 +541,7 @@ export const GoogleCalendarPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                 <CalendarIcon className="w-5 h-5 text-blue-600" />
-                Registrar Nuevo Evento en Calendario
+                Registrar Evento en Mi Calendario
               </h3>
               <button onClick={() => setShowEventModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
@@ -608,7 +627,7 @@ export const GoogleCalendarPage: React.FC = () => {
                   placeholder="cliente@correo.com, asesor@correo.com"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white"
                 />
-                <small className="text-[10px] text-slate-400 font-medium">Separe por comas (,) varios correos electrónicoss.</small>
+                <small className="text-[10px] text-slate-400 font-medium">Separe por comas (,) varios correos electrónicos.</small>
               </div>
 
               <div>
