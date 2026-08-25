@@ -34,6 +34,11 @@ export const landingService = {
     const response = await apiClient.get(`/v1/landings/${landingId}/requests`);
     return response.data?.data || response.data || [];
   },
+
+  toggleStatus: async (id: number, status?: number): Promise<{ id: number; status: number }> => {
+    const response = await apiClient.post(`/v1/landings/${id}/toggle-status`, { status });
+    return response.data?.data || response.data;
+  },
 };
 
 export default landingService;

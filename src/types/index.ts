@@ -398,6 +398,7 @@ export interface Product {
   category?: ProductCategory;
   is_active?: boolean;
   images?: Array<{ id: number; image_path: string }>;
+  attributes_json?: Record<string, any>;
   created_at?: string;
   updated_at?: string;
 }

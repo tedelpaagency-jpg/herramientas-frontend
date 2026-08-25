@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { CalendarEvent, GoogleCalendarSetting } from '../types';
 import googleCalendarService from '../services/googleCalendarService';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 import {
   Calendar as CalendarIcon,
   Plus,
@@ -126,12 +127,12 @@ export const GoogleCalendarPage: React.FC = () => {
               window.history.replaceState({}, '', window.location.pathname);
               fetchSettings();
               fetchEvents();
-              alert('¡Cuenta de Google Calendar vinculada exitosamente!');
+              toast.success('¡Cuenta de Google Calendar vinculada exitosamente!');
             }
           })
           .catch((err) => {
             console.error('Error exchanging OAuth code:', err);
-            alert('Error al vincular la cuenta de Google.');
+            toast.error('Error al vincular la cuenta de Google.');
           });
       }
     }
@@ -140,7 +141,7 @@ export const GoogleCalendarPage: React.FC = () => {
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSuperAdmin) {
-      alert('Solo el rol super_admin puede guardar credenciales Developer.');
+      toast.error('Solo el rol super_admin puede guardar credenciales Developer.');
       return;
     }
 
@@ -154,10 +155,10 @@ export const GoogleCalendarPage: React.FC = () => {
         calendar_id: calendarId,
       });
       setSettings(updated);
-      alert('¡Credenciales de Google Developer guardadas exitosamente por el Super Admin!');
+      toast.success('¡Credenciales de Google Developer guardadas exitosamente por el Super Admin!');
     } catch (err: any) {
       console.error('Error saving Google Developer settings:', err);
-      alert(err.response?.data?.message || 'Ocurrió un error al guardar las credenciales.');
+      toast.error(err.response?.data?.message || 'Ocurrió un error al guardar las credenciales.');
     } finally {
       setIsSavingSettings(false);
     }
@@ -184,7 +185,7 @@ export const GoogleCalendarPage: React.FC = () => {
             window.removeEventListener('message', handleAuthMessage);
             fetchSettings();
             fetchEvents();
-            alert('¡Cuenta de Google Calendar vinculada exitosamente!');
+            toast.success('¡Cuenta de Google Calendar vinculada exitosamente!');
           }
         };
 
@@ -196,7 +197,7 @@ export const GoogleCalendarPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error getting Google Auth URL:', err);
-      alert(err.response?.data?.message || 'Error al obtener URL de autenticación. Contacte al Super Admin.');
+      toast.error(err.response?.data?.message || 'Error al obtener URL de autenticación. Contacte al Super Admin.');
     }
   };
 
@@ -205,7 +206,7 @@ export const GoogleCalendarPage: React.FC = () => {
     try {
       await googleCalendarService.disconnect();
       await fetchSettings();
-      alert('Cuenta desvinculada exitosamente.');
+      toast.success('Cuenta desvinculada exitosamente.');
     } catch (err) {
       console.error('Error disconnecting Google account:', err);
     }
@@ -223,6 +224,8 @@ export const GoogleCalendarPage: React.FC = () => {
         ? eventAttendees.split(',').map((a) => a.trim()).filter(Boolean)
         : [];
 
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Guatemala';
+
       await googleCalendarService.createEvent({
         title: eventTitle,
         description: eventDescription,
@@ -230,7 +233,8 @@ export const GoogleCalendarPage: React.FC = () => {
         start_datetime: startDateTime,
         end_datetime: endDateTime,
         attendees,
-      });
+        timezone: userTimeZone,
+      } as any);
 
       setShowEventModal(false);
       setEventTitle('');
@@ -238,10 +242,10 @@ export const GoogleCalendarPage: React.FC = () => {
       setEventLocation('');
       setEventAttendees('');
       fetchEvents();
-      alert('¡Evento creado exitosamente para su usuario!');
+      toast.success('¡Evento creado exitosamente para su usuario!');
     } catch (err) {
       console.error('Error creating event:', err);
-      alert('Error al registrar el evento.');
+      toast.error('Error al registrar el evento.');
     } finally {
       setIsSubmittingEvent(false);
     }
@@ -255,9 +259,26 @@ export const GoogleCalendarPage: React.FC = () => {
       if (selectedEvent?.id === id) {
         setSelectedEvent(null);
       }
+      toast.success('Evento eliminado de su calendario.');
     } catch (err) {
       console.error('Error deleting event:', err);
     }
+  };
+
+  const formatDateToYYYYMMDD = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const parseLocalDateTime = (dateTimeStr?: string): Date => {
+    if (!dateTimeStr) return new Date();
+    const cleanStr = String(dateTimeStr)
+      .replace('Z', '')
+      .replace(' ', 'T')
+      .split('.')[0];
+    return new Date(cleanStr);
   };
 
   // Calendar Monthly Grid Calculation
@@ -277,14 +298,13 @@ export const GoogleCalendarPage: React.FC = () => {
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
       const prevDate = new Date(year, month - 1, prevMonthLastDay - i);
-      const dateString = prevDate.toISOString().split('T')[0];
+      const dateString = formatDateToYYYYMMDD(prevDate);
       days.push({ date: prevDate, isCurrentMonth: false, dateString });
     }
 
     // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       const currDate = new Date(year, month, day);
-      // Format YYYY-MM-DD
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       days.push({ date: currDate, isCurrentMonth: true, dateString });
     }
@@ -294,7 +314,7 @@ export const GoogleCalendarPage: React.FC = () => {
     const remainingCells = (7 - (totalCells % 7)) % 7;
     for (let day = 1; day <= remainingCells; day++) {
       const nextDate = new Date(year, month + 1, day);
-      const dateString = nextDate.toISOString().split('T')[0];
+      const dateString = formatDateToYYYYMMDD(nextDate);
       days.push({ date: nextDate, isCurrentMonth: false, dateString });
     }
 
@@ -306,9 +326,17 @@ export const GoogleCalendarPage: React.FC = () => {
     const map: Record<string, CalendarEvent[]> = {};
     events.forEach((ev) => {
       if (!ev.start_datetime) return;
-      const dateStr = ev.start_datetime.split(' ')[0] || ev.start_datetime.split('T')[0];
-      if (!map[dateStr]) map[dateStr] = [];
-      map[dateStr].push(ev);
+      let dateStr = '';
+      if (typeof ev.start_datetime === 'string') {
+        const cleanStr = ev.start_datetime.replace('Z', '').replace(' ', 'T').split('.')[0];
+        dateStr = cleanStr.split('T')[0];
+      } else {
+        dateStr = formatDateToYYYYMMDD(new Date(ev.start_datetime));
+      }
+      if (dateStr) {
+        if (!map[dateStr]) map[dateStr] = [];
+        map[dateStr].push(ev);
+      }
     });
     return map;
   }, [events]);
@@ -331,7 +359,7 @@ export const GoogleCalendarPage: React.FC = () => {
     setShowEventModal(true);
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = formatDateToYYYYMMDD(new Date());
 
   return (
     <div className="space-y-6">
@@ -408,36 +436,58 @@ export const GoogleCalendarPage: React.FC = () => {
         <div className="space-y-6">
           {/* Connection Banner */}
           {!settings?.is_connected ? (
-            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-6 rounded-3xl border border-blue-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <h3 className="text-base font-black flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-blue-400" />
-                  <span>Vincular mi Cuenta de Google Calendar</span>
-                </h3>
-                <p className="text-xs text-blue-200 max-w-xl">
+            <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white p-6 rounded-3xl border border-blue-900/50 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all">
+              <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="space-y-1.5 relative z-10">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2 rounded-2xl bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30">
+                    <Globe className="w-5 h-5" />
+                  </span>
+                  <h3 className="text-base font-black tracking-tight text-white">
+                    Vincular mi Cuenta de Google Calendar
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-300 max-w-xl font-medium leading-relaxed">
                   Conecte su cuenta personal de Google para sincronizar automáticamente sus citas y reuniones en tiempo real.
                 </p>
               </div>
 
               <button
                 onClick={handleConnectGoogle}
-                className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-extrabold text-xs transition-all shadow-md shrink-0 flex items-center gap-2"
+                className="relative z-10 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-2xl font-extrabold text-xs transition-all shadow-lg hover:shadow-emerald-500/25 shrink-0 flex items-center gap-2"
               >
                 <Globe className="w-4 h-4" />
                 <span>Vincular mi Cuenta de Google</span>
               </button>
             </div>
           ) : (
-            <div className="bg-emerald-950/40 border border-emerald-800/60 p-4 rounded-2xl flex items-center justify-between text-xs text-emerald-300">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Su cuenta de usuario está vinculada y sincronizada con Google Calendar.</span>
+            <div className="relative overflow-hidden bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-emerald-500/30 p-5 rounded-3xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all">
+              <div className="flex items-center gap-3.5">
+                <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30 shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-slate-900 tracking-tight">
+                      Sincronización Activa
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Google Calendar
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 font-medium">
+                    Su cuenta de usuario está vinculada y sincronizada con Google Calendar.
+                  </p>
+                </div>
               </div>
+
               <button
                 onClick={handleDisconnect}
-                className="px-3 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 rounded-xl font-bold text-[11px] transition-colors"
+                className="px-4 py-2 bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-2xl font-bold text-xs transition-all shadow-2xs hover:shadow-sm shrink-0 flex items-center gap-1.5 self-start sm:self-auto"
               >
-                Desvincular Mi Cuenta
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Desvincular Mi Cuenta</span>
               </button>
             </div>
           )}
@@ -550,8 +600,9 @@ export const GoogleCalendarPage: React.FC = () => {
                       {/* Day Events Pills */}
                       <div className="space-y-1 overflow-y-auto max-h-[80px] scrollbar-none">
                         {dayEvents.map((ev) => {
-                          const eventTime = ev.start_datetime
-                            ? new Date(ev.start_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          const dateObj = parseLocalDateTime(ev.start_datetime);
+                          const eventTime = dateObj && !isNaN(dateObj.getTime())
+                            ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                             : '';
 
                           return (
@@ -599,8 +650,8 @@ export const GoogleCalendarPage: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {events.map((ev) => {
-                    const startDate = new Date(ev.start_datetime);
-                    const endDate = new Date(ev.end_datetime);
+                    const startDate = parseLocalDateTime(ev.start_datetime);
+                    const endDate = parseLocalDateTime(ev.end_datetime);
 
                     return (
                       <div
@@ -947,26 +998,33 @@ export const GoogleCalendarPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <h2 className="text-lg font-extrabold text-slate-900">{selectedEvent.title}</h2>
 
-              <div className="space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
-                <div className="flex items-center gap-2 text-slate-700 font-bold">
-                  <CalendarIcon className="w-4 h-4 text-blue-600" />
-                  <span>
-                    {new Date(selectedEvent.start_datetime).toLocaleDateString('es-ES', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-500 font-medium">
-                  <Clock className="w-4 h-4 text-slate-400" />
-                  <span>
-                    {new Date(selectedEvent.start_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
-                    {new Date(selectedEvent.end_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              </div>
+              {(() => {
+                const startDate = parseLocalDateTime(selectedEvent.start_datetime);
+                const endDate = parseLocalDateTime(selectedEvent.end_datetime);
+
+                return (
+                  <div className="space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-2 text-slate-700 font-bold">
+                      <CalendarIcon className="w-4 h-4 text-blue-600" />
+                      <span>
+                        {startDate.toLocaleDateString('es-ES', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-500 font-medium">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      <span>
+                        {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
+                        {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {selectedEvent.location && (
                 <div className="flex items-center gap-2 font-bold text-slate-700 bg-rose-50/50 p-3 rounded-2xl border border-rose-100">
