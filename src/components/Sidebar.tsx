@@ -96,8 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       color: 'text-indigo-600 dark:text-indigo-400',
       items: [
         { label: 'Trámites de Visas', path: '/visas', icon: 'assignment_ind', permission: 'view_visas' },
-        { label: 'Formularios W-8', path: '/w8-forms', icon: 'description', permission: 'view_w8_forms' },
-        { label: 'Reportes de Viajes', path: '/travel-reports', icon: 'connecting_airports', permission: 'view_travel_reports' },
+        { label: 'Reportes de Viajes', path: '/travel-reports', icon: 'connecting_airports' },
       ],
     },
     {
@@ -111,6 +110,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
+      title: 'Cursos & Capacitación',
+      icon: 'school',
+      color: 'text-cyan-600 dark:text-cyan-400',
+      items: [
+        ...(isSuperAdmin || isGerenteComercial
+          ? [
+              { label: 'Gestión de Cursos', path: '/courses', icon: 'menu_book' },
+            ]
+          : []),
+        { label: 'Mis Cursos', path: '/my-courses', icon: 'local_library' },
+      ],
+    },
+    {
       title: 'Gestión & Agencia',
       icon: 'badge',
       color: 'text-purple-600 dark:text-purple-400',
@@ -121,6 +133,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ...(isGerenteComercial || isAdmin
           ? [{ label: isGerenteComercial ? 'Mis Agencias' : 'Mi Agencia', path: '/admin/agencies', icon: 'store' }]
           : []),
+        { label: 'Equipos de Trabajo', path: '/admin/teams', icon: 'groups' },
+        { label: 'Comisiones & Balances', path: '/commissions', icon: 'payments' },
       ],
     },
   ];

@@ -1,9 +1,3 @@
 {
-  "/admin/permissions/page": "app/admin/permissions/page.js",
-  "/products/page": "app/products/page.js",
-  "/travel-reports/page": "app/travel-reports/page.js",
-  "/login/page": "app/login/page.js",
-  "/admin/agencies/page": "app/admin/agencies/page.js",
-  "/page": "app/page.js",
-  "/landings/page": "app/landings/page.js"
+  "/my-courses/[id]/page": "app/my-courses/[id]/page.js"
 }
