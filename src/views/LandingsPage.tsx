@@ -101,9 +101,10 @@ export const LandingsPage: React.FC = () => {
           ? 'Landing Page habilitada con éxito'
           : 'Landing Page suspendida. Se mostrará la pantalla de aviso a los visitantes.'
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error toggling landing status:', err);
-      toast.error('Ocurrió un error al cambiar el estado de la landing.');
+      const serverMsg = err.response?.data?.message || err.message;
+      toast.error(serverMsg || 'Ocurrió un error al cambiar el estado de la landing.');
     } finally {
       setTogglingId(null);
     }
