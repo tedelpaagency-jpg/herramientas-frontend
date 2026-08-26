@@ -67,8 +67,8 @@ export const MyCourseDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-10 h-10 text-[#00e699] animate-spin" />
-        <p className="text-slate-400 text-xs font-semibold">Cargando la ruta de aprendizaje...</p>
+        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+        <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Cargando la ruta de aprendizaje...</p>
       </div>
     );
   }
@@ -77,7 +77,7 @@ export const MyCourseDetailPage: React.FC = () => {
     return (
       <div className="p-8 text-center space-y-4">
         <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-        <h2 className="text-xl font-bold text-white">Curso no encontrado o sin acceso</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Curso no encontrado o sin acceso</h2>
         <Link href="/my-courses" className="inline-block px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs">
           Volver a Mis Cursos
         </Link>
@@ -101,13 +101,13 @@ export const MyCourseDetailPage: React.FC = () => {
   ];
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 text-slate-100">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 text-slate-900 dark:text-slate-100">
       
       {/* BARRA SUPERIOR DE NAVEGACIÓN */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
         <Link
           href="/my-courses"
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors text-xs font-bold"
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs font-bold shadow-2xs"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Volver a Mis Cursos</span>
@@ -117,14 +117,14 @@ export const MyCourseDetailPage: React.FC = () => {
           {viewMode === 'player' && (
             <button
               onClick={() => setViewMode('overview')}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-extrabold text-white transition-colors border border-slate-700"
+              className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-extrabold text-slate-800 dark:text-white transition-colors border border-slate-200 dark:border-slate-700"
             >
               Ver Resumen del Curso
             </button>
           )}
 
           {isCompleted ? (
-            <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-950/80 text-emerald-400 font-extrabold text-xs border border-emerald-500/30">
+            <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs border border-emerald-200 dark:border-emerald-500/30">
               <CheckCircle2 className="w-4 h-4" />
               <span>Curso Completado</span>
             </div>
@@ -151,16 +151,16 @@ export const MyCourseDetailPage: React.FC = () => {
             {/* 1. COMPONENTE: CABECERA Y METADATOS */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-[#00e699] flex items-center justify-center border border-emerald-500/30">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] flex items-center justify-center border border-emerald-500/20 dark:border-emerald-500/30">
                   <GraduationCap className="w-5 h-5" />
                 </div>
-                <span className="text-xs font-black uppercase tracking-widest text-[#00e699]">
+                <span className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-[#00e699]">
                   Ruta Profesional
                 </span>
               </div>
 
               {/* Título del Programa */}
-              <h1 className="text-3xl md:text-4xl font-black text-white leading-tight tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">
                 {course.title}
               </h1>
 
@@ -172,34 +172,34 @@ export const MyCourseDetailPage: React.FC = () => {
                   <Star className="w-4 h-4 fill-amber-400" />
                   <Star className="w-4 h-4 fill-amber-400" />
                   <Star className="w-4 h-4 fill-amber-400" />
-                  <span className="ml-1.5 font-black text-white">4.9</span>
+                  <span className="ml-1.5 font-black text-slate-900 dark:text-white">4.9</span>
                 </div>
-                <span className="text-slate-400 font-semibold cursor-pointer hover:underline">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold cursor-pointer hover:underline">
                   34 opiniones ›
                 </span>
               </div>
 
               {/* Atributo de Publicación */}
-              <p className="text-xs font-semibold text-slate-400">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 Publicado el {course.created_at ? new Date(course.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : '08 de julio de 2025'}
               </p>
 
               {/* Píldoras de Especificación (Tags) */}
               <div className="flex flex-wrap items-center gap-2 pt-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold">
-                  <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
+                  <Layers className="w-3.5 h-3.5 text-indigo-500" />
                   <span>Nivel {course.category || 'Avanzado'}</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold">
-                  <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
+                  <BookOpen className="w-3.5 h-3.5 text-cyan-500" />
                   <span>{resources.length || 33} clases</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold">
-                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
+                  <Clock className="w-3.5 h-3.5 text-amber-500" />
                   <span>4 horas de contenido</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
                   <span>14 horas de práctica</span>
                 </span>
               </div>
@@ -207,17 +207,17 @@ export const MyCourseDetailPage: React.FC = () => {
 
             {/* 2. COMPONENTE: DESCRIPCIÓN Y OBJETIVOS */}
             <div className="pt-2">
-              <p className="text-slate-300 text-base leading-relaxed font-medium">
+              <p className="text-slate-700 dark:text-slate-300 text-base leading-relaxed font-medium">
                 {course.description || 'Domina esta tecnología más allá de los fundamentos. Construye proyectos reales aplicando principios profesionales de arquitectura moderna, optimización y desarrollo continuo.'}
               </p>
             </div>
 
             {/* 4. COMPONENTE: TEMARIO Y RUTA DE CLASES (SYLLABUS CON LÍNEA DE TIEMPO) */}
-            <div className="space-y-6 pt-6 border-t border-slate-800/80">
-              <h2 className="text-xl font-black text-white tracking-tight">Temario del Curso</h2>
+            <div className="space-y-6 pt-6 border-t border-slate-200 dark:border-slate-800/80">
+              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Temario del Curso</h2>
 
               {/* Render de los módulos con nodos numerados */}
-              <div className="relative pl-4 space-y-8 border-l-2 border-slate-800">
+              <div className="relative pl-4 space-y-8 border-l-2 border-slate-200 dark:border-slate-800">
                 {modules.map((module, mIdx) => {
                   let globalLessonOffset = mIdx === 0 ? 0 : modules[0].lessons.length;
 
@@ -225,8 +225,8 @@ export const MyCourseDetailPage: React.FC = () => {
                     <div key={module.title} className="space-y-4">
                       {/* Título del Módulo */}
                       <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full bg-[#00e699] -ml-[23px] shadow-md shadow-[#00e699]/40" />
-                        <h3 className="text-base font-extrabold text-white tracking-tight">
+                        <div className="w-3 h-3 rounded-full bg-emerald-500 dark:bg-[#00e699] -ml-[23px] shadow-md shadow-emerald-500/40" />
+                        <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
                           {module.title}
                         </h3>
                       </div>
@@ -244,36 +244,36 @@ export const MyCourseDetailPage: React.FC = () => {
                                 setActiveResource(lesson);
                                 setViewMode('player');
                               }}
-                              className="group flex items-center gap-4 p-3 rounded-2xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/80 hover:border-slate-700 transition-all cursor-pointer select-none"
+                              className="group flex items-center gap-4 p-3 rounded-2xl bg-white dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer select-none shadow-2xs"
                             >
                               {/* Nodo numerado */}
-                              <div className="w-7 h-7 rounded-full bg-slate-800 group-hover:bg-[#00e699] text-slate-400 group-hover:text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0 transition-colors">
+                              <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-500 dark:group-hover:bg-[#00e699] text-slate-600 dark:text-slate-400 group-hover:text-white dark:group-hover:text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0 transition-colors">
                                 {lessonIndex}
                               </div>
 
                               {/* Miniatura de la clase */}
-                              <div className="relative w-24 h-14 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex-shrink-0">
+                              <div className="relative w-24 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex-shrink-0">
                                 {course.main_image ? (
                                   <img src={course.main_image} alt={lesson.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-indigo-950/60 text-indigo-400">
+                                  <div className="w-full h-full flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/60 text-indigo-500">
                                     <Video className="w-6 h-6" />
                                   </div>
                                 )}
                                 
                                 {/* Overlay con candado o reproducción */}
-                                <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
+                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                                   {isUnlocked ? (
                                     <Play className="w-5 h-5 text-white fill-white opacity-90 group-hover:scale-110 transition-transform" />
                                   ) : (
-                                    <Lock className="w-4 h-4 text-slate-400" />
+                                    <Lock className="w-4 h-4 text-slate-300" />
                                   )}
                                 </div>
                               </div>
 
                               {/* Información de la Clase */}
                               <div className="flex-1 min-w-0">
-                                <h4 className="text-sm font-bold text-slate-200 group-hover:text-[#00e699] transition-colors truncate">
+                                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-[#00e699] transition-colors truncate">
                                   {lesson.title}
                                 </h4>
                                 <span className="text-xs font-semibold text-slate-400">
@@ -294,18 +294,18 @@ export const MyCourseDetailPage: React.FC = () => {
 
           {/* 3. COLUMNA LATERAL DERECHA (PANEL DE ACCIÓN Y MULTIMEDIA STICKY) */}
           <div className="space-y-6">
-            <div className="sticky top-6 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
+            <div className="sticky top-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
               
               {/* Banner de Beneficios */}
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-950 border border-slate-800">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-[#00e699] flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] flex items-center justify-center flex-shrink-0">
                   <Award className="w-6 h-6" />
                 </div>
-                <div className="text-xs font-medium text-slate-300">
-                  <p className="font-bold text-white leading-snug">
+                <div className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <p className="font-bold text-slate-900 dark:text-white leading-snug">
                     Accede a este y a más de 2000 cursos profesionales adquiriendo un plan.
                   </p>
-                  <span className="text-[#00e699] font-extrabold cursor-pointer hover:underline block pt-1">
+                  <span className="text-emerald-600 dark:text-[#00e699] font-extrabold cursor-pointer hover:underline block pt-1">
                     Ver otros planes
                   </span>
                 </div>
@@ -314,20 +314,20 @@ export const MyCourseDetailPage: React.FC = () => {
               {/* Media Preview Card */}
               <div 
                 onClick={() => setViewMode('player')}
-                className="relative rounded-2xl overflow-hidden border border-slate-700/80 h-48 bg-slate-950 cursor-pointer group shadow-xl"
+                className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/80 h-48 bg-slate-100 dark:bg-slate-950 cursor-pointer group shadow-md"
               >
                 {course.main_image ? (
                   <img src={course.main_image} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-950 to-slate-900 text-indigo-400">
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-indigo-950 dark:to-slate-900 text-indigo-500">
                     <Video className="w-10 h-10 opacity-60 mb-1" />
-                    <span className="text-xs font-bold text-slate-300">Vista Previa del Curso</span>
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Vista Previa del Curso</span>
                   </div>
                 )}
 
                 {/* Overlay Play Button */}
-                <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center group-hover:bg-slate-950/20 transition-colors">
-                  <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-2xl">
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/20 transition-colors">
+                  <div className="w-14 h-14 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-2xl">
                     <Play className="w-7 h-7 fill-white translate-x-0.5" />
                   </div>
                 </div>
@@ -337,15 +337,15 @@ export const MyCourseDetailPage: React.FC = () => {
               <div className="space-y-3">
                 <button
                   onClick={() => setViewMode('player')}
-                  className="w-full py-3.5 px-6 rounded-2xl bg-[#00e699] hover:bg-[#00c985] text-slate-950 font-black text-sm transition-all shadow-lg shadow-[#00e699]/20 flex items-center justify-center gap-2 active:scale-95"
+                  className="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 dark:bg-[#00e699] dark:hover:bg-[#00c985] text-white dark:text-slate-950 font-black text-sm transition-all shadow-lg shadow-emerald-500/20 dark:shadow-[#00e699]/20 flex items-center justify-center gap-2 active:scale-95"
                 >
-                  <Play className="w-4 h-4 fill-slate-950" />
+                  <Play className="w-4 h-4 fill-current" />
                   <span>Empezar Curso sin costo</span>
                 </button>
 
                 <button
                   onClick={() => toast.success('Curso agregado a tu ruta de aprendizaje')}
-                  className="w-full py-3 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-colors flex items-center justify-center gap-2 border border-slate-700"
+                  className="w-full py-3 px-6 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition-colors flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Agregar a mi ruta</span>
@@ -426,9 +426,9 @@ export const MyCourseDetailPage: React.FC = () => {
             </div>
 
             {/* Detalles & Descripción de la Clase */}
-            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-sm space-y-4">
-              <h3 className="text-lg font-black text-white">{activeResource?.title || course.title}</h3>
-              <p className="text-slate-300 text-xs leading-relaxed font-medium">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">{activeResource?.title || course.title}</h3>
+              <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed font-medium">
                 {course.description}
               </p>
             </div>
@@ -436,9 +436,9 @@ export const MyCourseDetailPage: React.FC = () => {
 
           {/* Lista Lateral de Reproducción (Playlist) */}
           <div className="space-y-4">
-            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-sm font-extrabold text-white">Contenido de la Ruta</h3>
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Contenido de la Ruta</h3>
                 <span className="text-xs font-bold text-slate-400">{resources.length} clase(s)</span>
               </div>
 
@@ -454,13 +454,13 @@ export const MyCourseDetailPage: React.FC = () => {
                         onClick={() => setActiveResource(resource)}
                         className={`w-full flex items-center justify-between p-3 rounded-2xl text-left transition-all ${
                           isActive
-                            ? 'bg-[#00e699]/10 border border-[#00e699]/40 text-[#00e699] font-extrabold shadow-2xs'
-                            : 'hover:bg-slate-800 text-slate-300 font-bold border border-transparent'
+                            ? 'bg-emerald-50 dark:bg-[#00e699]/10 border border-emerald-200 dark:border-[#00e699]/40 text-emerald-700 dark:text-[#00e699] font-extrabold shadow-2xs'
+                            : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border border-transparent'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black ${
-                            resource.type === 'video' ? 'bg-indigo-950 text-indigo-400' : 'bg-rose-950 text-rose-400'
+                            resource.type === 'video' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400'
                           }`}>
                             {resource.type === 'video' ? <Video className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
                           </div>
@@ -470,7 +470,7 @@ export const MyCourseDetailPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {isActive && <PlayCircle className="w-4 h-4 text-[#00e699]" />}
+                        {isActive && <PlayCircle className="w-4 h-4 text-emerald-600 dark:text-[#00e699]" />}
                       </button>
                     );
                   })}
