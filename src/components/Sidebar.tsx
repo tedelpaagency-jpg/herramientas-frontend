@@ -4,6 +4,33 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import { 
+  Home, 
+  LayoutDashboard, 
+  Calendar, 
+  Users, 
+  Globe, 
+  Mail, 
+  ShieldCheck, 
+  Building2, 
+  Plane, 
+  FileText, 
+  Package, 
+  ShoppingCart, 
+  Trophy, 
+  GraduationCap, 
+  BookOpen, 
+  UserCheck, 
+  Store, 
+  Briefcase, 
+  CreditCard, 
+  Layers, 
+  Key, 
+  Settings, 
+  Wrench, 
+  HelpCircle,
+  Compass
+} from 'lucide-react';
 
 interface SidebarProps {
   leftSidebarOpen: boolean;
@@ -49,101 +76,84 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   interface NavCategory {
     title: string;
-    icon: string;
-    color: string;
     items: {
       label: string;
       path: string;
-      icon: string;
+      icon: React.ElementType;
       permission?: string;
     }[];
   }
 
   const categories: NavCategory[] = [
     {
-      title: 'Principal & Control',
-      icon: 'space_dashboard',
-      color: 'text-blue-600 dark:text-blue-400',
+      title: 'MENÚ PRINCIPAL',
       items: [
-        { label: 'Dashboard', path: '/', icon: 'dashboard' },
+        { label: 'Inicio', path: '/', icon: Home },
       ],
     },
     {
-      title: 'Clientes, CRM & Contratos',
-      icon: 'contacts',
-      color: 'text-teal-600 dark:text-teal-400',
+      title: 'CLIENTES & CRM',
       items: [
-        { label: 'Workspaces & CRM', path: '/workspaces', icon: 'view_kanban' },
-        { label: 'Google Calendar', path: '/calendar', icon: 'calendar_month' },
-        { label: 'Directorio de Clientes', path: '/clients', icon: 'groups' },
-        { label: 'Landing Pages & Eventos', path: '/landings', icon: 'web' },
-        { label: 'Marketing & Correos', path: '/marketing', icon: 'mail' },
-        { label: 'Contratos & Bóveda (LexVault)', path: '/lexvault', icon: 'gavel' },
-      ],
-
-    },
-    {
-      title: 'Actividad Inmobiliaria',
-      icon: 'domain',
-      color: 'text-emerald-600 dark:text-emerald-400',
-      items: [
-        { label: 'Propiedades / Inmuebles', path: '/estates', icon: 'real_estate_agent', permission: 'view_estates' },
+        { label: 'Workspaces & CRM', path: '/workspaces', icon: LayoutDashboard },
+        { label: 'Google Calendar', path: '/calendar', icon: Calendar },
+        { label: 'Directorio de Clientes', path: '/clients', icon: Users },
+        { label: 'Landing Pages & Eventos', path: '/landings', icon: Globe },
+        { label: 'Marketing & Correos', path: '/marketing', icon: Mail },
+        { label: 'LexVault (Contratos)', path: '/lexvault', icon: ShieldCheck },
       ],
     },
     {
-      title: 'Turismo & Viajes',
-      icon: 'flight_takeoff',
-      color: 'text-indigo-600 dark:text-indigo-400',
+      title: 'ACTIVIDAD INMOBILIARIA',
       items: [
-        { label: 'Trámites de Visas', path: '/visas', icon: 'assignment_ind', permission: 'view_visas' },
-        { label: 'Reportes de Viajes', path: '/travel-reports', icon: 'connecting_airports' },
+        { label: 'Propiedades / Inmuebles', path: '/estates', icon: Building2, permission: 'view_estates' },
       ],
     },
     {
-      title: 'Comercio & Ventas',
-      icon: 'shopping_bag',
-      color: 'text-amber-600 dark:text-amber-400',
+      title: 'TURISMO & VIAJES',
       items: [
-        { label: 'Productos & Inventario', path: '/products', icon: 'inventory_2', permission: 'view_products' },
-        { label: 'Caja POS / Ventas', path: '/pos', icon: 'point_of_sale', permission: 'view_pos' },
-        { label: 'Ruleta de Premios', path: '/spin-wheel', icon: 'military_tech', permission: 'view_spin_wheel' },
+        { label: 'Trámites de Visas', path: '/visas', icon: FileText, permission: 'view_visas' },
+        { label: 'Reportes de Viajes', path: '/travel-reports', icon: Plane },
       ],
     },
     {
-      title: 'Cursos & Capacitación',
-      icon: 'school',
-      color: 'text-cyan-600 dark:text-cyan-400',
+      title: 'COMERCIO & VENTAS',
+      items: [
+        { label: 'Productos & Inventario', path: '/products', icon: Package, permission: 'view_products' },
+        { label: 'Caja POS / Ventas', path: '/pos', icon: ShoppingCart, permission: 'view_pos' },
+        { label: 'Ruleta de Premios', path: '/spin-wheel', icon: Trophy, permission: 'view_spin_wheel' },
+      ],
+    },
+    {
+      title: 'CAPACITACIÓN',
       items: [
         ...(isSuperAdmin || isGerenteComercial
           ? [
-              { label: 'Gestión de Cursos', path: '/courses', icon: 'menu_book' },
+              { label: 'Gestión de Cursos', path: '/courses', icon: GraduationCap },
             ]
           : []),
-        { label: 'Mis Cursos', path: '/my-courses', icon: 'local_library' },
+        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen },
       ],
     },
     {
-      title: 'Gestión & Agencia',
-      icon: 'badge',
-      color: 'text-purple-600 dark:text-purple-400',
+      title: 'GESTIÓN & AGENCIA',
       items: [
         ...(isSuperAdmin || isGerenteComercial || isAdmin
-          ? [{ label: 'Gestión de Usuarios', path: '/users', icon: 'group', permission: 'manage_users' }]
+          ? [{ label: 'Gestión de Usuarios', path: '/users', icon: UserCheck, permission: 'manage_users' }]
           : []),
         ...(isGerenteComercial || isAdmin
-          ? [{ label: isGerenteComercial ? 'Mis Agencias' : 'Mi Agencia', path: '/admin/agencies', icon: 'store' }]
+          ? [{ label: isGerenteComercial ? 'Mis Agencias' : 'Mi Agencia', path: '/admin/agencies', icon: Store }]
           : []),
-        { label: 'Equipos de Trabajo', path: '/admin/teams', icon: 'groups' },
-        { label: 'Comisiones & Balances', path: '/commissions', icon: 'payments' },
+        { label: 'Equipos de Trabajo', path: '/admin/teams', icon: Briefcase },
+        { label: 'Comisiones & Balances', path: '/commissions', icon: CreditCard },
       ],
     },
   ];
 
   const adminNavItems = [
-    { label: 'Planes', path: '/admin/plans', icon: 'layers' },
-    { label: 'Permisos', path: '/admin/permissions', icon: 'key' },
-    { label: 'Agencias', path: '/admin/agencies', icon: 'corporate_fare' },
-    { label: 'Suscripciones', path: '/admin/subscriptions', icon: 'credit_card' },
+    { label: 'Planes', path: '/admin/plans', icon: Layers },
+    { label: 'Permisos', path: '/admin/permissions', icon: Key },
+    { label: 'Agencias', path: '/admin/agencies', icon: Building2 },
+    { label: 'Suscripciones', path: '/admin/subscriptions', icon: CreditCard },
   ];
 
   return (
@@ -158,52 +168,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* Left Sidebar */}
-      <aside className={`flex flex-col h-full bg-surface dark:bg-inverse-surface fixed left-0 top-0 border-r border-outline-variant shadow-sm z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden ${leftSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isSidebarCollapsed ? 'w-64 lg:w-20' : 'w-64'}`}>
-        {/* Logo Branding */}
-        <div className="p-5 flex flex-col items-center border-b border-outline-variant/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-black shadow-md shadow-primary/20 text-lg flex-shrink-0">
-              S
+      <aside className={`flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden fixed left-0 top-0 ${leftSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isSidebarCollapsed ? 'w-64 lg:w-20' : 'w-64'}`}>
+        
+        {/* Logo Branding - Estilo Platzi */}
+        <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80">
+          <Link href="/" className="flex items-center gap-3">
+            {/* Logo de diamante de Platzi */}
+            <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20 transform -rotate-12">
+              <Compass className="w-5 h-5 text-slate-950 stroke-[2.5]" />
             </div>
+
             <div className={`transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[180px]'}`}>
-              <span className="text-xl font-extrabold text-on-surface tracking-tight uppercase whitespace-nowrap">SANTUN</span>
-              <p className="font-label-md text-label-md text-on-surface-variant opacity-70 whitespace-nowrap">Provider Portal</p>
+              <span className="text-xl font-black text-slate-900 dark:text-white tracking-tight font-sans">
+                SANTUN
+              </span>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Navigation Categories & Links */}
-        <nav className="flex-1 px-3 py-3 space-y-4 overflow-y-auto overflow-x-hidden custom-scrollbar">
+        <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto overflow-x-hidden custom-scrollbar">
           {categories.map((category, index) => {
             const visibleCategoryItems = category.items.filter(isItemVisible);
             if (visibleCategoryItems.length === 0) return null;
 
             return (
               <div key={category.title} className="space-y-1">
-                {/* Divider Line & Colored Title + Icon (No Background) */}
-                <div className={`transition-all duration-300 ${index > 0 ? 'pt-3 mt-3 border-t border-outline-variant/50' : 'pt-1'} ${isSidebarCollapsed ? 'lg:px-0' : 'px-1'}`}>
-                  <div className={`flex items-center gap-2 px-2.5 py-1 text-[10px] font-black tracking-wider uppercase ${category.color} ${isSidebarCollapsed ? 'lg:justify-center' : ''}`}>
-                    <span className="material-symbols-outlined text-[16px] flex-shrink-0">{category.icon}</span>
-                    <span className={`transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>{category.title}</span>
-                  </div>
+                {/* Header de Sección - Estilo Platzi */}
+                <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:text-center' : 'px-3'}`}>
+                  <span className={`text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase transition-all duration-300 ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
+                    {category.title}
+                  </span>
                 </div>
 
-                {/* Category Items */}
+                {/* Items de Navegación */}
                 {visibleCategoryItems.map((item) => {
                   const isActive = pathname === item.path;
+                  const Icon = item.icon;
+
                   return (
                     <Link 
                       key={item.path} 
                       href={item.path}
                       onClick={() => setLeftSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3.5 py-2.5 font-bold text-xs rounded-xl transition-all duration-150 active:scale-95 ${
+                      className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl transition-all duration-200 ${
                         isActive 
-                          ? 'text-primary bg-primary/10 border border-primary/20 shadow-2xs' 
-                          : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:bg-slate-800 dark:text-emerald-400 font-black shadow-xs border border-emerald-500/20' 
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white font-bold'
                       }`}
                     >
-                      <span className="material-symbols-outlined flex-shrink-0 text-[20px]">{item.icon}</span>
-                      <span className={`font-body-md whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>{item.label}</span>
+                      <Icon className={`w-5 h-5 flex-shrink-0 stroke-[2.2] transition-colors ${
+                        isActive ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-400'
+                      }`} />
+                      <span className={`text-[14px] leading-tight whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
+                        {item.label}
+                      </span>
                     </Link>
                   );
                 })}
@@ -213,29 +232,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Super Admin System Section */}
           {isSuperAdmin && (
-            <div className="space-y-1">
-              <div className={`pt-3 mt-3 border-t border-outline-variant/50 transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0' : 'px-1'}`}>
-                <div className={`flex items-center gap-2 px-2.5 py-1 text-rose-600 dark:text-rose-400 text-[10px] font-black tracking-wider uppercase ${isSidebarCollapsed ? 'lg:justify-center' : ''}`}>
-                  <span className="material-symbols-outlined text-[16px] flex-shrink-0">workspace_premium</span>
-                  <span className={`transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>Administración</span>
-                </div>
+            <div className="space-y-1 pt-2">
+              <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:text-center' : 'px-3'}`}>
+                <span className={`text-[10px] font-black tracking-widest text-rose-500 uppercase transition-all duration-300 ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
+                  ADMINISTRACIÓN
+                </span>
               </div>
 
               {adminNavItems.map((item) => {
                 const isActive = pathname === item.path;
+                const Icon = item.icon;
+
                 return (
                   <Link
                     key={item.path}
                     href={item.path}
                     onClick={() => setLeftSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 font-bold text-xs rounded-xl transition-all duration-150 ${
+                    className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl transition-all duration-200 ${
                       isActive
-                        ? 'text-rose-700 bg-rose-50 border border-rose-200/60 shadow-2xs'
-                        : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                        ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 font-black border border-rose-500/20'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white font-bold'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-rose-600 flex-shrink-0 text-[20px]">{item.icon}</span>
-                    <span className={`font-body-md whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>{item.label}</span>
+                    <Icon className={`w-5 h-5 flex-shrink-0 stroke-[2.2] ${
+                      isActive ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400 dark:text-slate-400'
+                    }`} />
+                    <span className={`text-[14px] leading-tight whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
+                      {item.label}
+                    </span>
                   </Link>
                 );
               })}
@@ -243,21 +267,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </nav>
 
-        {/* Bottom Utility Links */}
-        <div className="px-3 py-4 mt-auto border-t border-outline-variant/60 overflow-x-hidden space-y-0.5">
-          <Link href="/admin/permissions" className="flex items-center gap-3 px-3.5 py-2.5 text-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-xl transition-colors font-semibold">
-            <span className="material-symbols-outlined flex-shrink-0 text-[20px]">settings</span>
-            <span className={`font-body-md whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
+        {/* Links de Utilidad Inferiores */}
+        <div className="px-3 py-4 mt-auto border-t border-slate-100 dark:border-slate-800/80 space-y-1">
+          <Link href="/admin/permissions" className="flex items-center gap-3.5 px-3.5 py-2 rounded-xl text-[13px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
+            <Settings className="w-4 h-4 stroke-[2]" />
+            <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
           </Link>
-          <Link href="/products" className="flex items-center gap-3 px-3.5 py-2.5 text-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-xl transition-colors font-semibold">
-            <span className="material-symbols-outlined flex-shrink-0 text-[20px]">medical_services</span>
-            <span className={`font-body-md whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Herramientas</span>
+          <Link href="/products" className="flex items-center gap-3.5 px-3.5 py-2 rounded-xl text-[13px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
+            <Wrench className="w-4 h-4 stroke-[2]" />
+            <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Herramientas</span>
           </Link>
-          <Link href="/" onClick={() => setLeftSidebarOpen(false)} className="flex items-center w-full gap-3 px-3.5 py-2.5 text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface rounded-xl transition-colors font-semibold">
-            <span className="material-symbols-outlined flex-shrink-0 text-[20px]">help</span>
-            <span className={`font-body-md whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Ayuda</span>
+          <Link href="/" onClick={() => setLeftSidebarOpen(false)} className="flex items-center gap-3.5 px-3.5 py-2 rounded-xl text-[13px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
+            <HelpCircle className="w-4 h-4 stroke-[2]" />
+            <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Ayuda</span>
           </Link>
         </div>
+
       </aside>
     </>
   );
