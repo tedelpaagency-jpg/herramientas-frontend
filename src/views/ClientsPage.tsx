@@ -8,6 +8,8 @@ import { Users, Plus, Search, Mail, Phone, Edit3, Trash2, Info } from 'lucide-re
 import { TableSkeleton } from '@/components/Skeleton';
 import { LeadCampaignDetailsModal } from '@/components/LeadCampaignDetailsModal';
 
+import { confirmDialog } from '../utils/alerts';
+
 export const ClientsPage: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,7 +80,12 @@ export const ClientsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Desea eliminar este cliente?')) return;
+    const confirmed = await confirmDialog({
+      title: '¿Eliminar cliente?',
+      text: 'El registro del cliente será removido del directorio.',
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmed) return;
     try {
       await crmService.deleteClient(id);
       setClients(clients.filter(c => c.id !== id));

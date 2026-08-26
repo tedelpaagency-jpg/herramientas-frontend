@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import travelReportService from '../services/travelReportService';
 import { TravelReport } from '../types/travelReport';
+import { confirmDialog } from '../utils/alerts';
 import toast from 'react-hot-toast';
 
 export const TravelReportsPage: React.FC = () => {
@@ -61,7 +62,12 @@ export const TravelReportsPage: React.FC = () => {
   };
 
   const handleDelete = async (reportId: number) => {
-    if (!confirm('¿Estás seguro de eliminar este reporte de viaje?')) return;
+    const confirmed = await confirmDialog({
+      title: '¿Eliminar reporte de viaje?',
+      text: 'El expediente de viaje será marcado como eliminado.',
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmed) return;
     try {
       await travelReportService.deleteReport(reportId);
       toast.success('Reporte eliminado exitosamente');

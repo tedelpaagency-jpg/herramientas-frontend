@@ -43,6 +43,7 @@ export interface Course {
   description?: string | null;
   content?: string | null;
   main_image?: string | null;
+  category?: string | null;
   status: 'active' | 'inactive' | 'draft';
   created_by?: number | null;
   created_at?: string;

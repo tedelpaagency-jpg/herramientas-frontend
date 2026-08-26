@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
 
+import { confirmDialog } from '../utils/alerts';
+
 export const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const isSuperAdmin = currentUser?.role === 'super_admin' || currentUser?.roles?.some(r => r.name === 'super_admin');
@@ -123,7 +125,12 @@ export const UsersPage: React.FC = () => {
   };
 
   const handleDelete = async (u: User) => {
-    if (!confirm(`¿Está seguro de eliminar lógicamente al usuario "${u.name}"?`)) return;
+    const confirmed = await confirmDialog({
+      title: '¿Eliminar usuario?',
+      text: `Se inactivará lógicamente al usuario "${u.name}".`,
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmed) return;
     try {
       await userService.deleteUser(u.id);
       fetchUsers();

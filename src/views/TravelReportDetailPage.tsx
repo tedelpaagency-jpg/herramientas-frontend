@@ -11,6 +11,7 @@ import { TravelReport } from '../types/travelReport';
 import toast from 'react-hot-toast';
 
 import { useAuth } from '../context/AuthContext';
+import { confirmDialog } from '../utils/alerts';
 
 const formatMoney = (val: any): string => {
   const num = typeof val === 'number' ? val : parseFloat(val);
@@ -67,7 +68,17 @@ export const TravelReportDetailPage: React.FC = () => {
 
   const handleStatusChange = async (status: number, actionLabel: string) => {
     if (!report) return;
-    if (!confirm(`¿Estás seguro de realizar la acción "${actionLabel}" en este reporte?`)) return;
+
+    const actionText = actionLabel === 'auth' ? 'Autorizar Venta' : actionLabel === 'preauth' ? 'Pre-autorizar Venta' : 'Rechazar Venta';
+    const confirmed = await confirmDialog({
+      title: `¿Confirmar: ${actionText}?`,
+      text: `Se cambiará el estado de la venta ${report.code} - ${report.name}.`,
+      confirmButtonText: `Sí, ${actionText}`,
+      confirmButtonColor: status === 1 ? '#059669' : status === 2 ? '#ef4444' : '#2563eb',
+      icon: status === 1 ? 'success' : status === 2 ? 'warning' : 'info',
+    });
+
+    if (!confirmed) return;
 
     try {
       const res = await travelReportService.updateStatus(report.id, status);

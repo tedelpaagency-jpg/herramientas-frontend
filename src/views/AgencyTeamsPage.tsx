@@ -8,6 +8,7 @@ import teamService from '../services/teamService';
 import apiClient from '../services/apiClient';
 import { AgencyTeam } from '../types/travelReport';
 import toast from 'react-hot-toast';
+import { confirmDialog } from '../utils/alerts';
 
 interface UserSimple {
   id: number;
@@ -132,7 +133,12 @@ export const AgencyTeamsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Estás seguro de eliminar este equipo de trabajo?')) return;
+    const confirmed = await confirmDialog({
+      title: '¿Eliminar equipo de trabajo?',
+      text: 'El equipo y sus configuraciones de comisiones asociadas serán eliminados.',
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmed) return;
     try {
       await teamService.deleteTeam(id);
       toast.success('Equipo eliminado correctamente');
