@@ -1,8 +1,16 @@
 'use client';
 
 import React from 'react';
-import { SupplierPackagesPage } from '../../../views/SupplierPackagesPage';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Layout from '@/components/Layout';
+import { SupplierPackagesPage } from '@/views/SupplierPackagesPage';
 
 export default function Page() {
-  return <SupplierPackagesPage />;
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <SupplierPackagesPage />
+      </Layout>
+    </ProtectedRoute>
+  );
 }

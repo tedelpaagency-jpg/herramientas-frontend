@@ -1,15 +1,21 @@
 {
   "pages": {
-    "/my-courses/[id]/page": [
+    "/courses/[id]/edit/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/my-courses/[id]/page.js"
+      "static/css/app/courses/[id]/edit/page.css",
+      "static/chunks/app/courses/[id]/edit/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
+    ],
+    "/my-courses/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/my-courses/[id]/page.js"
     ],
     "/login/page": [
       "static/chunks/webpack.js",
@@ -21,10 +27,40 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/my-courses/page": [
+    "/travel-packages/pos/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/my-courses/page.js"
+      "static/chunks/app/travel-packages/pos/page.js"
+    ],
+    "/supplier/packages/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/supplier/packages/page.js"
+    ],
+    "/admin/pricing-rules/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/pricing-rules/page.js"
+    ],
+    "/admin/travel-packages/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/travel-packages/page.js"
+    ],
+    "/travel-packages/my-requests/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/travel-packages/my-requests/page.js"
+    ],
+    "/admin/travel-requests/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/travel-requests/page.js"
+    ],
+    "/admin/clearing/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/clearing/page.js"
     ]
   }
 }

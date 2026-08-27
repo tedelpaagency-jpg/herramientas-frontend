@@ -1,8 +1,16 @@
 'use client';
 
 import React from 'react';
-import { AdminTravelRequestsPage } from '../../../views/AdminTravelRequestsPage';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Layout from '@/components/Layout';
+import { AdminTravelRequestsPage } from '@/views/AdminTravelRequestsPage';
 
 export default function Page() {
-  return <AdminTravelRequestsPage />;
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <AdminTravelRequestsPage />
+      </Layout>
+    </ProtectedRoute>
+  );
 }

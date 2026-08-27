@@ -1,5 +1,7 @@
 {
-  "/page": "app/page.js",
-  "/my-courses/page": "app/my-courses/page.js",
-  "/my-courses/[id]/page": "app/my-courses/[id]/page.js"
+  "/travel-packages/pos/page": "app/travel-packages/pos/page.js",
+  "/admin/clearing/page": "app/admin/clearing/page.js",
+  "/admin/pricing-rules/page": "app/admin/pricing-rules/page.js",
+  "/supplier/packages/page": "app/supplier/packages/page.js",
+  "/login/page": "app/login/page.js"
 }

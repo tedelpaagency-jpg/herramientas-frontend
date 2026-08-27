@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"views\\\\CourseFormPage.tsx -> react-quill\":{\"id\":\"views\\\\CourseFormPage.tsx -> react-quill\",\"files\":[\"static/chunks/_app-pages-browser_node_modules_react-quill_lib_index_js.js\"]}}"

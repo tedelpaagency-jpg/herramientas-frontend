@@ -99,7 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Reportes', path: '/travel-reports', icon: Plane },
         ...(!isProveedor
           ? [
-              { label: 'Paquetes', path: '/travel-packages/pos', icon: ShoppingCart },
+              { label: 'Trip Builder B2B', path: '/travel-packages/pos', icon: ShoppingCart },
               { label: 'Solicitudes', path: '/travel-packages/my-requests', icon: FileText },
             ]
           : []),
@@ -111,6 +111,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           : []),
         ...(isSuperAdmin || isGerenteComercial
           ? [
+              { label: 'Clearing B2B', path: '/admin/clearing', icon: CreditCard },
+              { label: 'Reglas Pricing', path: '/admin/pricing-rules', icon: Layers },
               { label: 'Paquetes Admin', path: '/admin/travel-packages', icon: Package },
               { label: 'Solicitudes Viaje', path: '/admin/travel-requests', icon: FileText },
             ]

@@ -1,13 +1,16 @@
 'use client';
 
 import React from 'react';
-import { TravelPackagePosPage } from '../../../views/TravelPackagePosPage';
-import { TravelPackageCartProvider } from '../../../context/TravelPackageCartContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Layout from '@/components/Layout';
+import { TripBuilderPage } from '@/views/TripBuilderPage';
 
 export default function Page() {
   return (
-    <TravelPackageCartProvider>
-      <TravelPackagePosPage />
-    </TravelPackageCartProvider>
+    <ProtectedRoute>
+      <Layout>
+        <TripBuilderPage />
+      </Layout>
+    </ProtectedRoute>
   );
 }

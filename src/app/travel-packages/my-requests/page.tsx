@@ -1,8 +1,16 @@
 'use client';
 
 import React from 'react';
-import { AgentPackageRequestsPage } from '../../../views/AgentPackageRequestsPage';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Layout from '@/components/Layout';
+import { AgentPackageRequestsPage } from '@/views/AgentPackageRequestsPage';
 
 export default function Page() {
-  return <AgentPackageRequestsPage />;
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <AgentPackageRequestsPage />
+      </Layout>
+    </ProtectedRoute>
+  );
 }
