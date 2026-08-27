@@ -44,12 +44,13 @@ export const courseService = {
     return response.data;
   },
 
-  // Admin: Subir recurso de curso (video / pdf)
-  uploadResource: async (courseId: number | string, data: { title: string; type: 'video' | 'pdf'; file: File; sort_order?: number }) => {
+  // Admin: Subir recurso de curso (video / pdf / text)
+  uploadResource: async (courseId: number | string, data: { title: string; type: 'video' | 'pdf' | 'text'; content?: string; file?: File | null; sort_order?: number }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('type', data.type);
-    formData.append('file', data.file);
+    if (data.content !== undefined) formData.append('content', data.content);
+    if (data.file) formData.append('file', data.file);
     if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
 
     const response = await apiClient.post<{ status: string; message: string; data: CourseResource }>(`/v1/courses/${courseId}/resources`, formData, {
@@ -59,10 +60,11 @@ export const courseService = {
   },
 
   // Admin: Actualizar recurso (POST)
-  updateResource: async (resourceId: number, data: { title: string; type: 'video' | 'pdf'; file?: File; sort_order?: number }) => {
+  updateResource: async (resourceId: number, data: { title: string; type: 'video' | 'pdf' | 'text'; content?: string; file?: File | null; sort_order?: number }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('type', data.type);
+    if (data.content !== undefined) formData.append('content', data.content);
     if (data.file) formData.append('file', data.file);
     if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
 
@@ -138,6 +140,131 @@ export const courseService = {
     if (token) queryParams.set('token', token);
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return `${baseUrl}/v1/courses/resources/${resourceId}/stream${queryString}`;
+  },
+
+  // Admin: Crear Módulo del Curso (POST)
+  createModule: async (courseId: number | string, data: { title: string; description?: string; sort_order?: number }) => {
+    const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/${courseId}/modules`, data);
+    return response.data;
+  },
+
+  // Admin: Actualizar Módulo (POST)
+  updateModule: async (moduleId: number, data: { title: string; description?: string; sort_order?: number }) => {
+    const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/modules/${moduleId}/update`, data);
+    return response.data;
+  },
+
+  // Admin: Eliminar Módulo (POST)
+  deleteModule: async (moduleId: number) => {
+    const response = await apiClient.post<{ status: string; message: string }>(`/v1/courses/modules/${moduleId}/delete`);
+    return response.data;
+  },
+
+  // Admin: Reordenar Módulos (POST)
+  reorderModules: async (courseId: number | string, modules: { id: number; sort_order: number }[]) => {
+    const response = await apiClient.post<{ status: string; message: string }>(`/v1/courses/${courseId}/modules/reorder`, { modules });
+    return response.data;
+  },
+
+  // Admin: Crear sección de curso asociada a un módulo o curso (POST)
+  createSection: async (courseId: number | string, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'file'; file?: File; cover_image_file?: File }) => {
+    const formData = new FormData();
+    formData.append('title', data.title);
+    if (data.course_module_id) formData.append('course_module_id', data.course_module_id.toString());
+    if (data.group_name) formData.append('group_name', data.group_name);
+    if (data.duration) formData.append('duration', data.duration);
+    if (data.content) formData.append('content', data.content);
+    if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
+    if (data.primary_type) formData.append('primary_type', data.primary_type);
+    if (data.file) formData.append('file', data.file);
+    if (data.cover_image_file) formData.append('cover_image_file', data.cover_image_file);
+
+    const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/${courseId}/sections`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Admin: Actualizar sección (POST)
+  updateSection: async (sectionId: number, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'file'; file?: File; cover_image_file?: File }) => {
+    const formData = new FormData();
+    formData.append('title', data.title);
+    if (data.course_module_id !== undefined) formData.append('course_module_id', data.course_module_id ? data.course_module_id.toString() : '');
+    if (data.group_name !== undefined) formData.append('group_name', data.group_name || '');
+    if (data.duration !== undefined) formData.append('duration', data.duration || '');
+    if (data.content !== undefined) formData.append('content', data.content || '');
+    if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
+    if (data.primary_type) formData.append('primary_type', data.primary_type);
+    if (data.file) formData.append('file', data.file);
+    if (data.cover_image_file) formData.append('cover_image_file', data.cover_image_file);
+
+    const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/${sectionId}/update`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Admin: Eliminar sección (POST)
+  deleteSection: async (sectionId: number) => {
+    const response = await apiClient.post<{ status: string; message: string }>(`/v1/courses/sections/${sectionId}/delete`);
+    return response.data;
+  },
+
+  // Admin: Reordenar secciones (POST)
+  reorderSections: async (courseId: number | string, sections: { id: number; sort_order: number }[]) => {
+    const response = await apiClient.post<{ status: string; message: string }>(`/v1/courses/${courseId}/sections/reorder`, { sections });
+    return response.data;
+  },
+
+  // Admin: Subir material a una sección (video / pdf / file)
+  uploadMaterial: async (sectionId: number, data: { title: string; type: 'video' | 'pdf' | 'file'; file: File; sort_order?: number }) => {
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('type', data.type);
+    formData.append('file', data.file);
+    if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
+
+    const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/${sectionId}/materials`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Admin: Actualizar material de sección (POST)
+  updateMaterial: async (materialId: number, data: { title: string; type: 'video' | 'pdf' | 'file'; file?: File; sort_order?: number }) => {
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('type', data.type);
+    if (data.file) formData.append('file', data.file);
+    if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
+
+    const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/materials/${materialId}/update`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Admin: Eliminar material de sección (POST)
+  deleteMaterial: async (materialId: number) => {
+    const response = await apiClient.post<{ status: string; message: string }>(`/v1/courses/sections/materials/${materialId}/delete`);
+    return response.data;
+  },
+
+  // Admin: Reordenar materiales dentro de una sección (POST)
+  reorderMaterials: async (sectionId: number, materials: { id: number; sort_order: number }[]) => {
+    const response = await apiClient.post<{ status: string; message: string }>(`/v1/courses/sections/${sectionId}/materials/reorder`, { materials });
+    return response.data;
+  },
+
+  // Obtener URL de streaming/descarga protegida de material de sección
+  getMaterialStreamUrl: (materialId: number, download = false) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('santun_auth_token') : null;
+    const baseUrl = apiClient.defaults.baseURL || '';
+    const queryParams = new URLSearchParams();
+    if (download) queryParams.set('download', '1');
+    if (token) queryParams.set('token', token);
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return `${baseUrl}/v1/courses/materials/${materialId}/stream${queryString}`;
   }
 };
 

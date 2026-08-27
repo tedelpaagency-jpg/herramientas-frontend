@@ -1,8 +1,53 @@
+export interface CourseSectionMaterial {
+  id: number;
+  course_section_id: number;
+  title: string;
+  type: 'video' | 'pdf' | 'file';
+  duration?: string | null;
+  file_path: string;
+  file_name: string;
+  mime_type?: string;
+  file_size?: number;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string | null;
+}
+
+export interface CourseModule {
+  id: number;
+  course_id: number;
+  title: string;
+  description?: string | null;
+  sort_order: number;
+  sections?: CourseSection[];
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string | null;
+}
+
+export interface CourseSection {
+  id: number;
+  course_id: number;
+  course_module_id?: number | null;
+  group_name?: string | null;
+  title: string;
+  cover_image?: string | null;
+  content?: string | null;
+  duration?: string | null;
+  sort_order: number;
+  materials?: CourseSectionMaterial[];
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string | null;
+}
+
 export interface CourseResource {
   id: number;
   course_id: number;
   title: string;
-  type: 'video' | 'pdf';
+  type: 'video' | 'pdf' | 'text';
+  content?: string | null;
   file_path: string;
   file_name: string;
   mime_type?: string;
@@ -58,6 +103,8 @@ export interface Course {
     id: number;
     name: string;
   };
+  modules?: CourseModule[];
+  sections?: CourseSection[];
   resources?: CourseResource[];
   resources_count?: number;
   assignments?: CourseUserAssignment[];

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  X, Video, FileText, Plus, Trash2, Edit2, Upload, Loader2, Save, MoveUp, MoveDown, CheckCircle
+  X, Video, FileText, Plus, Trash2, Edit2, Upload, Loader2, Save, MoveUp, MoveDown, CheckCircle,
+  Bold, Italic, Underline, List, ListOrdered, Heading, Quote, Code, Eye, AlignLeft, Sparkles
 } from 'lucide-react';
 import courseService from '../services/courseService';
 import { Course, CourseResource } from '../types/course';
@@ -21,10 +22,12 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
   const [isAdding, setIsAdding] = useState(false);
   const [editingResource, setEditingResource] = useState<CourseResource | null>(null);
   const [title, setTitle] = useState('');
-  const [type, setType] = useState<'video' | 'pdf'>('video');
+  const [type, setType] = useState<'video' | 'pdf' | 'text'>('video');
+  const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   const fetchResources = async () => {
     setLoading(true);
@@ -49,7 +52,17 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
     setEditingResource(null);
     setTitle('');
     setType('video');
+    setContent('');
     setFile(null);
+    setShowPreview(false);
+  };
+
+  const insertTag = (openTag: string, closeTag: string = '') => {
+    if (!closeTag) {
+      setContent(prev => prev + openTag);
+    } else {
+      setContent(prev => prev + `${openTag}Texto formateado${closeTag}`);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -59,8 +72,13 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
       return;
     }
 
-    if (!editingResource && !file) {
-      toast.error('Debes seleccionar un archivo para el nuevo recurso');
+    if (type !== 'text' && !editingResource && !file) {
+      toast.error('Debes seleccionar un archivo para el recurso de video/PDF');
+      return;
+    }
+
+    if (type === 'text' && !content.trim()) {
+      toast.error('El contenido de texto enriquecido es requerido');
       return;
     }
 
@@ -71,6 +89,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
         await courseService.updateResource(editingResource.id, {
           title: title.trim(),
           type,
+          content: content.trim(),
           file: file || undefined,
         });
         toast.success('Recurso actualizado exitosamente');
@@ -79,9 +98,10 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
         await courseService.uploadResource(course.id, {
           title: title.trim(),
           type,
-          file: file!,
+          content: content.trim(),
+          file: file || undefined,
         });
-        toast.success('Recurso subido exitosamente');
+        toast.success('Recurso guardado exitosamente');
       }
       resetForm();
       fetchResources();
@@ -96,7 +116,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
     setDeletingId(id);
     try {
       await courseService.deleteResource(id);
-      toast.success('Recurso eliminado (Soft Delete)');
+      toast.success('Recurso eliminado');
       fetchResources();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al eliminar el recurso');
@@ -109,7 +129,9 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
     setEditingResource(resource);
     setTitle(resource.title);
     setType(resource.type);
+    setContent(resource.content || '');
     setFile(null);
+    setShowPreview(false);
     setIsAdding(true);
   };
 
@@ -198,14 +220,14 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
                 </button>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Título del Recurso *</label>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Ej. Introducción al Módulo (Video) o Guía PDF"
+                    placeholder="Ej. Introducción al Módulo (Video), Guía PDF o Lectura Teórica"
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none"
                     required
                   />
@@ -216,39 +238,158 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo de Recurso *</label>
                     <select
                       value={type}
-                      onChange={(e) => setType(e.target.value as 'video' | 'pdf')}
+                      onChange={(e) => setType(e.target.value as 'video' | 'pdf' | 'text')}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 outline-none"
                     >
                       <option value="video">Video (MP4, WebM, MOV)</option>
                       <option value="pdf">Documento PDF</option>
+                      <option value="text">Texto Enriquecido / Lectura</option>
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      {editingResource ? 'Reemplazar Archivo (Opcional)' : 'Seleccionar Archivo *'}
-                    </label>
-                    <input
-                      type="file"
-                      accept={type === 'video' ? 'video/mp4,video/webm,video/quicktime,video/x-matroska' : 'application/pdf'}
-                      onChange={(e) => setFile(e.target.files?.[0] || null)}
-                      className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-950 dark:file:text-blue-400 hover:file:bg-blue-100"
-                    />
-                  </div>
+                  {type !== 'text' && (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        {editingResource ? 'Reemplazar Archivo (Opcional)' : 'Seleccionar Archivo *'}
+                      </label>
+                      <input
+                        type="file"
+                        accept={type === 'video' ? 'video/mp4,video/webm,video/quicktime,video/x-matroska' : 'application/pdf'}
+                        onChange={(e) => setFile(e.target.files?.[0] || null)}
+                        className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-950 dark:file:text-blue-400 hover:file:bg-blue-100"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                {editingResource && (
+                {type !== 'text' && editingResource && editingResource.file_name && (
                   <p className="text-[11px] text-slate-400">
                     Archivo actual: <strong>{editingResource.file_name}</strong> ({formatFileSize(editingResource.file_size)})
                   </p>
                 )}
+
+                {/* Editor de Texto Enriquecido */}
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      {type === 'text' ? 'Contenido de Texto Enriquecido *' : 'Notas / Instrucciones Adicionales (Opcional)'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowPreview(!showPreview)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>{showPreview ? 'Ver Editor HTML' : 'Ver Vista Previa'}</span>
+                    </button>
+                  </div>
+
+                  {/* Toolbar de Formato */}
+                  {!showPreview && (
+                    <div className="flex flex-wrap items-center gap-1.5 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => insertTag('<b>', '</b>')}
+                        title="Negrita"
+                        className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      >
+                        <Bold className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTag('<i>', '</i>')}
+                        title="Cursiva"
+                        className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      >
+                        <Italic className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTag('<u>', '</u>')}
+                        title="Subrayado"
+                        className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      >
+                        <Underline className="w-4 h-4" />
+                      </button>
+                      <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+                      <button
+                        type="button"
+                        onClick={() => insertTag('<h2>', '</h2>')}
+                        title="Título Principal"
+                        className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs"
+                      >
+                        H2
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTag('<h3>', '</h3>')}
+                        title="Subtítulo"
+                        className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs"
+                      >
+                        H3
+                      </button>
+                      <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+                      <button
+                        type="button"
+                        onClick={() => insertTag('<ul className="list-disc pl-5 space-y-1">\n  <li>', '</li>\n</ul>')}
+                        title="Lista con viñetas"
+                        className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      >
+                        <List className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTag('<ol className="list-decimal pl-5 space-y-1">\n  <li>', '</li>\n</ol>')}
+                        title="Lista numerada"
+                        className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      >
+                        <ListOrdered className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTag('<blockquote className="border-l-4 border-emerald-500 pl-4 py-1 italic text-slate-600 dark:text-slate-400">\n  ', '\n</blockquote>')}
+                        title="Cita destacada"
+                        className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      >
+                        <Quote className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTag('<pre className="bg-slate-900 text-emerald-400 p-3 rounded-xl overflow-x-auto text-xs font-mono">\n  <code>', '</code>\n</pre>')}
+                        title="Bloque de código"
+                        className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      >
+                        <Code className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Area de Edición / Vista Previa */}
+                  {showPreview ? (
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[160px] text-sm text-slate-800 dark:text-slate-200 prose dark:prose-invert max-w-none">
+                      {content.trim() ? (
+                        <div dangerouslySetInnerHTML={{ __html: content }} />
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">Sin contenido cargado para previsualizar.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <textarea
+                      rows={6}
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      placeholder={type === 'text' ? 'Escribe o pega aquí el contenido enriquecido HTML de la clase (puedes usar etiquetas HTML o los botones superiores)...' : 'Instrucciones o notas adicionales para los alumnos...'}
+                      className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-mono text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500/20 outline-none leading-relaxed"
+                    />
+                  )}
+                </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-3 pt-3">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400"
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   Cancelar
                 </button>
@@ -258,7 +399,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
                   className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-500 transition-all shadow-md shadow-blue-600/20"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{editingResource ? 'Guardar Cambios' : 'Subir Recurso'}</span>
+                  <span>{editingResource ? 'Guardar Cambios' : 'Guardar Recurso'}</span>
                 </button>
               </div>
             </form>
@@ -281,22 +422,24 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
                   key={resource.id}
                   className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xs hover:border-blue-300 dark:hover:border-blue-800 transition-all group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
-                      resource.type === 'video' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0 ${
+                      resource.type === 'video' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400' :
+                      resource.type === 'pdf' ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400' :
+                      'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
                     }`}>
-                      {resource.type === 'video' ? <Video className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                      {resource.type === 'video' ? <Video className="w-5 h-5" /> : resource.type === 'pdf' ? <FileText className="w-5 h-5" /> : <AlignLeft className="w-5 h-5" />}
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <h4 className="font-extrabold text-sm text-slate-900 dark:text-white line-clamp-1">{resource.title}</h4>
-                      <p className="text-[11px] text-slate-400">
-                        {resource.file_name} • {formatFileSize(resource.file_size)} • {resource.type.toUpperCase()}
+                      <p className="text-[11px] text-slate-400 truncate">
+                        {resource.type === 'text' ? 'Texto Enriquecido' : `${resource.file_name || 'Archivo'} • ${formatFileSize(resource.file_size)}`} • {resource.type.toUpperCase()}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     {/* Move Controls */}
                     <button
                       disabled={index === 0}
@@ -325,7 +468,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
                     <button
                       disabled={deletingId === resource.id}
                       onClick={() => handleDelete(resource.id)}
-                      title="Eliminar (Soft Delete)"
+                      title="Eliminar"
                       className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
                     >
                       {deletingId === resource.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
