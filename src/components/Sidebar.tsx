@@ -5,43 +5,22 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { 
-  Home, 
-  LayoutDashboard, 
-  Calendar, 
-  Users, 
-  Globe, 
-  Mail, 
-  ShieldCheck, 
-  Building2, 
-  Plane, 
-  FileText, 
-  Package, 
-  ShoppingCart, 
-  Trophy, 
-  GraduationCap, 
-  BookOpen, 
-  UserCheck, 
-  Store, 
-  Briefcase, 
-  CreditCard, 
-  Layers, 
-  Key, 
-  Settings, 
-  Wrench, 
-  HelpCircle,
-  Compass
+  Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
+  Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
+  Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
+  LayoutDashboard, Compass
 } from 'lucide-react';
 
 interface SidebarProps {
+  isSidebarCollapsed: boolean;
   leftSidebarOpen: boolean;
   setLeftSidebarOpen: (open: boolean) => void;
-  isSidebarCollapsed: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
+  isSidebarCollapsed,
   leftSidebarOpen,
   setLeftSidebarOpen,
-  isSidebarCollapsed,
 }) => {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -190,13 +169,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Left Sidebar */}
-      <aside className={`flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden fixed left-0 top-0 ${leftSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isSidebarCollapsed ? 'w-64 lg:w-20' : 'w-64'}`}>
+      {/* Minimalist Left Sidebar */}
+      <aside className={`flex flex-col h-full bg-white dark:bg-slate-900 z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden fixed left-0 top-0 ${leftSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isSidebarCollapsed ? 'w-64 lg:w-20' : 'w-64'}`}>
         
-        {/* Logo Branding - Estilo Platzi */}
-        <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80">
+        {/* Logo Branding Minimalista (Sin bordes de separación) */}
+        <div className="px-5 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            {/* Logo de diamante de Platzi */}
             <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20 transform -rotate-12">
               <Compass className="w-5 h-5 text-slate-950 stroke-[2.5]" />
             </div>
@@ -209,22 +187,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </Link>
         </div>
 
-        {/* Navigation Categories & Links */}
-        <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto overflow-x-hidden custom-scrollbar">
-          {categories.map((category, index) => {
+        {/* Navigation Categories & Links Minimalistas */}
+        <nav className="flex-1 px-3 py-2 space-y-3 overflow-y-auto overflow-x-hidden custom-scrollbar">
+          {categories.map((category) => {
             const visibleCategoryItems = category.items.filter(isItemVisible);
             if (visibleCategoryItems.length === 0) return null;
 
             return (
-              <div key={category.title} className="space-y-1">
-                {/* Header de Sección - Estilo Platzi */}
+              <div key={category.title} className="space-y-0.5">
+                {/* Header de Sección Minimalista (Sin Iconos) */}
                 <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:text-center' : 'px-3'}`}>
-                  <span className={`text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase transition-all duration-300 ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
+                  <span className={`text-[10px] font-extrabold tracking-widest text-slate-400 dark:text-slate-500 uppercase transition-all duration-300 ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
                     {category.title}
                   </span>
                 </div>
 
-                {/* Items de Navegación */}
+                {/* Items de Navegación Compactos */}
                 {visibleCategoryItems.map((item) => {
                   const isActive = pathname === item.path;
                   const Icon = item.icon;
@@ -234,16 +212,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       key={item.path} 
                       href={item.path}
                       onClick={() => setLeftSidebarOpen(false)}
-                      className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl transition-all duration-200 ${
+                      className={`flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all duration-150 ${
                         isActive 
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:bg-slate-800 dark:text-emerald-400 font-black shadow-xs border border-emerald-500/20' 
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white font-bold'
+                          ? 'bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 font-extrabold' 
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white font-medium'
                       }`}
                     >
-                      <Icon className={`w-5 h-5 flex-shrink-0 stroke-[2.2] transition-colors ${
-                        isActive ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-400'
-                      }`} />
-                      <span className={`text-[14px] leading-tight whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
+                      {/* Mostrar icono solo cuando la barra esté colapsada para mantener usabilidad */}
+                      {isSidebarCollapsed && (
+                        <Icon className={`w-4 h-4 flex-shrink-0 stroke-[2] ${
+                          isActive ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'
+                        }`} />
+                      )}
+                      
+                      <span className={`text-[13px] leading-snug whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
                         {item.label}
                       </span>
                     </Link>
@@ -253,11 +235,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             );
           })}
 
-          {/* Super Admin System Section */}
+          {/* Super Admin System Section Minimalista */}
           {isSuperAdmin && (
-            <div className="space-y-1 pt-2">
+            <div className="space-y-0.5 pt-1">
               <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:text-center' : 'px-3'}`}>
-                <span className={`text-[10px] font-black tracking-widest text-rose-500 uppercase transition-all duration-300 ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
+                <span className={`text-[10px] font-extrabold tracking-widest text-rose-500/80 uppercase transition-all duration-300 ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
                   ADMINISTRACIÓN
                 </span>
               </div>
@@ -271,16 +253,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={item.path}
                     href={item.path}
                     onClick={() => setLeftSidebarOpen(false)}
-                    className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl transition-all duration-200 ${
+                    className={`flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all duration-150 ${
                       isActive
-                        ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 font-black border border-rose-500/20'
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white font-bold'
+                        ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-extrabold'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white font-medium'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 flex-shrink-0 stroke-[2.2] ${
-                      isActive ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400 dark:text-slate-400'
-                    }`} />
-                    <span className={`text-[14px] leading-tight whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
+                    {isSidebarCollapsed && (
+                      <Icon className={`w-4 h-4 flex-shrink-0 stroke-[2] ${
+                        isActive ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'
+                      }`} />
+                    )}
+                    <span className={`text-[13px] leading-snug whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
                       {item.label}
                     </span>
                   </Link>
@@ -290,18 +274,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </nav>
 
-        {/* Links de Utilidad Inferiores */}
-        <div className="px-3 py-4 mt-auto border-t border-slate-100 dark:border-slate-800/80 space-y-1">
-          <Link href="/admin/permissions" className="flex items-center gap-3.5 px-3.5 py-2 rounded-xl text-[13px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
-            <Settings className="w-4 h-4 stroke-[2]" />
+        {/* Links de Utilidad Inferiores Minimalistas (Sin línea de separación) */}
+        <div className="px-3 py-3 mt-auto space-y-0.5">
+          <Link href="/admin/permissions" className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+            {isSidebarCollapsed && <Settings className="w-4 h-4 stroke-[2]" />}
             <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
           </Link>
-          <Link href="/products" className="flex items-center gap-3.5 px-3.5 py-2 rounded-xl text-[13px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
-            <Wrench className="w-4 h-4 stroke-[2]" />
+          <Link href="/products" className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+            {isSidebarCollapsed && <Wrench className="w-4 h-4 stroke-[2]" />}
             <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Herramientas</span>
           </Link>
-          <Link href="/" onClick={() => setLeftSidebarOpen(false)} className="flex items-center gap-3.5 px-3.5 py-2 rounded-xl text-[13px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
-            <HelpCircle className="w-4 h-4 stroke-[2]" />
+          <Link href="/" onClick={() => setLeftSidebarOpen(false)} className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+            {isSidebarCollapsed && <HelpCircle className="w-4 h-4 stroke-[2]" />}
             <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Ayuda</span>
           </Link>
         </div>
