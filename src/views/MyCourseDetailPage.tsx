@@ -171,7 +171,7 @@ export const MyCourseDetailPage: React.FC = () => {
             {/* 1. COMPONENTE: CABECERA Y METADATOS */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] flex items-center justify-center border border-emerald-500/20 dark:border-emerald-500/30">
+                <div className="w-8 h-8 rounded-xl text-emerald-600 dark:text-[#00e699] flex items-center justify-center">
                   <GraduationCap className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-[#00e699]">
@@ -214,134 +214,128 @@ export const MyCourseDetailPage: React.FC = () => {
             </div>
 
             {/* 3. TIMELINE DE SECCIONES DEL CURSO */}
-            <div className="space-y-6 pt-6 border-t border-slate-200 dark:border-slate-800/80">
+            <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Ruta de Secciones (Timeline)</h2>
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{sections.length} módulo(s) estructurado(s)</span>
               </div>
 
               {course.modules && course.modules.length > 0 ? (
-                <div className="space-y-8">
-                  {course.modules.map((mod, mIdx) => {
-                    const modSections = mod.sections || sections.filter(s => s.course_module_id === mod.id);
+                (() => {
+                  let globalSectionCounter = 0;
+                  return (
+                    <div className="relative pl-6 space-y-6 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-3 pt-1">
+                      {course.modules.map((mod) => {
+                        const modSections = mod.sections || sections.filter(s => s.course_module_id === mod.id);
 
-                    return (
-                      <div key={mod.id} className="space-y-4 bg-slate-50/50 dark:bg-slate-900/40 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800/80">
-                        <div className="flex items-center gap-3 border-b border-slate-200/60 dark:border-slate-800/60 pb-3">
-                          <span className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs font-black">
-                            M{mIdx + 1}
-                          </span>
-                          <h3 className="text-base font-black text-slate-900 dark:text-white">
-                            {mod.title}
-                          </h3>
-                        </div>
+                        return (
+                          <div key={mod.id} className="space-y-3 relative">
+                            {/* Nodo del Módulo en la Línea de Tiempo */}
+                            <div className="flex items-center gap-3 relative">
+                              <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0" />
+                              <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
+                                {mod.title}
+                              </h3>
+                            </div>
 
-                        <div className="relative pl-6 space-y-4 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-2">
-                          {modSections.map((sec, sIdx) => {
-                            const mats = sec.materials || [];
-                            return (
-                              <div key={sec.id} className="relative group">
-                                <div className="absolute -left-[31px] top-4 w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] flex items-center justify-center text-[9px] font-black">
-                                  {sIdx + 1}
-                                </div>
+                            {/* Secciones ultras compactas con espacio mínimo */}
+                            <div className="space-y-0.5 pt-0.5">
+                              {modSections.map((sec) => {
+                                globalSectionCounter++;
+                                const currentSecNumber = globalSectionCounter;
+                                const mats = sec.materials || [];
+                                return (
+                                  <div 
+                                    key={sec.id}
+                                    onClick={() => {
+                                      setActiveSectionId(sec.id);
+                                      if (mats.length > 0) setActiveMaterialId(mats[0].id);
+                                      setViewMode('player');
+                                    }}
+                                    className="relative flex items-center justify-between gap-3 py-1.5 px-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs"
+                                  >
+                                    {/* Número Correlativo en la Línea del Timeline (Efecto Hover Resaltado) */}
+                                    <div className="absolute -left-[34px] top-4 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-[10px] flex items-center justify-center shadow-xs z-10 transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:scale-115 group-hover/sec:shadow-md group-hover/sec:shadow-emerald-500/30 group-hover/sec:border-emerald-400">
+                                      {currentSecNumber}
+                                    </div>
 
-                                <div 
-                                  onClick={() => {
-                                    setActiveSectionId(sec.id);
-                                    if (mats.length > 0) setActiveMaterialId(mats[0].id);
-                                    setViewMode('player');
-                                  }}
-                                  className="p-4 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/90 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 transition-all cursor-pointer shadow-2xs group/card space-y-3"
-                                >
-                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="flex items-center gap-3.5 min-w-0">
+                                    <div className="flex items-center gap-3 min-w-0">
                                       {sec.cover_image ? (
                                         <img
                                           src={formatImageUrl(sec.cover_image)!}
                                           alt={sec.title}
-                                          className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0 shadow-2xs"
+                                          className="w-16 h-11 sm:w-20 sm:h-12 rounded-xl object-cover shrink-0 border border-slate-200/60 dark:border-slate-800 shadow-xs transition-transform duration-200 group-hover/sec:scale-105 group-hover/sec:shadow-md"
                                         />
                                       ) : (
-                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 font-extrabold text-xs shadow-2xs">
+                                        <div className="w-16 h-11 sm:w-20 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-slate-900 text-white flex items-center justify-center shrink-0 font-black text-xs shadow-xs transition-transform duration-200 group-hover/sec:scale-105 group-hover/sec:shadow-md">
                                           {sec.title.charAt(0).toUpperCase()}
                                         </div>
                                       )}
 
                                       <div className="space-y-0.5 min-w-0">
-                                        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white group-hover/card:text-emerald-600 dark:group-hover/card:text-[#00e699] transition-colors truncate">
+                                        <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200 group-hover/sec:text-emerald-600 dark:group-hover/sec:text-[#00e699] transition-colors truncate">
                                           {sec.title}
-                                        </h3>
+                                        </h4>
                                         {(sec.duration || mats[0]?.duration) && (
-                                          <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                            <Clock className="w-3.5 h-3.5" />
+                                          <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
                                             <span>{sec.duration || mats[0]?.duration}</span>
                                           </p>
                                         )}
                                       </div>
                                     </div>
-
-                                    <button className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover/card:bg-emerald-500 group-hover/card:text-white dark:group-hover/card:text-slate-950 text-slate-700 dark:text-slate-300 font-extrabold text-xs transition-colors shrink-0">
-                                      <Play className="w-3.5 h-3.5 fill-current" />
-                                      <span>Ver Sección</span>
-                                    </button>
                                   </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
               ) : sections.length === 0 ? (
                 <div className="p-8 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl space-y-2">
                   <BookOpen className="w-8 h-8 text-slate-400 mx-auto" />
                   <p className="text-xs font-bold text-slate-500">Este curso aún no tiene secciones cargadas.</p>
                 </div>
               ) : (
-                /* Timeline Principal de Secciones Fallback */
-                <div className="relative pl-6 space-y-8 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-2">
-                  {sections.map((sec, sIdx) => {
+                /* Timeline Fallback sin modulos */
+                <div className="relative pl-6 space-y-3 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-3">
+                  {sections.map((sec, secIdx) => {
                     const mats = sec.materials || [];
                     return (
-                      <div key={sec.id} className="relative group">
-                        <div className="absolute -left-[31px] top-1.5 w-6 h-6 rounded-full border-2 bg-white dark:bg-slate-900 border-emerald-500 text-emerald-600 flex items-center justify-center text-[10px] font-black">
-                          {sIdx + 1}
-                        </div>
-                        <div 
-                          onClick={() => {
-                            setActiveSectionId(sec.id);
-                            if (mats.length > 0) setActiveMaterialId(mats[0].id);
-                            setViewMode('player');
-                          }}
-                          className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 transition-all cursor-pointer shadow-2xs space-y-3"
-                        >
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-3.5 min-w-0">
-                              {sec.cover_image ? (
-                                <img
-                                  src={formatImageUrl(sec.cover_image)!}
-                                  alt={sec.title}
-                                  className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0 shadow-2xs"
-                                />
-                              ) : (
-                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 font-extrabold text-xs shadow-2xs">
-                                  {sec.title.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <div className="space-y-0.5 min-w-0">
-                                <h3 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
-                                  {sec.title}
-                                </h3>
-                                {(sec.duration || mats[0]?.duration) && (
-                                  <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                    <Clock className="w-3.5 h-3.5" />
-                                    <span>{sec.duration || mats[0]?.duration}</span>
-                                  </p>
-                                )}
-                              </div>
+                      <div 
+                        key={sec.id}
+                        onClick={() => {
+                          setActiveSectionId(sec.id);
+                          if (mats.length > 0) setActiveMaterialId(mats[0].id);
+                          setViewMode('player');
+                        }}
+                        className="flex items-center justify-between gap-4 py-2 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 rounded-xl px-2 transition-all cursor-pointer group/sec"
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          {sec.cover_image ? (
+                            <img
+                              src={formatImageUrl(sec.cover_image)!}
+                              alt={sec.title}
+                              className="w-10 h-10 rounded-xl object-cover shrink-0 shadow-2xs"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 font-black text-xs shadow-2xs">
+                              {sec.title.charAt(0).toUpperCase()}
                             </div>
+                          )}
+                          <div className="space-y-0.5 min-w-0">
+                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                              <span className="font-extrabold text-emerald-600 dark:text-[#00e699] mr-1.5">{secIdx + 1}.</span>
+                              {sec.title}
+                            </h3>
+                            {(sec.duration || mats[0]?.duration) && (
+                              <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>{sec.duration || mats[0]?.duration}</span>
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -353,13 +347,13 @@ export const MyCourseDetailPage: React.FC = () => {
 
           </div>
 
-          {/* 3. COLUMNA LATERAL DERECHA (PANEL DE ACCIÓN Y MULTIMEDIA STICKY) */}
+          {/* 3. COLUMNA LATERAL DERECHA (PANEL DE ACCIÓN Y MULTIMEDIA STICKY SIN FONDO NI BORDE EN EL PADRE) */}
           <div className="space-y-6">
-            <div className="sticky top-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+            <div className="sticky top-6 space-y-6">
               
-              {/* Banner de Beneficios */}
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] flex items-center justify-center flex-shrink-0">
+              {/* Banner de Beneficios (Sin fondo y sin borde) */}
+              <div className="flex items-center gap-3 py-1">
+                <div className="w-9 h-9 rounded-xl text-emerald-600 dark:text-[#00e699] flex items-center justify-center flex-shrink-0">
                   <Award className="w-6 h-6" />
                 </div>
                 <div className="text-xs font-medium text-slate-700 dark:text-slate-300">

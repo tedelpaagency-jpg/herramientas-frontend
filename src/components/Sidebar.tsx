@@ -187,22 +187,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </Link>
         </div>
 
-        {/* Navigation Categories & Links Minimalistas */}
+        {/* Navigation Categories & Links (Espacio Confortable entre Accesos) */}
         <nav className="flex-1 px-3 py-2 space-y-3 overflow-y-auto overflow-x-hidden custom-scrollbar">
           {categories.map((category) => {
             const visibleCategoryItems = category.items.filter(isItemVisible);
             if (visibleCategoryItems.length === 0) return null;
 
             return (
-              <div key={category.title} className="space-y-0.5">
-                {/* Header de Sección Minimalista (Sin Iconos) */}
-                <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:text-center' : 'px-3'}`}>
+              <div key={category.title} className="space-y-1">
+                {/* Header de Sección Minimalista */}
+                <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:text-center' : 'px-3 py-0.5'}`}>
                   <span className={`text-[10px] font-extrabold tracking-widest text-slate-400 dark:text-slate-500 uppercase transition-all duration-300 ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
                     {category.title}
                   </span>
                 </div>
 
-                {/* Items de Navegación Compactos */}
+                {/* Items / Accesos de Navegación */}
                 {visibleCategoryItems.map((item) => {
                   const isActive = pathname === item.path;
                   const Icon = item.icon;
@@ -214,16 +214,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={() => setLeftSidebarOpen(false)}
                       className={`flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all duration-150 ${
                         isActive 
-                          ? 'bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 font-extrabold' 
+                          ? 'bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 font-black' 
                           : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white font-medium'
                       }`}
                     >
-                      {/* Mostrar icono solo cuando la barra esté colapsada para mantener usabilidad */}
-                      {isSidebarCollapsed && (
-                        <Icon className={`w-4 h-4 flex-shrink-0 stroke-[2] ${
-                          isActive ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'
-                        }`} />
-                      )}
+                      <Icon className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors ${
+                        isActive ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'
+                      }`} />
                       
                       <span className={`text-[13px] leading-snug whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
                         {item.label}
@@ -237,8 +234,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Super Admin System Section Minimalista */}
           {isSuperAdmin && (
-            <div className="space-y-0.5 pt-1">
-              <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:text-center' : 'px-3'}`}>
+            <div className="space-y-1 pt-1">
+              <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:text-center' : 'px-3 py-0.5'}`}>
                 <span className={`text-[10px] font-extrabold tracking-widest text-rose-500/80 uppercase transition-all duration-300 ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
                   ADMINISTRACIÓN
                 </span>
@@ -255,15 +252,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => setLeftSidebarOpen(false)}
                     className={`flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all duration-150 ${
                       isActive
-                        ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-extrabold'
+                        ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-black'
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white font-medium'
                     }`}
                   >
-                    {isSidebarCollapsed && (
-                      <Icon className={`w-4 h-4 flex-shrink-0 stroke-[2] ${
-                        isActive ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'
-                      }`} />
-                    )}
+                    <Icon className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors ${
+                      isActive ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'
+                    }`} />
                     <span className={`text-[13px] leading-snug whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
                       {item.label}
                     </span>
@@ -274,18 +269,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </nav>
 
-        {/* Links de Utilidad Inferiores Minimalistas (Sin línea de separación) */}
-        <div className="px-3 py-3 mt-auto space-y-0.5">
+        {/* Links de Utilidad Inferiores Minimalistas */}
+        <div className="px-3 py-2.5 mt-auto space-y-1">
           <Link href="/admin/permissions" className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-            {isSidebarCollapsed && <Settings className="w-4 h-4 stroke-[2]" />}
+            <Settings className="w-4 h-4 stroke-[2]" />
             <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
           </Link>
           <Link href="/products" className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-            {isSidebarCollapsed && <Wrench className="w-4 h-4 stroke-[2]" />}
+            <Wrench className="w-4 h-4 stroke-[2]" />
             <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Herramientas</span>
           </Link>
           <Link href="/" onClick={() => setLeftSidebarOpen(false)} className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-            {isSidebarCollapsed && <HelpCircle className="w-4 h-4 stroke-[2]" />}
+            <HelpCircle className="w-4 h-4 stroke-[2]" />
             <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Ayuda</span>
           </Link>
         </div>

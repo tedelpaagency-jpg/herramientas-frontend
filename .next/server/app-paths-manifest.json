@@ -1,7 +1,5 @@
 {
-  "/courses/page": "app/courses/page.js",
-  "/courses/[id]/edit/page": "app/courses/[id]/edit/page.js",
+  "/page": "app/page.js",
   "/my-courses/[id]/page": "app/my-courses/[id]/page.js",
-  "/crm/page": "app/crm/page.js",
-  "/page": "app/page.js"
+  "/my-courses/page": "app/my-courses/page.js"
 }

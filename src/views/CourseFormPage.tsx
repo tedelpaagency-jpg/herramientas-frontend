@@ -1011,124 +1011,128 @@ export const CourseFormPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="space-y-8">
-              {modules.map((mod, mIdx) => {
-                const modSections = sections.filter(s => s.course_module_id === mod.id);
+            (() => {
+              let globalSectionCounter = 0;
+              return (
+                <div className="relative pl-6 space-y-8 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-3 pt-2">
+                  {modules.map((mod) => {
+                    const modSections = sections.filter(s => s.course_module_id === mod.id);
 
-                return (
-                  <div key={mod.id} className="bg-slate-50/70 dark:bg-slate-950/60 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5">
-                    {/* Header del Módulo Principal */}
-                    <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-3">
-                      <div className="flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-xs">
-                          M{mIdx + 1}
-                        </span>
-                        <div>
-                          <h3 className="text-base font-black text-slate-900 dark:text-white">
-                            {mod.title}
-                          </h3>
-                          <p className="text-[11px] text-slate-400 font-semibold">
-                            {modSections.length} sección(es) dentro de este módulo
-                          </p>
+                    return (
+                      <div key={mod.id} className="space-y-4 relative">
+                        {/* Header del Módulo Principal en la Línea de Tiempo (Sin número, solo un punto) */}
+                        <div className="flex items-center justify-between gap-4 relative">
+                          <div className="flex items-center gap-3 relative">
+                            <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0" />
+                            <div>
+                              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                                {mod.title}
+                              </h3>
+                              <p className="text-[11px] text-slate-400 font-semibold">
+                                {modSections.length} sección(es)
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => startAddSectionToModule(mod.id)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-[#00e699] font-bold text-xs hover:bg-emerald-500/20 transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>+ Sección</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => startEditModule(mod)}
+                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteModule(mod.id)}
+                              disabled={deletingModId === mod.id}
+                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                            >
+                              {deletingModId === mod.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            </button>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => startAddSectionToModule(mod.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-[#00e699] font-bold text-xs hover:bg-emerald-500/20 transition-colors"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>+ Sección</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => startEditModule(mod)}
-                          className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteModule(mod.id)}
-                          disabled={deletingModId === mod.id}
-                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
-                        >
-                          {deletingModId === mod.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
+                        {/* Secciones del Módulo (Número correlativo en la línea del timeline) */}
+                        {modSections.length === 0 ? (
+                          <div className="py-2 text-xs font-medium text-slate-400 italic">
+                            Este módulo no tiene secciones aún. Haz clic en "+ Sección" para agregar una.
+                          </div>
+                        ) : (
+                          <div className="space-y-0.5 pt-0.5">
+                            {modSections.map((section) => {
+                              globalSectionCounter++;
+                              const currentSecNumber = globalSectionCounter;
+                              const materials = section.materials || [];
+                              return (
+                                <div key={section.id} className="relative flex items-center justify-between gap-3 py-1.5 px-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs">
+                                  {/* Número Correlativo en la Línea del Timeline (Efecto Hover Resaltado) */}
+                                  <div className="absolute -left-[34px] top-4 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-[10px] flex items-center justify-center shadow-xs z-10 transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:scale-115 group-hover/sec:shadow-md group-hover/sec:shadow-emerald-500/30 group-hover/sec:border-emerald-400">
+                                    {currentSecNumber}
+                                  </div>
 
-                    {/* Timeline de Secciones dentro de este Módulo */}
-                    {modSections.length === 0 ? (
-                      <div className="py-4 text-center text-xs font-medium text-slate-400 italic">
-                        Este módulo no tiene secciones aún. Haz clic en "+ Sección" para agregar una.
-                      </div>
-                    ) : (
-                      <div className="relative pl-6 space-y-4 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-2">
-                        {modSections.map((section, secIdx) => {
-                          const materials = section.materials || [];
-                          return (
-                            <div key={section.id} className="relative group bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-3">
-                              <div className="absolute -left-[31px] top-4 w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] flex items-center justify-center text-[9px] font-black">
-                                {secIdx + 1}
-                              </div>
-
-                              <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-2">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  {section.cover_image ? (
-                                    <img
-                                      src={formatImageUrl(section.cover_image)!}
-                                      alt={section.title}
-                                      className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0 shadow-2xs"
-                                    />
-                                  ) : (
-                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 font-extrabold text-xs shadow-2xs">
-                                      {section.title.charAt(0).toUpperCase()}
-                                    </div>
-                                  )}
-
-                                  <div className="min-w-0">
-                                    <h4 className="text-sm font-black text-slate-900 dark:text-white truncate">
-                                      {section.title}
-                                    </h4>
-                                    {(section.duration || materials[0]?.duration) && (
-                                      <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        <span>{section.duration || materials[0]?.duration}</span>
-                                      </p>
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {section.cover_image ? (
+                                      <img
+                                        src={formatImageUrl(section.cover_image)!}
+                                        alt={section.title}
+                                        className="w-16 h-11 sm:w-20 sm:h-12 rounded-xl object-cover shrink-0 border border-slate-200/60 dark:border-slate-800 shadow-xs transition-transform duration-200 group-hover/sec:scale-105 group-hover/sec:shadow-md"
+                                      />
+                                    ) : (
+                                      <div className="w-16 h-11 sm:w-20 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-slate-900 text-white flex items-center justify-center shrink-0 font-black text-xs shadow-xs transition-transform duration-200 group-hover/sec:scale-105 group-hover/sec:shadow-md">
+                                        {section.title.charAt(0).toUpperCase()}
+                                      </div>
                                     )}
+
+                                    <div className="space-y-0.5 min-w-0">
+                                      <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200 group-hover/sec:text-emerald-600 dark:group-hover/sec:text-[#00e699] transition-colors truncate">
+                                        {section.title}
+                                      </h4>
+                                      {(section.duration || materials[0]?.duration) && (
+                                        <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                          <Clock className="w-3 h-3" />
+                                          <span>{section.duration || materials[0]?.duration}</span>
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => startEditSection(section)}
+                                      className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteSection(section.id)}
+                                      disabled={deletingSecId === section.id}
+                                      className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                                    >
+                                      {deletingSecId === section.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                    </button>
                                   </div>
                                 </div>
-
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => startEditSection(section)}
-                                    className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteSection(section.id)}
-                                    disabled={deletingSecId === section.id}
-                                    className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
-                                  >
-                                    {deletingSecId === section.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              );
+            })()
           )}
         </div>
       </form>
