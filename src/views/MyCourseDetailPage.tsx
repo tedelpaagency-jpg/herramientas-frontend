@@ -12,6 +12,13 @@ import courseService from '../services/courseService';
 import { Course, CourseUserAssignment, CourseSection, CourseSectionMaterial } from '../types/course';
 import toast from 'react-hot-toast';
 
+const formatImageUrl = (url?: string | null) => {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  return `${baseUrl}/${url.replace(/^\//, '')}`;
+};
+
 export const MyCourseDetailPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
@@ -247,19 +254,27 @@ export const MyCourseDetailPage: React.FC = () => {
                                   className="p-4 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/90 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 transition-all cursor-pointer shadow-2xs group/card space-y-3"
                                 >
                                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="flex items-start gap-4 min-w-0">
-                                      <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-[#00e699] flex items-center justify-center flex-shrink-0 font-bold">
-                                        <FolderOpen className="w-5 h-5" />
-                                      </div>
+                                    <div className="flex items-center gap-3.5 min-w-0">
+                                      {sec.cover_image ? (
+                                        <img
+                                          src={formatImageUrl(sec.cover_image)!}
+                                          alt={sec.title}
+                                          className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0 shadow-2xs"
+                                        />
+                                      ) : (
+                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 font-extrabold text-xs shadow-2xs">
+                                          {sec.title.charAt(0).toUpperCase()}
+                                        </div>
+                                      )}
 
-                                      <div className="space-y-1 min-w-0">
-                                        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white group-hover/card:text-emerald-600 dark:group-hover/card:text-[#00e699] transition-colors">
+                                      <div className="space-y-0.5 min-w-0">
+                                        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white group-hover/card:text-emerald-600 dark:group-hover/card:text-[#00e699] transition-colors truncate">
                                           {sec.title}
                                         </h3>
                                         {(sec.duration || mats[0]?.duration) && (
                                           <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                                             <Clock className="w-3.5 h-3.5" />
-                                            <span>Duración: {sec.duration || mats[0]?.duration}</span>
+                                            <span>{sec.duration || mats[0]?.duration}</span>
                                           </p>
                                         )}
                                       </div>
@@ -270,20 +285,6 @@ export const MyCourseDetailPage: React.FC = () => {
                                       <span>Ver Sección</span>
                                     </button>
                                   </div>
-
-                                  {mats.length > 0 && (
-                                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                                      <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                        <Folder className="w-3.5 h-3.5" /> Carpeta:
-                                      </span>
-                                      {mats.map((m) => (
-                                        <span key={m.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 dark:bg-amber-950/30 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-amber-500/20">
-                                          {getMaterialIcon(m.type, "w-3 h-3 text-amber-600 dark:text-amber-400")}
-                                          <span>{m.title}</span>
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
                                 </div>
                               </div>
                             );
@@ -317,18 +318,26 @@ export const MyCourseDetailPage: React.FC = () => {
                           className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 transition-all cursor-pointer shadow-2xs space-y-3"
                         >
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-start gap-4 min-w-0">
-                              <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-[#00e699] flex items-center justify-center shrink-0 font-bold">
-                                <FolderOpen className="w-6 h-6" />
-                              </div>
-                              <div className="space-y-1 min-w-0">
-                                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                            <div className="flex items-center gap-3.5 min-w-0">
+                              {sec.cover_image ? (
+                                <img
+                                  src={formatImageUrl(sec.cover_image)!}
+                                  alt={sec.title}
+                                  className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0 shadow-2xs"
+                                />
+                              ) : (
+                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 font-extrabold text-xs shadow-2xs">
+                                  {sec.title.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="space-y-0.5 min-w-0">
+                                <h3 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
                                   {sec.title}
                                 </h3>
                                 {(sec.duration || mats[0]?.duration) && (
                                   <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                                     <Clock className="w-3.5 h-3.5" />
-                                    <span>Duración: {sec.duration || mats[0]?.duration}</span>
+                                    <span>{sec.duration || mats[0]?.duration}</span>
                                   </p>
                                 )}
                               </div>
@@ -646,9 +655,17 @@ export const MyCourseDetailPage: React.FC = () => {
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 shrink-0">
-                                <FolderOpen className="w-4 h-4" />
-                              </div>
+                              {sec.cover_image ? (
+                                <img
+                                  src={formatImageUrl(sec.cover_image)!}
+                                  alt={sec.title}
+                                  className="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-slate-800 shrink-0 shadow-2xs"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-black shrink-0 shadow-2xs">
+                                  {sec.title.charAt(0).toUpperCase()}
+                                </div>
+                              )}
 
                               <div className="min-w-0">
                                 {sec.group_name && (

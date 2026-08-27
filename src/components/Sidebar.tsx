@@ -58,6 +58,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     user?.role === 'admin' ||
     user?.roles?.some((r) => r.name === 'admin');
 
+  const isProveedor =
+    user?.role === 'proveedor' ||
+    user?.role === 'supplier' ||
+    user?.roles?.some((r) => r.name === 'proveedor' || r.name === 'supplier');
+
   const activePlanPermissions =
     user?.agency?.current_subscription?.plan?.plan_permissions?.map((p) => p.permission.toLowerCase()) ||
     user?.agency?.plan?.plan_permissions?.map((p) => p.permission.toLowerCase()) ||
@@ -113,6 +118,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: 'Trámites de Visas', path: '/visas', icon: FileText, permission: 'view_visas' },
         { label: 'Reportes de Viajes', path: '/travel-reports', icon: Plane },
+        ...(!isProveedor
+          ? [
+              { label: 'Catálogo POS Paquetes', path: '/travel-packages/pos', icon: ShoppingCart },
+              { label: 'Mis Solicitudes Paquetes', path: '/travel-packages/my-requests', icon: FileText },
+            ]
+          : []),
+        ...(isProveedor || isSuperAdmin
+          ? [
+              { label: 'Mis Paquetes (Proveedor)', path: '/supplier/packages', icon: Package },
+              { label: 'Solicitudes Recibidas', path: '/supplier/requests', icon: FileText },
+            ]
+          : []),
+        ...(isSuperAdmin || isGerenteComercial
+          ? [
+              { label: 'Gestión Paquetes Admin', path: '/admin/travel-packages', icon: Package },
+              { label: 'Gestión Solicitudes Viaje', path: '/admin/travel-requests', icon: FileText },
+            ]
+          : []),
       ],
     },
     {

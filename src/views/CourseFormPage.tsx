@@ -6,10 +6,10 @@ import Link from 'next/link';
 import { 
   ArrowLeft, BookOpen, Save, ImagePlus, Upload, Trash2, Loader2, Sparkles, CheckCircle2,
   GripVertical, Plus, Video, FileText, AlignLeft, Bold, Italic, Underline, List, ListOrdered,
-  Quote, Code, Eye, Edit2, MoveUp, MoveDown, Layers, Check, LayoutGrid, AlertCircle, File, FolderPlus, Folder, FolderOpen
+  Quote, Code, Eye, Edit2, MoveUp, MoveDown, Layers, Check, LayoutGrid, AlertCircle, File, FolderPlus, Folder, FolderOpen, Clock
 } from 'lucide-react';
 import courseService from '../services/courseService';
-import { Course, CourseSection, CourseSectionMaterial } from '../types/course';
+import { Course, CourseModule, CourseSection, CourseSectionMaterial } from '../types/course';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
@@ -102,6 +102,12 @@ export const CourseFormPage: React.FC = () => {
         
         setMainImage(c.main_image || null);
         setImagePreview1(c.main_image || null);
+
+        setBannerImage(c.banner_image || null);
+        setImagePreview2(c.banner_image || null);
+
+        setThumbImage(c.thumb_image || null);
+        setImagePreview3(c.thumb_image || null);
         
         // Cargar módulos y secciones
         setModules(c.modules || []);
@@ -158,12 +164,28 @@ export const CourseFormPage: React.FC = () => {
 
     setSaving(true);
     try {
-      let uploadedImageUrl = mainImage;
+      let uploadedMainImageUrl = mainImage;
+      let uploadedBannerImageUrl = bannerImage;
+      let uploadedThumbImageUrl = thumbImage;
 
       if (imageFile1) {
         const imgRes = await courseService.uploadMainImage(imageFile1, courseId || undefined);
         if (imgRes.url) {
-          uploadedImageUrl = imgRes.url;
+          uploadedMainImageUrl = imgRes.url;
+        }
+      }
+
+      if (imageFile2) {
+        const imgRes = await courseService.uploadMainImage(imageFile2, courseId || undefined);
+        if (imgRes.url) {
+          uploadedBannerImageUrl = imgRes.url;
+        }
+      }
+
+      if (imageFile3) {
+        const imgRes = await courseService.uploadMainImage(imageFile3, courseId || undefined);
+        if (imgRes.url) {
+          uploadedThumbImageUrl = imgRes.url;
         }
       }
 
@@ -171,7 +193,9 @@ export const CourseFormPage: React.FC = () => {
         title: title.trim(),
         description: description.trim() || null,
         content: content || null,
-        main_image: uploadedImageUrl,
+        main_image: uploadedMainImageUrl,
+        banner_image: uploadedBannerImageUrl,
+        thumb_image: uploadedThumbImageUrl,
         status,
       };
 
@@ -268,6 +292,13 @@ export const CourseFormPage: React.FC = () => {
     setIsAddingSection(true);
   };
 
+  const formatImageUrl = (url?: string | null) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    return `${baseUrl}/${url.replace(/^\//, '')}`;
+  };
+
   const startEditSection = (sec: CourseSection) => {
     setEditingSection(sec);
     setTargetModuleId(sec.course_module_id || null);
@@ -275,7 +306,7 @@ export const CourseFormPage: React.FC = () => {
     setSecGroupName(sec.group_name || '');
     setSecDuration(sec.duration || '');
     setSecContent(sec.content || '');
-    setSecCoverPreview(sec.cover_image || null);
+    setSecCoverPreview(formatImageUrl(sec.cover_image));
     setSecCoverFile(null);
     const firstMat = sec.materials?.[0];
     if (firstMat) {
@@ -1046,9 +1077,18 @@ export const CourseFormPage: React.FC = () => {
 
                               <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-2">
                                 <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-[#00e699] flex items-center justify-center shrink-0 font-bold">
-                                    <FolderOpen className="w-4 h-4" />
-                                  </div>
+                                  {section.cover_image ? (
+                                    <img
+                                      src={formatImageUrl(section.cover_image)!}
+                                      alt={section.title}
+                                      className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0 shadow-2xs"
+                                    />
+                                  ) : (
+                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 font-extrabold text-xs shadow-2xs">
+                                      {section.title.charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+
                                   <div className="min-w-0">
                                     <h4 className="text-sm font-black text-slate-900 dark:text-white truncate">
                                       {section.title}
@@ -1056,7 +1096,7 @@ export const CourseFormPage: React.FC = () => {
                                     {(section.duration || materials[0]?.duration) && (
                                       <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                                         <Clock className="w-3 h-3" />
-                                        <span>Duración: {section.duration || materials[0]?.duration}</span>
+                                        <span>{section.duration || materials[0]?.duration}</span>
                                       </p>
                                     )}
                                   </div>
@@ -1088,7 +1128,6 @@ export const CourseFormPage: React.FC = () => {
                   </div>
                 );
               })}
-            </div>
             </div>
           )}
         </div>
