@@ -78,41 +78,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'CLIENTES & CRM',
       items: [
-        { label: 'Workspaces & CRM', path: '/workspaces', icon: LayoutDashboard },
-        { label: 'Google Calendar', path: '/calendar', icon: Calendar },
-        { label: 'Directorio de Clientes', path: '/clients', icon: Users },
-        { label: 'Landing Pages & Eventos', path: '/landings', icon: Globe },
-        { label: 'Marketing & Correos', path: '/marketing', icon: Mail },
-        { label: 'LexVault (Contratos)', path: '/lexvault', icon: ShieldCheck },
+        { label: 'Workspaces', path: '/workspaces', icon: LayoutDashboard },
+        { label: 'Calendario', path: '/calendar', icon: Calendar },
+        { label: 'Clientes', path: '/clients', icon: Users },
+        { label: 'Landings', path: '/landings', icon: Globe },
+        { label: 'Marketing', path: '/marketing', icon: Mail },
+        { label: 'Contratos', path: '/lexvault', icon: ShieldCheck },
       ],
     },
     {
       title: 'ACTIVIDAD INMOBILIARIA',
       items: [
-        { label: 'Propiedades / Inmuebles', path: '/estates', icon: Building2, permission: 'view_estates' },
+        { label: 'Propiedades', path: '/estates', icon: Building2, permission: 'view_estates' },
       ],
     },
     {
       title: 'TURISMO & VIAJES',
       items: [
-        { label: 'Trámites de Visas', path: '/visas', icon: FileText, permission: 'view_visas' },
-        { label: 'Reportes de Viajes', path: '/travel-reports', icon: Plane },
+        { label: 'Visas', path: '/visas', icon: FileText, permission: 'view_visas' },
+        { label: 'Reportes', path: '/travel-reports', icon: Plane },
         ...(!isProveedor
           ? [
-              { label: 'Catálogo POS Paquetes', path: '/travel-packages/pos', icon: ShoppingCart },
-              { label: 'Mis Solicitudes Paquetes', path: '/travel-packages/my-requests', icon: FileText },
+              { label: 'Paquetes', path: '/travel-packages/pos', icon: ShoppingCart },
+              { label: 'Solicitudes', path: '/travel-packages/my-requests', icon: FileText },
             ]
           : []),
         ...(isProveedor || isSuperAdmin
           ? [
-              { label: 'Mis Paquetes (Proveedor)', path: '/supplier/packages', icon: Package },
-              { label: 'Solicitudes Recibidas', path: '/supplier/requests', icon: FileText },
+              { label: 'Paquetes', path: '/supplier/packages', icon: Package },
+              { label: 'Solicitudes', path: '/supplier/requests', icon: FileText },
             ]
           : []),
         ...(isSuperAdmin || isGerenteComercial
           ? [
-              { label: 'Gestión Paquetes Admin', path: '/admin/travel-packages', icon: Package },
-              { label: 'Gestión Solicitudes Viaje', path: '/admin/travel-requests', icon: FileText },
+              { label: 'Paquetes Admin', path: '/admin/travel-packages', icon: Package },
+              { label: 'Solicitudes Viaje', path: '/admin/travel-requests', icon: FileText },
             ]
           : []),
       ],
@@ -120,9 +120,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'COMERCIO & VENTAS',
       items: [
-        { label: 'Productos & Inventario', path: '/products', icon: Package, permission: 'view_products' },
-        { label: 'Caja POS / Ventas', path: '/pos', icon: ShoppingCart, permission: 'view_pos' },
-        { label: 'Ruleta de Premios', path: '/spin-wheel', icon: Trophy, permission: 'view_spin_wheel' },
+        { label: 'Productos', path: '/products', icon: Package, permission: 'view_products' },
+        { label: 'POS', path: '/pos', icon: ShoppingCart, permission: 'view_pos' },
+        { label: 'Ruleta', path: '/spin-wheel', icon: Trophy, permission: 'view_spin_wheel' },
       ],
     },
     {
@@ -130,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         ...(isSuperAdmin || isGerenteComercial
           ? [
-              { label: 'Gestión de Cursos', path: '/courses', icon: GraduationCap },
+              { label: 'Cursos', path: '/courses', icon: GraduationCap },
             ]
           : []),
         { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen },
@@ -140,13 +140,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'GESTIÓN & AGENCIA',
       items: [
         ...(isSuperAdmin || isGerenteComercial || isAdmin
-          ? [{ label: 'Gestión de Usuarios', path: '/users', icon: UserCheck, permission: 'manage_users' }]
+          ? [{ label: 'Usuarios', path: '/users', icon: UserCheck, permission: 'manage_users' }]
           : []),
         ...(isGerenteComercial || isAdmin
-          ? [{ label: isGerenteComercial ? 'Mis Agencias' : 'Mi Agencia', path: '/admin/agencies', icon: Store }]
+          ? [{ label: isGerenteComercial ? 'Agencias' : 'Agencia', path: '/admin/agencies', icon: Store }]
           : []),
-        { label: 'Equipos de Trabajo', path: '/admin/teams', icon: Briefcase },
-        { label: 'Comisiones & Balances', path: '/commissions', icon: CreditCard },
+        { label: 'Equipos', path: '/admin/teams', icon: Briefcase },
+        { label: 'Comisiones', path: '/commissions', icon: CreditCard },
       ],
     },
   ];

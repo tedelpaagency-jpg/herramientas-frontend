@@ -1014,16 +1014,19 @@ export const CourseFormPage: React.FC = () => {
             (() => {
               let globalSectionCounter = 0;
               return (
-                <div className="relative pl-6 space-y-8 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-3 pt-2">
+                <div className="relative pl-3 space-y-8 pt-2 overflow-x-hidden">
+                  {/* Línea Vertical Continua (Pasando por el CENTRO EXACTO de las insignias en x = 24px) */}
+                  <div className="absolute left-[24px] top-3 bottom-3 w-0.5 bg-emerald-500/30 dark:bg-emerald-500/20 z-0 pointer-events-none" />
+
                   {modules.map((mod) => {
                     const modSections = sections.filter(s => s.course_module_id === mod.id);
 
                     return (
                       <div key={mod.id} className="space-y-4 relative">
-                        {/* Header del Módulo Principal en la Línea de Tiempo (Sin número, solo un punto) */}
-                        <div className="flex items-center justify-between gap-4 relative">
+                        {/* Header del Módulo Principal en la Línea de Tiempo (Centrado en x = 24px) */}
+                        <div className="flex items-center justify-between gap-4 relative pl-9">
                           <div className="flex items-center gap-3 relative">
-                            <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0" />
+                            <div className="absolute left-[4px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0 z-10 shadow-xs" />
                             <div>
                               <h3 className="text-base font-black text-slate-900 dark:text-white">
                                 {mod.title}
@@ -1061,9 +1064,9 @@ export const CourseFormPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Secciones del Módulo (Número correlativo en la línea del timeline) */}
+                        {/* Secciones del Módulo */}
                         {modSections.length === 0 ? (
-                          <div className="py-2 text-xs font-medium text-slate-400 italic">
+                          <div className="py-2 pl-9 text-xs font-medium text-slate-400 italic">
                             Este módulo no tiene secciones aún. Haz clic en "+ Sección" para agregar una.
                           </div>
                         ) : (
@@ -1073,9 +1076,9 @@ export const CourseFormPage: React.FC = () => {
                               const currentSecNumber = globalSectionCounter;
                               const materials = section.materials || [];
                               return (
-                                <div key={section.id} className="relative flex items-center justify-between gap-3 py-1.5 px-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs">
-                                  {/* Número Correlativo en la Línea del Timeline (Efecto Hover Resaltado) */}
-                                  <div className="absolute -left-[34px] top-4 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-[10px] flex items-center justify-center shadow-xs z-10 transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:scale-115 group-hover/sec:shadow-md group-hover/sec:shadow-emerald-500/30 group-hover/sec:border-emerald-400">
+                                <div key={section.id} className="relative flex items-center justify-between gap-3 py-1.5 pl-9 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs">
+                                  {/* Número Correlativo en la Línea del Timeline (Centrado exacto en x = 24px, 12px de padding izquierdo) */}
+                                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-xs flex items-center justify-center shrink-0 z-10 shadow-xs transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110">
                                     {currentSecNumber}
                                   </div>
 

@@ -223,21 +223,24 @@ export const MyCourseDetailPage: React.FC = () => {
                 (() => {
                   let globalSectionCounter = 0;
                   return (
-                    <div className="relative pl-6 space-y-6 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-3 pt-1">
+                    <div className="relative pl-3 space-y-6 pt-1 overflow-x-hidden">
+                      {/* Línea Vertical Continua (Pasando por el CENTRO EXACTO de las insignias en x = 24px) */}
+                      <div className="absolute left-[24px] top-3 bottom-3 w-0.5 bg-emerald-500/30 dark:bg-emerald-500/20 z-0 pointer-events-none" />
+
                       {course.modules.map((mod) => {
                         const modSections = mod.sections || sections.filter(s => s.course_module_id === mod.id);
 
                         return (
                           <div key={mod.id} className="space-y-3 relative">
-                            {/* Nodo del Módulo en la Línea de Tiempo */}
-                            <div className="flex items-center gap-3 relative">
-                              <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0" />
+                            {/* Nodo del Módulo en la Línea de Tiempo (Centrado exacto en x = 24px) */}
+                            <div className="flex items-center gap-3 relative pl-9">
+                              <div className="absolute left-[4px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0 z-10 shadow-xs" />
                               <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
                                 {mod.title}
                               </h3>
                             </div>
 
-                            {/* Secciones ultras compactas con espacio mínimo */}
+                            {/* Secciones del Módulo */}
                             <div className="space-y-0.5 pt-0.5">
                               {modSections.map((sec) => {
                                 globalSectionCounter++;
@@ -251,10 +254,10 @@ export const MyCourseDetailPage: React.FC = () => {
                                       if (mats.length > 0) setActiveMaterialId(mats[0].id);
                                       setViewMode('player');
                                     }}
-                                    className="relative flex items-center justify-between gap-3 py-1.5 px-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs"
+                                    className="relative flex items-center justify-between gap-3 py-1.5 pl-9 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs"
                                   >
-                                    {/* Número Correlativo en la Línea del Timeline (Efecto Hover Resaltado) */}
-                                    <div className="absolute -left-[34px] top-4 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-[10px] flex items-center justify-center shadow-xs z-10 transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:scale-115 group-hover/sec:shadow-md group-hover/sec:shadow-emerald-500/30 group-hover/sec:border-emerald-400">
+                                    {/* Número Correlativo en la Línea del Timeline (Centrado exacto en x = 24px, 12px de padding izquierdo) */}
+                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-xs flex items-center justify-center shrink-0 z-10 shadow-xs transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110">
                                       {currentSecNumber}
                                     </div>
 
@@ -493,12 +496,12 @@ export const MyCourseDetailPage: React.FC = () => {
               )}
             </div>
 
-            {/* CONTENEDOR ESTILO CARPETA: RECURSOS Y MATERIALES DE LA SECCIÓN */}
-            <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-slate-900/40 dark:from-amber-950/40 dark:via-amber-950/20 dark:to-slate-950 border border-amber-500/30 rounded-3xl p-6 space-y-4 relative shadow-lg">
+            {/* CONTENEDOR ESTILO CARPETA: RECURSOS Y MATERIALES DE LA SECCIÓN (Fondo Blanco) */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 relative shadow-sm">
               {/* Tab/Solapa de la Carpeta */}
-              <div className="flex items-center justify-between border-b border-amber-500/20 dark:border-amber-500/30 pb-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30 shadow-xs">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] flex items-center justify-center border border-emerald-500/20 shadow-xs">
                     <Folder className="w-5 h-5 fill-current" />
                   </div>
                   <div>
@@ -529,8 +532,8 @@ export const MyCourseDetailPage: React.FC = () => {
                         onClick={() => setActiveMaterialId(mat.id)}
                         className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 group ${
                           isSelected
-                            ? 'bg-amber-500/20 border-amber-500/50 text-amber-900 dark:text-amber-100 shadow-md ring-2 ring-amber-500/30'
-                            : 'bg-white/80 dark:bg-slate-900/90 border-slate-200/80 dark:border-slate-800 hover:border-amber-400/60'
+                            ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-900 dark:text-emerald-100 shadow-sm ring-2 ring-emerald-500/20'
+                            : 'bg-slate-50 dark:bg-slate-900/90 border-slate-200/80 dark:border-slate-800 hover:border-emerald-400/60'
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -602,90 +605,153 @@ export const MyCourseDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Timeline Lateral de Secciones */}
+          {/* Timeline Lateral de Secciones (Compacto, Armónico y Centrado) */}
           <div className="space-y-4">
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 dark:text-white">Secciones de la Ruta</h3>
-                  <p className="text-[11px] text-slate-400">Línea de tiempo del programa</p>
-                </div>
-                <span className="text-xs font-bold text-[#00e699] px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                  {sections.length} sección(es)
-                </span>
-              </div>
+            {course.modules && course.modules.length > 0 ? (
+                (() => {
+                  let globalSectionCounter = 0;
+                  return (
+                    <div className="relative pl-3 space-y-5 pt-1 max-h-[500px] overflow-y-auto overflow-x-hidden pr-1 custom-scrollbar">
+                      {/* Línea Vertical Continua (Pasando por el CENTRO EXACTO de las insignias en x = 24px) */}
+                      <div className="absolute left-[24px] top-3 bottom-3 w-0.5 bg-emerald-500/30 dark:bg-emerald-500/20 z-0 pointer-events-none" />
 
-              {sections.length === 0 ? (
+                      {course.modules.map((mod) => {
+                        const modSections = mod.sections || sections.filter(s => s.course_module_id === mod.id);
+
+                        return (
+                          <div key={mod.id} className="space-y-2.5 relative">
+                            {/* Nodo del Módulo en la Línea de Tiempo (Centrado exacto en x = 24px) */}
+                            <div className="flex items-center gap-3 relative pl-9">
+                              <div className="absolute left-[4px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0 z-10 shadow-xs" />
+                              <h3 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
+                                {mod.title}
+                              </h3>
+                            </div>
+
+                            {/* Secciones compactas e higiénicas */}
+                            <div className="space-y-0.5 pt-0.5">
+                              {modSections.map((sec) => {
+                                globalSectionCounter++;
+                                const currentSecNumber = globalSectionCounter;
+                                const isSecActive = activeSection?.id === sec.id;
+                                const mats = sec.materials || [];
+                                return (
+                                  <div 
+                                    key={sec.id}
+                                    onClick={() => {
+                                      setActiveSectionId(sec.id);
+                                      if (mats.length > 0) setActiveMaterialId(mats[0].id);
+                                    }}
+                                    className={`relative flex items-center justify-between gap-3 py-1.5 pl-9 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec ${
+                                      isSecActive
+                                        ? 'bg-emerald-500/15 dark:bg-emerald-500/20 shadow-2xs font-bold'
+                                        : 'hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5'
+                                    }`}
+                                  >
+                                    {/* Número Correlativo en la Línea del Timeline (Centrado exacto en x = 24px, 12px de padding izquierdo) */}
+                                    <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square font-black text-xs flex items-center justify-center shrink-0 z-10 transition-all duration-200 ${
+                                      isSecActive
+                                        ? 'bg-emerald-500 text-white border-2 border-emerald-400 scale-110 shadow-md shadow-emerald-500/40'
+                                        : 'bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] shadow-xs group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110'
+                                    }`}>
+                                      {currentSecNumber}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      {sec.cover_image ? (
+                                        <img
+                                          src={formatImageUrl(sec.cover_image)!}
+                                          alt={sec.title}
+                                          className="w-14 h-10 rounded-xl object-cover shrink-0 border border-slate-200/60 dark:border-slate-800 shadow-xs transition-transform duration-200 group-hover/sec:scale-105"
+                                        />
+                                      ) : (
+                                        <div className="w-14 h-10 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-slate-900 text-white flex items-center justify-center shrink-0 font-black text-xs shadow-xs transition-transform duration-200 group-hover/sec:scale-105">
+                                          {sec.title.charAt(0).toUpperCase()}
+                                        </div>
+                                      )}
+
+                                      <div className="space-y-0.5 min-w-0">
+                                        <h4 className={`text-xs font-black truncate transition-colors ${
+                                          isSecActive
+                                            ? 'text-emerald-600 dark:text-[#00e699]'
+                                            : 'text-slate-800 dark:text-slate-200 group-hover/sec:text-emerald-600 dark:group-hover/sec:text-[#00e699]'
+                                        }`}>
+                                          {sec.title}
+                                        </h4>
+                                        {(sec.duration || mats[0]?.duration) && (
+                                          <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            <span>{sec.duration || mats[0]?.duration}</span>
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
+              ) : sections.length === 0 ? (
                 <p className="text-xs text-slate-400 py-4 text-center">Este curso no tiene secciones registradas.</p>
               ) : (
-                /* Timeline Vertical en Barra Lateral */
-                <div className="relative pl-5 space-y-6 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-2 max-h-[550px] overflow-y-auto pr-1 custom-scrollbar">
-                  {sections.map((sec, idx) => {
+                /* Timeline Fallback sin modulos */
+                <div className="relative pl-6 space-y-3 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-3 max-h-[550px] overflow-y-auto pr-1 custom-scrollbar">
+                  {sections.map((sec, secIdx) => {
                     const isSecActive = activeSection?.id === sec.id;
                     const mats = sec.materials || [];
 
                     return (
-                      <div key={sec.id} className="relative group">
-                        {/* Nodo Conector */}
-                        <div className={`absolute -left-[27px] top-1.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-black transition-all ${
-                          isSecActive 
-                            ? 'bg-emerald-500 text-slate-950 border-white dark:border-slate-900 ring-4 ring-emerald-500/20 shadow-md scale-110' 
-                            : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-500 group-hover:border-emerald-500'
+                      <div 
+                        key={sec.id}
+                        onClick={() => {
+                          setActiveSectionId(sec.id);
+                          if (mats.length > 0) setActiveMaterialId(mats[0].id);
+                        }}
+                        className={`relative flex items-center justify-between gap-3 py-1.5 px-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec ${
+                          isSecActive
+                            ? 'bg-emerald-500/15 dark:bg-emerald-500/20 shadow-2xs font-bold'
+                            : 'hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5'
+                        }`}
+                      >
+                        <div className={`absolute -left-[34px] top-3.5 w-5 h-5 rounded-full border text-[10px] font-black flex items-center justify-center shadow-xs z-10 transition-all duration-200 ${
+                          isSecActive
+                            ? 'bg-emerald-500 text-white border-emerald-400 scale-110 shadow-md shadow-emerald-500/30'
+                            : 'bg-white dark:bg-slate-950 border-emerald-500 text-emerald-600 dark:text-[#00e699] group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:scale-115'
                         }`}>
-                          {idx + 1}
+                          {secIdx + 1}
                         </div>
 
-                        {/* Botón de Sección en Timeline */}
-                        <button
-                          onClick={() => {
-                            setActiveSectionId(sec.id);
-                            if (mats.length > 0) setActiveMaterialId(mats[0].id);
-                          }}
-                          className={`w-full text-left p-3.5 rounded-2xl transition-all border ${
-                            isSecActive
-                              ? 'bg-emerald-50 dark:bg-[#00e699]/10 border-emerald-200 dark:border-[#00e699]/40 text-emerald-900 dark:text-emerald-100 font-bold shadow-xs'
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-transparent hover:border-slate-200 dark:hover:border-slate-800'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              {sec.cover_image ? (
-                                <img
-                                  src={formatImageUrl(sec.cover_image)!}
-                                  alt={sec.title}
-                                  className="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-slate-800 shrink-0 shadow-2xs"
-                                />
-                              ) : (
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-black shrink-0 shadow-2xs">
-                                  {sec.title.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-
-                              <div className="min-w-0">
-                                {sec.group_name && (
-                                  <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 block w-max mb-0.5">
-                                    {sec.group_name}
-                                  </span>
-                                )}
-                                <p className="text-xs font-bold line-clamp-1">{idx + 1}. {sec.title}</p>
-                                {(sec.duration || mats[0]?.duration) ? (
-                                  <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    <span>{sec.duration || mats[0]?.duration}</span>
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 uppercase tracking-wider">
-                                    {mats.length} archivo(s) en carpeta
-                                  </span>
-                                )}
-                              </div>
+                        <div className="flex items-center gap-3 min-w-0">
+                          {sec.cover_image ? (
+                            <img
+                              src={formatImageUrl(sec.cover_image)!}
+                              alt={sec.title}
+                              className="w-14 h-10 rounded-xl object-cover shrink-0 border border-slate-200/60 dark:border-slate-800 shadow-xs"
+                            />
+                          ) : (
+                            <div className="w-14 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-black shrink-0 shadow-xs">
+                              {sec.title.charAt(0).toUpperCase()}
                             </div>
-
-                            {isSecActive && (
-                              <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-[#00e699] animate-pulse shrink-0" />
+                          )}
+                          <div className="space-y-0.5 min-w-0">
+                            <h4 className={`text-xs font-black truncate ${
+                              isSecActive ? 'text-emerald-600 dark:text-[#00e699]' : 'text-slate-800 dark:text-slate-200'
+                            }`}>
+                              {sec.title}
+                            </h4>
+                            {(sec.duration || mats[0]?.duration) && (
+                              <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                <span>{sec.duration || mats[0]?.duration}</span>
+                              </p>
                             )}
                           </div>
-                        </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -693,8 +759,7 @@ export const MyCourseDetailPage: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
     </div>
   );
