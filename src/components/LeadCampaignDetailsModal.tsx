@@ -1,6 +1,7 @@
 import React from 'react';
 import { Client } from '../types';
 import { User, Mail, Phone, MapPin, Tag, CheckCircle2, AlertCircle, HelpCircle, X, Share2, Layers } from 'lucide-react';
+import Portal from './Portal';
 
 interface LeadCampaignDetailsModalProps {
   client: Client | null;
@@ -20,7 +21,8 @@ export const LeadCampaignDetailsModal: React.FC<LeadCampaignDetailsModalProps> =
   const customFieldValues = client.custom_field_values || [];
 
   return (
-    <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <Portal>
+      <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl p-6 shadow-2xl overflow-y-auto max-h-[90vh] custom-scrollbar">
         {/* Header */}
         <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800 mb-5">
@@ -209,7 +211,8 @@ export const LeadCampaignDetailsModal: React.FC<LeadCampaignDetailsModalProps> =
         </div>
       </div>
     </div>
-  );
+  </Portal>
+);
 };
 
 export default LeadCampaignDetailsModal;

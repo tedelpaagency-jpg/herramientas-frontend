@@ -42,6 +42,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     user?.role === 'supplier' ||
     user?.roles?.some((r) => r.name === 'proveedor' || r.name === 'supplier');
 
+  const isCloser =
+    user?.role === 'closer' ||
+    user?.role === 'closers' ||
+    user?.roles?.some((r) => r.name === 'closer' || r.name === 'closers');
+
   const activePlanPermissions =
     user?.agency?.current_subscription?.plan?.plan_permissions?.map((p) => p.permission.toLowerCase()) ||
     user?.agency?.plan?.plan_permissions?.map((p) => p.permission.toLowerCase()) ||
@@ -84,6 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Landings', path: '/landings', icon: Globe },
         { label: 'Marketing', path: '/marketing', icon: Mail },
         { label: 'Contratos', path: '/lexvault', icon: ShieldCheck },
+        { label: 'Tiendas Hunter', path: '/hunter', icon: Store },
       ],
     },
     {
@@ -191,7 +197,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Navigation Categories & Links (Espacio Confortable entre Accesos) */}
         <nav className="flex-1 px-3 py-2 space-y-3 overflow-y-auto overflow-x-hidden custom-scrollbar">
-          {categories.map((category) => {
+          {(isCloser
+            ? categories.filter(c => c.title === 'CLIENTES & CRM').map(c => ({
+                ...c,
+                items: c.items.filter(i => ['/workspaces', '/clients'].includes(i.path))
+              }))
+            : categories
+          ).map((category) => {
             const visibleCategoryItems = category.items.filter(isItemVisible);
             if (visibleCategoryItems.length === 0) return null;
 

@@ -1,16 +1,21 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { EmailTemplate, EmailCampaign, WorkspaceStage, Workspace } from '../types';
 import marketingService from '../services/marketingService';
 import crmService from '../services/crmService';
 import { workspaceMetaService } from '../services/workspaceMetaService';
+import Portal from '../components/Portal';
 import { 
   Mail, Send, Plus, FileText, CheckCircle2, Clock, 
   Users, Trash2, Edit3, Eye, Sparkles, Filter, Code, 
-  AlertCircle, ChevronRight, X, Layers
+  AlertCircle, ChevronRight, X, Layers, Smartphone, Monitor, RefreshCw, User, Building2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import 'react-quill/dist/quill.snow.css';
 
 export const MarketingPage: React.FC = () => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
@@ -19,6 +24,22 @@ export const MarketingPage: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'templates' | 'launcher' | 'campaigns'>('templates');
+
+  // Editor Modes State
+  const [templateEditMode, setTemplateEditMode] = useState<'wysiwyg' | 'html'>('wysiwyg');
+  const [campaignEditMode, setCampaignEditMode] = useState<'wysiwyg' | 'html'>('wysiwyg');
+
+  // Preview Modal State
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewSubject, setPreviewSubject] = useState('');
+  const [previewHtmlContent, setPreviewHtmlContent] = useState('');
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [testVars, setTestVars] = useState({
+    nombre: 'Juan Pérez',
+    email: 'juan.perez@ejemplo.com',
+    empresa: 'Inmobiliaria Demo',
+    agencia: 'Agencia SANTUN',
+  });
 
   // Template Modal State
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
@@ -64,6 +85,29 @@ export const MarketingPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleOpenPreviewModal = (subject: string, bodyHtml: string) => {
+    setPreviewSubject(subject || 'Asunto del correo electrónico');
+    setPreviewHtmlContent(bodyHtml || '<p style="color: #94a3b8; font-style: italic;">Sin contenido...</p>');
+    setIsPreviewModalOpen(true);
+  };
+
+  const getSubstitutedContent = (text: string) => {
+    if (!text) return '';
+    return text
+      .replace(/\{nombre\}/g, testVars.nombre)
+      .replace(/\{email\}/g, testVars.email)
+      .replace(/\{empresa\}/g, testVars.empresa)
+      .replace(/\{agencia\}/g, testVars.agencia);
+  };
+
+  const insertPlaceholderToTarget = (tag: string, target: 'template' | 'campaign') => {
+    if (target === 'template') {
+      setTemplateBody((prev) => prev + ` ${tag} `);
+    } else {
+      setCampaignBody((prev) => prev + ` ${tag} `);
+    }
+  };
 
   const handleOpenTemplateModal = (tpl?: EmailTemplate) => {
     if (tpl) {
@@ -284,7 +328,7 @@ export const MarketingPage: React.FC = () => {
 
                   <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                     <button
-                      onClick={() => setPreviewHtmlModal(tpl.body_html)}
+                      onClick={() => handleOpenPreviewModal(tpl.subject || '', tpl.body_html)}
                       className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-lg hover:bg-slate-200 flex items-center gap-1"
                     >
                       <Eye className="w-3.5 h-3.5" /> Ver Vista Previa
@@ -423,20 +467,116 @@ export const MarketingPage: React.FC = () => {
               />
             </div>
 
-            {/* HTML Editor */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cuerpo del Correo (Formato HTML / Texto Enriquecido)</label>
-              <textarea
-                required
-                rows={12}
-                value={campaignBody}
-                onChange={(e) => setCampaignBody(e.target.value)}
-                className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-xs focus:outline-none"
-              />
+            {/* Dual Editor Component (Visual WYSIWYG vs HTML Directo) */}
+            <div className="space-y-2">
+              <div className="flex flex-wrap justify-between items-center gap-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Cuerpo del Correo
+                </label>
+
+                {/* Mode Selector & Placeholder Buttons */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setCampaignEditMode('wysiwyg')}
+                      className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 ${
+                        campaignEditMode === 'wysiwyg'
+                          ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-300 shadow-2xs'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Editor Visual (WYSIWYG)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCampaignEditMode('html')}
+                      className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 ${
+                        campaignEditMode === 'html'
+                          ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-300 shadow-2xs'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <Code className="w-3.5 h-3.5" />
+                      <span>Código HTML Directo</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => insertPlaceholderToTarget('{nombre}', 'campaign')}
+                      className="px-2 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono rounded-lg font-bold border border-purple-200 dark:border-purple-800 hover:bg-purple-100"
+                    >
+                      +nombre
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertPlaceholderToTarget('{email}', 'campaign')}
+                      className="px-2 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono rounded-lg font-bold border border-purple-200 dark:border-purple-800 hover:bg-purple-100"
+                    >
+                      +email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertPlaceholderToTarget('{empresa}', 'campaign')}
+                      className="px-2 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono rounded-lg font-bold border border-purple-200 dark:border-purple-800 hover:bg-purple-100"
+                    >
+                      +empresa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertPlaceholderToTarget('{agencia}', 'campaign')}
+                      className="px-2 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono rounded-lg font-bold border border-purple-200 dark:border-purple-800 hover:bg-purple-100"
+                    >
+                      +agencia
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {campaignEditMode === 'wysiwyg' ? (
+                <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden text-slate-900 dark:text-white">
+                  <ReactQuill
+                    theme="snow"
+                    value={campaignBody}
+                    onChange={setCampaignBody}
+                    modules={{
+                      toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ color: [] }, { background: [] }],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        [{ align: [] }],
+                        ['link', 'clean'],
+                      ],
+                    }}
+                    className="h-64 mb-12"
+                  />
+                </div>
+              ) : (
+                <textarea
+                  required
+                  rows={12}
+                  value={campaignBody}
+                  onChange={(e) => setCampaignBody(e.target.value)}
+                  className="w-full p-4 bg-slate-950 text-emerald-400 font-mono text-xs border border-slate-800 rounded-xl focus:outline-none"
+                />
+              )}
             </div>
 
-            {/* Send Button */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+            {/* Action Buttons: Preview & Send */}
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => handleOpenPreviewModal(campaignSubject, campaignBody)}
+                className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all active:scale-95"
+              >
+                <Eye className="w-4 h-4 text-purple-600" />
+                <span>Previsualizar Correo Realista</span>
+              </button>
+
               <button
                 type="submit"
                 disabled={isSending}
@@ -498,96 +638,301 @@ export const MarketingPage: React.FC = () => {
         </div>
       )}
 
-      {/* Template Create / Edit Modal (Full screen backdrop fix) */}
+      {/* Template Create / Edit Modal (Full screen backdrop fix with Portal) */}
       {isTemplateModalOpen && (
-        <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                {editingTemplateId ? 'Editar Plantilla de Correo' : 'Nueva Plantilla HTML'}
-              </h3>
-              <button onClick={() => setIsTemplateModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveTemplate} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Plantilla</label>
-                <input
-                  type="text"
-                  required
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  placeholder="Ej: Plantilla Bienvenida Prospectos"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none"
-                />
+        <Portal>
+          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                  {editingTemplateId ? 'Editar Plantilla de Correo' : 'Nueva Plantilla HTML'}
+                </h3>
+                <button onClick={() => setIsTemplateModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Asunto Predeterminado</label>
-                <input
-                  type="text"
-                  value={templateSubject}
-                  onChange={(e) => setTemplateSubject(e.target.value)}
-                  placeholder="Ej: ¡Bienvenido a SANTUN, {nombre}!"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none"
-                />
-              </div>
+              <form onSubmit={handleSaveTemplate} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Plantilla</label>
+                  <input
+                    type="text"
+                    required
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="Ej: Plantilla Bienvenida Prospectos"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none"
+                  />
+                </div>
 
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Contenido HTML</label>
-                  <div className="flex gap-1 text-[10px]">
-                    <button type="button" onClick={() => insertPlaceholder('{nombre}')} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono rounded font-bold hover:bg-purple-100">+nombre</button>
-                    <button type="button" onClick={() => insertPlaceholder('{email}')} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono rounded font-bold hover:bg-purple-100">+email</button>
-                    <button type="button" onClick={() => insertPlaceholder('{empresa}')} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono rounded font-bold hover:bg-purple-100">+empresa</button>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Asunto Predeterminado</label>
+                  <input
+                    type="text"
+                    value={templateSubject}
+                    onChange={(e) => setTemplateSubject(e.target.value)}
+                    placeholder="Ej: ¡Bienvenido a SANTUN, {nombre}!"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none"
+                  />
+                </div>
+
+                {/* Dual Editor Component (Visual WYSIWYG vs HTML Directo) */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap justify-between items-center gap-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Contenido del Correo</label>
+                    
+                    {/* Mode Selector & Placeholder Buttons */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setTemplateEditMode('wysiwyg')}
+                          className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 ${
+                            templateEditMode === 'wysiwyg'
+                              ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-300 shadow-2xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Editor Visual (WYSIWYG)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTemplateEditMode('html')}
+                          className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 ${
+                            templateEditMode === 'html'
+                              ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-300 shadow-2xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <Code className="w-3.5 h-3.5" />
+                          <span>Código HTML Directo</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-[11px]">
+                        <button type="button" onClick={() => insertPlaceholderToTarget('{nombre}', 'template')} className="px-2 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono rounded-lg font-bold border border-purple-200 dark:border-purple-800 hover:bg-purple-100">+nombre</button>
+                        <button type="button" onClick={() => insertPlaceholderToTarget('{email}', 'template')} className="px-2 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono rounded-lg font-bold border border-purple-200 dark:border-purple-800 hover:bg-purple-100">+email</button>
+                        <button type="button" onClick={() => insertPlaceholderToTarget('{empresa}', 'template')} className="px-2 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono rounded-lg font-bold border border-purple-200 dark:border-purple-800 hover:bg-purple-100">+empresa</button>
+                        <button type="button" onClick={() => insertPlaceholderToTarget('{agencia}', 'template')} className="px-2 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono rounded-lg font-bold border border-purple-200 dark:border-purple-800 hover:bg-purple-100">+agencia</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {templateEditMode === 'wysiwyg' ? (
+                    <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden text-slate-900 dark:text-white">
+                      <ReactQuill
+                        theme="snow"
+                        value={templateBody}
+                        onChange={setTemplateBody}
+                        modules={{
+                          toolbar: [
+                            [{ header: [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ color: [] }, { background: [] }],
+                            [{ list: 'ordered' }, { list: 'bullet' }],
+                            [{ align: [] }],
+                            ['link', 'clean'],
+                          ],
+                        }}
+                        className="h-56 mb-12"
+                      />
+                    </div>
+                  ) : (
+                    <textarea
+                      required
+                      rows={10}
+                      value={templateBody}
+                      onChange={(e) => setTemplateBody(e.target.value)}
+                      className="w-full p-4 bg-slate-950 text-emerald-400 font-mono text-xs border border-slate-800 rounded-xl focus:outline-none"
+                    />
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPreviewModal(templateSubject, templateBody)}
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all active:scale-95"
+                  >
+                    <Eye className="w-4 h-4 text-purple-600" />
+                    <span>Previsualizar Correo Realista</span>
+                  </button>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsTemplateModalOpen(false)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold shadow-md hover:bg-purple-700 active:scale-95"
+                    >
+                      Guardar Plantilla
+                    </button>
                   </div>
                 </div>
-                <textarea
-                  required
-                  rows={8}
-                  value={templateBody}
-                  onChange={(e) => setTemplateBody(e.target.value)}
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-xs focus:outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsTemplateModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold shadow-md hover:bg-purple-700"
-                >
-                  Guardar Plantilla
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
 
-      {/* HTML Preview Modal (Full screen backdrop fix) */}
-      {previewHtmlModal && (
-        <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl h-[70vh] shadow-2xl flex flex-col overflow-hidden">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
-              <h3 className="font-bold text-sm">Vista Previa de Correo HTML</h3>
-              <button onClick={() => setPreviewHtmlModal(null)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
-              <div dangerouslySetInnerHTML={{ __html: previewHtmlModal }} />
+      {/* REALISTIC INBOX EMAIL PREVIEW MODAL */}
+      {isPreviewModalOpen && (
+        <Portal>
+          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden text-white">
+              {/* Top Header Bar */}
+              <div className="p-4 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-purple-400" />
+                  <h3 className="font-extrabold text-sm text-white">Vista Previa Realista de Correo Electrónico</h3>
+                </div>
+
+                {/* Device Switcher */}
+                <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDevice('desktop')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
+                      previewDevice === 'desktop'
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Monitor className="w-4 h-4" />
+                    <span>Escritorio (640px)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDevice('mobile')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
+                      previewDevice === 'mobile'
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>Móvil (375px)</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewModalOpen(false)}
+                  className="p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Live Variable Tester Bar */}
+              <div className="px-6 py-2.5 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <span className="text-slate-400 font-bold flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400" /> Probador de Marcadores Dinámicos:
+                </span>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
+                    <span className="text-slate-400 text-[11px] font-mono">{'{nombre}'}:</span>
+                    <input
+                      type="text"
+                      value={testVars.nombre}
+                      onChange={(e) => setTestVars({ ...testVars, nombre: e.target.value })}
+                      className="w-24 bg-transparent text-white font-bold text-xs focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
+                    <span className="text-slate-400 text-[11px] font-mono">{'{email}'}:</span>
+                    <input
+                      type="text"
+                      value={testVars.email}
+                      onChange={(e) => setTestVars({ ...testVars, email: e.target.value })}
+                      className="w-36 bg-transparent text-white font-bold text-xs focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800">
+                    <span className="text-slate-400 text-[11px] font-mono">{'{empresa}'}:</span>
+                    <input
+                      type="text"
+                      value={testVars.empresa}
+                      onChange={(e) => setTestVars({ ...testVars, empresa: e.target.value })}
+                      className="w-28 bg-transparent text-white font-bold text-xs focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Email Inbox Body Area */}
+              <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-slate-950 flex justify-center items-start">
+                <div
+                  className={`transition-all duration-300 ${
+                    previewDevice === 'desktop'
+                      ? 'w-full max-w-2xl bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 overflow-hidden'
+                      : 'w-[375px] bg-white text-slate-900 rounded-[36px] shadow-2xl border-8 border-slate-800 overflow-hidden relative'
+                  }`}
+                >
+                  {/* Mobile Phone Top Bar Mockup */}
+                  {previewDevice === 'mobile' && (
+                    <div className="bg-slate-900 text-white text-[10px] px-6 py-1.5 flex justify-between items-center font-bold">
+                      <span>9:41</span>
+                      <div className="w-16 h-3 bg-black rounded-full mx-auto"></div>
+                      <span>100% 🔋</span>
+                    </div>
+                  )}
+
+                  {/* Email Inbox Header (Gmail / Outlook style) */}
+                  <div className="p-5 bg-slate-50 border-b border-slate-200 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <h2 className="text-lg font-black text-slate-900 leading-snug">
+                        {getSubstitutedContent(previewSubject)}
+                      </h2>
+                      <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-800 rounded-md">
+                        Bandeja de Entrada
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-slate-600 border-t border-slate-200/60 pt-2">
+                      <div className="w-9 h-9 rounded-full bg-purple-600 text-white font-black flex items-center justify-center text-sm shadow-xs">
+                        S
+                      </div>
+                      <div className="flex-1 text-[11px]">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 text-xs">SANTUN Email Marketing</span>
+                          <span className="text-[10px] text-slate-400">Hoy, 14:35</span>
+                        </div>
+                        <p className="text-slate-500">
+                          De: <span className="font-semibold text-slate-700">no-reply@santun.tedelpa.com</span>
+                        </p>
+                        <p className="text-slate-500">
+                          Para: <span className="font-semibold text-slate-700">{testVars.nombre} &lt;{testVars.email}&gt;</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rendered Email HTML Content */}
+                  <div className="p-6 bg-white min-h-[250px] overflow-x-auto text-slate-900 leading-relaxed text-sm">
+                    <div dangerouslySetInnerHTML={{ __html: getSubstitutedContent(previewHtmlContent) }} />
+                  </div>
+
+                  {/* Email Footer Mockup */}
+                  <div className="p-4 bg-slate-50 border-t border-slate-200 text-center text-[10px] text-slate-400 space-y-1">
+                    <p>Este es un correo automático enviado a través del CRM SANTUN Marketing.</p>
+                    <p>© 2026 SANTUN. Todos los derechos reservados.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

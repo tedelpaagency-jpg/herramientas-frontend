@@ -6,6 +6,7 @@ import userService from '../services/userService';
 import adminService from '../services/adminService';
 import { useAuth } from '../context/AuthContext';
 import { X, UserPlus, Save, Loader2, ShieldCheck, Building } from 'lucide-react';
+import Portal from './Portal';
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -104,7 +105,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
       <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
@@ -185,6 +187,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all appearance-none"
                 >
                   <option value="user">User / Agente</option>
+                  <option value="closer">Closer (CRM & Clientes Asignados)</option>
                   <option value="admin">Administrador de Agencia</option>
                   <option value="gerente">Gerente de Operaciones</option>
                   {isSuperAdmin && <option value="gerente_comercial">Gerente Comercial</option>}
@@ -275,7 +278,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
         </form>
       </div>
     </div>
-  );
+  </Portal>
+);
 };
 
 export default UserFormModal;

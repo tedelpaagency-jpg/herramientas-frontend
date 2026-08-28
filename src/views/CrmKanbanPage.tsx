@@ -18,8 +18,17 @@ import {
   ChevronLeft, ChevronRight, AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 export const CrmKanbanPage: React.FC = () => {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some(r => r.name === 'super_admin');
+  const isAdmin = user?.role === 'admin' || user?.roles?.some(r => r.name === 'admin');
+  const userPermNames = user?.permissions?.map(p => p.name) || [];
+
+  const canCreateLeads = isSuperAdmin || isAdmin || userPermNames.includes('leads.create') || userPermNames.includes('leads.create_leads');
+  const canEditLeads = isSuperAdmin || isAdmin || userPermNames.includes('leads.edit') || userPermNames.includes('leads.edit_leads');
+  const canDeleteLeads = isSuperAdmin || isAdmin || userPermNames.includes('leads.delete') || userPermNames.includes('leads.delete_leads');
   const searchParams = useSearchParams();
   const workspaceIdFromUrl = searchParams?.get('workspace_id');
 
@@ -528,13 +537,15 @@ export const CrmKanbanPage: React.FC = () => {
             </>
           )}
 
-          <button
-            onClick={() => handleOpenAddLeadModal()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-emerald-700 transition-all active:scale-95"
-          >
-            <UserPlus className="w-4 h-4" />
-            Nuevo Prospecto
-          </button>
+          {canCreateLeads && (
+            <button
+              onClick={() => handleOpenAddLeadModal()}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-emerald-700 transition-all active:scale-95"
+            >
+              <UserPlus className="w-4 h-4" />
+              Nuevo Prospecto
+            </button>
+          )}
 
           <button
             onClick={() => setIsAddStageOpen(true)}

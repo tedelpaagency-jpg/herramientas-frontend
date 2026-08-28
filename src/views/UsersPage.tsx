@@ -6,6 +6,7 @@ import userService from '../services/userService';
 import adminService from '../services/adminService';
 import { useAuth } from '../context/AuthContext';
 import UserFormModal from '../components/UserFormModal';
+import UserPermissionsModal from '../components/UserPermissionsModal';
 import {
   Users,
   UserPlus,
@@ -21,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   UserCheck,
+  Key,
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
 
@@ -148,6 +150,9 @@ export const UsersPage: React.FC = () => {
     }
   };
 
+  // Modal de Permisos CRUD Granulares
+  const [permissionsUser, setPermissionsUser] = useState<User | null>(null);
+
   const getRoleBadge = (roleName?: string) => {
     switch (roleName) {
       case 'super_admin':
@@ -158,6 +163,9 @@ export const UsersPage: React.FC = () => {
         return <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200">Admin Agencia</span>;
       case 'gerente':
         return <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200">Gerente</span>;
+      case 'closer':
+      case 'closers':
+        return <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">Closer (Leads Asignados)</span>;
       default:
         return <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700 border border-slate-200">Agente / User</span>;
     }
@@ -356,6 +364,13 @@ export const UsersPage: React.FC = () => {
                           ) : (
                             <>
                               <button
+                                onClick={() => setPermissionsUser(u)}
+                                title="Gestionar Permisos CRUD Granulares"
+                                className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors"
+                              >
+                                <Key className="w-4 h-4" />
+                              </button>
+                              <button
                                 onClick={() => handleEdit(u)}
                                 title="Editar Usuario"
                                 className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
@@ -407,13 +422,23 @@ export const UsersPage: React.FC = () => {
         )}
       </div>
 
-      {/* Modal de Formulario */}
+      {/* Modal de Formulario de Usuario */}
       <UserFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchUsers}
         userToEdit={selectedUser}
       />
+
+      {/* Modal de Permisos CRUD Granulares por Usuario */}
+      {permissionsUser && (
+        <UserPermissionsModal
+          user={permissionsUser}
+          isOpen={!!permissionsUser}
+          onClose={() => setPermissionsUser(null)}
+          onSuccess={fetchUsers}
+        />
+      )}
     </div>
   );
 };

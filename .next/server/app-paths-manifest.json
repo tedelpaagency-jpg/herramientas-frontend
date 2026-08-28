@@ -1,7 +1,1 @@
-{
-  "/login/page": "app/login/page.js",
-  "/travel-packages/pos/page": "app/travel-packages/pos/page.js",
-  "/workspaces/page": "app/workspaces/page.js",
-  "/contract/show/[id]/page": "app/contract/show/[id]/page.js",
-  "/crm/page": "app/crm/page.js"
-}
+{}

@@ -39,8 +39,8 @@ export const DashboardPage: React.FC = () => {
         ]);
 
         setStats({
-          estatesCount: estatesRes.status === 'fulfilled' ? estatesRes.value.data.length : 0,
-          clientsCount: clientsRes.status === 'fulfilled' ? clientsRes.value.length : 0,
+          estatesCount: estatesRes.status === 'fulfilled' ? (estatesRes.value.pagination?.total ?? estatesRes.value.data?.length ?? 0) : 0,
+          clientsCount: clientsRes.status === 'fulfilled' ? (clientsRes.value.pagination?.total ?? clientsRes.value.data?.length ?? (Array.isArray(clientsRes.value) ? (clientsRes.value as any).length : 0)) : 0,
           productsCount: productsRes.status === 'fulfilled' ? productsRes.value.length : 0,
           visasCount: visasRes.status === 'fulfilled' ? visasRes.value.length : 0,
         });

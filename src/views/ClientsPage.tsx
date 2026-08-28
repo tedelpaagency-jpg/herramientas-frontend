@@ -1,18 +1,28 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Client, Workspace, User } from '../types';
+import { Client, Workspace, User, PaginationMeta } from '../types';
 
 import crmService from '../services/crmService';
 import userService from '../services/userService';
 import { workspaceMetaService } from '../services/workspaceMetaService';
-import { Users, Plus, Search, Mail, Phone, Edit3, Trash2, Info, Filter, Layers, UserCheck } from 'lucide-react';
+import { Users, Plus, Search, Mail, Phone, Edit3, Trash2, Info, Filter, Layers, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
 import { LeadCampaignDetailsModal } from '@/components/LeadCampaignDetailsModal';
+import Portal from '../components/Portal';
 
 import { confirmDialog } from '../utils/alerts';
+import { useAuth } from '../context/AuthContext';
 
 export const ClientsPage: React.FC = () => {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some(r => r.name === 'super_admin');
+  const isAdmin = user?.role === 'admin' || user?.roles?.some(r => r.name === 'admin');
+  const userPermNames = user?.permissions?.map(p => p.name) || [];
+
+  const canCreateClients = isSuperAdmin || isAdmin || userPermNames.includes('clients.create') || userPermNames.includes('clients.create_clients');
+  const canEditClients = isSuperAdmin || isAdmin || userPermNames.includes('clients.edit') || userPermNames.includes('clients.edit_clients');
+  const canDeleteClients = isSuperAdmin || isAdmin || userPermNames.includes('clients.delete') || userPermNames.includes('clients.delete_clients');
   const [clients, setClients] = useState<Client[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -24,6 +34,17 @@ export const ClientsPage: React.FC = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedClientForDetails, setSelectedClientForDetails] = useState<Client | null>(null);
   const [isLeadCampaignModalOpen, setIsLeadCampaignModalOpen] = useState(false);
+
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(15);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    current_page: 1,
+    last_page: 1,
+    per_page: 15,
+    total: 0,
+    from: 0,
+    to: 0,
+  });
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -43,8 +64,12 @@ export const ClientsPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchClients();
+    setPage(1);
   }, [search, selectedWorkspaceId, selectedAssignedUserId]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [page, perPage, search, selectedWorkspaceId, selectedAssignedUserId]);
 
   const fetchWorkspaces = async () => {
     try {
@@ -68,13 +93,31 @@ export const ClientsPage: React.FC = () => {
   const fetchClients = async () => {
     setIsLoading(true);
     try {
-      const params: Record<string, any> = {};
+      const params: Record<string, any> = {
+        page,
+        per_page: perPage,
+      };
       if (search) params.search = search;
       if (selectedWorkspaceId) params.workspace_id = selectedWorkspaceId;
       if (selectedAssignedUserId) params.assigned_user_id = selectedAssignedUserId;
 
-      const data = await crmService.getClients(params);
-      setClients(data);
+      const res = await crmService.getClients(params);
+      if (res && res.data) {
+        setClients(res.data);
+        if (res.pagination) {
+          setPagination(res.pagination);
+        }
+      } else if (Array.isArray(res)) {
+        setClients(res);
+        setPagination({
+          current_page: 1,
+          last_page: 1,
+          per_page: (res as any).length || 15,
+          total: (res as any).length,
+          from: (res as any).length ? 1 : 0,
+          to: (res as any).length,
+        });
+      }
     } catch (err) {
       console.error('Error fetching clients:', err);
     } finally {
@@ -181,13 +224,15 @@ export const ClientsPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenCreate}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Agregar Cliente</span>
-        </button>
+        {canCreateClients && (
+          <button
+            onClick={handleOpenCreate}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Agregar Cliente</span>
+          </button>
+        )}
       </div>
 
       {/* Filter Bar */}
@@ -356,20 +401,24 @@ export const ClientsPage: React.FC = () => {
                         >
                           <Info className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => handleOpenEdit(c)} 
-                          className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors"
-                          title="Editar"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(c.id)} 
-                          className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canEditClients && (
+                          <button 
+                            onClick={() => handleOpenEdit(c)} 
+                            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canDeleteClients && (
+                          <button 
+                            onClick={() => handleDelete(c.id)} 
+                            className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </td>
 
                     </tr>
@@ -379,107 +428,163 @@ export const ClientsPage: React.FC = () => {
             </table>
           </div>
 
-          <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 flex items-center justify-between border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 font-medium">
-            <p>Mostrando <strong className="text-slate-800 dark:text-white">{clients.length}</strong> clientes en el directorio</p>
+          <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 font-medium">
+            <div className="flex flex-wrap items-center gap-4">
+              <span>
+                Mostrando{' '}
+                <strong className="text-slate-800 dark:text-white">
+                  {pagination.total > 0 ? (pagination.from ?? ((pagination.current_page - 1) * pagination.per_page + 1)) : 0}
+                </strong>{' '}
+                -{' '}
+                <strong className="text-slate-800 dark:text-white">
+                  {pagination.to ?? Math.min(pagination.current_page * pagination.per_page, pagination.total)}
+                </strong>{' '}
+                de <strong className="text-slate-800 dark:text-white">{pagination.total}</strong> clientes
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-400">Mostrar</span>
+                <select
+                  value={perPage}
+                  onChange={(e) => {
+                    setPerPage(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span className="text-slate-400">por pág.</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Anterior</span>
+              </button>
+
+              <span className="font-bold text-slate-800 dark:text-white px-2">
+                Página {pagination.current_page} de {pagination.last_page || 1}
+              </span>
+
+              <button
+                disabled={page >= pagination.last_page}
+                onClick={() => setPage((p) => Math.min(p + 1, pagination.last_page))}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+              >
+                <span>Siguiente</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Modal Crear / Editar */}
       {showModal && (
-        <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
-              </h3>
-              <button onClick={() => setShowModal(false)} className="text-xs font-bold text-slate-400 hover:text-slate-600">
-                Cancelar
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Nombre Completo *</label>
-                <input
-                  type="text"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                  placeholder="Ej. Juan Pérez"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="juan@ejemplo.com"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Teléfono</label>
-                  <input
-                    type="text"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+593 99 123 4567"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Asesor / Usuario Responsable</label>
-                <select
-                  value={formData.assigned_user_id}
-                  onChange={(e) => setFormData({ ...formData, assigned_user_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
-                >
-                  <option value="">-- Sin Asignar (General) --</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>👤 {u.name} ({u.email})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Workspace</label>
-                <select
-                  value={formData.workspace_id}
-                  onChange={(e) => setFormData({ ...formData, workspace_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
-                >
-                  <option value="">Seleccionar Workspace...</option>
-                  {workspaces.map((ws) => (
-                    <option key={ws.id} value={ws.id}>{ws.name} (ID: #{ws.id})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300"
-                >
+        <Portal>
+          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
+                </h3>
+                <button onClick={() => setShowModal(false)} className="text-xs font-bold text-slate-400 hover:text-slate-600">
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm"
-                >
-                  Guardar Cliente
-                </button>
               </div>
-            </form>
+
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Nombre Completo *</label>
+                  <input
+                    type="text"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                    placeholder="Ej. Juan Pérez"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="juan@ejemplo.com"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Teléfono</label>
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="+593 99 123 4567"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Asesor / Usuario Responsable</label>
+                  <select
+                    value={formData.assigned_user_id}
+                    onChange={(e) => setFormData({ ...formData, assigned_user_id: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
+                  >
+                    <option value="">-- Sin Asignar (General) --</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>👤 {u.name} ({u.email})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Workspace</label>
+                  <select
+                    value={formData.workspace_id}
+                    onChange={(e) => setFormData({ ...formData, workspace_id: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
+                  >
+                    <option value="">Seleccionar Workspace...</option>
+                    {workspaces.map((ws) => (
+                      <option key={ws.id} value={ws.id}>{ws.name} (ID: #{ws.id})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm"
+                  >
+                    Guardar Cliente
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Modal Detalle Lead / Campaña */}

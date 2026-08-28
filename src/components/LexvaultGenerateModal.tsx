@@ -111,7 +111,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
       ]);
 
       setAvailableTemplates(tmplList);
-      setClients(clientList);
+      setClients(Array.isArray(clientList) ? clientList : (clientList as any).data || []);
 
       if (!activeTemplate && tmplList.length > 0) {
         const firstTmpl = template || tmplList[0];

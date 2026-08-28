@@ -7,18 +7,57 @@ import {
   PipelineTask,
   PipelineProposal,
   PipelinePayment,
+  PaginatedResult,
 } from '../types';
 
 export const crmService = {
   // Clients CRUD
-  getClients: async (params?: Record<string, any>): Promise<Client[]> => {
+  getClients: async (params?: Record<string, any>): Promise<PaginatedResult<Client>> => {
     const response = await apiClient.get('/v1/clients', { params });
     const raw = response.data;
-    if (Array.isArray(raw)) return raw;
-    if (Array.isArray(raw?.data?.data)) return raw.data.data;
-    if (Array.isArray(raw?.data)) return raw.data;
-    return [];
+    const payload = raw?.data || raw;
+
+    if (Array.isArray(payload)) {
+      return {
+        data: payload,
+        pagination: {
+          current_page: 1,
+          last_page: 1,
+          per_page: payload.length || 15,
+          total: payload.length,
+          from: payload.length ? 1 : 0,
+          to: payload.length,
+        },
+      };
+    }
+
+    if (payload && Array.isArray(payload.data)) {
+      return {
+        data: payload.data,
+        pagination: {
+          current_page: payload.current_page || 1,
+          last_page: payload.last_page || 1,
+          per_page: payload.per_page || 15,
+          total: payload.total || payload.data.length,
+          from: payload.from || 0,
+          to: payload.to || 0,
+        },
+      };
+    }
+
+    return {
+      data: [],
+      pagination: {
+        current_page: 1,
+        last_page: 1,
+        per_page: 15,
+        total: 0,
+        from: 0,
+        to: 0,
+      },
+    };
   },
+
 
   getClient: async (id: number): Promise<Client> => {
     const response = await apiClient.get(`/v1/clients/${id}`);
@@ -139,6 +178,15 @@ export const crmService = {
   generatePaymentLink: async (data: { client_pipeline_id: number; name: string; total_amount: number }): Promise<PipelinePayment & { payment_url: string }> => {
     const response = await apiClient.post('/v1/crm/payment-links', data);
     return response.data;
+  },
+
+  // Assign Agent to Leads
+  assignAgent: async (pipelineIds: number[], assignedUserId: number | null): Promise<CrmPipelineItem[]> => {
+    const response = await apiClient.post('/v1/crm/assign-agent', {
+      pipeline_ids: pipelineIds,
+      assigned_user_id: assignedUserId,
+    });
+    return response.data?.data || response.data;
   },
 };
 

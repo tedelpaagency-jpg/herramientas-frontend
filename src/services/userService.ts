@@ -68,6 +68,21 @@ export const userService = {
     const res = await apiClient.post(`/v1/users/${id}/assign-agency`, { agency_id });
     return res.data;
   },
+
+  getPermissionCatalog: async () => {
+    const res = await apiClient.get('/v1/permissions/catalog');
+    return res.data?.data || res.data;
+  },
+
+  getUserPermissions: async (id: number) => {
+    const res = await apiClient.get(`/v1/users/${id}/permissions`);
+    return res.data;
+  },
+
+  syncUserPermissions: async (id: number, permissions: string[]) => {
+    const res = await apiClient.post(`/v1/users/${id}/permissions`, { permissions });
+    return res.data;
+  },
 };
 
 export default userService;

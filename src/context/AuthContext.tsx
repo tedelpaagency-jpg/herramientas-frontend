@@ -44,13 +44,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    let hasSavedSession = false;
     if (typeof window !== 'undefined') {
       const savedUser = localStorage.getItem('santun_user');
       const savedToken = localStorage.getItem('santun_auth_token');
-      if (savedUser) setUser(JSON.parse(savedUser));
-      if (savedToken) setToken(savedToken);
+      if (savedUser && savedToken) {
+        try {
+          setUser(JSON.parse(savedUser));
+          setToken(savedToken);
+          setIsLoading(false);
+          hasSavedSession = true;
+        } catch (e) {
+          console.error('Error al deserializar sesión:', e);
+        }
+      }
     }
-    refreshUser();
+    
+    // Validación en segundo plano sin bloquear el renderizado inicial
+    refreshUser().finally(() => {
+      if (!hasSavedSession) {
+        setIsLoading(false);
+      }
+    });
   }, []);
 
   const login = async (email: string, password: string) => {
