@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Estate } from '../types';
+import { Estate, User } from '../types';
 import estateService from '../services/estateService';
+import userService from '../services/userService';
 import { 
   Building2, 
   Plus, 
@@ -30,10 +31,12 @@ import { EstateCanvasModal } from '@/components/EstateCanvasModal';
 export const EstatesPage: React.FC = () => {
   const router = useRouter();
   const [estates, setEstates] = useState<Estate[]>([]);
+  const [agents, setAgents] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [agentFilter, setAgentFilter] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   
   const [page, setPage] = useState(1);
@@ -50,6 +53,16 @@ export const EstatesPage: React.FC = () => {
   const [canvasData, setCanvasData] = useState<any | null>(null);
   const [activeEstateForPdf, setActiveEstateForPdf] = useState<Estate | null>(null);
 
+  const fetchAgents = async () => {
+    try {
+      const res = await userService.getUsers();
+      const userList = Array.isArray(res) ? res : (res.data?.data || res.data || []);
+      setAgents(userList);
+    } catch (err) {
+      console.error('Error fetching agents:', err);
+    }
+  };
+
   const fetchEstates = async () => {
     setIsLoading(true);
     try {
@@ -58,6 +71,7 @@ export const EstatesPage: React.FC = () => {
         search: search || undefined,
         type: typeFilter || undefined,
         status: statusFilter || undefined,
+        agent_id: agentFilter ? Number(agentFilter) : undefined,
       });
 
       setEstates(res.data);
@@ -72,8 +86,12 @@ export const EstatesPage: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchAgents();
+  }, []);
+
+  useEffect(() => {
     fetchEstates();
-  }, [page, search, typeFilter, statusFilter]);
+  }, [page, search, typeFilter, statusFilter, agentFilter]);
 
   const handleOpenCreateModal = () => router.push('/estates/new');
   const handleOpenEditModal = (estate: Estate) => router.push(`/estates/${estate.id}/edit`);
@@ -226,6 +244,22 @@ export const EstatesPage: React.FC = () => {
             <option value="reserved">Reservado</option>
             <option value="sold">Vendido</option>
             <option value="rented">Alquilado</option>
+          </select>
+
+          <select
+            value={agentFilter}
+            onChange={(e) => {
+              setAgentFilter(e.target.value);
+              setPage(1);
+            }}
+            className="bg-[#F4F5F7] border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+          >
+            <option value="">👤 Todos los Agentes / Asesores</option>
+            {agents.map((ag) => (
+              <option key={ag.id} value={ag.id}>
+                {ag.name || ag.email} (ID: #{ag.id})
+              </option>
+            ))}
           </select>
         </div>
 

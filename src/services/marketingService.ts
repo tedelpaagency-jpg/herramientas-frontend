@@ -31,6 +31,7 @@ export const marketingService = {
     subject: string;
     body_html: string;
     email_template_id?: number;
+    workspace_id?: number;
     stage_id?: number;
     client_ids?: number[];
   }): Promise<{ message: string; data: { campaign: EmailCampaign; sent_count: number; failed_count: number } }> => {

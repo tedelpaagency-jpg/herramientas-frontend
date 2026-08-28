@@ -106,12 +106,7 @@ export const LexvaultPage: React.FC = () => {
   };
 
   const handleOpenGenerateDoc = (tmpl?: LexvaultTemplate) => {
-    const targetTmpl = tmpl || templates[0];
-    if (!targetTmpl) {
-      toast.error('Cree una plantilla legal primero');
-      return;
-    }
-    setSelectedTemplateForGen(targetTmpl);
+    setSelectedTemplateForGen(tmpl || null);
     setIsGenerateModalOpen(true);
   };
 

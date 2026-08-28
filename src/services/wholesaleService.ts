@@ -128,6 +128,21 @@ export const wholesaleService = {
     return res.data;
   },
 
+  async getBookings(status?: string) {
+    const res = await apiClient.get('/v1/bookings', { params: { status } });
+    return res.data;
+  },
+
+  async approveBookingItem(itemId: number) {
+    const res = await apiClient.post(`/v1/booking-items/${itemId}/approve`);
+    return res.data;
+  },
+
+  async rejectBookingItem(itemId: number, rejection_reason?: string) {
+    const res = await apiClient.post(`/v1/booking-items/${itemId}/reject`, { rejection_reason });
+    return res.data;
+  },
+
   // Wallet
   async getWallet() {
     const res = await apiClient.get('/v1/wallet');

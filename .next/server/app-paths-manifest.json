@@ -1,7 +1,7 @@
 {
+  "/login/page": "app/login/page.js",
   "/travel-packages/pos/page": "app/travel-packages/pos/page.js",
-  "/admin/clearing/page": "app/admin/clearing/page.js",
-  "/admin/pricing-rules/page": "app/admin/pricing-rules/page.js",
-  "/supplier/packages/page": "app/supplier/packages/page.js",
-  "/login/page": "app/login/page.js"
+  "/workspaces/page": "app/workspaces/page.js",
+  "/contract/show/[id]/page": "app/contract/show/[id]/page.js",
+  "/crm/page": "app/crm/page.js"
 }

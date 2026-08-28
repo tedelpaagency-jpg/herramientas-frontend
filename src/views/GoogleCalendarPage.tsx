@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { CalendarEvent, GoogleCalendarSetting } from '../types';
+import { CalendarEvent, GoogleCalendarSetting, User } from '../types';
 import googleCalendarService from '../services/googleCalendarService';
+import userService from '../services/userService';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import {
@@ -37,6 +38,8 @@ export const GoogleCalendarPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentMonthDate, setCurrentMonthDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [systemUsers, setSystemUsers] = useState<User[]>([]);
+  const [selectedUserEmails, setSelectedUserEmails] = useState<string[]>([]);
   const [settings, setSettings] = useState<GoogleCalendarSetting | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -89,6 +92,16 @@ export const GoogleCalendarPage: React.FC = () => {
     }
   };
 
+  const fetchSystemUsers = async () => {
+    try {
+      const res = await userService.getUsers();
+      const userList = Array.isArray(res) ? res : (res.data?.data || res.data || []);
+      setSystemUsers(userList);
+    } catch (err) {
+      console.error('Error fetching system users:', err);
+    }
+  };
+
   const fetchEvents = async () => {
     setIsLoading(true);
     try {
@@ -104,6 +117,7 @@ export const GoogleCalendarPage: React.FC = () => {
   useEffect(() => {
     fetchSettings();
     fetchEvents();
+    fetchSystemUsers();
 
     // Check if OAuth code is present in URL (e.g. /calendar?code=...)
     if (typeof window !== 'undefined') {
@@ -220,9 +234,11 @@ export const GoogleCalendarPage: React.FC = () => {
     try {
       const startDateTime = `${eventStartDate} ${eventStartTime}:00`;
       const endDateTime = `${eventEndDate} ${eventEndTime}:00`;
-      const attendees = eventAttendees
+      const manualAttendees = eventAttendees
         ? eventAttendees.split(',').map((a) => a.trim()).filter(Boolean)
         : [];
+      
+      const allAttendees = Array.from(new Set([...selectedUserEmails, ...manualAttendees]));
 
       const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Guatemala';
 
@@ -232,7 +248,7 @@ export const GoogleCalendarPage: React.FC = () => {
         location: eventLocation,
         start_datetime: startDateTime,
         end_datetime: endDateTime,
-        attendees,
+        attendees: allAttendees,
         timezone: userTimeZone,
       } as any);
 
@@ -241,6 +257,7 @@ export const GoogleCalendarPage: React.FC = () => {
       setEventDescription('');
       setEventLocation('');
       setEventAttendees('');
+      setSelectedUserEmails([]);
       fetchEvents();
       toast.success('¡Evento creado exitosamente para su usuario!');
     } catch (err) {
@@ -853,10 +870,10 @@ export const GoogleCalendarPage: React.FC = () => {
 
       {/* Modal 1: Create Event */}
       {showEventModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+        <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-lg p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <CalendarIcon className="w-5 h-5 text-blue-600" />
                 Registrar Evento en Mi Calendario
               </h3>
@@ -867,109 +884,156 @@ export const GoogleCalendarPage: React.FC = () => {
 
             <form onSubmit={handleCreateEvent} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Título del Evento / Reunión</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Título del Evento / Reunión *</label>
                 <input
                   type="text"
                   required
                   value={eventTitle}
                   onChange={(e) => setEventTitle(e.target.value)}
                   placeholder="Ej: Reunión de Cierre de Venta con Cliente"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white focus:border-blue-600"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:bg-white focus:border-blue-600"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Ubicación / Enlace de Reunión</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Ubicación / Enlace de Reunión</label>
                 <input
                   type="text"
                   value={eventLocation}
                   onChange={(e) => setEventLocation(e.target.value)}
-                  placeholder="Ej: Sala de Juntas 2 o Google Meet link"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white focus:border-blue-600"
+                  placeholder="Ej: Google Meet, Zoom o Dirección física"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:bg-white"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Fecha de Inicio</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha de Inicio *</label>
                   <input
                     type="date"
                     required
                     value={eventStartDate}
-                    onChange={(e) => setEventStartDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white"
+                    onChange={(e) => {
+                      setEventStartDate(e.target.value);
+                      if (!eventEndDate) setEventEndDate(e.target.value);
+                    }}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:bg-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Hora de Inicio</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Hora de Inicio</label>
                   <input
                     type="time"
                     required
                     value={eventStartTime}
                     onChange={(e) => setEventStartTime(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:bg-white"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Fecha de Fin</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha de Fin *</label>
                   <input
                     type="date"
                     required
                     value={eventEndDate}
                     onChange={(e) => setEventEndDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:bg-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Hora de Fin</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Hora de Fin</label>
                   <input
                     type="time"
                     required
                     value={eventEndTime}
                     onChange={(e) => setEventEndTime(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:bg-white"
                   />
                 </div>
               </div>
 
+              {/* Selector de Usuarios Participantes del Sistema */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Correos de Invitados</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  Seleccionar Usuarios Participantes (Se añadirán a Google Calendar)
+                </label>
+                <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 max-h-36 overflow-y-auto space-y-1.5 custom-scrollbar">
+                  {systemUsers.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic">Cargando usuarios del sistema...</p>
+                  ) : (
+                    systemUsers.map((u) => {
+                      const isSelected = selectedUserEmails.includes(u.email);
+                      return (
+                        <label
+                          key={u.id}
+                          className={`flex items-center justify-between p-2 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                            isSelected 
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' 
+                              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                if (isSelected) {
+                                  setSelectedUserEmails(selectedUserEmails.filter(e => e !== u.email));
+                                } else {
+                                  setSelectedUserEmails([...selectedUserEmails, u.email]);
+                                }
+                              }}
+                              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span>{u.name}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 font-normal">{u.email}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Correos Adicionales de Invitados</label>
                 <input
                   type="text"
                   value={eventAttendees}
                   onChange={(e) => setEventAttendees(e.target.value)}
-                  placeholder="cliente@correo.com, asesor@correo.com"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white"
+                  placeholder="cliente@correo.com, invitadotercero@correo.com"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:bg-white"
                 />
-                <small className="text-[10px] text-slate-400 font-medium">Separe por comas (,) varios correos electrónicos.</small>
+                <small className="text-[10px] text-slate-400 font-medium">Separe por comas (,) correos adicionales.</small>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Descripción</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Descripción</label>
                 <textarea
                   rows={2}
                   value={eventDescription}
                   onChange={(e) => setEventDescription(e.target.value)}
                   placeholder="Notas adicionales o temas a tratar..."
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:bg-white"
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:bg-white"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowEventModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingEvent}
-                  className="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md hover:bg-blue-700"
+                  className="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md hover:bg-blue-700 disabled:opacity-50"
                 >
                   {isSubmittingEvent ? 'Registrando...' : 'Guardar Evento'}
                 </button>
@@ -981,7 +1045,7 @@ export const GoogleCalendarPage: React.FC = () => {
 
       {/* Modal 2: Event Details Preview */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+        <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-md p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">

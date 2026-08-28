@@ -13,7 +13,11 @@ export const crmService = {
   // Clients CRUD
   getClients: async (params?: Record<string, any>): Promise<Client[]> => {
     const response = await apiClient.get('/v1/clients', { params });
-    return Array.isArray(response.data) ? response.data : (response.data?.data || []);
+    const raw = response.data;
+    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw?.data?.data)) return raw.data.data;
+    if (Array.isArray(raw?.data)) return raw.data;
+    return [];
   },
 
   getClient: async (id: number): Promise<Client> => {
