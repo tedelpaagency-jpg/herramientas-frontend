@@ -7,6 +7,8 @@ import Portal from './Portal';
 import { Key, Shield, Check, X, Sparkles, CheckSquare, Square, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { useAuth } from '../context/AuthContext';
+
 interface UserPermissionsModalProps {
   user: User;
   isOpen: boolean;
@@ -20,6 +22,7 @@ export const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { refreshUser } = useAuth();
   const [catalog, setCatalog] = useState<Record<string, { name: string; permissions: Record<string, string> }>>({});
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -41,8 +44,7 @@ export const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
       setCatalog(catData || {});
       setSelectedPermissions(userData.permissions || []);
     } catch (err) {
-      console.error(err);
-      toast.error('Error al cargar catálogo de permisos');
+      toast.error('Error al cargar permisos del usuario');
     } finally {
       setLoading(false);
     }
@@ -54,12 +56,12 @@ export const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
     );
   };
 
-  const handleSelectModuleAll = (modulePerms: string[]) => {
-    const allSelected = modulePerms.every((p) => selectedPermissions.includes(p));
+  const handleSelectModuleAll = (modulePermKeys: string[]) => {
+    const allSelected = modulePermKeys.every((k) => selectedPermissions.includes(k));
     if (allSelected) {
-      setSelectedPermissions((prev) => prev.filter((p) => !modulePerms.includes(p)));
+      setSelectedPermissions((prev) => prev.filter((k) => !modulePermKeys.includes(k)));
     } else {
-      setSelectedPermissions((prev) => Array.from(new Set([...prev, ...modulePerms])));
+      setSelectedPermissions((prev) => Array.from(new Set([...prev, ...modulePermKeys])));
     }
   };
 
@@ -68,6 +70,7 @@ export const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
       'leads.view',
       'leads.create',
       'leads.edit',
+      'leads.assign',
       'clients.view',
       'clients.create',
       'clients.edit',
@@ -94,6 +97,9 @@ export const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
     try {
       await userService.syncUserPermissions(user.id, selectedPermissions);
       toast.success(`Permisos actualizados para ${user.name}`);
+      if (refreshUser) {
+        try { await refreshUser(); } catch (e) {}
+      }
       if (onSuccess) onSuccess();
       onClose();
     } catch (err: any) {

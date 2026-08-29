@@ -1,1 +1,7 @@
-{}
+{
+  "/login/page": "app/login/page.js",
+  "/workspaces/page": "app/workspaces/page.js",
+  "/users/page": "app/users/page.js",
+  "/crm/page": "app/crm/page.js",
+  "/page": "app/page.js"
+}

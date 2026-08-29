@@ -188,6 +188,30 @@ export const crmService = {
     });
     return response.data?.data || response.data;
   },
+
+  // Download Import Template
+  downloadImportTemplate: async (): Promise<void> => {
+    const response = await apiClient.get('/v1/crm/import-template', {
+      responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'PLANTILLA_CLIENTES.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
+
+  // Import Leads
+  importLeads: async (formData: FormData): Promise<{ imported_count: number; errors: string[] }> => {
+    const response = await apiClient.post('/v1/crm/import-leads', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
 
 export default crmService;

@@ -8,7 +8,7 @@ import {
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
   Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
-  LayoutDashboard, Compass
+  LayoutDashboard, Compass, CheckSquare
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -84,6 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'CLIENTES & CRM',
       items: [
         { label: 'Workspaces', path: '/workspaces', icon: LayoutDashboard },
+        { label: 'Tareas', path: '/tasks', icon: CheckSquare },
         { label: 'Calendario', path: '/calendar', icon: Calendar },
         { label: 'Clientes', path: '/clients', icon: Users },
         { label: 'Landings', path: '/landings', icon: Globe },
