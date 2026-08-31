@@ -1,9 +1,24 @@
 import apiClient from './apiClient';
 
+export interface UserTaskWorkspace {
+  id: number;
+  user_id: number;
+  agency_id?: number | null;
+  name: string;
+  description?: string | null;
+  color: string;
+  sort_order: number;
+  is_default?: boolean;
+  stages?: UserTaskStage[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface UserTaskStage {
   id: number;
   user_id: number;
   agency_id?: number | null;
+  workspace_id?: number | null;
   name: string;
   color: string;
   sort_order: number;
@@ -16,6 +31,7 @@ export interface UserTask {
   user_id: number;
   created_by?: number | null;
   agency_id?: number | null;
+  workspace_id?: number | null;
   stage_id: number;
   title: string;
   description?: string | null;
@@ -36,9 +52,12 @@ export interface UserTask {
     email: string;
   };
   stage?: UserTaskStage;
+  workspace?: UserTaskWorkspace;
 }
 
 export interface TaskKanbanData {
+  workspaces: UserTaskWorkspace[];
+  active_workspace: UserTaskWorkspace;
   stages: UserTaskStage[];
   tasks: UserTask[];
   team_users: {
@@ -50,13 +69,32 @@ export interface TaskKanbanData {
 }
 
 export const taskService = {
-  getKanbanData: async (agencyId?: number): Promise<TaskKanbanData> => {
-    const params = agencyId ? { agency_id: agencyId } : {};
+  getKanbanData: async (agencyId?: number, workspaceId?: number): Promise<TaskKanbanData> => {
+    const params: Record<string, any> = {};
+    if (agencyId) params.agency_id = agencyId;
+    if (workspaceId) params.workspace_id = workspaceId;
+
     const res = await apiClient.get('/v1/tasks/kanban', { params });
     return res.data.data;
   },
 
-  createStage: async (data: { name: string; color?: string }): Promise<UserTaskStage> => {
+  // Workspace actions
+  createWorkspace: async (data: { name: string; description?: string; color?: string }): Promise<UserTaskWorkspace> => {
+    const res = await apiClient.post('/v1/tasks/workspaces', data);
+    return res.data.data;
+  },
+
+  updateWorkspace: async (id: number, data: { name?: string; description?: string; color?: string; sort_order?: number }): Promise<UserTaskWorkspace> => {
+    const res = await apiClient.put(`/v1/tasks/workspaces/${id}`, data);
+    return res.data.data;
+  },
+
+  deleteWorkspace: async (id: number): Promise<void> => {
+    await apiClient.delete(`/v1/tasks/workspaces/${id}`);
+  },
+
+  // Stage actions
+  createStage: async (data: { workspace_id: number; name: string; color?: string }): Promise<UserTaskStage> => {
     const res = await apiClient.post('/v1/tasks/stages', data);
     return res.data.data;
   },
@@ -74,7 +112,9 @@ export const taskService = {
     await apiClient.post('/v1/tasks/stages/reorder', { stages });
   },
 
+  // Task actions
   createTask: async (data: {
+    workspace_id: number;
     stage_id: number;
     title: string;
     description?: string;
