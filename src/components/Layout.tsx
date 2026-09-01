@@ -9,7 +9,7 @@ import PageTransition from './PageTransition';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
-  const isKanbanPage = pathname === '/crm';
+  const isKanbanPage = pathname === '/crm' || pathname === '/tasks' || pathname?.startsWith('/tasks');
 
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isKanbanPage);

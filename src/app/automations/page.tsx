@@ -1,10 +1,16 @@
+'use client';
+
+import React from 'react';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Layout from '@/components/Layout';
 import AutomationsPage from '@/views/AutomationsPage';
 
-export const metadata = {
-  title: 'Automatizaciones & Reglas | Santun',
-  description: 'Motor de automatizaciones y reglas comerciales de Santun',
-};
-
-export default function Page() {
-  return <AutomationsPage />;
+export default function AutomationsRoute() {
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <AutomationsPage />
+      </Layout>
+    </ProtectedRoute>
+  );
 }
