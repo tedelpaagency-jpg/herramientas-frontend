@@ -1132,7 +1132,7 @@ export default function AutomationsPage() {
       {/* TEST EMAIL DISPATCH MODAL */}
       {isTestEmailModalOpen && (
         <Portal>
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[20000] bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-5 animate-scale-up">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-black text-base">
