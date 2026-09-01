@@ -11,6 +11,7 @@ import workspaceMetaService from '../services/workspaceMetaService';
 import { WorkspaceMetaModal } from '../components/WorkspaceMetaModal';
 import { WorkspaceCustomFieldsModal } from '../components/WorkspaceCustomFieldsModal';
 import { LeadCampaignDetailsModal } from '../components/LeadCampaignDetailsModal';
+import { agencyCustomFieldService, AgencyCustomField } from '../services/agencyCustomFieldService';
 import Portal from '../components/Portal';
 import { 
   Kanban, MessageSquare, DollarSign, Plus, CheckSquare, 
@@ -95,6 +96,35 @@ export const CrmKanbanPage: React.FC = () => {
   const [editingStage, setEditingStage] = useState<WorkspaceStage | null>(null);
   const [editStageName, setEditStageName] = useState('');
   const [editStageColor, setEditStageColor] = useState('#3B82F6');
+
+  // Agency Custom Fields & Lead Edit State
+  const [agencyCustomFields, setAgencyCustomFields] = useState<AgencyCustomField[]>([]);
+  const [leadCustomFields, setLeadCustomFields] = useState<Record<string, any>>({});
+
+  const [editClientData, setEditClientData] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    city: string;
+    country: string;
+    classification: string;
+    notes: string;
+    estimated_value: number;
+    priority: number;
+    custom_fields: Record<string, any>;
+  }>({
+    name: '',
+    email: '',
+    phone: '',
+    city: '',
+    country: 'Ecuador',
+    classification: '',
+    notes: '',
+    estimated_value: 0,
+    priority: 1,
+    custom_fields: {},
+  });
+  const [isSavingClientInfo, setIsSavingClientInfo] = useState<boolean>(false);
 
   // Create Lead Modal State
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
@@ -217,14 +247,58 @@ export const CrmKanbanPage: React.FC = () => {
     }
   };
 
+  const fetchAgencyCustomFields = async () => {
+    try {
+      const fields = await agencyCustomFieldService.getFields(undefined, true);
+      setAgencyCustomFields(Array.isArray(fields) ? fields : []);
+    } catch (err) {
+      console.error('Error fetching agency custom fields:', err);
+    }
+  };
+
   useEffect(() => {
     fetchKanban();
     fetchSystemUsers();
+    fetchAgencyCustomFields();
 
     const handleGlobalClick = () => setOpenStageMenuId(null);
     window.addEventListener('click', handleGlobalClick);
     return () => window.removeEventListener('click', handleGlobalClick);
   }, [workspaceIdFromUrl]);
+
+  useEffect(() => {
+    if (selectedItem) {
+      setEditClientData({
+        name: selectedItem.client?.name || selectedItem.title || '',
+        email: selectedItem.client?.email || '',
+        phone: selectedItem.client?.phone || '',
+        city: selectedItem.client?.city || '',
+        country: selectedItem.client?.country || 'Ecuador',
+        classification: selectedItem.client?.classification || '',
+        notes: selectedItem.client?.notes || '',
+        estimated_value: Number(selectedItem.estimated_value || selectedItem.deal_value || 0),
+        priority: Number(selectedItem.priority || 1),
+        custom_fields: (selectedItem.client as any)?.custom_fields || {},
+      });
+    }
+  }, [selectedItem?.id]);
+
+  const handleSaveClientInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedItem) return;
+    setIsSavingClientInfo(true);
+    try {
+      const updatedPipeline = await crmService.updateLeadDetails(selectedItem.id, editClientData);
+      setPipelines((prev) => prev.map((p) => (p.id === updatedPipeline.id ? updatedPipeline : p)));
+      setSelectedItem(updatedPipeline);
+      toast.success('Información del cliente y campos personalizados guardados');
+    } catch (err: any) {
+      console.error('Error updating lead client info:', err);
+      toast.error(err.response?.data?.message || 'Error al guardar los cambios del cliente');
+    } finally {
+      setIsSavingClientInfo(false);
+    }
+  };
 
 
   const handleExportStageLeads = (stage: WorkspaceStage) => {
@@ -338,6 +412,7 @@ export const CrmKanbanPage: React.FC = () => {
     setLeadSource('Manual CRM');
     setLeadClassification('');
     setLeadStageId(defaultStageId || (stages[0]?.id ?? ''));
+    setLeadCustomFields({});
     setIsAddLeadOpen(true);
   };
 
@@ -356,6 +431,7 @@ export const CrmKanbanPage: React.FC = () => {
         priority: leadPriority,
         source: leadSource,
         classification: leadClassification || undefined,
+        custom_fields: leadCustomFields,
       });
 
       setPipelines(prev => [newPipelineCard, ...prev]);
@@ -1234,6 +1310,91 @@ export const CrmKanbanPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* DYNAMIC AGENCY CUSTOM FIELDS */}
+                {agencyCustomFields.length > 0 && (
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <h4 className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                      <Sliders className="w-3.5 h-3.5" />
+                      Campos Personalizados de la Agencia
+                    </h4>
+                    <div className="space-y-3">
+                      {agencyCustomFields.map((field) => {
+                        const val = leadCustomFields[field.field_key] ?? '';
+                        if (field.type === 'select') {
+                          const opts = Array.isArray(field.options) ? field.options : [];
+                          return (
+                            <div key={field.id}>
+                              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                {field.label} {field.is_required && '*'}
+                              </label>
+                              <select
+                                required={field.is_required}
+                                value={val}
+                                onChange={(e) => setLeadCustomFields((prev) => ({ ...prev, [field.field_key]: e.target.value }))}
+                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
+                              >
+                                <option value="">-- Seleccionar {field.label} --</option>
+                                {opts.map((o) => (
+                                  <option key={o} value={o}>
+                                    {o}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          );
+                        }
+                        if (field.type === 'boolean') {
+                          return (
+                            <div key={field.id} className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                id={`lead_check_${field.field_key}`}
+                                checked={!!val}
+                                onChange={(e) => setLeadCustomFields((prev) => ({ ...prev, [field.field_key]: e.target.checked }))}
+                                className="rounded text-blue-600 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                              />
+                              <label htmlFor={`lead_check_${field.field_key}`} className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                {field.label} {field.is_required && '*'}
+                              </label>
+                            </div>
+                          );
+                        }
+                        if (field.type === 'textarea') {
+                          return (
+                            <div key={field.id}>
+                              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                {field.label} {field.is_required && '*'}
+                              </label>
+                              <textarea
+                                rows={2}
+                                required={field.is_required}
+                                value={val}
+                                onChange={(e) => setLeadCustomFields((prev) => ({ ...prev, [field.field_key]: e.target.value }))}
+                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
+                              />
+                            </div>
+                          );
+                        }
+                        return (
+                          <div key={field.id}>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              {field.label} {field.is_required && '*'}
+                            </label>
+                            <input
+                              type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                              required={field.is_required}
+                              value={val}
+                              onChange={(e) => setLeadCustomFields((prev) => ({ ...prev, [field.field_key]: e.target.value }))}
+                              placeholder={`Ingrese ${field.label}...`}
+                              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                   <button
                     type="button"
@@ -1400,84 +1561,266 @@ export const CrmKanbanPage: React.FC = () => {
               <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900">
                 {/* TAB: Details */}
                 {activeTab === 'details' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">Datos Comerciales</h4>
-                      
-                      <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3.5 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-500 dark:text-slate-400 font-medium">Valor Estimado:</span>
-                          <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm">
-                            ${Number(selectedItem.estimated_value || selectedItem.deal_value || 0).toLocaleString()}
-                          </span>
-                        </div>
+                  <form onSubmit={handleSaveClientInfo} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Left Column: Commercial Lead Data */}
+                      <div className="space-y-4">
+                        <h4 className="font-extrabold text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-emerald-500" />
+                          Datos Comerciales & Prospecto
+                        </h4>
 
-                        <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-800">
-                          <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">Etapa Actual:</span>
-                          <select
-                            value={selectedItem.stage_id}
-                            onChange={(e) => handleMoveStage(selectedItem.id, Number(e.target.value))}
-                            className="max-w-[210px] w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs cursor-pointer truncate"
-                          >
-                            {stages.map(s => (
-                              <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
-                          </select>
-                        </div>
+                        <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3.5 text-xs">
+                          <div>
+                            <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Nombre Completo del Cliente / Título</label>
+                            <input
+                              type="text"
+                              value={editClientData.name}
+                              onChange={(e) => setEditClientData({ ...editClientData, name: e.target.value })}
+                              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
+                            />
+                          </div>
 
-                        <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-800">
-                          <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">Asesor Asignado:</span>
-                          <div className="relative max-w-[210px] w-full">
+                          <div className="grid grid-cols-2 gap-3 pt-1">
+                            <div>
+                              <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Valor Estimado ($USD)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={editClientData.estimated_value}
+                                onChange={(e) => setEditClientData({ ...editClientData, estimated_value: Number(e.target.value) })}
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-black text-emerald-600 dark:text-emerald-400 focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Prioridad del Lead</label>
+                              <select
+                                value={editClientData.priority}
+                                onChange={(e) => setEditClientData({ ...editClientData, priority: Number(e.target.value) })}
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                              >
+                                <option value={1}>Baja</option>
+                                <option value={2}>Media</option>
+                                <option value={3}>Alta</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-800">
+                            <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">Etapa Actual:</span>
                             <select
-                              value={selectedItem.assigned_user_id || selectedItem.client?.assigned_to || ''}
-                              onChange={async (e) => {
-                                const val = e.target.value;
-                                const newUserId = val ? Number(val) : undefined;
-                                try {
-                                  await crmService.assignAgent([selectedItem.id], newUserId || null);
-                                  const assignedU = usersList.find(u => u.id === newUserId);
-                                  setPipelines(prev => prev.map(p => {
-                                    if (p.id === selectedItem.id) {
-                                      return { ...p, assigned_user_id: newUserId, assignedUser: assignedU || undefined };
-                                    }
-                                    return p;
-                                  }));
-                                  setSelectedItem(prev => prev ? { ...prev, assigned_user_id: newUserId, assignedUser: assignedU || undefined } : null);
-                                  toast.success('Asesor asignado correctamente');
-                                } catch (err) {
-                                  toast.error('No se pudo asignar el asesor');
-                                }
-                              }}
-                              className="w-full bg-white dark:bg-slate-950 border border-indigo-200 dark:border-indigo-900/60 rounded-xl pl-3 pr-8 py-1.5 text-xs font-extrabold text-indigo-700 dark:text-indigo-300 focus:ring-2 focus:ring-indigo-500 shadow-2xs cursor-pointer appearance-none truncate"
+                              value={selectedItem.stage_id}
+                              onChange={(e) => handleMoveStage(selectedItem.id, Number(e.target.value))}
+                              className="max-w-[210px] w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs cursor-pointer truncate"
                             >
-                              <option value="">-- Sin Asignar --</option>
-                              {usersList.map((u) => (
-                                <option key={u.id} value={u.id}>
-                                  {u.name} ({u.role || 'Usuario'})
-                                </option>
+                              {stages.map(s => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
                               ))}
                             </select>
-                            <UserCheck className="w-4 h-4 text-indigo-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
+
+                          <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-800">
+                            <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">Asesor Asignado:</span>
+                            <div className="relative max-w-[210px] w-full">
+                              <select
+                                value={selectedItem.assigned_user_id || selectedItem.client?.assigned_to || ''}
+                                onChange={async (e) => {
+                                  const val = e.target.value;
+                                  const newUserId = val ? Number(val) : undefined;
+                                  try {
+                                    await crmService.assignAgent([selectedItem.id], newUserId || null);
+                                    const assignedU = usersList.find(u => u.id === newUserId);
+                                    setPipelines(prev => prev.map(p => {
+                                      if (p.id === selectedItem.id) {
+                                        return { ...p, assigned_user_id: newUserId, assignedUser: assignedU || undefined };
+                                      }
+                                      return p;
+                                    }));
+                                    setSelectedItem(prev => prev ? { ...prev, assigned_user_id: newUserId, assignedUser: assignedU || undefined } : null);
+                                    toast.success('Asesor asignado correctamente');
+                                  } catch (err) {
+                                    toast.error('No se pudo asignar el asesor');
+                                  }
+                                }}
+                                className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60 rounded-xl pl-3 pr-8 py-1.5 text-xs font-extrabold text-indigo-700 dark:text-indigo-300 focus:ring-2 focus:ring-indigo-500 shadow-2xs cursor-pointer appearance-none truncate"
+                              >
+                                <option value="">-- Sin Asignar --</option>
+                                {usersList.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name} ({u.role || 'Usuario'})
+                                  </option>
+                                ))}
+                              </select>
+                              <UserCheck className="w-4 h-4 text-indigo-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column: Contact & Personal Info */}
+                      <div className="space-y-4">
+                        <h4 className="font-extrabold text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-blue-500" />
+                          Contacto & Datos del Cliente
+                        </h4>
+                        
+                        <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3.5 text-xs">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Teléfono</label>
+                              <input
+                                type="text"
+                                value={editClientData.phone}
+                                onChange={(e) => setEditClientData({ ...editClientData, phone: e.target.value })}
+                                placeholder="+593 99 123 4567"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Email</label>
+                              <input
+                                type="email"
+                                value={editClientData.email}
+                                onChange={(e) => setEditClientData({ ...editClientData, email: e.target.value })}
+                                placeholder="cliente@ejemplo.com"
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Ciudad</label>
+                              <input
+                                type="text"
+                                value={editClientData.city}
+                                onChange={(e) => setEditClientData({ ...editClientData, city: e.target.value })}
+                                placeholder="Quito, Guayaquil..."
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Clasificación</label>
+                              <input
+                                type="text"
+                                value={editClientData.classification}
+                                onChange={(e) => setEditClientData({ ...editClientData, classification: e.target.value })}
+                                placeholder="VIP, Propietario, Inversionista..."
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">Contacto del Cliente</h4>
-                      
-                      <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3 text-xs">
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedItem.client?.phone || 'Sin teléfono'}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedItem.client?.email || 'Sin email'}</span>
+                    {/* DYNAMIC AGENCY CUSTOM FIELDS IN LEAD DETAIL VIEW */}
+                    {agencyCustomFields.length > 0 && (
+                      <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                        <h4 className="font-extrabold text-sm text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                          <Sliders className="w-4 h-4 text-indigo-500" />
+                          Campos Personalizados de la Agencia
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl">
+                          {agencyCustomFields.map((field) => {
+                            const val = (editClientData.custom_fields || {})[field.field_key] ?? '';
+                            const handleFieldChange = (newValue: any) => {
+                              setEditClientData((prev) => ({
+                                ...prev,
+                                custom_fields: {
+                                  ...(prev.custom_fields || {}),
+                                  [field.field_key]: newValue,
+                                },
+                              }));
+                            };
+
+                            if (field.type === 'select') {
+                              const opts = Array.isArray(field.options) ? field.options : [];
+                              return (
+                                <div key={field.id}>
+                                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                    {field.label} {field.is_required && '*'}
+                                  </label>
+                                  <select
+                                    value={val}
+                                    onChange={(e) => handleFieldChange(e.target.value)}
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
+                                  >
+                                    <option value="">-- Seleccionar {field.label} --</option>
+                                    {opts.map((o) => (
+                                      <option key={o} value={o}>
+                                        {o}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              );
+                            }
+
+                            if (field.type === 'boolean') {
+                              return (
+                                <div key={field.id} className="flex items-center gap-2 pt-5">
+                                  <input
+                                    type="checkbox"
+                                    id={`detail_check_${field.field_key}`}
+                                    checked={!!val}
+                                    onChange={(e) => handleFieldChange(e.target.checked)}
+                                    className="rounded text-blue-600 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                                  />
+                                  <label htmlFor={`detail_check_${field.field_key}`} className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    {field.label} {field.is_required && '*'}
+                                  </label>
+                                </div>
+                              );
+                            }
+
+                            if (field.type === 'textarea') {
+                              return (
+                                <div key={field.id} className="md:col-span-2">
+                                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                    {field.label} {field.is_required && '*'}
+                                  </label>
+                                  <textarea
+                                    rows={2}
+                                    value={val}
+                                    onChange={(e) => handleFieldChange(e.target.value)}
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
+                                  />
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div key={field.id}>
+                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                  {field.label} {field.is_required && '*'}
+                                </label>
+                                <input
+                                  type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                                  value={val}
+                                  onChange={(e) => handleFieldChange(e.target.value)}
+                                  placeholder={`Ingrese ${field.label}...`}
+                                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
+                    )}
+
+                    <div className="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="submit"
+                        disabled={isSavingClientInfo}
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 active:scale-95"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        <span>{isSavingClientInfo ? 'Guardando Cambios...' : 'Guardar Cambios del Cliente'}</span>
+                      </button>
                     </div>
-                  </div>
+                  </form>
                 )}
 
                 {/* TAB: Activities */}

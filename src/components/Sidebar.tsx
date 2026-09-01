@@ -8,7 +8,7 @@ import {
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
   Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
-  LayoutDashboard, Compass, CheckSquare
+  LayoutDashboard, Compass, CheckSquare, Zap
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -47,20 +47,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
     user?.role === 'closers' ||
     user?.roles?.some((r) => r.name === 'closer' || r.name === 'closers');
 
-  const activePlanPermissions =
-    user?.agency?.current_subscription?.plan?.plan_permissions?.map((p) => p.permission.toLowerCase()) ||
-    user?.agency?.plan?.plan_permissions?.map((p) => p.permission.toLowerCase()) ||
-    [];
-
+  const currentPlan = user?.agency?.current_subscription?.plan || user?.agency?.plan;
+  const activePlanPermissions = currentPlan?.plan_permissions?.map((p) => p.permission.toLowerCase()) || [];
   const userDirectPermissions = user?.permissions?.map((p) => p.name.toLowerCase()) || [];
 
+  const isRealEstateAgency =
+    currentPlan?.name?.toLowerCase().includes('inmobiliaria') ||
+    (Array.isArray(currentPlan?.allowed_agency_types) &&
+      (currentPlan?.allowed_agency_types.includes('inmobiliaria') || currentPlan?.allowed_agency_types.includes('real_estate'))) ||
+    (Array.isArray((user?.agency as any)?.allowed_agency_types) &&
+      ((user?.agency as any)?.allowed_agency_types.includes('inmobiliaria') || (user?.agency as any)?.allowed_agency_types.includes('real_estate')));
+
   const isItemVisible = (item: { permission?: string }) => {
-    if (!item.permission || isSuperAdmin) return true;
-    if (activePlanPermissions.length === 0 && userDirectPermissions.length === 0) return true;
-    return (
-      activePlanPermissions.includes(item.permission.toLowerCase()) ||
-      userDirectPermissions.includes(item.permission.toLowerCase())
-    );
+    if (isSuperAdmin) return true;
+    if (!item.permission) return true;
+
+    // Rule: Real Estate Agencies MUST NOT have access to Visas or POS modules
+    if (isRealEstateAgency) {
+      const blockedForRealEstate = [
+        'view_visas',
+        'manage_visas',
+        'view_pos',
+        'manage_pos',
+        'view_products',
+        'packages.view',
+        'requests.view',
+        'view_travel_reports',
+        'view_w8_forms',
+      ];
+      if (blockedForRealEstate.includes(item.permission.toLowerCase())) {
+        return false;
+      }
+    }
+
+    if (activePlanPermissions.length > 0) {
+      return (
+        activePlanPermissions.includes(item.permission.toLowerCase()) ||
+        userDirectPermissions.includes(item.permission.toLowerCase())
+      );
+    }
+
+    return true;
   };
 
   interface NavCategory {
@@ -89,7 +116,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Clientes', path: '/clients', icon: Users },
         { label: 'Landings', path: '/landings', icon: Globe },
         { label: 'Marketing', path: '/marketing', icon: Mail },
-        { label: 'Contratos', path: '/lexvault', icon: ShieldCheck },
+        { label: 'Automatizaciones', path: '/automations', icon: Zap, permission: 'view_crm' },
+        { label: 'Contratos', path: '/lexvault', icon: ShieldCheck, permission: 'view_lexvault' },
         { label: 'Tiendas Hunter', path: '/hunter', icon: Store },
       ],
     },
@@ -103,11 +131,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'TURISMO & VIAJES',
       items: [
         { label: 'Visas', path: '/visas', icon: FileText, permission: 'view_visas' },
-        { label: 'Reportes', path: '/travel-reports', icon: Plane },
+        { label: 'Reportes', path: '/travel-reports', icon: Plane, permission: 'view_travel_reports' },
         ...(!isProveedor
           ? [
-              { label: 'Trip Builder B2B', path: '/travel-packages/pos', icon: ShoppingCart },
-              { label: 'Solicitudes', path: '/travel-packages/my-requests', icon: FileText },
+              { label: 'Trip Builder B2B', path: '/travel-packages/pos', icon: ShoppingCart, permission: 'packages.view' },
+              { label: 'Solicitudes', path: '/travel-packages/my-requests', icon: FileText, permission: 'requests.view' },
             ]
           : []),
         ...(isProveedor || isSuperAdmin

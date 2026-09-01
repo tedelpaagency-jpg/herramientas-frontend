@@ -156,8 +156,33 @@ export const crmService = {
     source?: string;
     classification?: string;
     notes?: string;
+    custom_fields?: Record<string, any>;
   }): Promise<CrmPipelineItem> => {
     const response = await apiClient.post('/v1/crm/leads', data);
+    return response.data?.data || response.data;
+  },
+
+  // Update Lead Details & Client Info
+  updateLeadDetails: async (
+    pipelineId: number,
+    data: {
+      name?: string;
+      first_name?: string;
+      last_name?: string;
+      email?: string;
+      phone?: string;
+      city?: string;
+      country?: string;
+      classification?: string;
+      notes?: string;
+      estimated_value?: number;
+      priority?: number;
+      assigned_user_id?: number | null;
+      stage_id?: number;
+      custom_fields?: Record<string, any>;
+    }
+  ): Promise<CrmPipelineItem> => {
+    const response = await apiClient.put(`/v1/crm/leads/${pipelineId}`, data);
     return response.data?.data || response.data;
   },
 

@@ -16,6 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
+import { getPermissionLabel, getPermissionDescription } from '../../utils/permissionLabels';
 
 export const AdminPlansPage: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -535,11 +536,11 @@ export const AdminPlansPage: React.FC = () => {
                         type="checkbox"
                         checked={!!assigned}
                         onChange={() => {}}
-                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />
                       <div>
-                        <p className="font-mono font-bold text-xs">{sysPerm.name}</p>
-                        <p className="text-[10px] text-slate-400">Guard: {sysPerm.guard_name || 'web'}</p>
+                        <p className="font-extrabold text-xs text-slate-900">{getPermissionLabel(sysPerm.name)}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">{getPermissionDescription(sysPerm.name)} • <span className="font-mono text-slate-400">({sysPerm.name})</span></p>
                       </div>
                     </div>
                     {assigned && (
