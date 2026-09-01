@@ -73,6 +73,11 @@ export const automationService = {
   deleteAutomation: async (id: number): Promise<void> => {
     await apiClient.delete(`/v1/automations/${id}`);
   },
+
+  sendTestEmail: async (data: { recipient_email: string; subject: string; body: string }): Promise<{ status: string; message: string }> => {
+    const response = await apiClient.post('/v1/automations/test-email', data);
+    return response.data;
+  },
 };
 
 export default automationService;

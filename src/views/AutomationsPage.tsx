@@ -29,7 +29,8 @@ import {
   Monitor,
   User,
   Users,
-  Briefcase
+  Briefcase,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { automationService, PipelineAutomation, AutomationMeta } from '../services/automationService';
@@ -93,6 +94,39 @@ export default function AutomationsPage() {
     agency: 'Agencia Central',
     stage: 'Prospecto Calificado',
   });
+
+  // Test Email Dispatch Modal State
+  const [isTestEmailModalOpen, setIsTestEmailModalOpen] = useState<boolean>(false);
+  const [testEmailTarget, setTestEmailTarget] = useState<string>('');
+  const [sendingTestEmail, setSendingTestEmail] = useState<boolean>(false);
+
+  const handleSendTestEmail = async () => {
+    if (!testEmailTarget.trim()) {
+      toast.error('Por favor ingresa un correo destinatario válido');
+      return;
+    }
+
+    setSendingTestEmail(true);
+    try {
+      const res = await automationService.sendTestEmail({
+        recipient_email: testEmailTarget.trim(),
+        subject: emailSubject || 'Correo de Prueba SANTUN',
+        body: emailBody || '<p>Correo de prueba de automatización.</p>',
+      });
+
+      if (res.status === 'success') {
+        toast.success(res.message || 'Correo de prueba enviado con éxito');
+        setIsTestEmailModalOpen(false);
+      } else {
+        toast.error(res.message || 'Falla al enviar correo de prueba');
+      }
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Error al enviar correo de prueba. Verifica la conexión SMTP.';
+      toast.error(errorMsg);
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -699,14 +733,24 @@ export default function AutomationsPage() {
                         <Mail className="w-4 h-4 text-blue-600" />
                         <span>Configuración del Correo Electrónico</span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsPreviewOpen(true)}
-                        className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-blue-100 transition-colors cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Previsualizar Correo</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsPreviewOpen(true)}
+                          className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-blue-100 transition-colors cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Previsualizar</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsTestEmailModalOpen(true)}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Enviar Prueba Real</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Recipient Selection Options */}
@@ -1060,13 +1104,90 @@ export default function AutomationsPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="flex justify-end border-t border-slate-200 dark:border-slate-800 pt-3">
+              <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPreviewOpen(false);
+                    setIsTestEmailModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Enviar Correo de Prueba Real</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setIsPreviewOpen(false)}
                   className="px-5 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-bold text-xs hover:opacity-90 cursor-pointer"
                 >
                   Cerrar Previsualización
+                </button>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* TEST EMAIL DISPATCH MODAL */}
+      {isTestEmailModalOpen && (
+        <Portal>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-5 animate-scale-up">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-black text-base">
+                  <Send className="w-5 h-5" />
+                  <span>Enviar Correo de Prueba</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsTestEmailModalOpen(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Ingresa la dirección de correo electrónico a la que deseas enviar una prueba real con las variables y plantilla configuradas.
+              </p>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Correo Electrónico Destinatario *</label>
+                <input
+                  type="email"
+                  value={testEmailTarget}
+                  onChange={(e) => setTestEmailTarget(e.target.value)}
+                  placeholder="ejemplo@dominio.com"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsTestEmailModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendTestEmail}
+                  disabled={sendingTestEmail || !testEmailTarget.trim()}
+                  className="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-md"
+                >
+                  {sendingTestEmail ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Enviando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Enviar Ahora</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
