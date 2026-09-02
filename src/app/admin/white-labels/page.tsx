@@ -9,7 +9,7 @@ import { WhiteLabelsPage } from '@/views/admin/WhiteLabelsPage';
 export default function AdminWhiteLabelsRoute() {
   return (
     <ProtectedRoute>
-      <SuperAdminRoute>
+      <SuperAdminRoute allowWhiteLabelAdmin={false}>
         <Layout>
           <WhiteLabelsPage />
         </Layout>

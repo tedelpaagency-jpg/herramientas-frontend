@@ -6,7 +6,10 @@ import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
-export const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SuperAdminRoute: React.FC<{ children: React.ReactNode; allowWhiteLabelAdmin?: boolean }> = ({
+  children,
+  allowWhiteLabelAdmin = true,
+}) => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
@@ -21,7 +24,7 @@ export const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ child
       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-400 text-sm animate-pulse">Verificando permisos de Super Admin...</p>
+          <p className="text-slate-400 text-sm animate-pulse">Verificando permisos...</p>
         </div>
       </div>
     );
@@ -35,7 +38,13 @@ export const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ child
     user?.role === 'super_admin' ||
     user?.roles?.some((r) => r.name === 'super_admin');
 
-  if (!isSuperAdmin) {
+  const isWhiteLabelAdmin =
+    user?.role === 'white_label_admin' ||
+    user?.roles?.some((r) => r.name === 'white_label_admin');
+
+  const isAuthorized = isSuperAdmin || (allowWhiteLabelAdmin && isWhiteLabelAdmin);
+
+  if (!isAuthorized) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl shadow-xl p-8 text-center">
@@ -46,7 +55,7 @@ export const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ child
             Acceso Restringido (403)
           </h2>
           <p className="text-sm text-slate-600 mb-6">
-            Esta sección de Administración Global es exclusiva para usuarios con el rol de <strong className="text-slate-900">super_admin</strong>.
+            Esta sección de Administración requiere un rol de <strong className="text-slate-900">super_admin</strong> o <strong className="text-slate-900">administrador de marca blanca</strong>.
           </p>
           <Link
             href="/"
