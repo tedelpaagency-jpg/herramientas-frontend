@@ -16,8 +16,11 @@ export const whiteLabelService = {
     if (data.logo_file || data.favicon_file || data.admin_photo_file) {
       const formData = new FormData();
       Object.keys(data).forEach((key) => {
-        if (data[key] !== undefined && data[key] !== null) {
-          formData.append(key, data[key]);
+        const val = data[key];
+        if (val instanceof File) {
+          formData.append(key, val);
+        } else if (val !== null && val !== undefined && val !== '') {
+          formData.append(key, String(val));
         }
       });
       const response = await apiClient.post('/v1/white-labels', formData, {
@@ -30,11 +33,14 @@ export const whiteLabelService = {
   },
 
   updateWhiteLabel: async (id: number, data: any) => {
-    if (data.logo_file || data.favicon_file) {
+    if (data.logo_file || data.favicon_file || data.admin_photo_file) {
       const formData = new FormData();
       Object.keys(data).forEach((key) => {
-        if (data[key] !== undefined && data[key] !== null) {
-          formData.append(key, data[key]);
+        const val = data[key];
+        if (val instanceof File) {
+          formData.append(key, val);
+        } else if (val !== null && val !== undefined && val !== '') {
+          formData.append(key, String(val));
         }
       });
       const response = await apiClient.post(`/v1/white-labels/${id}/update`, formData, {

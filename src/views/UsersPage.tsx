@@ -32,6 +32,8 @@ export const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const isSuperAdmin = currentUser?.role === 'super_admin' || currentUser?.roles?.some(r => r.name === 'super_admin');
   const isGerenteComercial = currentUser?.role === 'gerente_comercial' || currentUser?.roles?.some(r => r.name === 'gerente_comercial');
+  const isWhiteLabelAdmin = currentUser?.role === 'white_label_admin' || currentUser?.roles?.some(r => r.name === 'white_label_admin');
+  const canFilterAgencies = isSuperAdmin || isGerenteComercial || isWhiteLabelAdmin;
 
   const [users, setUsers] = useState<User[]>([]);
   const [agencies, setAgencies] = useState<Agency[]>([]);
@@ -100,12 +102,12 @@ export const UsersPage: React.FC = () => {
   }, [page, search, roleFilter, agencyFilter, statusFilter, withTrashed]);
 
   useEffect(() => {
-    if (isSuperAdmin || isGerenteComercial) {
+    if (canFilterAgencies) {
       adminService.getAgencies()
         .then(data => setAgencies(data))
         .catch(err => console.error('Error cargando agencias:', err));
     }
-  }, [isSuperAdmin, isGerenteComercial]);
+  }, [canFilterAgencies]);
 
   const handleCreate = () => {
     setSelectedUser(null);

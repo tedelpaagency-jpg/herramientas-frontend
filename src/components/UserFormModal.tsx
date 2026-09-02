@@ -24,6 +24,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   const { user: currentUser } = useAuth();
   const isSuperAdmin = currentUser?.role === 'super_admin' || currentUser?.roles?.some(r => r.name === 'super_admin');
   const isGerenteComercial = currentUser?.role === 'gerente_comercial' || currentUser?.roles?.some(r => r.name === 'gerente_comercial');
+  const isWhiteLabelAdmin = currentUser?.role === 'white_label_admin' || currentUser?.roles?.some(r => r.name === 'white_label_admin');
+  const canSelectAgency = isSuperAdmin || isGerenteComercial || isWhiteLabelAdmin;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -44,7 +46,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      if (isSuperAdmin || isGerenteComercial) {
+      if (canSelectAgency) {
         setIsLoadingAgencies(true);
         adminService.getAgencies()
           .then(data => setAgencies(data))
@@ -244,7 +246,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
           </div>
 
-          {(isSuperAdmin || isGerenteComercial) && (
+          {canSelectAgency && (
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Asociar a Agencia *</label>
               {isLoadingAgencies ? (

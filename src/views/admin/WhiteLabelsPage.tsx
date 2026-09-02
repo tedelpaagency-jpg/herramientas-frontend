@@ -110,7 +110,12 @@ export const WhiteLabelsPage: React.FC = () => {
       resetFormData();
       fetchWhiteLabels();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Error al guardar Marca Blanca');
+      if (err?.response?.data?.errors) {
+        const firstErr = Object.values(err.response.data.errors)[0];
+        toast.error(Array.isArray(firstErr) ? firstErr[0] : (err?.response?.data?.message || 'Error en la validación'));
+      } else {
+        toast.error(err?.response?.data?.message || 'Error al guardar Marca Blanca');
+      }
     }
   };
 
