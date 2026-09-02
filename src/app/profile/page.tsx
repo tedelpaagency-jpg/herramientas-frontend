@@ -3,13 +3,13 @@
 import React from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
-import AdminClearingPage from '@/views/AdminClearingPage';
+import UserProfilePage from '@/views/UserProfilePage';
 
-export default function Page() {
+export default function ProfileRoute() {
   return (
     <ProtectedRoute>
       <Layout>
-        <AdminClearingPage />
+        <UserProfilePage />
       </Layout>
     </ProtectedRoute>
   );

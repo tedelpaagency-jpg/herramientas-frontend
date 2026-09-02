@@ -159,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: 'Productos', path: '/products', icon: Package, permission: 'view_products' },
         { label: 'POS', path: '/pos', icon: ShoppingCart, permission: 'view_pos' },
-        { label: 'Ruleta', path: '/spin-wheel', icon: Trophy, permission: 'view_spin_wheel' },
+        { label: 'Ruleta & Premios', path: '/gamification', icon: Trophy },
       ],
     },
     {

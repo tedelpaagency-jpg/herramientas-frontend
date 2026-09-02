@@ -3,13 +3,13 @@
 import React from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
-import AdminClearingPage from '@/views/AdminClearingPage';
+import GamificationPage from '@/views/GamificationPage';
 
-export default function Page() {
+export default function GamificationRoute() {
   return (
     <ProtectedRoute>
       <Layout>
-        <AdminClearingPage />
+        <GamificationPage />
       </Layout>
     </ProtectedRoute>
   );

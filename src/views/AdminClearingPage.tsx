@@ -158,3 +158,5 @@ export const AdminClearingPage: React.FC = () => {
     </div>
   );
 };
+
+export default AdminClearingPage;

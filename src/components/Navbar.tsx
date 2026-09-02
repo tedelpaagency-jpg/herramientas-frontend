@@ -141,7 +141,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       Nueva Propiedad
                     </Link>
                     <div className="h-px bg-outline-variant my-1"></div>
-                    <Link href="/users" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-surface-container text-sm text-on-surface transition-colors">
+                    <Link href="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-surface-container text-sm text-on-surface transition-colors">
                       <span className="material-symbols-outlined text-[20px]">person</span>
                       Mi Perfil
                     </Link>

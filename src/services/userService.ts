@@ -83,6 +83,16 @@ export const userService = {
     const res = await apiClient.post(`/v1/users/${id}/permissions`, { permissions });
     return res.data;
   },
+
+  updateMyProfile: async (data: { name: string; email: string; phone?: string }) => {
+    const res = await apiClient.put('/v1/profile', data);
+    return res.data;
+  },
+
+  updateMyPassword: async (data: { current_password: string; password: string; password_confirmation: string }) => {
+    const res = await apiClient.put('/v1/profile/password', data);
+    return res.data;
+  },
 };
 
 export default userService;
