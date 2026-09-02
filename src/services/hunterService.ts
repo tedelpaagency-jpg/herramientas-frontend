@@ -26,13 +26,29 @@ export const hunterService = {
     await apiClient.delete(`/v1/hunters/${id}`);
   },
 
-  approveRequest: async (requestId: number, commission_percentage: number): Promise<HunterRequest> => {
-    const res = await apiClient.post(`/v1/hunters/requests/${requestId}/approve`, { commission_percentage });
+  approveRequest: async (requestId: number, commission_percentage: number, commission_amount?: number): Promise<HunterRequest> => {
+    const res = await apiClient.post(`/v1/hunters/requests/${requestId}/approve`, {
+      commission_percentage,
+      commission_amount,
+    });
     return res.data.data;
   },
 
   rejectRequest: async (requestId: number, rejection_reason: string): Promise<HunterRequest> => {
     const res = await apiClient.post(`/v1/hunters/requests/${requestId}/reject`, { rejection_reason });
+    return res.data.data;
+  },
+
+  getPublicStore: async (idOrToken: string): Promise<{ store: HunterStore; agency?: any }> => {
+    const res = await apiClient.get(`/v1/public/hunter/store/${idOrToken}`);
+    return res.data.data;
+  },
+
+  submitPublicRequest: async (
+    idOrToken: string,
+    data: { client_name: string; email?: string; phone?: string; service_name?: string; comments?: string }
+  ): Promise<HunterRequest> => {
+    const res = await apiClient.post(`/v1/public/hunter/store/${idOrToken}/request`, data);
     return res.data.data;
   },
 };

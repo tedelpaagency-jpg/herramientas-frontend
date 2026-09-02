@@ -43,8 +43,8 @@ export interface AutomationMeta {
   triggers: { key: string; label: string; description: string }[];
   conditions: { key: string; label: string }[];
   actions: { key: string; label: string; description: string }[];
-  stages: { id: number; name: string }[];
-  users: { id: number; name: string; email: string }[];
+  stages: { id: number; name: string; workspace_id?: number; color?: string }[];
+  users: { id: number; name: string; email: string; agency_id?: number }[];
   workspaces?: AutomationWorkspace[];
   agencies?: AutomationAgency[];
 }

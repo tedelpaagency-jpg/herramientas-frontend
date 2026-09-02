@@ -854,6 +854,8 @@ export const CrmKanbanPage: React.FC = () => {
                 onDrop={(e) => {
                   e.preventDefault();
                   setDragOverStageId(null);
+                  setDraggedCardId(null);
+                  setDraggedStageIndex(null);
                   const dragType = e.dataTransfer.getData('drag_type');
                   if (dragType === 'card') {
                     const pipelineId = e.dataTransfer.getData('pipeline_id');

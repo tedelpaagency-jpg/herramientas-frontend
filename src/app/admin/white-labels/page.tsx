@@ -4,14 +4,14 @@ import React from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SuperAdminRoute from '@/components/SuperAdminRoute';
 import Layout from '@/components/Layout';
-import { AdminAgenciesPage } from '@/views/admin/AdminAgenciesPage';
+import { WhiteLabelsPage } from '@/views/admin/WhiteLabelsPage';
 
-export default function AdminAgenciesRoute() {
+export default function AdminWhiteLabelsRoute() {
   return (
     <ProtectedRoute>
       <SuperAdminRoute>
         <Layout>
-          <AdminAgenciesPage />
+          <WhiteLabelsPage />
         </Layout>
       </SuperAdminRoute>
     </ProtectedRoute>

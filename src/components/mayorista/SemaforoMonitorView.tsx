@@ -28,13 +28,6 @@ export const SemaforoMonitorView: React.FC<SemaforoMonitorViewProps> = ({
   useEffect(() => {
     fetchStatus();
     fetchWallet();
-
-    // Poll status every 4 seconds for real-time traceability
-    const interval = setInterval(() => {
-      fetchStatus(false);
-    }, 4000);
-
-    return () => clearInterval(interval);
   }, [bookingId]);
 
   const fetchStatus = async (showSpinner = true) => {
@@ -146,6 +139,18 @@ export const SemaforoMonitorView: React.FC<SemaforoMonitorViewProps> = ({
 
         {/* Acciones del Banner */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              fetchStatus(true);
+              fetchWallet();
+            }}
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+            title="Actualizar Estado Manualmente"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Actualizar Estado</span>
+          </button>
+
           {isAllApproved && (
             <button
               disabled={paying}

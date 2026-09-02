@@ -36,6 +36,7 @@ import {
   X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getApiBaseUrl, normalizeFileUrl } from '../services/apiClient';
 
 export interface WordDocumentPaperProps {
   htmlContent: string;
@@ -207,7 +208,7 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
     toast.success('Valores de campos guardados. Se reemplazarán automáticamente en la vista pública.');
   };
 
-  // Clean inner inline background images & white backgrounds and substitute signature tag if signatureUrl is present
+  // Clean inner inline background images & white backgrounds, normalize img src URLs and substitute signature tag if signatureUrl is present
   const sanitizedHtml = useMemo(() => {
     if (!localHtml) return '';
 
@@ -219,16 +220,56 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
       .replace(/background-color\s*:\s*(?:#fff(?:fff)?|white|rgba\([^)]+\));?/gi, '')
       .replace(/background\s*:\s*(?:#fff(?:fff)?|white|rgba\([^)]+\));?/gi, '');
 
-    if (signatureUrl) {
-      const sigHtml = `
-        <div class="signature-stamp text-center my-4 p-2 border border-slate-300 rounded-lg bg-white/50 backdrop-blur-xs inline-block">
-          <img src="${signatureUrl}" alt="Firma Digital" class="max-w-[220px] max-h-[85px] object-contain mx-auto" />
-          <div class="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest mt-1">Firma Digital Registrada</div>
-        </div>
-      `;
-      const sigRegex = /(?:\{\{|\[)FIRMA(?:\}\}|\])/gi;
-      if (sigRegex.test(clean)) {
-        clean = clean.replace(sigRegex, sigHtml);
+    // Normalize image src URLs inside clean HTML so signatures & embedded images resolve to correct backend API host and bypass 403 web server blocks
+    const apiBase = getApiBaseUrl().replace(/\/api$/, '');
+    clean = clean.replace(/<img([^>]+)src=["']([^"']+)["']([^>]*)>/gi, (match, prefix, src, suffix) => {
+      let normalized = src;
+      if (src.startsWith('data:') || src.startsWith('blob:')) {
+        normalized = src;
+      } else if (src.includes('/signatures/')) {
+        const filename = src.substring(src.lastIndexOf('/') + 1);
+        normalized = `${apiBase}/api/v1/public/storage/signatures/${filename}`;
+      } else if (src.startsWith('/')) {
+        normalized = `${apiBase}${src}`;
+      } else if (src.includes('/storage/')) {
+        const idx = src.indexOf('/storage/');
+        if (idx !== -1) {
+          normalized = `${apiBase}${src.substring(idx)}`;
+        }
+      } else if (src.includes('localhost') || src.includes('127.0.0.1') || src.includes('santun.tedelpa.com')) {
+        try {
+          const urlObj = new URL(src);
+          const apiObj = new URL(apiBase);
+          urlObj.protocol = apiObj.protocol;
+          urlObj.hostname = apiObj.hostname;
+          urlObj.port = apiObj.port;
+          normalized = urlObj.toString();
+        } catch (e) {}
+      }
+      return `<img${prefix}src="${normalized}"${suffix}>`;
+    });
+
+    const hasEmbeddedSignature =
+      /<img[^>]+(?:alt=["']Firma Digital["']|src=["'][^"']*(?:signatures|base64|data:)[^"']*["'])/i.test(clean) ||
+      /p12-signature-badge/i.test(clean) ||
+      /signature-stamp/i.test(clean);
+
+    if (!hasEmbeddedSignature && signatureUrl) {
+      const isPdfOrCert = /\.(pdf|p12|pfx)(\?.*)?$/i.test(signatureUrl);
+      if (!isPdfOrCert) {
+        const normalizedSig = normalizeFileUrl(signatureUrl);
+        const sigHtml = `
+          <div class="signature-stamp text-center my-4 p-2 border border-slate-300 rounded-lg bg-white/50 backdrop-blur-xs inline-block">
+            <img src="${normalizedSig}" alt="Firma Digital" class="max-w-[220px] max-h-[85px] object-contain mx-auto" />
+            <div class="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest mt-1">Firma Digital Registrada</div>
+          </div>
+        `;
+        const sigRegex = /(?:\{\{|\[)(?:FIRMA|FIRMA_CLIENTE)(?:\}\}|\])/gi;
+        if (sigRegex.test(clean)) {
+          clean = clean.replace(sigRegex, sigHtml);
+        } else {
+          clean += `<br/><br/>${sigHtml}`;
+        }
       }
     }
 

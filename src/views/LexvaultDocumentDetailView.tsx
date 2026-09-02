@@ -22,15 +22,14 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
   const fetchData = async () => {
     setIsLoading(true);
     setError(null);
-    const numericId = parseInt(id);
 
     try {
       if (type === 'contract') {
-        const doc = await lexvaultService.getDocument(numericId);
+        const doc = await lexvaultService.getDocument(id);
         setDocument(doc);
       } else {
         const tmpls = await lexvaultService.getTemplates();
-        const found = tmpls.find((t) => t.id === numericId);
+        const found = tmpls.find((t) => t.id.toString() === id.toString());
         if (found) {
           setTemplate(found);
         } else {
@@ -193,7 +192,14 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
         documentNumber={docNumber}
         watermarkText={watermarkText}
         fieldValues={document?.field_values_json || {}}
-        signatureUrl={document?.pdf_path || undefined}
+        signatureUrl={
+          document?.pdf_path ||
+          document?.pdf_url ||
+          (document as any)?.signature_image ||
+          (document as any)?.signature_path ||
+          (document as any)?.signature_url ||
+          undefined
+        }
         onSave={async (updatedHtml, savedFieldValues) => {
           if (document?.id) {
             try {

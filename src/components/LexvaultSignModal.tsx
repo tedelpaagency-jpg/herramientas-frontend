@@ -110,9 +110,10 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
       toast.success('¡Contrato firmado digitalmente con éxito!', { id: toastId });
       onSuccess();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error signing document:', err);
-      toast.error('Error al registrar la firma digital', { id: toastId });
+      const errMsg = err?.response?.data?.message || err?.message || 'Error al registrar la firma digital';
+      toast.error(errMsg, { id: toastId });
     } finally {
       setIsSubmitting(false);
     }

@@ -67,15 +67,25 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
     return rawHtml;
   }, [document]);
 
-  // Helper to decode ID parameter (Base64 encoded or raw ID)
+  // Helper to decode ID parameter (Base64 encoded, URL-encoded or raw ID)
   const getDecodedId = (rawId: string): string => {
+    if (!rawId) return rawId;
     try {
-      const decoded = atob(rawId);
-      if (/^\d+$/.test(decoded)) {
-        return decoded;
+      const unescaped = decodeURIComponent(rawId);
+      const decoded = atob(unescaped);
+      if (decoded && decoded.trim().length > 0) {
+        return decoded.trim();
       }
     } catch (e) {
-      // Not base64, use original
+      // Ignorar si no es Base64 válido
+    }
+    try {
+      const decoded = atob(rawId);
+      if (decoded && decoded.trim().length > 0) {
+        return decoded.trim();
+      }
+    } catch (e) {
+      // Ignorar si no es Base64
     }
     return rawId;
   };
@@ -188,9 +198,10 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
 
       toast.success('¡Contrato firmado exitosamente!', { id: toastId });
       setDocument(updatedDoc);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error signing document:', err);
-      toast.error('Error al registrar la firma digital', { id: toastId });
+      const errMsg = err?.response?.data?.message || err?.message || 'Error al registrar la firma digital';
+      toast.error(errMsg, { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -335,7 +346,14 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
           documentNumber={document.document_number || `#LEX-${document.id}`}
           watermarkText={watermarkText}
           editablePages={false}
-          signatureUrl={document.pdf_path || undefined}
+          signatureUrl={
+            document.pdf_path ||
+            document.pdf_url ||
+            (document as any)?.signature_image ||
+            (document as any)?.signature_path ||
+            (document as any)?.signature_url ||
+            undefined
+          }
         />
 
         {/* Client Action Box: Sign / Decline / Status Banner */}

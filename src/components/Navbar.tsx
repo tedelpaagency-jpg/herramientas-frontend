@@ -114,11 +114,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <button 
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="w-11 h-11 rounded-full border-2 border-primary bg-primary flex items-center justify-center text-white font-bold hover:ring-2 hover:ring-primary/50 transition-all active:scale-95 focus:outline-none overflow-hidden flex-shrink-0"
+            className={`w-11 h-11 rounded-full border border-slate-200 dark:border-slate-800 ${user?.photo ? 'bg-transparent' : 'bg-primary text-white'} flex items-center justify-center font-bold hover:ring-2 hover:ring-primary/40 transition-all active:scale-95 focus:outline-none overflow-hidden flex-shrink-0`}
             aria-label="Menú de usuario"
             aria-expanded={showUserMenu}
           >
-            {user?.name ? user.name.substring(0, 2).toUpperCase() : 'ST'}
+            {user?.photo ? (
+              <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
+            ) : user?.name ? (
+              user.name.substring(0, 2).toUpperCase()
+            ) : (
+              'ST'
+            )}
           </button>
           
           <AnimatePresence>

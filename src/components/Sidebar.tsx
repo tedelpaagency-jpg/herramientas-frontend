@@ -23,7 +23,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setLeftSidebarOpen,
 }) => {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, currentWhiteLabel } = useAuth();
+  const brandLogo = currentWhiteLabel?.logo || user?.agency?.logo || null;
+  const brandName = currentWhiteLabel?.name || user?.agency?.name || 'SANTUN';
+  const firstWordOfName = brandName.trim().split(' ')[0];
 
   const isSuperAdmin =
     user?.role === 'super_admin' ||
@@ -46,6 +49,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     user?.role === 'closer' ||
     user?.role === 'closers' ||
     user?.roles?.some((r) => r.name === 'closer' || r.name === 'closers');
+
+  const isHunter =
+    user?.role === 'hunter' ||
+    user?.roles?.some((r) => r.name === 'hunter');
+
+  const isWhiteLabelAdmin =
+    user?.role === 'white_label_admin' ||
+    user?.roles?.some((r) => r.name === 'white_label_admin');
 
   const currentPlan = user?.agency?.current_subscription?.plan || user?.agency?.plan;
   const activePlanPermissions = currentPlan?.plan_permissions?.map((p) => p.permission.toLowerCase()) || [];
@@ -179,16 +190,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ...(isSuperAdmin || isGerenteComercial || isAdmin
           ? [{ label: 'Usuarios', path: '/users', icon: UserCheck, permission: 'manage_users' }]
           : []),
-        ...(isGerenteComercial || isAdmin
-          ? [{ label: isGerenteComercial ? 'Agencias' : 'Agencia', path: '/admin/agencies', icon: Store }]
+        ...(isSuperAdmin
+          ? [{ label: 'Agencias', path: '/admin/agencies', icon: Store }]
           : []),
         { label: 'Equipos', path: '/admin/teams', icon: Briefcase },
         { label: 'Comisiones', path: '/commissions', icon: CreditCard },
       ],
     },
+    ...(isWhiteLabelAdmin || isSuperAdmin
+      ? [
+          {
+            title: 'ORGANIZACIÓN & WHITE LABEL',
+            items: [
+              { label: 'Mi White Label', path: '/white-label/dashboard', icon: Globe },
+            ],
+          },
+        ]
+      : []),
   ];
 
   const adminNavItems = [
+    { label: 'White Labels', path: '/admin/white-labels', icon: Globe },
     { label: 'Planes', path: '/admin/plans', icon: Layers },
     { label: 'Permisos', path: '/admin/permissions', icon: Key },
     { label: 'Agencias', path: '/admin/agencies', icon: Building2 },
@@ -209,24 +231,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Minimalist Left Sidebar */}
       <aside className={`flex flex-col h-full bg-white dark:bg-slate-900 z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden fixed left-0 top-0 ${leftSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isSidebarCollapsed ? 'w-64 lg:w-20' : 'w-64'}`}>
         
-        {/* Logo Branding Minimalista (Sin bordes de separación) */}
+        {/* Logo Branding Dinámico */}
         <div className="px-5 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20 transform -rotate-12">
-              <Compass className="w-5 h-5 text-slate-950 stroke-[2.5]" />
-            </div>
-
-            <div className={`transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[180px]'}`}>
-              <span className="text-xl font-black text-slate-900 dark:text-white tracking-tight font-sans">
-                SANTUN
-              </span>
-            </div>
+            {brandLogo ? (
+              <img
+                src={brandLogo}
+                alt={brandName}
+                className="h-9 max-w-[160px] object-contain shrink-0"
+              />
+            ) : (
+              <div className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-600/20 shrink-0">
+                {firstWordOfName}
+              </div>
+            )}
           </Link>
         </div>
 
         {/* Navigation Categories & Links (Espacio Confortable entre Accesos) */}
         <nav className="flex-1 px-3 py-2 space-y-3 overflow-y-auto overflow-x-hidden custom-scrollbar">
-          {(isCloser
+          {(isHunter
+            ? categories.filter(c => c.title === 'CLIENTES & CRM').map(c => ({
+                ...c,
+                items: c.items.filter(i => i.path === '/hunter')
+              }))
+            : isCloser
             ? categories.filter(c => c.title === 'CLIENTES & CRM').map(c => ({
                 ...c,
                 items: c.items.filter(i => ['/workspaces', '/clients'].includes(i.path))
@@ -314,7 +343,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Links de Utilidad Inferiores Minimalistas */}
         <div className="px-3 py-2.5 mt-auto space-y-1">
-          <Link href="/admin/permissions" className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+          <Link href={isSuperAdmin ? "/admin/permissions" : "/users"} className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
             <Settings className="w-4 h-4 stroke-[2]" />
             <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
           </Link>

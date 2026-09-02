@@ -7,8 +7,10 @@ export interface HunterRequest {
   email?: string;
   phone?: string;
   service_name?: string;
+  comments?: string;
   status: number; // 1: Pendiente, 2: Aprobada, 0: Rechazada
   commission_percentage: number;
+  commission_amount?: number;
   rejection_reason?: string;
   created_at: string;
   updated_at: string;
@@ -28,10 +30,13 @@ export interface HunterStore {
   canton?: string;
   address?: string;
   photo?: string;
+  media_type?: 'image' | 'video';
+  media_url?: string;
   qr_code_url?: string;
   campaign_token: string;
   status: 'active' | 'suspended';
   agency?: Agency;
+  user?: any;
   requests?: HunterRequest[];
   created_at: string;
   updated_at: string;
@@ -43,6 +48,7 @@ export interface HunterStats {
   pending_requests: number;
   rejected_requests: number;
   average_commission: number;
+  total_commission_amount?: number;
   estimated_visitors: number;
 }
 

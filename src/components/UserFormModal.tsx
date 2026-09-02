@@ -33,8 +33,10 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
     agency_id: currentUser?.agency_id || 1,
     phone: '',
     status: 1,
+    photo_file: null as File | null,
   });
 
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [isLoadingAgencies, setIsLoadingAgencies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,7 +61,9 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           agency_id: userToEdit.agency_id || currentUser?.agency_id || 1,
           phone: userToEdit.phone || '',
           status: userToEdit.status ?? 1,
+          photo_file: null,
         });
+        setPhotoPreview(userToEdit.photo || null);
       } else {
         setFormData({
           name: '',
@@ -69,7 +73,9 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           agency_id: currentUser?.agency_id || 1,
           phone: '',
           status: 1,
+          photo_file: null,
         });
+        setPhotoPreview(null);
       }
       setError(null);
     }
@@ -138,6 +144,36 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               {error}
             </div>
           )}
+
+          {/* Foto de Perfil */}
+          <div className="flex items-center gap-4 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+            {photoPreview ? (
+              <img
+                src={photoPreview}
+                alt="Preview"
+                className="w-14 h-14 rounded-2xl object-cover border border-slate-300 shrink-0"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 font-bold flex items-center justify-center text-sm shrink-0 border border-blue-200">
+                Avatar
+              </div>
+            )}
+            <div className="flex-1">
+              <label className="block text-xs font-bold text-slate-700 mb-1">Foto de Perfil</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    setFormData({ ...formData, photo_file: file });
+                    setPhotoPreview(URL.createObjectURL(file));
+                  }
+                }}
+                className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+              />
+            </div>
+          </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">Nombre Completo *</label>

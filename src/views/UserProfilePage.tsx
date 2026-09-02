@@ -22,7 +22,9 @@ import {
   Building2,
   Globe,
   FileText,
-  BadgeCheck
+  BadgeCheck,
+  Camera,
+  Upload
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -34,6 +36,8 @@ export const UserProfilePage: React.FC = () => {
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [savingInfo, setSavingInfo] = useState<boolean>(false);
 
   // Form State - Security & Password
@@ -51,8 +55,19 @@ export const UserProfilePage: React.FC = () => {
       setName(user.name || '');
       setEmail(user.email || '');
       setPhone(user.phone || '');
+      if (user.photo) {
+        setPhotoPreview(user.photo);
+      }
     }
   }, [user]);
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +86,7 @@ export const UserProfilePage: React.FC = () => {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim() || undefined,
+        photo_file: photoFile || undefined,
       });
 
       toast.success(response.message || 'Perfil actualizado correctamente');
@@ -161,11 +177,30 @@ export const UserProfilePage: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 md:p-8 shadow-xs relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-5">
-            {/* Avatar Badge */}
+            {/* Avatar Badge with Upload */}
             <div className="relative group">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-black flex items-center justify-center text-3xl shadow-xl shadow-blue-600/20 border-2 border-white dark:border-slate-800 flex-shrink-0">
-                {getInitials(user.name)}
-              </div>
+              <label className="cursor-pointer block relative">
+                {photoPreview ? (
+                  <img
+                    src={photoPreview}
+                    alt={user.name}
+                    className="w-20 h-20 rounded-3xl object-cover border-2 border-white dark:border-slate-800 shadow-xl shadow-blue-600/10 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-black flex items-center justify-center text-3xl shadow-xl shadow-blue-600/20 border-2 border-white dark:border-slate-800 flex-shrink-0">
+                    {getInitials(user.name)}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                  <Camera className="w-6 h-6" />
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+              </label>
               <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full border-2 border-white dark:border-slate-900 shadow-xs" title="Cuenta Activa">
                 <CheckCircle2 className="w-4 h-4" />
               </div>

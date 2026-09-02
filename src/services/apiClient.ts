@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-// Resolución dinámica del API Base URL según entorno y dominio actual
+// Resolución dinámica del API Base URL según entorno y dominio actual (Default: santun.tedelpa.com)
 export const getApiBaseUrl = (): string => {
   if (typeof process !== 'undefined' && process.env) {
     if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
@@ -24,10 +24,14 @@ export const getApiBaseUrl = (): string => {
       return `${protocol}//${hostname}:8000/api`;
     }
 
+    if (hostname.includes('tedelpa.com') || hostname.includes('santun')) {
+      return 'https://santun.tedelpa.com/api';
+    }
+
     return `${window.location.origin}/api`;
   }
 
-  return 'http://127.0.0.1:8000/api';
+  return 'https://santun.tedelpa.com/api';
 };
 
 export const normalizeFileUrl = (url: string | undefined | null): string => {
@@ -35,6 +39,12 @@ export const normalizeFileUrl = (url: string | undefined | null): string => {
   if (url.startsWith('data:') || url.startsWith('blob:')) return url;
 
   const apiBase = getApiBaseUrl().replace(/\/api$/, '');
+
+  // Bypass 403 Forbidden Nginx/Apache block on direct /storage/signatures/ URLs
+  if (url.includes('/signatures/')) {
+    const filename = url.substring(url.lastIndexOf('/') + 1);
+    return `${apiBase}/api/v1/public/storage/signatures/${filename}`;
+  }
 
   if (url.startsWith('/storage')) {
     return `${apiBase}${url}`;

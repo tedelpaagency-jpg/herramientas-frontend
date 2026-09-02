@@ -30,7 +30,8 @@ import {
   Info,
   Loader2,
   Trash2,
-  Edit3
+  Edit3,
+  X
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -66,6 +67,8 @@ export const GamificationPage: React.FC = () => {
 
   const [editingRouletteRewards, setEditingRouletteRewards] = useState<Roulette | null>(null);
   const [rouletteRewardProbs, setRouletteRewardProbs] = useState<{ [key: number]: { enabled: boolean; prob: number; color: string } }>({});
+
+  const isAdmin = user && (user.role === 'super_admin' || user.role === 'admin' || user.roles?.some(r => r.name === 'super_admin' || r.name === 'admin'));
 
   useEffect(() => {
     loadAllData();
@@ -317,7 +320,7 @@ export const GamificationPage: React.FC = () => {
             <Gift className="w-4 h-4" />
             <span>Mis Regalos & Canjes ({giftsList.length})</span>
           </button>
-          {user && (user.role === 'super_admin' || user.role === 'admin') && (
+          {isAdmin && (
             <button
               onClick={() => setActiveTab('admin')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
@@ -337,26 +340,43 @@ export const GamificationPage: React.FC = () => {
       {activeTab === 'wheel' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col items-center justify-center text-center relative">
-            {/* Roulette Selector Header */}
-            {roulettes.length > 1 && (
-              <div className="w-full flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Seleccionar Ruleta:</span>
-                <select
-                  value={selectedRoulette?.id || ''}
-                  onChange={(e) => {
-                    const r = roulettes.find((item) => item.id === Number(e.target.value));
-                    if (r) setSelectedRoulette(r);
-                  }}
-                  className="px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-extrabold text-slate-900 dark:text-white"
-                >
-                  {roulettes.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.title || r.name}
-                    </option>
-                  ))}
-                </select>
+            {/* Roulette Selector Header & Admin Edit Shortcut */}
+            <div className="w-full flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4 flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Ruleta Activa:</span>
+                {roulettes.length > 1 ? (
+                  <select
+                    value={selectedRoulette?.id || ''}
+                    onChange={(e) => {
+                      const r = roulettes.find((item) => item.id === Number(e.target.value));
+                      if (r) setSelectedRoulette(r);
+                    }}
+                    className="px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-extrabold text-slate-900 dark:text-white"
+                  >
+                    {roulettes.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.title || r.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="font-extrabold text-xs text-slate-900 dark:text-white">
+                    {selectedRoulette?.title || selectedRoulette?.name || 'Ruleta Principal'}
+                  </span>
+                )}
               </div>
-            )}
+
+              {/* Admin Button to Open Prizes Modal Directly */}
+              {isAdmin && selectedRoulette && (
+                <button
+                  onClick={() => openEditRouletteRewards(selectedRoulette)}
+                  className="px-4 py-2 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs font-black hover:bg-amber-100 transition-colors flex items-center gap-2 cursor-pointer"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Configurar Premios & Probabilidades</span>
+                </button>
+              )}
+            </div>
 
             {selectedRoulette ? (
               <div className="space-y-6 w-full flex flex-col items-center">
@@ -395,6 +415,14 @@ export const GamificationPage: React.FC = () => {
               <div className="py-12 text-center text-slate-500">
                 <Gift className="w-12 h-12 text-slate-400 mx-auto mb-3" />
                 <p className="text-sm font-bold">No hay ruletas configuradas actualmente.</p>
+                {isAdmin && (
+                  <button
+                    onClick={() => setShowCreateRouletteModal(true)}
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl"
+                  >
+                    Crear Nueva Ruleta
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -574,7 +602,7 @@ export const GamificationPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      {user && (user.role === 'super_admin' || user.role === 'admin') && (
+                      {isAdmin && (
                         <button
                           onClick={() => handleUpdateGiftStatus(g.id, g.status)}
                           className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-300 font-bold text-[11px] transition-colors cursor-pointer"
@@ -647,9 +675,10 @@ export const GamificationPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => openEditRouletteRewards(r)}
-                      className="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-bold text-xs hover:bg-indigo-100 transition-colors cursor-pointer"
+                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 transition-colors cursor-pointer flex items-center gap-1.5"
                     >
-                      Premios & Probabilidades
+                      <Settings className="w-3.5 h-3.5" />
+                      <span>Premios & Probabilidades</span>
                     </button>
                   </div>
                 </div>
@@ -688,8 +717,14 @@ export const GamificationPage: React.FC = () => {
 
       {/* CREATE ROULETTE MODAL */}
       {showCreateRouletteModal && (
-        <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 space-y-4 shadow-2xl relative">
+            <button
+              onClick={() => setShowCreateRouletteModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
             <h3 className="text-base font-black text-slate-900 dark:text-white">Crear Nueva Ruleta</h3>
             <form onSubmit={handleCreateRouletteSubmit} className="space-y-4">
               <div className="space-y-1">
@@ -731,72 +766,168 @@ export const GamificationPage: React.FC = () => {
         </div>
       )}
 
+      {/* CREATE REWARD MODAL */}
+      {showCreateRewardModal && (
+        <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 space-y-4 shadow-2xl relative">
+            <button
+              onClick={() => setShowCreateRewardModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-base font-black text-slate-900 dark:text-white">Agregar Nuevo Premio al Catálogo</h3>
+            <form onSubmit={handleCreateRewardSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Nombre del Premio *</label>
+                <input
+                  type="text"
+                  value={newRewardName}
+                  onChange={(e) => setNewRewardName(e.target.value)}
+                  placeholder="Ej: Viaje a Galápagos o GiftCard $50"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold"
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Descripción</label>
+                <textarea
+                  value={newRewardDesc}
+                  onChange={(e) => setNewRewardDesc(e.target.value)}
+                  placeholder="Detalles del premio"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold"
+                  rows={2}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Costo en Puntos</label>
+                  <input
+                    type="number"
+                    value={newRewardPoints}
+                    onChange={(e) => setNewRewardPoints(parseInt(e.target.value) || 0)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold font-mono"
+                    min="0"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Stock Inicial</label>
+                  <input
+                    type="number"
+                    value={newRewardStock}
+                    onChange={(e) => setNewRewardStock(parseInt(e.target.value) || 0)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold font-mono"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateRewardModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100"
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="px-5 py-2 bg-amber-500 text-slate-950 rounded-xl text-xs font-bold cursor-pointer">
+                  Crear Premio
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* EDIT ROULETTE REWARDS PROBABILITIES MODAL */}
       {editingRouletteRewards && (
-        <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-xl p-6 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-xl p-6 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto relative">
+            <button
+              onClick={() => setEditingRouletteRewards(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
             <h3 className="text-base font-black text-slate-900 dark:text-white">
-              Premios y Probabilidades: <span className="text-amber-500">{editingRouletteRewards.title}</span>
+              Premios y Probabilidades: <span className="text-amber-500">{editingRouletteRewards.title || editingRouletteRewards.name}</span>
             </h3>
 
             <form onSubmit={handleSaveRouletteRewardsSubmit} className="space-y-4">
-              {rewardsCatalog.map((r) => {
-                const conf = rouletteRewardProbs[r.id] || { enabled: false, prob: 0.1, color: '#2563eb' };
-                return (
-                  <div
-                    key={r.id}
-                    className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs"
-                  >
-                    <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-2 font-black text-slate-900 dark:text-white cursor-pointer">
+              {rewardsCatalog.length > 0 ? (
+                rewardsCatalog.map((r) => {
+                  const conf = rouletteRewardProbs[r.id] || { enabled: false, prob: 0.1, color: '#2563eb' };
+                  return (
+                    <div
+                      key={r.id}
+                      className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 font-black text-slate-900 dark:text-white cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={conf.enabled}
+                            onChange={(e) =>
+                              setRouletteRewardProbs({
+                                ...rouletteRewardProbs,
+                                [r.id]: { ...conf, enabled: e.target.checked },
+                              })
+                            }
+                            className="rounded text-amber-500"
+                          />
+                          <span>{r.name}</span>
+                        </label>
                         <input
-                          type="checkbox"
-                          checked={conf.enabled}
+                          type="color"
+                          value={conf.color}
                           onChange={(e) =>
                             setRouletteRewardProbs({
                               ...rouletteRewardProbs,
-                              [r.id]: { ...conf, enabled: e.target.checked },
+                              [r.id]: { ...conf, color: e.target.value },
                             })
                           }
-                          className="rounded text-amber-500"
-                        />
-                        <span>{r.name}</span>
-                      </label>
-                      <input
-                        type="color"
-                        value={conf.color}
-                        onChange={(e) =>
-                          setRouletteRewardProbs({
-                            ...rouletteRewardProbs,
-                            [r.id]: { ...conf, color: e.target.value },
-                          })
-                        }
-                        className="w-8 h-8 rounded border-none cursor-pointer"
-                      />
-                    </div>
-
-                    {conf.enabled && (
-                      <div className="flex items-center gap-3 pt-1">
-                        <span className="font-bold text-slate-500">Probabilidad (0.00 a 1.00):</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="1"
-                          value={conf.prob}
-                          onChange={(e) =>
-                            setRouletteRewardProbs({
-                              ...rouletteRewardProbs,
-                              [r.id]: { ...conf, prob: parseFloat(e.target.value) || 0 },
-                            })
-                          }
-                          className="w-28 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-mono text-xs font-bold"
+                          className="w-8 h-8 rounded border-none cursor-pointer"
                         />
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+
+                      {conf.enabled && (
+                        <div className="flex items-center gap-3 pt-1">
+                          <span className="font-bold text-slate-500">Probabilidad (0.00 a 1.00):</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="1"
+                            value={conf.prob}
+                            onChange={(e) =>
+                              setRouletteRewardProbs({
+                                ...rouletteRewardProbs,
+                                [r.id]: { ...conf, prob: parseFloat(e.target.value) || 0 },
+                              })
+                            }
+                            className="w-28 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-mono text-xs font-bold"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="py-6 text-center text-slate-500">
+                  <p className="text-xs font-bold">No hay premios creados en el catálogo.</p>
+                  <p className="text-[11px] mt-1">Crea primero los premios en el catálogo para asignarlos a esta ruleta.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingRouletteRewards(null);
+                      setShowCreateRewardModal(true);
+                    }}
+                    className="mt-3 px-4 py-2 bg-amber-500 text-slate-950 font-bold text-xs rounded-xl"
+                  >
+                    Crear Premio en Catálogo
+                  </button>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
@@ -806,7 +937,7 @@ export const GamificationPage: React.FC = () => {
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="px-5 py-2 bg-amber-500 text-slate-950 rounded-xl text-xs font-bold">
+                <button type="submit" className="px-5 py-2 bg-amber-500 text-slate-950 rounded-xl text-xs font-bold cursor-pointer">
                   Guardar Probabilidades
                 </button>
               </div>

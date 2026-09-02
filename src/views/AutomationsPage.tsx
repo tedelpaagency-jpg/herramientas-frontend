@@ -337,6 +337,25 @@ export default function AutomationsPage() {
       : meta.workspaces
     : [];
 
+  // Filtered Stages based on chosen workspace in modal
+  const availableStagesModal = meta?.stages
+    ? workspaceId
+      ? meta.stages.filter((st) => Number(st.workspace_id) === Number(workspaceId))
+      : agencyId
+      ? meta.stages.filter((st) => {
+          const wsIds = availableWorkspacesModal.map((w) => w.id);
+          return !st.workspace_id || wsIds.includes(st.workspace_id);
+        })
+      : meta.stages
+    : [];
+
+  // Filtered Users based on chosen agency in modal
+  const availableUsersModal = meta?.users
+    ? agencyId
+      ? meta.users.filter((u) => !u.agency_id || Number(u.agency_id) === Number(agencyId))
+      : meta.users
+    : [];
+
   const filteredAutomations = automations.filter((a) => {
     const matchesSearch =
       a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -627,6 +646,12 @@ export default function AutomationsPage() {
                           const val = e.target.value ? Number(e.target.value) : '';
                           setAgencyId(val);
                           setWorkspaceId('');
+                          if (val && selectedUserId) {
+                            const isValidUser = meta?.users?.some(
+                              (u) => Number(u.agency_id) === Number(val) && u.id === Number(selectedUserId)
+                            );
+                            if (!isValidUser) setSelectedUserId('');
+                          }
                         }}
                         className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none"
                       >
@@ -646,7 +671,16 @@ export default function AutomationsPage() {
                     </label>
                     <select
                       value={workspaceId}
-                      onChange={(e) => setWorkspaceId(e.target.value ? Number(e.target.value) : '')}
+                      onChange={(e) => {
+                        const newWsId = e.target.value ? Number(e.target.value) : '';
+                        setWorkspaceId(newWsId);
+                        if (newWsId && stageId) {
+                          const isValidInNewWs = meta?.stages.some(
+                            (st) => Number(st.workspace_id) === Number(newWsId) && st.id === Number(stageId)
+                          );
+                          if (!isValidInNewWs) setStageId('');
+                        }
+                      }}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none"
                     >
                       <option value="">-- Todos los Workspaces --</option>
@@ -700,11 +734,14 @@ export default function AutomationsPage() {
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none"
                     >
                       <option value="">-- Cualquier Etapa --</option>
-                      {meta?.stages.map((st) => (
-                        <option key={st.id} value={st.id}>
-                          {st.name}
-                        </option>
-                      ))}
+                      {availableStagesModal.map((st) => {
+                        const parentWs = meta?.workspaces?.find((w) => w.id === st.workspace_id);
+                        return (
+                          <option key={st.id} value={st.id}>
+                            {st.name} {!workspaceId && parentWs ? `(${parentWs.name})` : ''}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                 </div>
@@ -819,7 +856,7 @@ export default function AutomationsPage() {
                             className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-900 dark:text-white"
                           >
                             <option value="">-- Seleccionar Usuario de la Agencia --</option>
-                            {meta?.users.map((u) => (
+                            {availableUsersModal.map((u) => (
                               <option key={u.id} value={u.id}>
                                 {u.name} ({u.email})
                               </option>
@@ -958,9 +995,28 @@ export default function AutomationsPage() {
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none font-bold"
                     >
                       <option value="">-- Seleccionar Asesor --</option>
-                      {meta?.users.map((u) => (
+                      {availableUsersModal.map((u) => (
                         <option key={u.id} value={u.id}>
                           {u.name} ({u.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Change Stage Action Value */}
+                {actionType === 'change_stage' && (
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Etapa Destino *</label>
+                    <select
+                      value={actionValue}
+                      onChange={(e) => setActionValue(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none font-bold"
+                    >
+                      <option value="">-- Seleccionar Etapa Destino --</option>
+                      {availableStagesModal.map((st) => (
+                        <option key={st.id} value={st.id}>
+                          {st.name}
                         </option>
                       ))}
                     </select>

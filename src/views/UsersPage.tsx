@@ -310,9 +310,17 @@ export const UsersPage: React.FC = () => {
                     <tr key={u.id} className={`hover:bg-slate-50/80 transition-colors ${isDeleted ? 'bg-rose-50/30' : ''}`}>
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">
-                            {u.name ? u.name.substring(0, 2).toUpperCase() : 'U'}
-                          </div>
+                          {u.photo ? (
+                            <img
+                              src={u.photo}
+                              alt={u.name}
+                              className="w-9 h-9 rounded-full object-cover border border-slate-200 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">
+                              {u.name ? u.name.substring(0, 2).toUpperCase() : 'U'}
+                            </div>
+                          )}
                           <div>
                             <p className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
                               {u.name}

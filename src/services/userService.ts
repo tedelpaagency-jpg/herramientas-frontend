@@ -34,12 +34,36 @@ export const userService = {
     return res.data;
   },
 
-  createUser: async (data: Partial<User> & { password?: string }) => {
+  createUser: async (data: any) => {
+    if (data.photo_file) {
+      const formData = new FormData();
+      Object.keys(data).forEach((key) => {
+        if (data[key] !== undefined && data[key] !== null) {
+          formData.append(key, data[key]);
+        }
+      });
+      const res = await apiClient.post('/v1/users', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data;
+    }
     const res = await apiClient.post('/v1/users', data);
     return res.data;
   },
 
-  updateUser: async (id: number, data: Partial<User> & { password?: string }) => {
+  updateUser: async (id: number, data: any) => {
+    if (data.photo_file) {
+      const formData = new FormData();
+      Object.keys(data).forEach((key) => {
+        if (data[key] !== undefined && data[key] !== null) {
+          formData.append(key, data[key]);
+        }
+      });
+      const res = await apiClient.post(`/v1/users/${id}/update`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data;
+    }
     const res = await apiClient.post(`/v1/users/${id}/update`, data);
     return res.data;
   },
@@ -84,7 +108,19 @@ export const userService = {
     return res.data;
   },
 
-  updateMyProfile: async (data: { name: string; email: string; phone?: string }) => {
+  updateMyProfile: async (data: { name: string; email: string; phone?: string; photo?: string; photo_file?: File }) => {
+    if (data.photo_file) {
+      const formData = new FormData();
+      formData.append('name', data.name);
+      formData.append('email', data.email);
+      if (data.phone) formData.append('phone', data.phone);
+      formData.append('photo_file', data.photo_file);
+      formData.append('_method', 'PUT');
+      const res = await apiClient.post('/v1/profile', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data;
+    }
     const res = await apiClient.put('/v1/profile', data);
     return res.data;
   },

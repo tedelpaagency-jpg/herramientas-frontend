@@ -7,6 +7,8 @@ import Navbar from './Navbar';
 import RightSidebar from './RightSidebar';
 import PageTransition from './PageTransition';
 
+import ImpersonationBanner from './ImpersonationBanner';
+
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
   const isKanbanPage = pathname === '/crm' || pathname === '/tasks' || pathname?.startsWith('/tasks');
@@ -63,6 +65,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Main Content Container */}
       <main className={`flex-1 overflow-y-auto relative h-screen transition-all duration-300 print:ml-0 print:p-0 print:bg-white print:overflow-visible print:h-auto ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} ${rightSidebarOpen ? '2xl:mr-80' : 'mr-0'}`}>
+        <ImpersonationBanner />
         {/* Header Bar */}
         <Navbar
           leftSidebarOpen={leftSidebarOpen}

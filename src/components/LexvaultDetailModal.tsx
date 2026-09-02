@@ -147,6 +147,14 @@ export const LexvaultDetailModal: React.FC<LexvaultDetailModalProps> = ({
               title={title}
               documentNumber={docNumber}
               watermarkText={watermarkText}
+              signatureUrl={
+                document?.pdf_path ||
+                document?.pdf_url ||
+                (document as any)?.signature_image ||
+                (document as any)?.signature_path ||
+                (document as any)?.signature_url ||
+                undefined
+              }
             />
           </div>
         </motion.div>

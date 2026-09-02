@@ -42,6 +42,7 @@ export interface Agency {
   city?: string;
   province?: string;
   domain?: string;
+  logo?: string | null;
   plan_id?: number;
   plan?: Plan;
   gerente_id?: number;
@@ -78,6 +79,7 @@ export interface User {
   roles?: Role[];
   permissions?: Permission[];
   phone?: string;
+  photo?: string | null;
   status?: number;
   deleted_at?: string | null;
   created_at?: string;

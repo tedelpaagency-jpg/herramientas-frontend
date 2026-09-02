@@ -36,7 +36,7 @@ export const lexvaultService = {
     return Array.isArray(response.data) ? response.data : (response.data?.data || []);
   },
 
-  getDocument: async (id: number): Promise<LexvaultDocument> => {
+  getDocument: async (id: number | string): Promise<LexvaultDocument> => {
     const response = await apiClient.get(`/v1/lexvault/documents/${id}`);
     return response.data?.data || response.data;
   },
