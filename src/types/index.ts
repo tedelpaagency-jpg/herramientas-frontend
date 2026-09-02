@@ -7,6 +7,8 @@ export interface PlanPermission {
 
 export interface Plan {
   id: number;
+  white_label_id?: number | null;
+  white_label?: any;
   name: string;
   description?: string;
   price: number;

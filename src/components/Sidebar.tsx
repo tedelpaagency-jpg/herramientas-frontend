@@ -203,6 +203,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title: 'ORGANIZACIÓN & WHITE LABEL',
             items: [
               { label: 'Mi White Label', path: '/white-label/dashboard', icon: Globe },
+              { label: 'Planes de mi Marca', path: '/admin/plans', icon: Layers },
+              { label: 'Agencias y Equipos', path: '/admin/agencies', icon: Building2 },
+              { label: 'Directorio de Usuarios', path: '/users', icon: Users },
             ],
           },
         ]
