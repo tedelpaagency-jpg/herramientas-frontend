@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
@@ -86,6 +86,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
     brandName = (hasCustomBranding && agency?.name) ? agency.name : (hostWhiteLabel?.name || 'SANTUN');
   }
 
+  // Local storage instant caching for 0ms logo render on page refresh
+  const [cachedLogo, setCachedLogo] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('santun_sidebar_logo');
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (brandLogo) {
+      setCachedLogo(brandLogo);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('santun_sidebar_logo', brandLogo);
+      }
+    }
+  }, [brandLogo]);
+
+  const effectiveLogo = brandLogo || cachedLogo;
   const firstWordOfName = brandName.trim().split(' ')[0];
 
   const currentPlan = user?.agency?.current_subscription?.plan || user?.agency?.plan;
@@ -267,10 +285,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Logo Branding Dinámico */}
         <div className="px-5 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            {brandLogo ? (
+            {effectiveLogo ? (
               <img
-                src={brandLogo}
+                src={effectiveLogo}
                 alt={brandName}
+                loading="eager"
+                decoding="sync"
                 className="h-9 max-w-[160px] object-contain shrink-0"
               />
             ) : (

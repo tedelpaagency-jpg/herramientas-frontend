@@ -49,7 +49,15 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       if (canSelectAgency) {
         setIsLoadingAgencies(true);
         adminService.getAgencies()
-          .then(data => setAgencies(data))
+          .then(data => {
+            setAgencies(data);
+            if (data.length > 0 && !userToEdit) {
+              setFormData(prev => ({
+                ...prev,
+                agency_id: data[0].id
+              }));
+            }
+          })
           .catch(err => console.error('Error cargando agencias:', err))
           .finally(() => setIsLoadingAgencies(false));
       }
@@ -249,7 +257,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
           </div>
 
-          {canSelectAgency && (
+          {canSelectAgency && !['super_admin', 'white_label_admin'].includes(formData.role) && (
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Asociar a Agencia *</label>
               {isLoadingAgencies ? (
