@@ -28,7 +28,8 @@ import {
   ChevronRight,
   LayoutGrid,
   List,
-  CalendarDays
+  CalendarDays,
+  Users
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
 
@@ -72,6 +73,7 @@ export const GoogleCalendarPage: React.FC = () => {
   const [eventEndTime, setEventEndTime] = useState('10:00');
   const [eventAttendees, setEventAttendees] = useState('');
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+  const [assignmentScope, setAssignmentScope] = useState<'all' | 'specific'>('all');
 
   const fetchSettings = async () => {
     try {
@@ -238,7 +240,11 @@ export const GoogleCalendarPage: React.FC = () => {
         ? eventAttendees.split(',').map((a) => a.trim()).filter(Boolean)
         : [];
       
-      const allAttendees = Array.from(new Set([...selectedUserEmails, ...manualAttendees]));
+      const targetEmails = assignmentScope === 'all'
+        ? systemUsers.map((u) => u.email)
+        : selectedUserEmails;
+      
+      const allAttendees = Array.from(new Set([...targetEmails, ...manualAttendees]));
 
       const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Guatemala';
 
@@ -955,48 +961,86 @@ export const GoogleCalendarPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Selector de Usuarios Participantes del Sistema */}
+              {/* Selector de Asignación / Audiencia de Usuarios */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                  <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  Seleccionar Usuarios Participantes (Se añadirán a Google Calendar)
+                  <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                  Asignar Evento a Usuarios de la Agencia
                 </label>
-                <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 max-h-36 overflow-y-auto space-y-1.5 custom-scrollbar">
-                  {systemUsers.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic">Cargando usuarios del sistema...</p>
-                  ) : (
-                    systemUsers.map((u) => {
-                      const isSelected = selectedUserEmails.includes(u.email);
-                      return (
-                        <label
-                          key={u.id}
-                          className={`flex items-center justify-between p-2 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
-                            isSelected 
-                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' 
-                              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => {
-                                if (isSelected) {
-                                  setSelectedUserEmails(selectedUserEmails.filter(e => e !== u.email));
-                                } else {
-                                  setSelectedUserEmails([...selectedUserEmails, u.email]);
-                                }
-                              }}
-                              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                            />
-                            <span>{u.name}</span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-normal">{u.email}</span>
-                        </label>
-                      );
-                    })
-                  )}
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAssignmentScope('all');
+                      setSelectedUserEmails(systemUsers.map((u) => u.email));
+                    }}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                      assignmentScope === 'all'
+                        ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 shadow-2xs'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Users className="w-4 h-4 text-blue-600" />
+                    <span>Todos los Usuarios</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentScope('specific')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                      assignmentScope === 'specific'
+                        ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 shadow-2xs'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                    }`}
+                  >
+                    <UserCheck className="w-4 h-4 text-indigo-600" />
+                    <span>Usuarios Específicos</span>
+                  </button>
                 </div>
+
+                {assignmentScope === 'all' ? (
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 font-medium flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>El evento se invitará y notificará automáticamente a los <strong>{systemUsers.length} usuarios</strong> de su agencia.</span>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 max-h-36 overflow-y-auto space-y-1.5 custom-scrollbar">
+                    {systemUsers.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">Cargando usuarios del sistema...</p>
+                    ) : (
+                      systemUsers.map((u) => {
+                        const isSelected = selectedUserEmails.includes(u.email);
+                        return (
+                          <label
+                            key={u.id}
+                            className={`flex items-center justify-between p-2 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                              isSelected 
+                                ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800' 
+                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {
+                                  if (isSelected) {
+                                    setSelectedUserEmails(selectedUserEmails.filter(e => e !== u.email));
+                                  } else {
+                                    setSelectedUserEmails([...selectedUserEmails, u.email]);
+                                  }
+                                }}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                              />
+                              <span>{u.name}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-normal">{u.email}</span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>

@@ -126,8 +126,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ((user?.agency as any)?.allowed_agency_types.includes('inmobiliaria') || (user?.agency as any)?.allowed_agency_types.includes('real_estate')));
 
   const isItemVisible = (item: { permission?: string }) => {
-    // 1. Super Admin y Administradores de Marca Blanca poseen acceso ilimitado
-    if (isSuperAdmin || isWhiteLabelAdmin) return true;
+    // 1. Super Admin posee acceso global a nivel de plataforma
+    if (isSuperAdmin) return true;
 
     // 2. Si el elemento no requiere permisos específicos (ej. Inicio), es visible
     if (!item.permission) return true;
@@ -152,22 +152,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }
     }
 
-    // 4. Nivel 1: Permisos del Plan de la Agencia (Acceso a Módulos)
-    // Si la agencia no tiene contratado el módulo en su Plan activo, ningún usuario de la agencia puede acceder.
-    const isModuleInPlan = activePlanPermissions.length > 0 && activePlanPermissions.includes(perm);
-
-    if (!isModuleInPlan) {
-      return false;
+    // 4. Verificación Estricta del Plan de la Agencia
+    // Si la agencia tiene un plan activo con lista de permisos, el módulo DEBE estar incluido en el Plan.
+    if (activePlanPermissions.length > 0) {
+      const isModuleInPlan = activePlanPermissions.includes(perm);
+      if (!isModuleInPlan) {
+        return false; // Si el módulo fue desactivado del Plan, SE OCULTA para la agencia
+      }
     }
 
-    // 5. Nivel 2: Permisos para Administradores de Agencia (admin / gerente)
-    // Tienen acceso a la totalidad de los módulos contratados por su Plan.
-    if (isAgencyAdmin) {
+    // 5. Para Administradores (admin / gerente / white_label_admin): Tienen acceso a todos los módulos activos en su Plan.
+    if (isAgencyAdmin || isWhiteLabelAdmin) {
       return true;
     }
 
-    // 6. Nivel 3: Permisos Granulares para Usuarios Estándar / Agentes / Closers
-    // Requieren que el módulo esté contratado en el Plan Y que el usuario posea el permiso individual directo.
+    // 6. Para Usuarios Estándar / Agentes / Closers:
+    // Requieren tener el permiso individual directo otorgado.
     return userDirectPermissions.includes(perm);
   };
 

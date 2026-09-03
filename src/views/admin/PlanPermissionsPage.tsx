@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
+import { useAuth } from '../../context/AuthContext';
 
 interface ModuleDefinition {
   id: string;
@@ -119,6 +120,7 @@ export const PlanPermissionsPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const { refreshUser } = useAuth();
 
   const planId = params?.id ? Number(params.id) : searchParams.get('id') ? Number(searchParams.get('id')) : null;
 
@@ -200,6 +202,9 @@ export const PlanPermissionsPage: React.FC = () => {
         ...plan,
         plan_permissions: updatedPermissions,
       });
+      if (refreshUser) {
+        try { await refreshUser(); } catch (e) {}
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Error al actualizar estado del módulo');
     } finally {
