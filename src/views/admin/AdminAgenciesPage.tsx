@@ -18,11 +18,18 @@ import {
   CreditCard,
   Globe
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import whiteLabelService from '../../services/whiteLabelService';
+import { WhiteLabel } from '../../types/whiteLabel';
 import { TableSkeleton } from '@/components/Skeleton';
 
 export const AdminAgenciesPage: React.FC = () => {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === 'super_admin' || currentUser?.roles?.some(r => r.name === 'super_admin');
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [whiteLabels, setWhiteLabels] = useState<WhiteLabel[]>([]);
+  const [whiteLabelFilter, setWhiteLabelFilter] = useState<number | ''>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -51,7 +58,9 @@ export const AdminAgenciesPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const agencyList = await adminService.getAgencies();
+      const agencyList = await adminService.getAgencies({
+        white_label_id: whiteLabelFilter ? Number(whiteLabelFilter) : undefined,
+      });
       setAgencies(agencyList);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cargar las agencias.');
@@ -61,7 +70,7 @@ export const AdminAgenciesPage: React.FC = () => {
       const planList = await adminService.getPlans();
       setPlans(planList);
     } catch (err) {
-      // Ignorar fallo de planes si no es super_admin
+      // Ignorar
     } finally {
       setLoading(false);
     }
@@ -69,7 +78,15 @@ export const AdminAgenciesPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [whiteLabelFilter]);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      whiteLabelService.getWhiteLabels()
+        .then(res => setWhiteLabels(Array.isArray(res) ? res : res?.data || []))
+        .catch(err => console.error('Error cargando Marcas Blancas:', err));
+    }
+  }, [isSuperAdmin]);
 
   const openCreateModal = () => {
     setEditingAgency(null);
@@ -191,16 +208,31 @@ export const AdminAgenciesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3 max-w-md">
-        <Search className="w-4 h-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Buscar agencia por nombre, RUC, email o dominio..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-transparent text-xs font-medium outline-none text-slate-800 placeholder-slate-400"
-        />
+      {/* Search Bar & Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3 flex-1 min-w-[280px] max-w-md">
+          <Search className="w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar agencia por nombre, RUC, email o dominio..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-transparent text-xs font-medium outline-none text-slate-800 placeholder-slate-400"
+          />
+        </div>
+
+        {isSuperAdmin && (
+          <select
+            value={whiteLabelFilter}
+            onChange={(e) => setWhiteLabelFilter(e.target.value ? Number(e.target.value) : '')}
+            className="px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl text-xs font-bold text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-600/20 max-w-[220px] truncate"
+          >
+            <option value="">Todas las Marcas Blancas</option>
+            {whiteLabels.map((wl) => (
+              <option key={wl.id} value={wl.id}>{wl.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Table */}

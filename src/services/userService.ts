@@ -3,6 +3,7 @@ import { User } from '../types';
 
 export interface UserFilterParams {
   agency_id?: number;
+  white_label_id?: number;
   role?: string;
   status?: number;
   search?: string;

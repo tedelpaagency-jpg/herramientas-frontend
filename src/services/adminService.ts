@@ -73,7 +73,7 @@ export const adminService = {
   },
 
   // === AGENCIAS ===
-  getAgencies: async (params?: { with_trashed?: boolean; gerente_id?: number; search?: string }): Promise<Agency[]> => {
+  getAgencies: async (params?: { with_trashed?: boolean; gerente_id?: number; white_label_id?: number; search?: string }): Promise<Agency[]> => {
     try {
       const res = await apiClient.get('/v1/agencies', { params });
       return res.data?.data || res.data || [];

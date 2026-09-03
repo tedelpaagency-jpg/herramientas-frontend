@@ -27,6 +27,29 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const isSuperAdmin =
+    user?.role === 'super_admin' ||
+    user?.roles?.some((r) => r.name === 'super_admin');
+
+  const isWhiteLabelAdmin =
+    user?.role === 'white_label_admin' ||
+    user?.roles?.some((r) => r.name === 'white_label_admin');
+
+  const isAgencyAdmin =
+    user?.role === 'admin' ||
+    user?.role === 'gerente' ||
+    user?.role === 'gerente_comercial' ||
+    user?.roles?.some((r) => ['admin', 'gerente', 'gerente_comercial'].includes(r.name));
+
+  let configHref: string | null = null;
+  if (isSuperAdmin) {
+    configHref = '/admin/permissions';
+  } else if (isWhiteLabelAdmin) {
+    configHref = '/white-label/dashboard';
+  } else if (isAgencyAdmin) {
+    configHref = '/admin/agencies';
+  }
+
   return (
     <header className="bg-surface/80 backdrop-blur-md sticky top-0 z-30 w-full h-16 border-b border-outline-variant flex justify-between items-center px-2 lg:px-6 gap-2 print:hidden">
       {/* Menu Toggle & Search Bar */}
@@ -151,10 +174,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <span className="material-symbols-outlined text-[20px]">person</span>
                       Mi Perfil
                     </Link>
-                    <Link href="/admin/permissions" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-surface-container text-sm text-on-surface transition-colors">
-                      <span className="material-symbols-outlined text-[20px]">settings</span>
-                      Configuración
-                    </Link>
+                    {configHref && (
+                      <Link href={configHref} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-surface-container text-sm text-on-surface transition-colors">
+                        <span className="material-symbols-outlined text-[20px]">settings</span>
+                        Configuración
+                      </Link>
+                    )}
                     <div className="h-px bg-outline-variant my-2"></div>
                     <button 
                       onClick={() => {

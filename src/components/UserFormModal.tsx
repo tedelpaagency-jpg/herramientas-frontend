@@ -99,7 +99,10 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       onSuccess();
       onClose();
     } catch (err: any) {
-      if (err.response?.data?.message) {
+      if (err.response?.data?.errors?.email) {
+        const emailErr = err.response.data.errors.email;
+        setError(Array.isArray(emailErr) ? emailErr[0] : emailErr);
+      } else if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else if (err.response?.data?.errors) {
         const firstErr = Object.values(err.response.data.errors)[0] as string[];

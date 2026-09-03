@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Apply branding dynamically
-  useBranding(currentWhiteLabel, user?.agency || currentAgency);
+  useBranding(currentWhiteLabel, user?.agency || currentAgency, user);
 
   const refreshUser = async () => {
     if (typeof window === 'undefined' || !localStorage.getItem('santun_auth_token')) {

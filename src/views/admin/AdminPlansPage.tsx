@@ -264,15 +264,9 @@ export const AdminPlansPage: React.FC = () => {
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-slate-900">{plan.name}</p>
-                        {plan.white_label_id ? (
-                          <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold text-[10px] shrink-0">
-                            {plan.white_label?.name || 'Marca Blanca'}
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px] shrink-0">
-                            Global SaaS
-                          </span>
-                        )}
+                        <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold text-[10px] shrink-0">
+                          {plan.white_label?.name || 'Marca Blanca'}
+                        </span>
                       </div>
                       {plan.description && (
                         <p className="text-[11px] text-slate-500 line-clamp-1">{plan.description}</p>

@@ -24,13 +24,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const pathname = usePathname();
   const { user, currentWhiteLabel } = useAuth();
-  const brandLogo = currentWhiteLabel?.logo || user?.agency?.logo || null;
-  const brandName = currentWhiteLabel?.name || user?.agency?.name || 'SANTUN';
-  const firstWordOfName = brandName.trim().split(' ')[0];
-
   const isSuperAdmin =
     user?.role === 'super_admin' ||
     user?.roles?.some((r) => r.name === 'super_admin');
+
+  const isWhiteLabelAdmin =
+    user?.role === 'white_label_admin' ||
+    user?.roles?.some((r) => r.name === 'white_label_admin');
 
   const isGerenteComercial =
     user?.role === 'gerente_comercial' ||
@@ -54,9 +54,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
     user?.role === 'hunter' ||
     user?.roles?.some((r) => r.name === 'hunter');
 
-  const isWhiteLabelAdmin =
-    user?.role === 'white_label_admin' ||
-    user?.roles?.some((r) => r.name === 'white_label_admin');
+  const isAgencyAdmin =
+    user?.role === 'admin' ||
+    user?.role === 'gerente' ||
+    user?.role === 'gerente_comercial' ||
+    user?.roles?.some((r) => ['admin', 'gerente', 'gerente_comercial'].includes(r.name));
+
+  let configHref: string | null = null;
+  if (isSuperAdmin) {
+    configHref = '/admin/permissions';
+  } else if (isWhiteLabelAdmin) {
+    configHref = '/white-label/dashboard';
+  } else if (isAgencyAdmin) {
+    configHref = '/admin/agencies';
+  }
+
+  let brandLogo: string | null = null;
+  let brandName = 'SANTUN';
+
+  if (isSuperAdmin || isWhiteLabelAdmin) {
+    brandLogo = currentWhiteLabel?.logo || null;
+    brandName = currentWhiteLabel?.name || 'SANTUN';
+  } else {
+    const agency = user?.agency;
+    const currentPlan = agency?.current_subscription?.plan || agency?.plan;
+    const activePlanPermissions = currentPlan?.plan_permissions?.map((p: any) => p.permission.toLowerCase()) || [];
+    const hasCustomBranding = activePlanPermissions.includes('custom_agency_branding');
+    const hostWhiteLabel = (agency as any)?.white_label || currentWhiteLabel;
+
+    brandLogo = (hasCustomBranding && agency?.logo) ? agency.logo : (hostWhiteLabel?.logo || null);
+    brandName = (hasCustomBranding && agency?.name) ? agency.name : (hostWhiteLabel?.name || 'SANTUN');
+  }
+
+  const firstWordOfName = brandName.trim().split(' ')[0];
 
   const currentPlan = user?.agency?.current_subscription?.plan || user?.agency?.plan;
   const activePlanPermissions = currentPlan?.plan_permissions?.map((p) => p.permission.toLowerCase()) || [];
@@ -345,20 +375,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         {/* Links de Utilidad Inferiores Minimalistas */}
-        <div className="px-3 py-2.5 mt-auto space-y-1">
-          <Link href={isSuperAdmin ? "/admin/permissions" : "/users"} className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-            <Settings className="w-4 h-4 stroke-[2]" />
-            <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
-          </Link>
-          <Link href="/products" className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-            <Wrench className="w-4 h-4 stroke-[2]" />
-            <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Herramientas</span>
-          </Link>
-          <Link href="/" onClick={() => setLeftSidebarOpen(false)} className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-            <HelpCircle className="w-4 h-4 stroke-[2]" />
-            <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Ayuda</span>
-          </Link>
-        </div>
+        {configHref && (
+          <div className="px-3 py-2.5 mt-auto space-y-1">
+            <Link 
+              href={configHref} 
+              onClick={() => setLeftSidebarOpen(false)}
+              className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+            >
+              <Settings className="w-4 h-4 stroke-[2]" />
+              <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
+            </Link>
+          </div>
+        )}
 
       </aside>
     </>

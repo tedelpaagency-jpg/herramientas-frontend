@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { User, Agency } from '../types';
+import { WhiteLabel } from '../types/whiteLabel';
 import userService from '../services/userService';
 import adminService from '../services/adminService';
+import whiteLabelService from '../services/whiteLabelService';
 import { useAuth } from '../context/AuthContext';
 import UserFormModal from '../components/UserFormModal';
 import UserPermissionsModal from '../components/UserPermissionsModal';
@@ -44,6 +46,8 @@ export const UsersPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [agencyFilter, setAgencyFilter] = useState<number | ''>('');
+  const [whiteLabelFilter, setWhiteLabelFilter] = useState<number | ''>('');
+  const [whiteLabels, setWhiteLabels] = useState<WhiteLabel[]>([]);
   const [statusFilter, setStatusFilter] = useState<number | ''>('');
   const [withTrashed, setWithTrashed] = useState(false);
   const [page, setPage] = useState(1);
@@ -65,6 +69,7 @@ export const UsersPage: React.FC = () => {
         search,
         role: roleFilter || undefined,
         agency_id: agencyFilter ? Number(agencyFilter) : undefined,
+        white_label_id: whiteLabelFilter ? Number(whiteLabelFilter) : undefined,
         status: statusFilter !== '' ? Number(statusFilter) : undefined,
         with_trashed: withTrashed,
         page,
@@ -99,7 +104,7 @@ export const UsersPage: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [page, search, roleFilter, agencyFilter, statusFilter, withTrashed]);
+  }, [page, search, roleFilter, agencyFilter, whiteLabelFilter, statusFilter, withTrashed]);
 
   useEffect(() => {
     if (canFilterAgencies) {
@@ -107,7 +112,12 @@ export const UsersPage: React.FC = () => {
         .then(data => setAgencies(data))
         .catch(err => console.error('Error cargando agencias:', err));
     }
-  }, [canFilterAgencies]);
+    if (isSuperAdmin) {
+      whiteLabelService.getWhiteLabels()
+        .then(res => setWhiteLabels(Array.isArray(res) ? res : res?.data || []))
+        .catch(err => console.error('Error cargando Marcas Blancas:', err));
+    }
+  }, [canFilterAgencies, isSuperAdmin]);
 
   const handleCreate = () => {
     setSelectedUser(null);
