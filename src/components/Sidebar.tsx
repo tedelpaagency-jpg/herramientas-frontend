@@ -8,7 +8,7 @@ import {
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
   Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
-  LayoutDashboard, Compass, CheckSquare, Zap
+  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -349,6 +349,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title: 'ORGANIZACIÓN & WHITE LABEL',
             items: [
               { label: 'Mi White Label', path: '/white-label/dashboard', icon: Globe },
+              { label: 'Importar Estudiantes', path: '/white-label/import-students', icon: FileSpreadsheet },
               { label: 'Planes de mi Marca', path: '/admin/plans', icon: Layers },
               { label: 'Agencias y Equipos', path: '/admin/agencies', icon: Building2 },
               { label: 'Directorio de Usuarios', path: '/users', icon: Users },
