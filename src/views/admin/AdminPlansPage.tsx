@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import adminService from '../../services/adminService';
 import { Plan, PlanPermission, Permission } from '../../types';
 import { 
@@ -292,13 +293,13 @@ export const AdminPlansPage: React.FC = () => {
                       )}
                     </td>
                     <td className="py-3.5 px-4">
-                      <button
-                        onClick={() => setPermissionModalPlan(plan)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[11px] transition-colors"
+                      <Link
+                        href={`/admin/plans/${plan.id}/permissions`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold text-[11px] transition-colors"
                       >
                         <Shield className="w-3.5 h-3.5" />
                         <span>{plan.plan_permissions?.length || 0} permisos</span>
-                      </button>
+                      </Link>
                     </td>
                     <td className="py-3.5 px-4">
                       <button
@@ -457,115 +458,6 @@ export const AdminPlansPage: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Plan Permissions Modal */}
-      {permissionModalPlan && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-slide-up-fade max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">
-                  Seleccionar Permisos para el Plan: <span className="text-amber-600">{permissionModalPlan.name}</span>
-                </h3>
-                <p className="text-[11px] text-slate-500">
-                  Marca los permisos y módulos que tendrán habilitados las agencias suscritas a este plan.
-                </p>
-              </div>
-              <button
-                onClick={() => setPermissionModalPlan(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Quick custom permission input */}
-            <form onSubmit={handleAddPlanPermission} className="flex gap-2 mb-4">
-              <input
-                type="text"
-                required
-                placeholder="Añadir permiso personalizado (ej. view_custom_module)"
-                value={newPermission}
-                onChange={(e) => setNewPermission(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-xl border border-slate-200 outline-none text-xs font-mono"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-colors shadow-xs"
-              >
-                Agregar
-              </button>
-            </form>
-
-            {/* Checkbox List of Available System Permissions */}
-            <div className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider text-[10px]">
-              Permisos del Sistema Disponibles ({systemPermissions.length}):
-            </div>
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1 min-h-[200px] max-h-[300px]">
-              {systemPermissions.map((sysPerm) => {
-                const assigned = permissionModalPlan.plan_permissions?.find(
-                  (p) => p.permission.toLowerCase() === sysPerm.name.toLowerCase()
-                );
-                return (
-                  <div
-                    key={sysPerm.id}
-                    onClick={async () => {
-                      if (assigned) {
-                        await handleDeletePlanPermission(permissionModalPlan.id, assigned.id);
-                      } else {
-                        try {
-                          await adminService.addPlanPermission(permissionModalPlan.id, sysPerm.name);
-                          const updated = await adminService.getPlanPermissions(permissionModalPlan.id);
-                          setPermissionModalPlan({
-                            ...permissionModalPlan,
-                            plan_permissions: updated,
-                          });
-                          loadPlans();
-                        } catch (err) {
-                          setError('Error al asignar permiso.');
-                        }
-                      }
-                    }}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                      assigned
-                        ? 'bg-amber-50/80 border-amber-300 text-amber-900 shadow-2xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={!!assigned}
-                        onChange={() => {}}
-                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                      />
-                      <div>
-                        <p className="font-extrabold text-xs text-slate-900">{getPermissionLabel(sysPerm.name)}</p>
-                        <p className="text-[10px] text-slate-500 font-medium">{getPermissionDescription(sysPerm.name)} • <span className="font-mono text-slate-400">({sysPerm.name})</span></p>
-                      </div>
-                    </div>
-                    {assigned && (
-                      <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
-                        Asignado
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-slate-100 text-right">
-              <button
-                onClick={() => setPermissionModalPlan(null)}
-                className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition-colors shadow-xs"
-              >
-                Listo / Guardar
-              </button>
-            </div>
           </div>
         </div>
       )}

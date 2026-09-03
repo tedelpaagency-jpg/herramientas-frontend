@@ -73,14 +73,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   let brandName = 'SANTUN';
 
   if (isSuperAdmin || isWhiteLabelAdmin) {
-    brandLogo = currentWhiteLabel?.logo || null;
-    brandName = currentWhiteLabel?.name || 'SANTUN';
+    const userWl = (user as any)?.white_labels?.[0] || (user as any)?.white_label || currentWhiteLabel;
+    brandLogo = userWl?.logo || currentWhiteLabel?.logo || null;
+    brandName = userWl?.name || currentWhiteLabel?.name || 'SANTUN';
   } else {
     const agency = user?.agency;
     const currentPlan = agency?.current_subscription?.plan || agency?.plan;
-    const activePlanPermissions = currentPlan?.plan_permissions?.map((p: any) => p.permission.toLowerCase()) || [];
+    const activePlanPermissions = currentPlan?.plan_permissions?.map((p: any) => p.permission?.toLowerCase() || p.name?.toLowerCase() || '') || [];
     const hasCustomBranding = activePlanPermissions.includes('custom_agency_branding');
-    const hostWhiteLabel = (agency as any)?.white_label || currentWhiteLabel;
+    const hostWhiteLabel = (agency as any)?.white_label || (user as any)?.white_labels?.[0] || currentWhiteLabel;
 
     brandLogo = (hasCustomBranding && agency?.logo) ? agency.logo : (hostWhiteLabel?.logo || null);
     brandName = (hasCustomBranding && agency?.name) ? agency.name : (hostWhiteLabel?.name || 'SANTUN');
@@ -107,7 +108,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const firstWordOfName = brandName.trim().split(' ')[0];
 
   const currentPlan = user?.agency?.current_subscription?.plan || user?.agency?.plan;
-  const activePlanPermissions = currentPlan?.plan_permissions?.map((p) => p.permission.toLowerCase()) || [];
+  const activePlanPermissions: string[] = ((currentPlan as any)?.plan_permissions || (currentPlan as any)?.permissions || []).map((p: any) => {
+    if (typeof p === 'string') return p.toLowerCase();
+    if (p && typeof p === 'object') {
+      return (p.permission || p.name || p.slug || '').toLowerCase();
+    }
+    return '';
+  }).filter(Boolean);
+
   const userDirectPermissions = user?.permissions?.map((p) => p.name.toLowerCase()) || [];
 
   const isRealEstateAgency =
@@ -118,10 +126,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ((user?.agency as any)?.allowed_agency_types.includes('inmobiliaria') || (user?.agency as any)?.allowed_agency_types.includes('real_estate')));
 
   const isItemVisible = (item: { permission?: string }) => {
-    if (isSuperAdmin) return true;
+    // 1. Super Admin y Administradores de Marca Blanca poseen acceso ilimitado
+    if (isSuperAdmin || isWhiteLabelAdmin) return true;
+
+    // 2. Si el elemento no requiere permisos específicos (ej. Inicio), es visible
     if (!item.permission) return true;
 
-    // Rule: Real Estate Agencies MUST NOT have access to Visas or POS modules
+    const perm = item.permission.toLowerCase();
+
+    // 3. Regla Inmobiliaria: bloqueo estricto si la agencia es exclusivamente inmobiliaria
     if (isRealEstateAgency) {
       const blockedForRealEstate = [
         'view_visas',
@@ -134,19 +147,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         'view_travel_reports',
         'view_w8_forms',
       ];
-      if (blockedForRealEstate.includes(item.permission.toLowerCase())) {
+      if (blockedForRealEstate.includes(perm)) {
         return false;
       }
     }
 
-    if (activePlanPermissions.length > 0) {
-      return (
-        activePlanPermissions.includes(item.permission.toLowerCase()) ||
-        userDirectPermissions.includes(item.permission.toLowerCase())
-      );
+    // 4. Nivel 1: Permisos del Plan de la Agencia (Acceso a Módulos)
+    // Si la agencia no tiene contratado el módulo en su Plan activo, ningún usuario de la agencia puede acceder.
+    const isModuleInPlan = activePlanPermissions.length > 0 && activePlanPermissions.includes(perm);
+
+    if (!isModuleInPlan) {
+      return false;
     }
 
-    return true;
+    // 5. Nivel 2: Permisos para Administradores de Agencia (admin / gerente)
+    // Tienen acceso a la totalidad de los módulos contratados por su Plan.
+    if (isAgencyAdmin) {
+      return true;
+    }
+
+    // 6. Nivel 3: Permisos Granulares para Usuarios Estándar / Agentes / Closers
+    // Requieren que el módulo esté contratado en el Plan Y que el usuario posea el permiso individual directo.
+    return userDirectPermissions.includes(perm);
   };
 
   interface NavCategory {

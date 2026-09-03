@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { User, Agency } from '../types';
 import { WhiteLabel } from '../types/whiteLabel';
 import userService from '../services/userService';
@@ -383,13 +384,13 @@ export const UsersPage: React.FC = () => {
                             </button>
                           ) : (
                             <>
-                              <button
-                                onClick={() => setPermissionsUser(u)}
-                                title="Gestionar Permisos CRUD Granulares"
+                              <Link
+                                href={`/users/${u.id}/permissions`}
+                                title="Gestionar Permisos Granulares"
                                 className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors"
                               >
                                 <Key className="w-4 h-4" />
-                              </button>
+                              </Link>
                               <button
                                 onClick={() => handleEdit(u)}
                                 title="Editar Usuario"
