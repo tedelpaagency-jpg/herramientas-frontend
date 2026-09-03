@@ -37,6 +37,7 @@ export const UsersPage: React.FC = () => {
   const isGerenteComercial = currentUser?.role === 'gerente_comercial' || currentUser?.roles?.some(r => r.name === 'gerente_comercial');
   const isWhiteLabelAdmin = currentUser?.role === 'white_label_admin' || currentUser?.roles?.some(r => r.name === 'white_label_admin');
   const canFilterAgencies = isSuperAdmin || isGerenteComercial || isWhiteLabelAdmin;
+  const isAgencyAdmin = !isSuperAdmin && !isWhiteLabelAdmin && !isGerenteComercial;
 
   const [users, setUsers] = useState<User[]>([]);
   const [agencies, setAgencies] = useState<Agency[]>([]);
@@ -248,9 +249,14 @@ export const UsersPage: React.FC = () => {
             <option value="">Todos los Roles</option>
             <option value="user">Agentes / Users</option>
             <option value="admin">Administradores de Agencia</option>
-            <option value="gerente">Gerentes de Operaciones</option>
-            <option value="gerente_comercial">Gerentes Comerciales</option>
-            <option value="super_admin">Super Admins</option>
+            {!isAgencyAdmin && (
+              <>
+                <option value="closer">Closers</option>
+                <option value="gerente">Gerentes de Operaciones</option>
+                <option value="gerente_comercial">Gerentes Comerciales</option>
+                {isSuperAdmin && <option value="super_admin">Super Admins</option>}
+              </>
+            )}
           </select>
 
           {/* Agency Filter */}

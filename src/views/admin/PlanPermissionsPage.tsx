@@ -10,7 +10,8 @@ import {
   ArrowLeft, Layers, Shield, Check, Plus, Trash2, Search, 
   RefreshCw, CheckCircle2, AlertCircle, Sparkles, Building2, 
   Plane, Users, ShoppingCart, Trophy, ShieldCheck, Mail, Zap, 
-  Store, GraduationCap, Palette, LayoutGrid, ToggleLeft, ToggleRight
+  Store, GraduationCap, Palette, LayoutGrid, ToggleLeft, ToggleRight,
+  UserCheck, Lock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -38,9 +39,9 @@ const SYSTEM_MODULES: ModuleDefinition[] = [
     id: 'turismo',
     name: 'Módulo Turismo, Visas & Viajes',
     category: 'TURISMO',
-    description: 'Gestión de solicitudes de visas, reportes de viaje, Trip Builder B2B y formularios W8.',
+    description: 'Gestión de solicitudes de visas, reportes de viaje, comisiones, Trip Builder B2B y formularios W8.',
     icon: Plane,
-    permissions: ['view_visas', 'manage_visas', 'view_travel_reports', 'packages.view', 'requests.view', 'view_w8_forms'],
+    permissions: ['view_visas', 'manage_visas', 'view_travel_reports', 'packages.view', 'requests.view', 'view_w8_forms', 'commissions.view'],
   },
   {
     id: 'crm',
@@ -107,6 +108,14 @@ const SYSTEM_MODULES: ModuleDefinition[] = [
     permissions: ['courses.view'],
   },
   {
+    id: 'users',
+    name: 'Módulo Gestión de Usuarios & Equipos',
+    category: 'GESTIÓN',
+    description: 'Permite a la agencia crear y gestionar sus miembros (administradores y asesores/closers) y equipos.',
+    icon: UserCheck,
+    permissions: ['manage_users'],
+  },
+  {
     id: 'branding',
     name: 'Personalización de Marca (Custom Branding)',
     category: 'BRANDING',
@@ -120,7 +129,27 @@ export const PlanPermissionsPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
+  const isWhiteLabelAdmin = !isSuperAdmin && (user?.role === 'white_label_admin' || user?.roles?.some((r: any) => r.name === 'white_label_admin'));
+
+  const userWL = (user as any)?.white_labels?.[0] || (user as any)?.whiteLabels?.[0] || (user as any)?.white_label;
+  const whiteLabelPlan = userWL?.plan;
+  const hasWhiteLabelPlan = Boolean(whiteLabelPlan || userWL?.plan_id);
+
+  const whiteLabelPlanPermissions: string[] = (
+    (whiteLabelPlan?.plan_permissions || whiteLabelPlan?.planPermissions || whiteLabelPlan?.permissions || [])
+  ).map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim()).filter(Boolean);
+
+  const isModuleAllowedForWhiteLabel = (mod: ModuleDefinition): boolean => {
+    if (!isWhiteLabelAdmin || !hasWhiteLabelPlan) return true;
+    return mod.permissions.some((p) => whiteLabelPlanPermissions.includes(p.toLowerCase()));
+  };
+
+  const isSinglePermAllowedForWhiteLabel = (permName: string): boolean => {
+    if (!isWhiteLabelAdmin || !hasWhiteLabelPlan) return true;
+    return whiteLabelPlanPermissions.includes(permName.toLowerCase());
+  };
 
   const planId = params?.id ? Number(params.id) : searchParams.get('id') ? Number(searchParams.get('id')) : null;
 
@@ -172,6 +201,12 @@ export const PlanPermissionsPage: React.FC = () => {
 
   const handleToggleModule = async (mod: ModuleDefinition) => {
     if (!planId || !plan) return;
+
+    if (isWhiteLabelAdmin && hasWhiteLabelPlan && !isModuleAllowedForWhiteLabel(mod)) {
+      toast.error(`Este módulo no está contratado en el plan de su Marca Blanca ("${whiteLabelPlan?.name || 'Plan Matriz'}").`);
+      return;
+    }
+
     setSaving(true);
     const activeKeys = getActivePermissionKeys();
     const isActive = isModuleActive(mod);
@@ -214,6 +249,12 @@ export const PlanPermissionsPage: React.FC = () => {
 
   const handleToggleSinglePermission = async (sysPerm: Permission, assigned?: PlanPermission) => {
     if (!planId || !plan) return;
+
+    if (!assigned && isWhiteLabelAdmin && hasWhiteLabelPlan && !isSinglePermAllowedForWhiteLabel(sysPerm.name)) {
+      toast.error(`El permiso "${sysPerm.name}" no está contratado en el plan de su Marca Blanca.`);
+      return;
+    }
+
     setSaving(true);
     try {
       if (assigned) {
@@ -371,6 +412,23 @@ export const PlanPermissionsPage: React.FC = () => {
         </form>
       </div>
 
+      {/* White Label Plan Restrictive Notice */}
+      {isWhiteLabelAdmin && hasWhiteLabelPlan && (
+        <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-2xl flex items-center gap-3 text-xs text-indigo-900 font-medium shadow-xs">
+          <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-600/20">
+            <Shield className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="font-extrabold text-indigo-950">
+              Plan Matriz de tu Marca Blanca: {whiteLabelPlan?.name || 'Plan Activo'} ({whiteLabelPlanPermissions.length} permisos habilitados)
+            </div>
+            <p className="text-[11px] text-indigo-700/90 mt-0.5">
+              Solo puedes habilitar en los planes de tus agencias los módulos y permisos contratados por tu Marca Blanca. Los módulos no contratados aparecen bloqueados.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Control Bar: Search & View Mode Switcher */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80">
         <div className="relative w-full sm:w-80">
@@ -417,21 +475,30 @@ export const PlanPermissionsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredModules.map((mod) => {
             const active = isModuleActive(mod);
+            const isAllowed = isModuleAllowedForWhiteLabel(mod);
             const IconComp = mod.icon;
 
             return (
               <div
                 key={mod.id}
                 className={`bg-white rounded-3xl border shadow-xs p-6 flex flex-col justify-between space-y-4 transition-all ${
-                  active
-                    ? 'border-amber-300 ring-2 ring-amber-500/10 bg-amber-50/20'
-                    : 'border-slate-200/80 hover:border-slate-300'
+                  !isAllowed
+                    ? 'border-slate-200/60 bg-slate-50/50 opacity-75'
+                    : active
+                      ? 'border-amber-300 ring-2 ring-amber-500/10 bg-amber-50/20'
+                      : 'border-slate-200/80 hover:border-slate-300'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
                     <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-2xl ${active ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20' : 'bg-slate-100 text-slate-500'}`}>
+                      <div className={`p-3 rounded-2xl ${
+                        !isAllowed
+                          ? 'bg-slate-200/70 text-slate-400'
+                          : active
+                            ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
+                            : 'bg-slate-100 text-slate-500'
+                      }`}>
                         <IconComp className="w-5 h-5" />
                       </div>
                       <div>
@@ -441,6 +508,11 @@ export const PlanPermissionsPage: React.FC = () => {
                         <h3 className="font-black text-sm text-slate-900 leading-snug">{mod.name}</h3>
                       </div>
                     </div>
+                    {!isAllowed && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1">
+                        <Lock className="w-2.5 h-2.5" /> No incluido
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-xs text-slate-500 font-medium leading-relaxed mb-4">
@@ -456,28 +528,35 @@ export const PlanPermissionsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => handleToggleModule(mod)}
-                  className={`w-full py-2.5 px-4 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-xs ${
-                    active
-                      ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  {active ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Módulo Habilitado</span>
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 text-slate-400" />
-                      <span>Habilitar Módulo</span>
-                    </>
-                  )}
-                </button>
+                {!isAllowed ? (
+                  <div className="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-slate-100 text-slate-400 flex items-center justify-center gap-2 cursor-not-allowed border border-slate-200/60">
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Bloqueado por tu Plan Matriz</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => handleToggleModule(mod)}
+                    className={`w-full py-2.5 px-4 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-xs ${
+                      active
+                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {active ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Módulo Habilitado</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 text-slate-400" />
+                        <span>Habilitar Módulo</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             );
           })}
@@ -491,23 +570,33 @@ export const PlanPermissionsPage: React.FC = () => {
             const assigned = plan?.plan_permissions?.find(
               (p) => p.permission.toLowerCase() === sysPerm.name.toLowerCase()
             );
+            const isAllowed = isSinglePermAllowedForWhiteLabel(sysPerm.name);
 
             return (
               <div
                 key={sysPerm.id}
-                onClick={() => handleToggleSinglePermission(sysPerm, assigned)}
-                className={`p-4 rounded-2xl border flex items-start justify-between gap-3 cursor-pointer transition-all select-none ${
-                  assigned
-                    ? 'bg-amber-50/80 border-amber-300 text-amber-950 shadow-xs'
-                    : 'bg-white border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50/50'
+                onClick={() => {
+                  if (!isAllowed && !assigned) {
+                    toast.error(`El permiso "${sysPerm.name}" no está contratado en el plan de su Marca Blanca.`);
+                    return;
+                  }
+                  handleToggleSinglePermission(sysPerm, assigned);
+                }}
+                className={`p-4 rounded-2xl border flex items-start justify-between gap-3 transition-all select-none ${
+                  !isAllowed && !assigned
+                    ? 'bg-slate-50/70 border-slate-200 text-slate-400 opacity-60 cursor-not-allowed'
+                    : assigned
+                      ? 'bg-amber-50/80 border-amber-300 text-amber-950 shadow-xs cursor-pointer'
+                      : 'bg-white border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50/50 cursor-pointer'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
                     checked={!!assigned}
+                    disabled={!isAllowed && !assigned}
                     readOnly
-                    className="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500 cursor-pointer pointer-events-none"
+                    className="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500 pointer-events-none"
                   />
                   <div className="space-y-1">
                     <h4 className="font-black text-xs text-slate-900 leading-snug">
@@ -522,11 +611,15 @@ export const PlanPermissionsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {assigned && (
+                {assigned ? (
                   <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full shrink-0 border border-amber-200">
                     Activo
                   </span>
-                )}
+                ) : !isAllowed ? (
+                  <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full shrink-0 border border-rose-200 flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" /> Bloqueado
+                  </span>
+                ) : null}
               </div>
             );
           })}

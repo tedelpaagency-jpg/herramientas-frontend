@@ -26,6 +26,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   const isGerenteComercial = currentUser?.role === 'gerente_comercial' || currentUser?.roles?.some(r => r.name === 'gerente_comercial');
   const isWhiteLabelAdmin = currentUser?.role === 'white_label_admin' || currentUser?.roles?.some(r => r.name === 'white_label_admin');
   const canSelectAgency = isSuperAdmin || isGerenteComercial || isWhiteLabelAdmin;
+  const isAgencyAdmin = !isSuperAdmin && !isWhiteLabelAdmin && !isGerenteComercial;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -236,11 +237,15 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all appearance-none"
                 >
                   <option value="user">User / Agente</option>
-                  <option value="closer">Closer (CRM & Clientes Asignados)</option>
                   <option value="admin">Administrador de Agencia</option>
-                  <option value="gerente">Gerente de Operaciones</option>
-                  {isSuperAdmin && <option value="gerente_comercial">Gerente Comercial</option>}
-                  {isSuperAdmin && <option value="super_admin">Super Admin</option>}
+                  {!isAgencyAdmin && (
+                    <>
+                      <option value="closer">Closer (CRM & Clientes Asignados)</option>
+                      <option value="gerente">Gerente de Operaciones</option>
+                      {isSuperAdmin && <option value="gerente_comercial">Gerente Comercial</option>}
+                      {isSuperAdmin && <option value="super_admin">Super Admin</option>}
+                    </>
+                  )}
                 </select>
               </div>
             </div>

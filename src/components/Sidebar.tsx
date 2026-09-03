@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setLeftSidebarOpen,
 }) => {
   const pathname = usePathname();
-  const { user, currentWhiteLabel } = useAuth();
+  const { user, currentWhiteLabel, currentAgency } = useAuth();
   const isSuperAdmin =
     user?.role === 'super_admin' ||
     user?.roles?.some((r) => r.name === 'super_admin');
@@ -54,11 +54,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     user?.role === 'hunter' ||
     user?.roles?.some((r) => r.name === 'hunter');
 
+  const agency = user?.agency || (user as any)?.agency_data || currentAgency;
+  const hasAgency = Boolean(user?.agency_id || agency?.id || user?.agency);
+  const isAgencyUser = hasAgency && !isSuperAdmin && !isWhiteLabelAdmin;
+
   const isAgencyAdmin =
-    user?.role === 'admin' ||
-    user?.role === 'gerente' ||
-    user?.role === 'gerente_comercial' ||
-    user?.roles?.some((r) => ['admin', 'gerente', 'gerente_comercial'].includes(r.name));
+    isAgencyUser &&
+    (user?.role === 'admin' ||
+      user?.role === 'gerente' ||
+      user?.role === 'gerente_comercial' ||
+      user?.roles?.some((r) => ['admin', 'gerente', 'gerente_comercial'].includes(r.name)));
 
   let configHref: string | null = null;
   if (isSuperAdmin) {
@@ -66,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   } else if (isWhiteLabelAdmin) {
     configHref = '/white-label/dashboard';
   } else if (isAgencyAdmin) {
-    configHref = '/admin/agencies';
+    configHref = user?.agency_id ? `/agencies/${user.agency_id}` : '/admin/agencies';
   }
 
   let brandLogo: string | null = null;
@@ -77,9 +82,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     brandLogo = userWl?.logo || currentWhiteLabel?.logo || null;
     brandName = userWl?.name || currentWhiteLabel?.name || 'SANTUN';
   } else {
-    const agency = user?.agency;
-    const currentPlan = agency?.current_subscription?.plan || agency?.plan;
-    const activePlanPermissions = currentPlan?.plan_permissions?.map((p: any) => p.permission?.toLowerCase() || p.name?.toLowerCase() || '') || [];
+    const currentPlan = agency?.current_subscription?.plan || agency?.currentSubscription?.plan || agency?.plan;
+    const activePlanPermissions = (
+      (currentPlan as any)?.plan_permissions ||
+      (currentPlan as any)?.planPermissions ||
+      (currentPlan as any)?.permissions ||
+      []
+    ).map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim());
     const hasCustomBranding = activePlanPermissions.includes('custom_agency_branding');
     const hostWhiteLabel = (agency as any)?.white_label || (user as any)?.white_labels?.[0] || currentWhiteLabel;
 
@@ -107,32 +116,79 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const effectiveLogo = brandLogo || cachedLogo;
   const firstWordOfName = brandName.trim().split(' ')[0];
 
-  const currentPlan = user?.agency?.current_subscription?.plan || user?.agency?.plan;
-  const activePlanPermissions: string[] = ((currentPlan as any)?.plan_permissions || (currentPlan as any)?.permissions || []).map((p: any) => {
-    if (typeof p === 'string') return p.toLowerCase();
-    if (p && typeof p === 'object') {
-      return (p.permission || p.name || p.slug || '').toLowerCase();
-    }
-    return '';
-  }).filter(Boolean);
+  const currentPlan =
+    agency?.current_subscription?.plan ||
+    agency?.currentSubscription?.plan ||
+    agency?.plan ||
+    (user as any)?.agency_plan;
 
-  const userDirectPermissions = user?.permissions?.map((p) => p.name.toLowerCase()) || [];
+  const rawPlanPermissions =
+    currentPlan?.plan_permissions ||
+    currentPlan?.planPermissions ||
+    currentPlan?.permissions ||
+    [];
+
+  const activePlanPermissions: string[] = (
+    Array.isArray(rawPlanPermissions) ? rawPlanPermissions : []
+  )
+    .map((p: any) => {
+      if (typeof p === 'string') return p.toLowerCase().trim();
+      if (p && typeof p === 'object') {
+        return (p.permission || p.name || p.slug || '').toLowerCase().trim();
+      }
+      return '';
+    })
+    .filter(Boolean);
+
+  const userDirectPermissions: string[] = (user?.permissions || [])
+    .map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase().trim())
+    .filter(Boolean);
+
+  const hostWhiteLabel =
+    (user as any)?.white_labels?.[0] ||
+    (user as any)?.whiteLabels?.[0] ||
+    (user as any)?.white_label ||
+    (agency as any)?.white_label ||
+    currentWhiteLabel;
+
+  const whiteLabelPlan = hostWhiteLabel?.plan;
+  const rawWhiteLabelPlanPermissions =
+    whiteLabelPlan?.plan_permissions ||
+    whiteLabelPlan?.planPermissions ||
+    whiteLabelPlan?.permissions ||
+    [];
+
+  const activeWhiteLabelPlanPermissions: string[] = (
+    Array.isArray(rawWhiteLabelPlanPermissions) ? rawWhiteLabelPlanPermissions : []
+  )
+    .map((p: any) => {
+      if (typeof p === 'string') return p.toLowerCase().trim();
+      if (p && typeof p === 'object') {
+        return (p.permission || p.name || p.slug || '').toLowerCase().trim();
+      }
+      return '';
+    })
+    .filter(Boolean);
+
+  const hasWhiteLabelPlan = Boolean(whiteLabelPlan || hostWhiteLabel?.plan_id);
 
   const isRealEstateAgency =
     currentPlan?.name?.toLowerCase().includes('inmobiliaria') ||
     (Array.isArray(currentPlan?.allowed_agency_types) &&
       (currentPlan?.allowed_agency_types.includes('inmobiliaria') || currentPlan?.allowed_agency_types.includes('real_estate'))) ||
-    (Array.isArray((user?.agency as any)?.allowed_agency_types) &&
-      ((user?.agency as any)?.allowed_agency_types.includes('inmobiliaria') || (user?.agency as any)?.allowed_agency_types.includes('real_estate')));
+    (Array.isArray((agency as any)?.allowed_agency_types) &&
+      ((agency as any)?.allowed_agency_types.includes('inmobiliaria') || (agency as any)?.allowed_agency_types.includes('real_estate')));
 
-  const isItemVisible = (item: { permission?: string }) => {
+  const isItemVisible = (item: { permission?: string | string[] }) => {
     // 1. Super Admin posee acceso global a nivel de plataforma
     if (isSuperAdmin) return true;
 
     // 2. Si el elemento no requiere permisos específicos (ej. Inicio), es visible
     if (!item.permission) return true;
 
-    const perm = item.permission.toLowerCase();
+    const requiredPermissions = (
+      Array.isArray(item.permission) ? item.permission : [item.permission]
+    ).map((p) => p.toLowerCase().trim());
 
     // 3. Regla Inmobiliaria: bloqueo estricto si la agencia es exclusivamente inmobiliaria
     if (isRealEstateAgency) {
@@ -147,28 +203,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
         'view_travel_reports',
         'view_w8_forms',
       ];
-      if (blockedForRealEstate.includes(perm)) {
+      if (requiredPermissions.some((p) => blockedForRealEstate.includes(p))) {
         return false;
       }
     }
 
-    // 4. Verificación Estricta del Plan de la Agencia
-    // Si la agencia tiene un plan activo con lista de permisos, el módulo DEBE estar incluido en el Plan.
-    if (activePlanPermissions.length > 0) {
-      const isModuleInPlan = activePlanPermissions.includes(perm);
-      if (!isModuleInPlan) {
-        return false; // Si el módulo fue desactivado del Plan, SE OCULTA para la agencia
+    // 4. Verificación Estricta del Plan de la Agencia:
+    // Toda agencia (incluyendo al Administrador de la Agencia y sus agentes) está delimitada por su Plan.
+    if (isAgencyUser) {
+      // Si el plan no tiene permisos o el módulo no forma parte de los permisos del plan:
+      const isAllowedByPlan = requiredPermissions.some((p) =>
+        activePlanPermissions.includes(p)
+      );
+
+      if (!isAllowedByPlan) {
+        // Bloqueo total: el módulo NO está contratado en el plan de la agencia
+        return false;
       }
+
+      // Si el módulo SÍ está incluido en el Plan:
+      // Si es Administrador de la Agencia (admin / gerente): tiene acceso completo a los módulos de su Plan.
+      if (isAgencyAdmin) {
+        return true;
+      }
+
+      // Para usuarios estándar o agentes de la agencia: requieren además el permiso asignado a su cuenta.
+      return requiredPermissions.some((p) => userDirectPermissions.includes(p));
     }
 
-    // 5. Para Administradores (admin / gerente / white_label_admin): Tienen acceso a todos los módulos activos en su Plan.
-    if (isAgencyAdmin || isWhiteLabelAdmin) {
+    // 5. Para Administradores de Marca Blanca (white_label_admin):
+    if (isWhiteLabelAdmin) {
+      // Si la Marca Blanca tiene un Plan asignado, sus módulos de negocio están estrictamente delimitados por ese plan:
+      if (hasWhiteLabelPlan) {
+        const isAllowedByWLPlan = requiredPermissions.some((p) =>
+          activeWhiteLabelPlanPermissions.includes(p)
+        );
+        if (!isAllowedByWLPlan) {
+          return false;
+        }
+      }
       return true;
     }
 
-    // 6. Para Usuarios Estándar / Agentes / Closers:
-    // Requieren tener el permiso individual directo otorgado.
-    return userDirectPermissions.includes(perm);
+    // 6. Otros usuarios de plataforma:
+    return requiredPermissions.some((p) => userDirectPermissions.includes(p));
   };
 
   interface NavCategory {
@@ -177,7 +255,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: string;
       path: string;
       icon: React.ElementType;
-      permission?: string;
+      permission?: string | string[];
     }[];
   }
 
@@ -191,41 +269,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'CLIENTES & CRM',
       items: [
-        { label: 'Workspaces', path: '/workspaces', icon: LayoutDashboard },
-        { label: 'Tareas', path: '/tasks', icon: CheckSquare },
-        { label: 'Calendario', path: '/calendar', icon: Calendar },
-        { label: 'Clientes', path: '/clients', icon: Users },
-        { label: 'Landings', path: '/landings', icon: Globe },
-        { label: 'Marketing', path: '/marketing', icon: Mail },
-        { label: 'Automatizaciones', path: '/automations', icon: Zap, permission: 'view_crm' },
-        { label: 'Contratos', path: '/lexvault', icon: ShieldCheck, permission: 'view_lexvault' },
-        { label: 'Tiendas Hunter', path: '/hunter', icon: Store },
+        { label: 'Workspaces', path: '/workspaces', icon: LayoutDashboard, permission: ['view_crm', 'workspaces.view'] },
+        { label: 'Tareas', path: '/tasks', icon: CheckSquare, permission: ['tasks.view', 'view_crm'] },
+        { label: 'Calendario', path: '/calendar', icon: Calendar, permission: ['view_crm', 'calendar.view'] },
+        { label: 'Clientes', path: '/clients', icon: Users, permission: ['view_clients', 'clients.view'] },
+        { label: 'Landings', path: '/landings', icon: Globe, permission: ['landings.view', 'view_landings', 'view_crm'] },
+        { label: 'Marketing', path: '/marketing', icon: Mail, permission: ['email_marketing', 'view_email_marketing', 'marketing.view'] },
+        { label: 'Automatizaciones', path: '/automations', icon: Zap, permission: ['automations', 'view_automations', 'view_crm'] },
+        { label: 'Contratos', path: '/lexvault', icon: ShieldCheck, permission: ['view_lexvault', 'lexvault.view'] },
+        { label: 'Tiendas Hunter', path: '/hunter', icon: Store, permission: ['view_hunter', 'hunter.view'] },
       ],
     },
     {
       title: 'ACTIVIDAD INMOBILIARIA',
       items: [
-        { label: 'Propiedades', path: '/estates', icon: Building2, permission: 'view_estates' },
+        { label: 'Propiedades', path: '/estates', icon: Building2, permission: ['view_estates', 'estates.view', 'manage_estates'] },
       ],
     },
     {
       title: 'TURISMO & VIAJES',
       items: [
-        { label: 'Visas', path: '/visas', icon: FileText, permission: 'view_visas' },
-        { label: 'Reportes', path: '/travel-reports', icon: Plane, permission: 'view_travel_reports' },
+        { label: 'Visas', path: '/visas', icon: FileText, permission: ['view_visas', 'manage_visas'] },
+        { label: 'Reportes', path: '/travel-reports', icon: Plane, permission: ['view_travel_reports'] },
+        { label: 'Comisiones', path: '/commissions', icon: CreditCard, permission: ['view_travel_reports', 'commissions.view', 'packages.view'] },
         ...(!isProveedor
           ? [
-              { label: 'Trip Builder B2B', path: '/travel-packages/pos', icon: ShoppingCart, permission: 'packages.view' },
-              { label: 'Solicitudes', path: '/travel-packages/my-requests', icon: FileText, permission: 'requests.view' },
+              { label: 'Trip Builder B2B', path: '/travel-packages/pos', icon: ShoppingCart, permission: ['packages.view', 'packages.catalog'] },
+              { label: 'Solicitudes', path: '/travel-packages/my-requests', icon: FileText, permission: ['requests.view', 'requests.manage'] },
             ]
           : []),
         ...(isProveedor || isSuperAdmin
           ? [
-              { label: 'Paquetes', path: '/supplier/packages', icon: Package },
-              { label: 'Solicitudes', path: '/supplier/requests', icon: FileText },
+              { label: 'Paquetes', path: '/supplier/packages', icon: Package, permission: ['packages.view', 'packages.manage'] },
+              { label: 'Solicitudes', path: '/supplier/requests', icon: FileText, permission: ['requests.view', 'requests.manage'] },
             ]
           : []),
-        ...(isSuperAdmin || isGerenteComercial
+        ...(isSuperAdmin || (isGerenteComercial && !isAgencyUser)
           ? [
               { label: 'Clearing B2B', path: '/admin/clearing', icon: CreditCard },
               { label: 'Reglas Pricing', path: '/admin/pricing-rules', icon: Layers },
@@ -238,33 +317,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'COMERCIO & VENTAS',
       items: [
-        { label: 'Productos', path: '/products', icon: Package, permission: 'view_products' },
-        { label: 'POS', path: '/pos', icon: ShoppingCart, permission: 'view_pos' },
-        { label: 'Ruleta & Premios', path: '/gamification', icon: Trophy },
+        { label: 'Productos', path: '/products', icon: Package, permission: ['view_products', 'products.view'] },
+        { label: 'POS', path: '/pos', icon: ShoppingCart, permission: ['view_pos', 'manage_pos', 'pos.view'] },
+        { label: 'Ruleta & Premios', path: '/gamification', icon: Trophy, permission: ['view_spin_wheel', 'view_gamification'] },
       ],
     },
     {
       title: 'CAPACITACIÓN',
       items: [
-        ...(isSuperAdmin || isGerenteComercial
+        ...(isSuperAdmin || (isGerenteComercial && !isAgencyUser)
           ? [
-              { label: 'Cursos', path: '/courses', icon: GraduationCap },
+              { label: 'Cursos', path: '/courses', icon: GraduationCap, permission: ['courses.view', 'courses.create'] },
             ]
           : []),
-        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen },
+        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: ['courses.view'] },
       ],
     },
     {
       title: 'GESTIÓN & AGENCIA',
       items: [
-        ...(isSuperAdmin || isGerenteComercial || isAdmin
-          ? [{ label: 'Usuarios', path: '/users', icon: UserCheck, permission: 'manage_users' }]
-          : []),
+        { label: 'Usuarios', path: '/users', icon: UserCheck, permission: 'manage_users' },
         ...(isSuperAdmin
           ? [{ label: 'Agencias', path: '/admin/agencies', icon: Store }]
           : []),
-        { label: 'Equipos', path: '/admin/teams', icon: Briefcase },
-        { label: 'Comisiones', path: '/commissions', icon: CreditCard },
+        { label: 'Equipos', path: '/admin/teams', icon: Briefcase, permission: 'manage_users' },
       ],
     },
     ...(isWhiteLabelAdmin || isSuperAdmin
