@@ -10,15 +10,17 @@ export interface ImportPreviewRow {
   agency_name: string;
   is_suspended: boolean;
   is_deleted: boolean;
-  status: 'NUEVO' | 'EXISTENTE' | 'NO_IMPORTABLE' | 'ERROR';
+  status: 'NUEVO' | 'EXISTENTE' | 'EXISTENTE_ASIGNAR' | 'NO_IMPORTABLE' | 'ERROR';
   status_label: string;
   reason: string | null;
   can_import: boolean;
+  existing_user_id?: number | null;
 }
 
 export interface ImportSummary {
   total_records: number;
   new_agencies: number;
+  assigned_existing?: number;
   existing_users: number;
   deleted_moodle: number;
   error_records: number;
@@ -42,6 +44,7 @@ export interface ImportExecuteResult {
     total_processed: number;
     created_agencies: number;
     created_users: number;
+    assigned_existing?: number;
     existing_records: number;
     error_records: number;
   };
@@ -61,6 +64,7 @@ export interface ImportHistoryRecord {
   total_records: number;
   created_agencies: number;
   created_users: number;
+  assigned_existing?: number;
   existing_records: number;
   error_records: number;
   errors_detail?: any[];

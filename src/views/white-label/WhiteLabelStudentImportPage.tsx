@@ -49,7 +49,7 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
   const [targetWhiteLabel, setTargetWhiteLabel] = useState<{ id: number; name: string } | null>(null);
 
   // Filtros de preview
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'NUEVO' | 'EXISTENTE' | 'NO_IMPORTABLE' | 'ERROR'>('ALL');
+  const [filterStatus, setFilterStatus] = useState<'ALL' | 'NUEVO' | 'EXISTENTE_ASIGNAR' | 'EXISTENTE' | 'NO_IMPORTABLE' | 'ERROR'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modal de confirmación
@@ -294,7 +294,7 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
           {previewSummary && !importResult && !isValidating && (
             <div className="space-y-6 animate-fade-in">
               {/* Summary Stats Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
                 <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
                   <span className="text-[10px] font-extrabold uppercase text-slate-400">Total en CSV</span>
                   <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">
@@ -309,8 +309,15 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 shadow-xs">
+                  <span className="text-[10px] font-extrabold uppercase text-purple-600 dark:text-purple-400">Asignar a Marca</span>
+                  <div className="text-2xl font-black text-purple-700 dark:text-purple-300 mt-1">
+                    {previewSummary.assigned_existing || 0}
+                  </div>
+                </div>
+
                 <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase text-indigo-600 dark:text-indigo-400">Ya Existentes</span>
+                  <span className="text-[10px] font-extrabold uppercase text-indigo-600 dark:text-indigo-400">Ya en esta Marca</span>
                   <div className="text-2xl font-black text-indigo-700 dark:text-indigo-300 mt-1">
                     {previewSummary.existing_users}
                   </div>
@@ -352,7 +359,8 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
                   >
                     <option value="ALL">Todos los estados</option>
                     <option value="NUEVO">Solo Nuevos ({previewSummary.new_agencies})</option>
-                    <option value="EXISTENTE">Solo Existentes ({previewSummary.existing_users})</option>
+                    <option value="EXISTENTE_ASIGNAR">Existentes a Asignar ({previewSummary.assigned_existing || 0})</option>
+                    <option value="EXISTENTE">Ya en esta Marca ({previewSummary.existing_users})</option>
                     <option value="NO_IMPORTABLE">Solo Eliminados ({previewSummary.deleted_moodle})</option>
                     <option value="ERROR">Solo Errores ({previewSummary.error_records})</option>
                   </select>
@@ -367,14 +375,19 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
                     Cambiar Archivo
                   </button>
 
-                  <button
-                    onClick={() => setShowConfirmModal(true)}
-                    disabled={isImporting || previewSummary.new_agencies === 0}
-                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold shadow-md shadow-blue-600/20 flex items-center gap-2 transition-all disabled:opacity-50"
-                  >
-                    <span>Importar {previewSummary.new_agencies} Estudiantes</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                  {(() => {
+                    const totalActionable = previewSummary.new_agencies + (previewSummary.assigned_existing || 0);
+                    return (
+                      <button
+                        onClick={() => setShowConfirmModal(true)}
+                        disabled={isImporting || totalActionable === 0}
+                        className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold shadow-md shadow-blue-600/20 flex items-center gap-2 transition-all disabled:opacity-50"
+                      >
+                        <span>Importar / Asignar {totalActionable} Estudiantes</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -387,7 +400,7 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
                         <th className="p-3.5">Moodle ID</th>
                         <th className="p-3.5">Nombre & Apellido</th>
                         <th className="p-3.5">Email</th>
-                        <th className="p-3.5">Agency a Crear</th>
+                        <th className="p-3.5">Agency a Crear / Asignar</th>
                         <th className="p-3.5">Estado</th>
                         <th className="p-3.5">Detalle</th>
                       </tr>
@@ -412,7 +425,7 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
                                 {row.agency_name}
                               </span>
                             ) : (
-                              <span className="text-slate-400 italic font-normal">—</span>
+                              <span className="text-slate-400 italic font-normal">{row.agency_name || '—'}</span>
                             )}
                           </td>
                           <td className="p-3.5">
@@ -421,9 +434,14 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
                                 <CheckCircle2 className="w-3 h-3" /> {row.status_label}
                               </span>
                             )}
+                            {row.status === 'EXISTENTE_ASIGNAR' && (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200 inline-flex items-center gap-1">
+                                <Sparkles className="w-3 h-3" /> Asignar a Marca
+                              </span>
+                            )}
                             {row.status === 'EXISTENTE' && (
                               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200 inline-flex items-center gap-1">
-                                <Users className="w-3 h-3" /> Ya Existente
+                                <Users className="w-3 h-3" /> Ya en esta Marca
                               </span>
                             )}
                             {row.status === 'NO_IMPORTABLE' && (
@@ -465,7 +483,7 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
               </div>
 
               {/* Stats Box */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 max-w-4xl mx-auto">
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center">
                   <span className="text-[10px] font-extrabold uppercase text-slate-400">Procesados</span>
                   <div className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">
@@ -474,9 +492,16 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-center">
-                  <span className="text-[10px] font-extrabold uppercase text-emerald-600">Agencies Creadas</span>
+                  <span className="text-[10px] font-extrabold uppercase text-emerald-600">Nuevas Agencies</span>
                   <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">
                     {importResult.summary.created_agencies}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-center">
+                  <span className="text-[10px] font-extrabold uppercase text-purple-600">Existentes Asignados</span>
+                  <div className="text-2xl font-black text-purple-700 dark:text-purple-300 mt-1">
+                    {importResult.summary.assigned_existing || 0}
                   </div>
                 </div>
 
@@ -488,7 +513,7 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center">
-                  <span className="text-[10px] font-extrabold uppercase text-slate-400">Existentes Omitidos</span>
+                  <span className="text-[10px] font-extrabold uppercase text-slate-400">Ya en esta Marca</span>
                   <div className="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">
                     {importResult.summary.existing_records}
                   </div>
@@ -570,8 +595,9 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
                     <th className="p-3.5">ID / Fecha</th>
                     <th className="p-3.5">Archivo</th>
                     <th className="p-3.5 text-center">Total</th>
-                    <th className="p-3.5 text-center">Agencies Creadas</th>
-                    <th className="p-3.5 text-center">Existentes</th>
+                    <th className="p-3.5 text-center">Nuevas Agencies</th>
+                    <th className="p-3.5 text-center">Existentes Asignados</th>
+                    <th className="p-3.5 text-center">Ya en Marca</th>
                     <th className="p-3.5 text-center">Errores</th>
                     <th className="p-3.5">Importado Por</th>
                   </tr>
@@ -595,6 +621,15 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
                         <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">
                           +{item.created_agencies}
                         </span>
+                      </td>
+                      <td className="p-3.5 text-center">
+                        {item.assigned_existing && item.assigned_existing > 0 ? (
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full font-bold text-[10px]">
+                            +{item.assigned_existing}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">0</span>
+                        )}
                       </td>
                       <td className="p-3.5 text-center text-slate-500">
                         {item.existing_records}
@@ -630,29 +665,31 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-900 dark:text-white">
-                  ¿Deseas importar estos estudiantes?
+                  ¿Deseas importar y asignar estos estudiantes?
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Confirmación de creación masiva de agencias y administradores.
+                  Confirmación de creación y asignación a tu Marca Blanca.
                 </p>
               </div>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2 text-xs">
               <div className="flex justify-between font-medium">
-                <span className="text-slate-500">White Label Destino:</span>
+                <span className="text-slate-500">White Label Anfitriona:</span>
                 <span className="font-extrabold text-blue-600">{targetWhiteLabel?.name || 'Tu Marca Blanca'}</span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-slate-500">Nuevas Agencies a crear:</span>
-                <span className="font-extrabold text-emerald-600">{previewSummary.new_agencies}</span>
+                <span className="font-extrabold text-emerald-600">+{previewSummary.new_agencies}</span>
               </div>
+              {previewSummary.assigned_existing && previewSummary.assigned_existing > 0 ? (
+                <div className="flex justify-between font-medium">
+                  <span className="text-slate-500">Agencies / Usuarios a asignar a esta Marca:</span>
+                  <span className="font-extrabold text-purple-600">+{previewSummary.assigned_existing}</span>
+                </div>
+              ) : null}
               <div className="flex justify-between font-medium">
-                <span className="text-slate-500">Nuevos Usuarios y Admins:</span>
-                <span className="font-extrabold text-emerald-600">{previewSummary.new_agencies}</span>
-              </div>
-              <div className="flex justify-between font-medium">
-                <span className="text-slate-500">Usuarios existentes omitidos:</span>
+                <span className="text-slate-500">Ya pertenecientes a esta Marca (sin cambios):</span>
                 <span className="font-bold text-slate-700 dark:text-slate-300">{previewSummary.existing_users}</span>
               </div>
               {previewSummary.deleted_moodle > 0 && (
@@ -664,7 +701,7 @@ export const WhiteLabelStudentImportPage: React.FC = () => {
             </div>
 
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              Esta operación creará exactamente 1 Agency por cada estudiante nuevo y lo asignará como administrador exclusivo de su Agency. Las agencias existentes no sufrirán modificaciones.
+              Esta operación creará las nuevas Agencies requeridas y asignará tanto las nuevas como las existentes a tu Marca Blanca anfitriona, estableciendo al estudiante como Administrador de su propia Agency.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">
