@@ -3,7 +3,11 @@ import { TravelReport, Commission, CommissionBalance } from '../types/travelRepo
 
 export interface TravelReportListParams {
   agency_id?: number;
-  status?: number;
+  user_id?: number;
+  agent_id?: number;
+  start_date?: string;
+  end_date?: string;
+  status?: number | string;
   search?: string;
   page?: number;
   per_page?: number;

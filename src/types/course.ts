@@ -82,6 +82,7 @@ export interface CourseUserAssignment {
 
 export interface Course {
   id: number;
+  white_label_id?: number | null;
   agency_id?: number | null;
   title: string;
   slug: string;
@@ -100,6 +101,10 @@ export interface Course {
     id: number;
     name: string;
     email: string;
+  };
+  white_label?: {
+    id: number;
+    name: string;
   };
   agency?: {
     id: number;

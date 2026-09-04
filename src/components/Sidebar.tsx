@@ -8,7 +8,7 @@ import {
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
   Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
-  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet
+  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -145,11 +145,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     .filter(Boolean);
 
   const hostWhiteLabel =
+    currentWhiteLabel ||
     (user as any)?.white_labels?.[0] ||
     (user as any)?.whiteLabels?.[0] ||
     (user as any)?.white_label ||
-    (agency as any)?.white_label ||
-    currentWhiteLabel;
+    (agency as any)?.white_label;
 
   const whiteLabelPlan = hostWhiteLabel?.plan;
   const rawWhiteLabelPlanPermissions =
@@ -164,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     .map((p: any) => {
       if (typeof p === 'string') return p.toLowerCase().trim();
       if (p && typeof p === 'object') {
-        return (p.permission || p.name || p.slug || '').toLowerCase().trim();
+        return (typeof p.permission === 'string' ? p.permission : p.permission?.name || p.name || p.slug || '').toLowerCase().trim();
       }
       return '';
     })
@@ -172,12 +172,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const hasWhiteLabelPlan = Boolean(whiteLabelPlan || hostWhiteLabel?.plan_id);
 
+  const isTravelAllowedByPlan = (plan: any) => {
+    if (!plan) return false;
+    if (plan.billing_type === 'commission') return true;
+    if (Array.isArray(plan.allowed_agency_types) && plan.allowed_agency_types.includes('travel')) return true;
+    const perms = Array.isArray(plan.plan_permissions || plan.planPermissions || plan.permissions)
+      ? (plan.plan_permissions || plan.planPermissions || plan.permissions)
+      : [];
+    return perms.some((p: any) => {
+      const name = (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase();
+      return name.startsWith('packages.') || name.startsWith('requests.') || name.includes('travel') || name.includes('visa');
+    });
+  };
+
+  const isTravelPlan = isTravelAllowedByPlan(currentPlan);
+  const isWhiteLabelTravelPlan = isTravelAllowedByPlan(whiteLabelPlan);
+
   const isRealEstateAgency =
-    currentPlan?.name?.toLowerCase().includes('inmobiliaria') ||
-    (Array.isArray(currentPlan?.allowed_agency_types) &&
-      (currentPlan?.allowed_agency_types.includes('inmobiliaria') || currentPlan?.allowed_agency_types.includes('real_estate'))) ||
-    (Array.isArray((agency as any)?.allowed_agency_types) &&
-      ((agency as any)?.allowed_agency_types.includes('inmobiliaria') || (agency as any)?.allowed_agency_types.includes('real_estate')));
+    !isTravelPlan &&
+    (currentPlan?.name?.toLowerCase().includes('inmobiliaria') ||
+      (Array.isArray(currentPlan?.allowed_agency_types) &&
+        (currentPlan?.allowed_agency_types.includes('inmobiliaria') || currentPlan?.allowed_agency_types.includes('real_estate'))) ||
+      (Array.isArray((agency as any)?.allowed_agency_types) &&
+        ((agency as any)?.allowed_agency_types.includes('inmobiliaria') || (agency as any)?.allowed_agency_types.includes('real_estate'))));
 
   const isItemVisible = (item: { permission?: string | string[] }) => {
     // 1. Super Admin posee acceso global a nivel de plataforma
@@ -190,7 +207,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       Array.isArray(item.permission) ? item.permission : [item.permission]
     ).map((p) => p.toLowerCase().trim());
 
-    // 3. Regla Inmobiliaria: bloqueo estricto si la agencia es exclusivamente inmobiliaria
+    const isTravelPermission = requiredPermissions.some((p) =>
+      p.startsWith('packages.') || p.startsWith('requests.') || p.includes('travel') || p.includes('visa') || p === 'commissions.view'
+    );
+
+    // 3. Regla Inmobiliaria: bloqueo estricto si la agencia es exclusivamente inmobiliaria (sin módulo de viajes)
     if (isRealEstateAgency) {
       const blockedForRealEstate = [
         'view_visas',
@@ -209,35 +230,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     // 4. Verificación Estricta del Plan de la Agencia:
-    // Toda agencia (incluyendo al Administrador de la Agencia y sus agentes) está delimitada por su Plan.
     if (isAgencyUser) {
-      // Si el plan no tiene permisos o el módulo no forma parte de los permisos del plan:
-      const isAllowedByPlan = requiredPermissions.some((p) =>
-        activePlanPermissions.includes(p)
-      );
+      const isAllowedByPlan =
+        requiredPermissions.some((p) => activePlanPermissions.includes(p)) ||
+        (isTravelPermission && isTravelPlan);
 
       if (!isAllowedByPlan) {
-        // Bloqueo total: el módulo NO está contratado en el plan de la agencia
         return false;
       }
 
-      // Si el módulo SÍ está incluido en el Plan:
-      // Si es Administrador de la Agencia (admin / gerente): tiene acceso completo a los módulos de su Plan.
       if (isAgencyAdmin) {
         return true;
       }
 
-      // Para usuarios estándar o agentes de la agencia: requieren además el permiso asignado a su cuenta.
-      return requiredPermissions.some((p) => userDirectPermissions.includes(p));
+      return (
+        requiredPermissions.some((p) => userDirectPermissions.includes(p)) ||
+        (isTravelPermission && isTravelPlan)
+      );
     }
 
     // 5. Para Administradores de Marca Blanca (white_label_admin):
     if (isWhiteLabelAdmin) {
-      // Si la Marca Blanca tiene un Plan asignado, sus módulos de negocio están estrictamente delimitados por ese plan:
-      if (hasWhiteLabelPlan) {
-        const isAllowedByWLPlan = requiredPermissions.some((p) =>
-          activeWhiteLabelPlanPermissions.includes(p)
-        );
+      if (hasWhiteLabelPlan && activeWhiteLabelPlanPermissions.length > 0) {
+        const isAllowedByWLPlan =
+          requiredPermissions.some((p) => activeWhiteLabelPlanPermissions.includes(p)) ||
+          (isTravelPermission && isWhiteLabelTravelPlan);
+
         if (!isAllowedByWLPlan) {
           return false;
         }
@@ -246,7 +264,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     // 6. Otros usuarios de plataforma:
-    return requiredPermissions.some((p) => userDirectPermissions.includes(p));
+    return (
+      requiredPermissions.some((p) => userDirectPermissions.includes(p)) ||
+      (isTravelPermission && isTravelPlan)
+    );
   };
 
   interface NavCategory {
@@ -284,6 +305,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'ACTIVIDAD INMOBILIARIA',
       items: [
         { label: 'Propiedades', path: '/estates', icon: Building2, permission: ['view_estates', 'estates.view', 'manage_estates'] },
+        { label: 'Mapa de Inmuebles', path: '/estates?view=map', icon: MapPin, permission: ['view_estates', 'estates.view', 'manage_estates'] },
       ],
     },
     {
@@ -325,7 +347,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'CAPACITACIÓN',
       items: [
-        ...(isSuperAdmin || (isGerenteComercial && !isAgencyUser)
+        ...(isSuperAdmin || isWhiteLabelAdmin || (isGerenteComercial && !isAgencyUser)
           ? [
               { label: 'Cursos', path: '/courses', icon: GraduationCap, permission: ['courses.view', 'courses.create'] },
             ]
@@ -343,7 +365,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Equipos', path: '/admin/teams', icon: Briefcase, permission: 'manage_users' },
       ],
     },
-    ...(isWhiteLabelAdmin || isSuperAdmin
+    ...(isWhiteLabelAdmin && !isSuperAdmin
       ? [
           {
             title: 'ORGANIZACIÓN & WHITE LABEL',

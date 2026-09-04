@@ -105,7 +105,7 @@ const SYSTEM_MODULES: ModuleDefinition[] = [
     category: 'ACADEMIA',
     description: 'Acceso a la academia de formación, entrenamientos y evaluaciones de personal.',
     icon: GraduationCap,
-    permissions: ['courses.view'],
+    permissions: ['courses.view', 'courses.create'],
   },
   {
     id: 'users',

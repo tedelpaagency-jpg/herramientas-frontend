@@ -13,11 +13,40 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
   rightSidebarOpen,
   setRightSidebarOpen,
 }) => {
-  const { user } = useAuth();
+  const { user, currentWhiteLabel } = useAuth();
   const [isAgendarModalOpen, setIsAgendarModalOpen] = useState(false);
 
   const userName = user?.name ? user.name : 'Dr. Alexander Vane';
   const userPoints = user?.points !== undefined ? user.points.toLocaleString() : '15,000';
+
+  const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
+  const isWhiteLabelAdmin = user?.role === 'white_label_admin' || user?.roles?.some((r: any) => r.name === 'white_label_admin');
+
+  let managerTitle = 'Gerente Comercial';
+  let managerSubtitle = 'Soporte Dedicado Exclusivo';
+  let managerName = 'Soporte Plataforma';
+  let managerInitials = 'SP';
+
+  if (isWhiteLabelAdmin) {
+    managerTitle = 'Super Admin';
+    managerSubtitle = 'Administrador General de Plataforma';
+    managerName = (user as any)?.white_label?.creator?.name || (user as any)?.white_labels?.[0]?.creator?.name || 'Super Admin Platform';
+    managerInitials = 'SA';
+  } else if (isSuperAdmin) {
+    managerTitle = 'Super Admin';
+    managerSubtitle = 'Administración Global de Plataforma';
+    managerName = user?.name || 'Super Admin';
+    managerInitials = user?.name ? user.name.substring(0, 2).toUpperCase() : 'SA';
+  } else {
+    // Agency users / Agency Admins
+    const hostWhiteLabel = (user?.agency as any)?.white_label || currentWhiteLabel;
+    const wlAdminUser = hostWhiteLabel?.users?.[0] || (user as any)?.agency?.white_label_admin;
+    
+    managerTitle = 'Admin Marca Blanca';
+    managerSubtitle = hostWhiteLabel?.name ? `Marca Blanca ${hostWhiteLabel.name}` : 'Soporte Marca Blanca';
+    managerName = wlAdminUser?.name || hostWhiteLabel?.name || 'Admin Marca Blanca';
+    managerInitials = managerName.substring(0, 2).toUpperCase();
+  }
 
   return (
     <>
@@ -96,23 +125,23 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
         
         <div className="mx-6 border-t border-outline-variant/50"></div>
 
-        {/* Bottom Section: Gerente Comercial Contact Card */}
+        {/* Bottom Section: Dynamic Manager Contact Card */}
         <div className="p-4 flex flex-col flex-1">
           <div className="mb-3">
-            <h2 className="font-bold text-sm text-on-surface">Gerente Comercial</h2>
-            <p className="text-xs text-on-surface-variant opacity-80">Soporte Dedicado Exclusivo</p>
+            <h2 className="font-bold text-sm text-on-surface">{managerTitle}</h2>
+            <p className="text-xs text-on-surface-variant opacity-80">{managerSubtitle}</p>
           </div>
 
           <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-3 shadow-sm space-y-3 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
               <div className="relative flex-shrink-0">
                 <div className="w-10 h-10 rounded-full bg-secondary-container border border-secondary flex items-center justify-center font-bold text-sm text-secondary">
-                  ER
+                  {managerInitials}
                 </div>
                 <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-secondary rounded-full border border-surface"></div>
               </div>
               <div className="overflow-hidden">
-                <p className="font-bold text-sm text-on-surface leading-tight truncate">Elena Rodriguez</p>
+                <p className="font-bold text-sm text-on-surface leading-tight truncate">{managerName}</p>
                 <div className="flex items-center gap-1 mt-0.5">
                   <span className="material-symbols-outlined text-[12px] text-secondary">verified</span>
                   <span className="text-[9px] font-bold text-secondary uppercase tracking-wide">Verified Partner</span>
@@ -128,7 +157,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
             </div>
 
             <a 
-              href="https://wa.me/1234567890?text=Hola%20Elena,%20necesito%20asistencia%20con%20el%20portal%20SANTUN" 
+              href={`https://wa.me/1234567890?text=Hola%20${encodeURIComponent(managerName)},%20necesito%20asistencia%20con%20el%20portal%20SANTUN`} 
               target="_blank" 
               rel="noopener noreferrer" 
               className="flex items-center justify-center gap-2 w-full py-2 bg-[#25D366] text-white rounded-lg font-bold text-xs transition-all hover:bg-[#1da851] hover:shadow-md active:scale-95 mt-1"
@@ -185,7 +214,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                   <span className="material-symbols-outlined">close</span>
                 </button>
               </div>
-              <p className="text-body-md text-on-surface-variant mb-6">Selecciona una fecha y hora preferida para la visita de Elena Rodriguez.</p>
+              <p className="text-body-md text-on-surface-variant mb-6">Selecciona una fecha y hora preferida para la visita de {managerName}.</p>
               
               <div className="space-y-4 mb-8">
                 <div>
@@ -212,7 +241,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                 <button 
                   onClick={() => {
                     setIsAgendarModalOpen(false);
-                    toast.success('Solicitud enviada. Elena confirmará en breve.');
+                    toast.success(`Solicitud enviada. ${managerName} confirmará en breve.`);
                   }} 
                   className="px-5 py-2.5 bg-primary text-on-primary font-bold rounded-xl shadow-md transition-all duration-200 ease-in-out hover:bg-primary-container hover:shadow-lg active:scale-[0.98]"
                 >

@@ -1,8 +1,7 @@
-'use client';
-
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Estate, User } from '../types';
 import estateService from '../services/estateService';
 import userService from '../services/userService';
@@ -22,22 +21,39 @@ import {
   MessageSquare,
   FileText,
   Layout,
-  Download
+  Download,
+  MapPin
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
 import { EstateCanvasModal } from '@/components/EstateCanvasModal';
+import { EstateCanvaGalleryModal } from '@/components/EstateCanvaGalleryModal';
+
+const EstatesMapView = dynamic(() => import('@/components/EstatesMapView'), { ssr: false });
 
 export const EstatesPage: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const viewParam = searchParams ? searchParams.get('view') : null;
+
   const [estates, setEstates] = useState<Estate[]>([]);
+  const [mapEstates, setMapEstates] = useState<Estate[]>([]);
+  const [loadingMap, setLoadingMap] = useState<boolean>(false);
   const [agents, setAgents] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [agentFilter, setAgentFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'map'>(viewParam === 'map' ? 'map' : 'table');
+
+  useEffect(() => {
+    if (viewParam === 'map') {
+      setViewMode('map');
+    } else if (viewParam === 'table' || viewParam === 'grid') {
+      setViewMode(viewParam);
+    }
+  }, [viewParam]);
   
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({
@@ -52,6 +68,14 @@ export const EstatesPage: React.FC = () => {
   const [canvasModalOpen, setCanvasModalOpen] = useState(false);
   const [canvasData, setCanvasData] = useState<any | null>(null);
   const [activeEstateForPdf, setActiveEstateForPdf] = useState<Estate | null>(null);
+  const [canvaGalleryModalOpen, setCanvaGalleryModalOpen] = useState(false);
+  const [selectedEstateForCanva, setSelectedEstateForCanva] = useState<Estate | null>(null);
+
+  const handleViewCanvaGallery = (estate: Estate) => {
+    setActiveMenuId(null);
+    setSelectedEstateForCanva(estate);
+    setCanvaGalleryModalOpen(true);
+  };
 
   const fetchAgents = async () => {
     try {
@@ -85,6 +109,23 @@ export const EstatesPage: React.FC = () => {
     }
   };
 
+  const fetchMapEstates = async () => {
+    setLoadingMap(true);
+    try {
+      const data = await estateService.getEstatesMap({
+        search: search || undefined,
+        type: typeFilter || undefined,
+        status: statusFilter || undefined,
+        agent_id: agentFilter ? Number(agentFilter) : undefined,
+      });
+      setMapEstates(data);
+    } catch (err) {
+      console.error('Error fetching map estates:', err);
+    } finally {
+      setLoadingMap(false);
+    }
+  };
+
   useEffect(() => {
     fetchAgents();
   }, []);
@@ -92,6 +133,12 @@ export const EstatesPage: React.FC = () => {
   useEffect(() => {
     fetchEstates();
   }, [page, search, typeFilter, statusFilter, agentFilter]);
+
+  useEffect(() => {
+    if (viewMode === 'map') {
+      fetchMapEstates();
+    }
+  }, [viewMode, search, typeFilter, statusFilter, agentFilter]);
 
   const handleOpenCreateModal = () => router.push('/estates/new');
   const handleOpenEditModal = (estate: Estate) => router.push(`/estates/${estate.id}/edit`);
@@ -285,11 +332,27 @@ export const EstatesPage: React.FC = () => {
             <LayoutGrid className="w-4 h-4" />
             <span className="hidden sm:inline">Tarjetas</span>
           </button>
+          <button
+            onClick={() => setViewMode('map')}
+            className={`p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors ${
+              viewMode === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+            }`}
+            title="Vista Mapa Interactivo"
+          >
+            <MapPin className="w-4 h-4" />
+            <span className="hidden sm:inline">Mapa</span>
+          </button>
         </div>
       </div>
 
       {/* Main Content Area */}
-      {isLoading ? (
+      {viewMode === 'map' ? (
+        <EstatesMapView 
+          estates={mapEstates.length > 0 ? mapEstates : estates} 
+          loading={loadingMap} 
+          onSelectCanvaGallery={handleViewCanvaGallery}
+        />
+      ) : isLoading ? (
         <TableSkeleton rows={5} />
       ) : estates.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center border border-slate-200/80 shadow-sm">
@@ -435,6 +498,15 @@ export const EstatesPage: React.FC = () => {
                                 <Layout className="w-4 h-4" />
                               </button>
 
+                              {/* Canva 3D Gallery Icon */}
+                              <button
+                                onClick={() => handleViewCanvaGallery(estate)}
+                                className="p-2 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 transition-all active:scale-95 shadow-2xs"
+                                title="Ver Galería Canva 3D"
+                              >
+                                <ImageIcon className="w-4 h-4" />
+                              </button>
+
                               {/* Direct Edit Button */}
                               <button
                                 onClick={() => handleOpenEditModal(estate)}
@@ -486,6 +558,14 @@ export const EstatesPage: React.FC = () => {
                                       >
                                         <Layout className="w-4 h-4 text-indigo-600 flex-shrink-0" />
                                         <span>Ver Canvas</span>
+                                      </button>
+
+                                      <button
+                                        onClick={() => handleViewCanvaGallery(estate)}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-purple-700 hover:bg-purple-50 transition-colors"
+                                      >
+                                        <ImageIcon className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                                        <span>Ver Galería Canva 3D</span>
                                       </button>
 
                                       <div className="h-px bg-slate-100 my-1"></div>
@@ -685,6 +765,14 @@ export const EstatesPage: React.FC = () => {
                           <Layout className="w-4 h-4" />
                         </button>
 
+                        <button
+                          onClick={() => handleViewCanvaGallery(estate)}
+                          className="p-1.5 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 transition-colors"
+                          title="Ver Galería Canva 3D"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                        </button>
+
                         <button 
                           onClick={() => handleOpenEditModal(estate)} 
                           className="p-1.5 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition-colors"
@@ -747,6 +835,15 @@ export const EstatesPage: React.FC = () => {
         canvasData={canvasData}
         onCopyWhatsApp={() => activeEstateForPdf && handleCopyWhatsApp(activeEstateForPdf)}
         onDownloadPdf={() => activeEstateForPdf && handleDownloadPdf(activeEstateForPdf)}
+      />
+
+      {/* Canva 3D Gallery Modal */}
+      <EstateCanvaGalleryModal
+        isOpen={canvaGalleryModalOpen}
+        onClose={() => setCanvaGalleryModalOpen(false)}
+        estate={selectedEstateForCanva}
+        onCopyWhatsApp={() => selectedEstateForCanva && handleCopyWhatsApp(selectedEstateForCanva)}
+        onDownloadPdf={() => selectedEstateForCanva && handleDownloadPdf(selectedEstateForCanva)}
       />
     </div>
   );

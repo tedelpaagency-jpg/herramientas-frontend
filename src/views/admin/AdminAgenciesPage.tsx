@@ -445,7 +445,7 @@ export const AdminAgenciesPage: React.FC = () => {
                     <option value="">Seleccionar Plan...</option>
                     {plans.map((plan) => (
                       <option key={plan.id} value={plan.id}>
-                        {plan.name} (${Number(plan.price).toFixed(2)}/mes)
+                        {plan.name} ({plan.billing_type === 'commission' ? `${plan.commission_percentage || 0}% Comisión` : `$${Number(plan.price).toFixed(2)}/mes`})
                       </option>
                     ))}
                   </select>

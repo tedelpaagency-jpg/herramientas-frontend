@@ -234,9 +234,16 @@ export const CoursesPage: React.FC = () => {
 
                 {/* Footer Creator & Actions */}
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-[11px] font-semibold text-slate-400 truncate max-w-[140px]">
-                    Por: {course.creator?.name || 'Sistema'}
-                  </span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[11px] font-semibold text-slate-400 truncate max-w-[140px]">
+                      Por: {course.creator?.name || 'Sistema'}
+                    </span>
+                    {(course.white_label || course.agency) && (
+                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 truncate max-w-[140px]">
+                        {course.white_label?.name || course.agency?.name}
+                      </span>
+                    )}
+                  </div>
 
                   <div className="flex items-center gap-1">
                     <button

@@ -24,6 +24,11 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     description: 'Acceso a balances de pasajes, hoteles y liquidaciones B2B',
     module: 'Turismo & Viajes',
   },
+  approve_travel_reports: {
+    label: 'Aprobar Directamente Reportes de Viajes',
+    description: 'Permite al Administrador de Agencia autorizar expedientes de viajes sin requerir la aprobación de la Marca Blanca',
+    module: 'Turismo & Viajes',
+  },
   'packages.view': {
     label: 'Ver Catálogo de Paquetes Turísticos',
     description: 'Permite consultar itinerarios y paquetes de viajes B2B',

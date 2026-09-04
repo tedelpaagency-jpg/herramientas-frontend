@@ -385,33 +385,37 @@ export const TravelReportDetailPage: React.FC = () => {
                   </p>
                 </div>
 
+                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 space-y-1">
+                  <span className="text-[10px] font-extrabold text-emerald-600 uppercase">Comisión del Plan</span>
+                  <p className="text-lg font-black text-emerald-700 dark:text-emerald-400">
+                    ${formatMoney(report.commition_percent_empresa)}
+                  </p>
+                </div>
+
                 <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 space-y-1">
-                  <span className="text-[10px] font-extrabold text-indigo-600 uppercase">Comisión Agente</span>
+                  <span className="text-[10px] font-extrabold text-indigo-600 uppercase">Comisión</span>
                   <p className="text-lg font-black text-indigo-700 dark:text-indigo-400">
                     ${formatMoney(report.commition_percent)}
                   </p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/40 space-y-1">
-                  <span className="text-[10px] font-extrabold text-purple-600 uppercase">Comisión Gerente</span>
-                  <p className="text-lg font-black text-purple-700 dark:text-purple-400">
-                    ${formatMoney(report.commition_percent_gerente)}
-                  </p>
-                </div>
+                {Number(report.commition_percent_gerente) > 0 && (
+                  <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/40 space-y-1">
+                    <span className="text-[10px] font-extrabold text-purple-600 uppercase">Comisión Gerente</span>
+                    <p className="text-lg font-black text-purple-700 dark:text-purple-400">
+                      ${formatMoney(report.commition_percent_gerente)}
+                    </p>
+                  </div>
+                )}
 
-                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 space-y-1">
-                  <span className="text-[10px] font-extrabold text-amber-600 uppercase">Comisión Admin/Dir</span>
-                  <p className="text-lg font-black text-amber-700 dark:text-amber-400">
-                    ${formatMoney(report.commition_percent_director)}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 space-y-1">
-                  <span className="text-[10px] font-extrabold text-emerald-600 uppercase">Comisión Empresa</span>
-                  <p className="text-lg font-black text-emerald-700 dark:text-emerald-400">
-                    ${formatMoney(report.commition_percent_empresa)}
-                  </p>
-                </div>
+                {Number(report.commition_percent_director) > 0 && (
+                  <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 space-y-1">
+                    <span className="text-[10px] font-extrabold text-amber-600 uppercase">Comisión Admin/Dir</span>
+                    <p className="text-lg font-black text-amber-700 dark:text-amber-400">
+                      ${formatMoney(report.commition_percent_director)}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

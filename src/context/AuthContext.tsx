@@ -50,17 +50,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(res.user);
         localStorage.setItem('santun_user', JSON.stringify(res.user));
 
-        if ((res.user as any).agency) {
-          setCurrentAgency((res.user as any).agency);
-        }
-        if ((res.user as any).white_labels && (res.user as any).white_labels.length > 0) {
-          const wl = (res.user as any).white_labels[0];
-          setCurrentWhiteLabel(wl);
-          localStorage.setItem('santun_white_label', JSON.stringify(wl));
-        } else if ((res.user as any).agency?.white_label) {
-          const wl = (res.user as any).agency.white_label;
-          setCurrentWhiteLabel(wl);
-          localStorage.setItem('santun_white_label', JSON.stringify(wl));
+        const isSuperAdminUser = res.user.role === 'super_admin' || res.user.roles?.some((r: any) => r.name === 'super_admin');
+
+        if (isSuperAdminUser) {
+          // Super Admin manages all white labels globally and does not belong to a single locked white label
+          setCurrentWhiteLabel(null);
+          setCurrentAgency(null);
+          localStorage.removeItem('santun_white_label');
+        } else {
+          if ((res.user as any).agency) {
+            setCurrentAgency((res.user as any).agency);
+          }
+          if ((res.user as any).white_labels && (res.user as any).white_labels.length > 0) {
+            const wl = (res.user as any).white_labels[0];
+            setCurrentWhiteLabel(wl);
+            localStorage.setItem('santun_white_label', JSON.stringify(wl));
+          } else if ((res.user as any).agency?.white_label) {
+            const wl = (res.user as any).agency.white_label;
+            setCurrentWhiteLabel(wl);
+            localStorage.setItem('santun_white_label', JSON.stringify(wl));
+          }
         }
       }
     } catch (err) {
@@ -70,6 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('santun_auth_token');
       localStorage.removeItem('santun_user');
       localStorage.removeItem('santun_impersonator');
+      localStorage.removeItem('santun_original_token');
+      localStorage.removeItem('santun_original_user');
     } finally {
       setIsLoading(false);
     }
@@ -87,17 +98,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const parsedUser = JSON.parse(savedUser);
           setUser(parsedUser);
           setToken(savedToken);
-          if (parsedUser.agency) {
-            setCurrentAgency(parsedUser.agency);
-          }
-          if (parsedUser.white_labels && parsedUser.white_labels.length > 0) {
-            setCurrentWhiteLabel(parsedUser.white_labels[0]);
-          } else if (parsedUser.agency?.white_label) {
-            setCurrentWhiteLabel(parsedUser.agency.white_label);
+
+          const isSuperAdminUser = parsedUser.role === 'super_admin' || parsedUser.roles?.some((r: any) => r.name === 'super_admin');
+
+          if (isSuperAdminUser) {
+            setCurrentWhiteLabel(null);
+            setCurrentAgency(null);
           } else {
-            const savedWl = localStorage.getItem('santun_white_label');
-            if (savedWl) {
-              try { setCurrentWhiteLabel(JSON.parse(savedWl)); } catch (e) {}
+            if (parsedUser.agency) {
+              setCurrentAgency(parsedUser.agency);
+            }
+            if (parsedUser.white_labels && parsedUser.white_labels.length > 0) {
+              setCurrentWhiteLabel(parsedUser.white_labels[0]);
+            } else if (parsedUser.agency?.white_label) {
+              setCurrentWhiteLabel(parsedUser.agency.white_label);
+            } else {
+              const savedWl = localStorage.getItem('santun_white_label');
+              if (savedWl) {
+                try { setCurrentWhiteLabel(JSON.parse(savedWl)); } catch (e) {}
+              }
             }
           }
 
@@ -130,11 +149,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('santun_auth_token', res.token);
       localStorage.setItem('santun_user', JSON.stringify(res.user));
 
-      if ((res.user as any).agency) {
-        setCurrentAgency((res.user as any).agency);
-      }
-      if ((res.user as any).white_labels && (res.user as any).white_labels.length > 0) {
-        setCurrentWhiteLabel((res.user as any).white_labels[0]);
+      const isSuperAdminUser = res.user.role === 'super_admin' || res.user.roles?.some((r: any) => r.name === 'super_admin');
+      if (isSuperAdminUser) {
+        setCurrentWhiteLabel(null);
+        setCurrentAgency(null);
+      } else {
+        if ((res.user as any).agency) {
+          setCurrentAgency((res.user as any).agency);
+        }
+        if ((res.user as any).white_labels && (res.user as any).white_labels.length > 0) {
+          setCurrentWhiteLabel((res.user as any).white_labels[0]);
+        }
       }
     } finally {
       setIsLoading(false);
@@ -157,11 +182,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('santun_auth_token');
       localStorage.removeItem('santun_user');
       localStorage.removeItem('santun_impersonator');
+      localStorage.removeItem('santun_original_token');
+      localStorage.removeItem('santun_original_user');
       setIsLoading(false);
     }
   };
 
   const startImpersonation = (newToken: string, targetUser: any, fromUser: any) => {
+    // Preserve original super_admin token and user before switching token
+    if (token && !localStorage.getItem('santun_original_token')) {
+      localStorage.setItem('santun_original_token', token);
+    }
+    if (user && !localStorage.getItem('santun_original_user')) {
+      localStorage.setItem('santun_original_user', JSON.stringify(user));
+    }
+
     setToken(newToken);
     setUser(targetUser);
     setIsImpersonating(true);
@@ -174,8 +209,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (targetUser.agency) {
       setCurrentAgency(targetUser.agency);
     }
-    if (targetUser.white_labels && targetUser.white_labels.length > 0) {
-      setCurrentWhiteLabel(targetUser.white_labels[0]);
+
+    const targetWl = targetUser.white_labels?.[0] || targetUser.whiteLabels?.[0] || targetUser.agency?.white_label;
+    if (targetWl) {
+      setCurrentWhiteLabel(targetWl);
+      localStorage.setItem('santun_white_label', JSON.stringify(targetWl));
+    } else {
+      setCurrentWhiteLabel(null);
     }
   };
 
@@ -186,9 +226,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error('Error stopping impersonation:', e);
     } finally {
+      const originalToken = localStorage.getItem('santun_original_token');
+      const originalUser = localStorage.getItem('santun_original_user');
+
+      if (originalToken && originalUser) {
+        const parsedOriginalUser = JSON.parse(originalUser);
+        setToken(originalToken);
+        setUser(parsedOriginalUser);
+        localStorage.setItem('santun_auth_token', originalToken);
+        localStorage.setItem('santun_user', originalUser);
+      }
+
+      localStorage.removeItem('santun_original_token');
+      localStorage.removeItem('santun_original_user');
+      localStorage.removeItem('santun_impersonator');
+      localStorage.removeItem('santun_white_label');
+
       setIsImpersonating(false);
       setImpersonatingFrom(null);
-      localStorage.removeItem('santun_impersonator');
+      setCurrentWhiteLabel(null);
+      setCurrentAgency(null);
+
       await refreshUser();
     }
   };

@@ -3,25 +3,68 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { 
-  Plane, Plus, Search, Filter, RefreshCw, FileText, CheckCircle, XCircle, Clock, AlertCircle, Eye, Edit, Trash2, TrendingUp, DollarSign, Users, Award, ShieldCheck, Download
+  Plane, Plus, Search, Filter, RefreshCw, FileText, CheckCircle, XCircle, Clock, AlertCircle, Eye, Edit, Trash2, TrendingUp, DollarSign, Users, Award, ShieldCheck, Download, Calendar, X, Building
 } from 'lucide-react';
 import travelReportService from '../services/travelReportService';
+import userService from '../services/userService';
+import adminService from '../services/adminService';
+import { useAuth } from '../context/AuthContext';
 import { TravelReport } from '../types/travelReport';
+import { User, Agency } from '../types';
 import { confirmDialog } from '../utils/alerts';
 import toast from 'react-hot-toast';
 
 export const TravelReportsPage: React.FC = () => {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isWhiteLabelAdmin = user?.role === 'white_label_admin' || (!isSuperAdmin && !!user?.white_label_id && !user?.agency_id);
+  const isMultiAgencyAdmin = isSuperAdmin || isWhiteLabelAdmin;
+
   const [reports, setReports] = useState<TravelReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedAgency, setSelectedAgency] = useState<string>('all');
+  const [selectedUser, setSelectedUser] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [usersList, setUsersList] = useState<User[]>([]);
+  const [agenciesList, setAgenciesList] = useState<Agency[]>([]);
   const [stats, setStats] = useState({
     total_sales: 0,
     mgt: 0,
     gnt: 0,
     agent_commissions: 0,
     gerente_commissions: 0,
+    white_label_commissions: 0,
   });
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await userService.getUsers({ per_page: 100 });
+        const usersData = Array.isArray(res) ? res : res?.data?.data || res?.data || [];
+        setUsersList(usersData);
+      } catch (err) {
+        console.error('Error cargando lista de usuarios', err);
+      }
+    };
+    loadUsers();
+  }, []);
+
+  useEffect(() => {
+    const loadAgencies = async () => {
+      if (isMultiAgencyAdmin) {
+        try {
+          const agencies = await adminService.getAgencies();
+          setAgenciesList(agencies);
+        } catch (err) {
+          console.error('Error cargando lista de agencias', err);
+        }
+      }
+    };
+    loadAgencies();
+  }, [isMultiAgencyAdmin]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -29,6 +72,10 @@ export const TravelReportsPage: React.FC = () => {
       const params: any = {};
       if (search) params.search = search;
       if (statusFilter !== 'all') params.status = statusFilter;
+      if (selectedAgency !== 'all') params.agency_id = selectedAgency;
+      if (selectedUser !== 'all') params.user_id = selectedUser;
+      if (startDate) params.start_date = startDate;
+      if (endDate) params.end_date = endDate;
 
       const res = await travelReportService.getReports(params);
       if (res.status === 'success') {
@@ -44,11 +91,20 @@ export const TravelReportsPage: React.FC = () => {
 
   useEffect(() => {
     fetchReports();
-  }, [statusFilter]);
+  }, [statusFilter, selectedAgency, selectedUser, startDate, endDate]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchReports();
+  };
+
+  const handleClearFilters = () => {
+    setSearch('');
+    setStatusFilter('all');
+    setSelectedAgency('all');
+    setSelectedUser('all');
+    setStartDate('');
+    setEndDate('');
   };
 
   const handleStatusChange = async (reportId: number, status: number, action: string) => {
@@ -145,7 +201,7 @@ export const TravelReportsPage: React.FC = () => {
       </div>
 
       {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400 flex items-center justify-center font-bold">
             <DollarSign className="w-6 h-6" />
@@ -183,20 +239,20 @@ export const TravelReportsPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400 flex items-center justify-center font-bold">
-            <Users className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400 flex items-center justify-center font-bold">
+            <Building className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Comisión Gerentes</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Por Cobrar Marca Blanca</span>
             <p className="text-2xl font-black text-slate-900 dark:text-white">
-              ${stats.gerente_commissions.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              ${(stats.white_label_commissions || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
         <form onSubmit={handleSearchSubmit} className="relative flex-1 w-full">
           <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -204,29 +260,106 @@ export const TravelReportsPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por código (SLT...), nombre de venta, cliente o RUC..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
           />
         </form>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
-          >
-            <option value="all">Todos los Estados</option>
-            <option value="0">Pendientes (0)</option>
-            <option value="4">Pre-autorizados (4)</option>
-            <option value="1">Autorizados (1)</option>
-            <option value="2">Rechazados (2)</option>
-          </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 items-end">
+          {/* Agency Filter (Only for White Label or Super Admin) */}
+          {isMultiAgencyAdmin && (
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1 ml-1">Agencia</label>
+              <select
+                value={selectedAgency}
+                onChange={(e) => setSelectedAgency(e.target.value)}
+                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
+              >
+                <option value="all">Todas las Agencias</option>
+                {agenciesList.map((ag) => (
+                  <option key={ag.id} value={ag.id}>
+                    {ag.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          <button
-            onClick={fetchReports}
-            className="p-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 rounded-2xl transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
+          {/* Status Filter */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1 ml-1">Estado</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
+            >
+              <option value="all">Todos los Estados</option>
+              <option value="0">Pendientes (0)</option>
+              <option value="4">Pre-autorizados (4)</option>
+              <option value="1">Autorizados (1)</option>
+              <option value="2">Rechazados (2)</option>
+            </select>
+          </div>
+
+          {/* User / Agent Filter */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1 ml-1">Agente / Usuario</label>
+            <select
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
+            >
+              <option value="all">Todos los Vendedores</option>
+              {usersList.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} {u.last_name || ''} {u.role ? `(${u.role})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Start Date */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1 ml-1">Fecha Desde</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
+            />
+          </div>
+
+          {/* End Date */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1 ml-1">Fecha Hasta</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 pt-2 sm:pt-0">
+            <button
+              onClick={fetchReports}
+              className="flex-1 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+              title="Refrescar datos"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Filtrar</span>
+            </button>
+            {(search || statusFilter !== 'all' || selectedAgency !== 'all' || selectedUser !== 'all' || startDate || endDate) && (
+              <button
+                onClick={handleClearFilters}
+                className="py-2.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                title="Limpiar filtros"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Limpiar</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -249,6 +382,7 @@ export const TravelReportsPage: React.FC = () => {
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-[11px] font-black uppercase text-slate-400 tracking-wider">
                   <th className="py-4 px-6">Código / Venta</th>
+                  {isMultiAgencyAdmin && <th className="py-4 px-6">Agencia</th>}
                   <th className="py-4 px-6">Vendedor / Equipo</th>
                   <th className="py-4 px-6">Cliente / Pasajeros</th>
                   <th className="py-4 px-6">Total Cliente</th>
@@ -271,6 +405,15 @@ export const TravelReportsPage: React.FC = () => {
                         {new Date(report.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     </td>
+
+                    {isMultiAgencyAdmin && (
+                      <td className="py-4 px-6">
+                        <div className="font-bold text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
+                          <Building className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>{report.agency?.name || 'N/A'}</span>
+                        </div>
+                      </td>
+                    )}
 
                     <td className="py-4 px-6">
                       <p className="text-slate-900 dark:text-slate-200 font-bold">{report.user?.name || 'N/A'}</p>

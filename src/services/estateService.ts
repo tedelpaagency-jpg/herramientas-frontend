@@ -25,6 +25,11 @@ export const estateService = {
     return { data: [] };
   },
 
+  getEstatesMap: async (params?: Record<string, any>): Promise<Estate[]> => {
+    const response = await apiClient.get('/v1/estates/map', { params });
+    return response.data?.data || response.data || [];
+  },
+
   getEstate: async (id: number): Promise<Estate> => {
     const response = await apiClient.get(`/v1/estates/${id}`);
     return response.data?.data || response.data;

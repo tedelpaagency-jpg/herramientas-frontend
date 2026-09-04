@@ -1,11 +1,13 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { ShieldAlert, LogOut, UserCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const ImpersonationBanner: React.FC = () => {
+  const router = useRouter();
   const { isImpersonating, impersonatingFrom, user, stopImpersonation } = useAuth();
 
   if (!isImpersonating) return null;
@@ -14,6 +16,7 @@ export const ImpersonationBanner: React.FC = () => {
     try {
       await stopImpersonation();
       toast.success('Regresado a cuenta de Super Admin');
+      router.push('/admin/white-labels');
     } catch (e) {
       toast.error('Error al salir de impersonación');
     }

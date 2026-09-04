@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Globe,
   Building2,
@@ -19,6 +21,7 @@ import {
   Eye,
   RefreshCw,
   Layers,
+  User,
 } from 'lucide-react';
 import { WhiteLabel } from '../../types/whiteLabel';
 import { Plan } from '../../types';
@@ -29,6 +32,7 @@ import Portal from '../../components/Portal';
 import toast from 'react-hot-toast';
 
 export const WhiteLabelsPage: React.FC = () => {
+  const router = useRouter();
   const { user, startImpersonation } = useAuth();
   const [whiteLabels, setWhiteLabels] = useState<WhiteLabel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -174,8 +178,10 @@ export const WhiteLabelsPage: React.FC = () => {
       if (res.token && res.user) {
         startImpersonation(res.token, res.user, { id: user!.id, name: user!.name, email: user!.email });
         toast.success(`Impersonación iniciada para ${wl.name}`);
+        router.push('/');
       } else {
         toast.success(`Modo contexto activado para ${wl.name}`);
+        router.push('/');
       }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Error al iniciar impersonación');
@@ -330,7 +336,9 @@ export const WhiteLabelsPage: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <span className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" style={{ backgroundColor: wl.primary_color || '#0284c7' }} title="Color Primario" />
                         <div>
-                          <div>{wl.name}</div>
+                          <Link href={`/admin/white-labels/${wl.id}`} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors hover:underline">
+                            {wl.name}
+                          </Link>
                           {wl.legal_name && <div className="text-[10px] text-slate-400 font-normal">{wl.legal_name}</div>}
                         </div>
                       </div>
@@ -372,6 +380,13 @@ export const WhiteLabelsPage: React.FC = () => {
                     </td>
                     <td className="p-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href={`/admin/white-labels/${wl.id}`}
+                          className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-bold"
+                          title="Ver Perfil de la Marca Blanca"
+                        >
+                          <User className="w-3.5 h-3.5" />
+                        </Link>
                         <button
                           onClick={() => handleImpersonateWL(wl)}
                           className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold text-[11px] rounded-xl transition-all flex items-center gap-1 shadow-xs cursor-pointer"
@@ -493,14 +508,16 @@ export const WhiteLabelsPage: React.FC = () => {
                     className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl text-slate-900 dark:text-white font-medium text-xs focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="">-- Sin Plan Asignado (Todos los módulos disponibles) --</option>
-                    {plans.map((p) => {
-                      const permsCount = p.plan_permissions?.length ?? (p as any).planPermissions?.length ?? 0;
-                      return (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({permsCount} permisos/módulos contratados)
-                        </option>
-                      );
-                    })}
+                    {plans
+                      .filter((p) => !p.white_label_id || p.white_label_id === 1 || p.white_label?.id === 1)
+                      .map((p) => {
+                        const permsCount = p.plan_permissions?.length ?? (p as any).planPermissions?.length ?? 0;
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({permsCount} permisos/módulos contratados)
+                          </option>
+                        );
+                      })}
                   </select>
                   <p className="text-[11px] text-indigo-700/80 dark:text-indigo-300/80 mt-1">
                     Esta Marca Blanca y sus administradores solo tendrán acceso a los módulos definidos en este Plan, y solo podrán crear planes para sus agencias dentro de este alcance.

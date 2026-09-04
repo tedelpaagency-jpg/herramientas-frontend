@@ -12,6 +12,8 @@ export interface Plan {
   name: string;
   description?: string;
   price: number;
+  billing_type?: 'fixed' | 'commission';
+  commission_percentage?: number | null;
   features?: string[];
   allowed_agency_types?: string[];
   status?: boolean;
@@ -49,6 +51,8 @@ export interface Agency {
   plan?: Plan;
   gerente_id?: number;
   gerente_comercial?: User;
+  white_label_id?: number;
+  white_label?: any;
   current_subscription?: Subscription;
   subscriptions?: Subscription[];
   status?: number;
@@ -78,6 +82,8 @@ export interface User {
   avatarUrl?: string;
   agency_id?: number;
   agency?: Agency;
+  white_label_id?: number;
+  white_label?: any;
   roles?: Role[];
   permissions?: Permission[];
   phone?: string;
@@ -105,6 +111,10 @@ export interface Estate {
   currency: string;
   address?: string;
   full_address?: string;
+  location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  has_coordinates?: boolean;
   city?: string;
   state?: string;
   province?: string;
@@ -120,6 +130,7 @@ export interface Estate {
   agency?: Agency;
   user_id?: number;
   user?: User;
+  image?: string;
   images?: EstateImage[] | string[];
   attributes_json?: Record<string, any>;
   created_at?: string;

@@ -34,6 +34,8 @@ export const AdminPlansPage: React.FC = () => {
     name: '',
     description: '',
     price: 0,
+    billing_type: 'fixed' as 'fixed' | 'commission',
+    commission_percentage: 0,
     featuresStr: '',
     allowedAgencyTypesStr: '',
     status: true,
@@ -70,6 +72,8 @@ export const AdminPlansPage: React.FC = () => {
       name: '',
       description: '',
       price: 0,
+      billing_type: 'fixed',
+      commission_percentage: 0,
       featuresStr: '',
       allowedAgencyTypesStr: 'real_estate, travel',
       status: true,
@@ -83,6 +87,8 @@ export const AdminPlansPage: React.FC = () => {
       name: plan.name,
       description: plan.description || '',
       price: plan.price,
+      billing_type: plan.billing_type || 'fixed',
+      commission_percentage: plan.commission_percentage || 0,
       featuresStr: Array.isArray(plan.features) ? plan.features.join(', ') : '',
       allowedAgencyTypesStr: Array.isArray(plan.allowed_agency_types)
         ? plan.allowed_agency_types.join(', ')
@@ -101,6 +107,8 @@ export const AdminPlansPage: React.FC = () => {
       name: formData.name,
       description: formData.description,
       price: Number(formData.price),
+      billing_type: formData.billing_type,
+      commission_percentage: formData.billing_type === 'commission' ? Number(formData.commission_percentage) : null,
       features: formData.featuresStr
         ? formData.featuresStr.split(',').map((s) => s.trim()).filter(Boolean)
         : [],
@@ -252,6 +260,7 @@ export const AdminPlansPage: React.FC = () => {
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="py-3.5 px-4">Plan</th>
+                  <th className="py-3.5 px-4">Método de Cobro</th>
                   <th className="py-3.5 px-4">Precio</th>
                   <th className="py-3.5 px-4">Tipos de Agencia</th>
                   <th className="py-3.5 px-4">Permisos Asignados</th>
@@ -271,6 +280,20 @@ export const AdminPlansPage: React.FC = () => {
                       </div>
                       {plan.description && (
                         <p className="text-[11px] text-slate-500 line-clamp-1">{plan.description}</p>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 font-semibold">
+                      {plan.billing_type === 'commission' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          <span>Comisión</span>
+                          {plan.commission_percentage !== null && plan.commission_percentage !== undefined && (
+                            <span className="font-extrabold">({plan.commission_percentage}%)</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          Cargo Fijo
+                        </span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-900">
@@ -391,6 +414,64 @@ export const AdminPlansPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <label className="block font-bold text-slate-700 mb-1">Método de Cobro *</label>
+                  {(() => {
+                    const isTravelAllowed = formData.allowedAgencyTypesStr.toLowerCase().includes('travel') || 
+                      (editingPlan ? (editingPlan.allowed_agency_types?.includes('travel') || editingPlan.plan_permissions?.some(p => p.permission.startsWith('packages.') || p.permission.startsWith('requests.') || p.permission.includes('travel') || p.permission.includes('visa'))) : true);
+                    return (
+                      <>
+                        <select
+                          value={formData.billing_type}
+                          onChange={(e) => setFormData({ ...formData, billing_type: e.target.value as 'fixed' | 'commission' })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs bg-white font-semibold"
+                        >
+                          <option value="fixed">Cargo Fijo</option>
+                          <option value="commission" disabled={!isTravelAllowed}>
+                            Por Comisión {!isTravelAllowed ? '(Requiere Módulo Viajes)' : ''}
+                          </option>
+                        </select>
+                        {!isTravelAllowed && (
+                          <p className="text-[10px] text-amber-700 mt-1 font-semibold leading-tight">
+                            * El cobro por comisión requiere el Módulo de Viajes ("travel").
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+
+                {formData.billing_type === 'commission' ? (
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">% de Comisión *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      required
+                      value={formData.commission_percentage}
+                      onChange={(e) => setFormData({ ...formData, commission_percentage: parseFloat(e.target.value) || 0 })}
+                      placeholder="ej. 5.00"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Estado</label>
+                    <select
+                      value={formData.status ? '1' : '0'}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value === '1' })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs bg-white"
+                    >
+                      <option value="1">Activo</option>
+                      <option value="0">Inactivo</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block font-bold text-slate-700 mb-1">Precio Mensual ($) *</label>
                   <input
                     type="number"
@@ -403,17 +484,19 @@ export const AdminPlansPage: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Estado</label>
-                  <select
-                    value={formData.status ? '1' : '0'}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value === '1' })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs bg-white"
-                  >
-                    <option value="1">Activo</option>
-                    <option value="0">Inactivo</option>
-                  </select>
-                </div>
+                {formData.billing_type === 'commission' && (
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Estado</label>
+                    <select
+                      value={formData.status ? '1' : '0'}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value === '1' })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs bg-white"
+                    >
+                      <option value="1">Activo</option>
+                      <option value="0">Inactivo</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div>
