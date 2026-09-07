@@ -8,7 +8,7 @@ import {
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
   Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
-  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin
+  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -306,6 +306,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: 'Propiedades', path: '/estates', icon: Building2, permission: ['view_estates', 'estates.view', 'manage_estates'] },
         { label: 'Mapa de Inmuebles', path: '/estates?view=map', icon: MapPin, permission: ['view_estates', 'estates.view', 'manage_estates'] },
+        { label: 'Valoración ACM', path: '/acm', icon: Calculator },
       ],
     },
     {
