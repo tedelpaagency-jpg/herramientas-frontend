@@ -7,7 +7,7 @@ import {
   Camera, Image as ImageIcon, Map as MapIcon, Crosshair,
   TrendingDown, TrendingUp, Maximize, Activity, Trash2,
   Download, Share2, Globe, FileBadge, PieChart as PieChartIcon, Target, FileText,
-  Info, Layers, RefreshCw
+  Info, Layers, RefreshCw, Edit3
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell, 
@@ -18,6 +18,7 @@ import { acmService } from '../services/acmService';
 import { AcmEstimation, AcmZone } from '../types/acm';
 
 const AcmZoneDrawerMap = dynamic(() => import('../components/acm/AcmZoneDrawerMap'), { ssr: false });
+const AcmLocationPickerMap = dynamic(() => import('../components/acm/AcmLocationPickerMap'), { ssr: false });
 
 export function AcmPage() {
   const [activeTab, setActiveTab] = useState<'estimations' | 'zones'>('estimations');
@@ -171,69 +172,93 @@ function ACMListView({ onNew, onEdit }: { onNew: () => void; onEdit: (item: AcmE
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {inspections.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => onEdit(item)}
-              className="bg-white rounded-xl border border-slate-200 p-5 hover:border-[#00a884]/50 hover:shadow-md transition-all cursor-pointer flex flex-col h-full shadow-sm relative group"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <span className="text-[11px] font-bold text-slate-400 font-mono">{item.code}</span>
-                  <h3 className="text-base font-bold text-slate-800 mt-0.5 line-clamp-1">{item.client_name}</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border ${
-                      item.status === 'Completado'
-                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                        : item.status === 'En Proceso'
-                        ? 'bg-amber-50 text-amber-600 border-amber-200'
-                        : 'bg-blue-50 text-blue-600 border-blue-200'
-                    }`}
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold text-[10px] tracking-wider">
+                <tr>
+                  <th className="p-3.5">Código / Expediente</th>
+                  <th className="p-3.5">Cliente / Propietario</th>
+                  <th className="p-3.5">Ubicación / Dirección</th>
+                  <th className="p-3.5">Tipología</th>
+                  <th className="p-3.5">Área Útil / Terreno</th>
+                  <th className="p-3.5">Valor Sugerido</th>
+                  <th className="p-3.5">Estado</th>
+                  <th className="p-3.5">Fecha</th>
+                  <th className="p-3.5 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                {inspections.map((item) => (
+                  <tr
+                    key={item.id}
+                    onClick={() => onEdit(item)}
+                    className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                   >
-                    {item.status}
-                  </span>
-                  <button
-                    onClick={(e) => handleDelete(e, item.id)}
-                    className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-4">
-                <MapPin className="w-3.5 h-3.5 text-[#00a884] shrink-0" />
-                <span className="truncate">{item.location_str || 'Sin dirección fija'}</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 mb-4 mt-auto">
-                <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Tipología</p>
-                  <p className="text-xs font-semibold text-slate-700 truncate">{item.property_type}</p>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Área Útil</p>
-                  <p className="text-xs font-semibold text-slate-700">{item.area_util || item.area_terreno} m²</p>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex justify-between items-end">
-                <div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Valor Sugerido</p>
-                  <p className="text-lg font-black text-[#00a884]">
-                    ${(item.transaction_type === 'alquiler' ? item.suggested_rent : item.suggested_value)?.toLocaleString('es-EC')}
-                  </p>
-                </div>
-                <span className="text-xs text-slate-400 font-medium">
-                  {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
-                </span>
-              </div>
-            </div>
-          ))}
+                    <td className="p-3.5 font-bold font-mono text-[#00a884]">
+                      {item.code}
+                    </td>
+                    <td className="p-3.5 font-bold text-slate-800">
+                      {item.client_name}
+                      {item.client_phone && (
+                        <span className="block text-[10px] text-slate-400 font-normal">{item.client_phone}</span>
+                      )}
+                    </td>
+                    <td className="p-3.5 max-w-xs truncate">
+                      <span className="flex items-center gap-1.5 text-slate-600">
+                        <MapPin className="w-3.5 h-3.5 text-[#00a884] shrink-0" />
+                        <span className="truncate">{item.location_str || 'Sin dirección registrada'}</span>
+                      </span>
+                    </td>
+                    <td className="p-3.5">
+                      <span className="font-semibold text-slate-700">{item.property_type}</span>
+                      <span className={`block text-[10px] font-bold uppercase ${item.transaction_type === 'alquiler' ? 'text-blue-600' : 'text-slate-400'}`}>
+                        {item.transaction_type}
+                      </span>
+                    </td>
+                    <td className="p-3.5 font-semibold text-slate-700">
+                      {item.area_util || item.area_terreno} m²
+                    </td>
+                    <td className="p-3.5 font-black text-sm text-[#00a884]">
+                      ${(item.transaction_type === 'alquiler' ? item.suggested_rent : item.suggested_value)?.toLocaleString('es-EC')}
+                    </td>
+                    <td className="p-3.5">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border ${
+                          item.status === 'Completado'
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                            : item.status === 'En Proceso'
+                            ? 'bg-amber-50 text-amber-600 border-amber-200'
+                            : 'bg-blue-50 text-blue-600 border-blue-200'
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="p-3.5 text-slate-400 text-[11px]">
+                      {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
+                    </td>
+                    <td className="p-3.5 text-right space-x-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                        className="p-1.5 text-slate-500 hover:text-[#00a884] hover:bg-slate-100 rounded-lg transition-colors"
+                        title="Ver / Editar Expediente"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(e, item.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
@@ -255,6 +280,11 @@ function ACMWizard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activePhotoCategory, setActivePhotoCategory] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [availableZones, setAvailableZones] = useState<AcmZone[]>([]);
+
+  useEffect(() => {
+    acmService.getZones().then((res) => setAvailableZones(res.data || [])).catch(() => {});
+  }, []);
 
   const [photos, setPhotos] = useState<{ [key: string]: any[] }>({
     fachada: initialData?.photos?.fachada || [],
@@ -772,20 +802,35 @@ function ACMWizard({
               )}
             </div>
 
-            <div className="h-44 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden relative shadow-inner">
-              {formData.lat && formData.lng ? (
-                <iframe
-                  title="map"
-                  width="100%" height="100%" frameBorder="0" scrolling="no"
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${formData.lng-0.005}%2C${formData.lat-0.005}%2C${formData.lng+0.005}%2C${formData.lat+0.005}&layer=mapnik&marker=${formData.lat}%2C${formData.lng}`}
-                  className="opacity-95 pointer-events-none"
-                ></iframe>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-4 text-center">
-                  <MapIcon className="w-7 h-7 mb-2 opacity-40" />
-                  <p className="text-xs">Presiona "Capturar GPS y Validar Zona" para fijar coordenadas en el mapa.</p>
-                </div>
-              )}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase">
+                Ubicación Manual en Mapa (Haz clic o arrastra el pin)
+              </label>
+              <AcmLocationPickerMap
+                lat={formData.lat}
+                lng={formData.lng}
+                zones={availableZones}
+                onLocationChange={(newLat, newLng) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    lat: newLat,
+                    lng: newLng,
+                  }));
+                  // Auto-detect zone when marker is placed manually
+                  acmService.detectZone(newLat, newLng).then((res) => {
+                    if (res.detected && res.zone) {
+                      setZoneDetected({
+                        name: res.zone.name,
+                        suggestedSuelo: res.zone.suggestedSuelo,
+                        suggestedConstruccion: res.zone.suggestedConstruccion,
+                      });
+                      toast.success(`Zona detectada: ${res.zone.name}`);
+                    } else {
+                      setZoneDetected(null);
+                    }
+                  }).catch(() => {});
+                }}
+              />
             </div>
           </div>
         </div>
