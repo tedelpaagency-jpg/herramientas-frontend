@@ -33,7 +33,7 @@ export const whiteLabelService = {
   },
 
   updateWhiteLabel: async (id: number, data: any) => {
-    if (data.logo_file || data.favicon_file || data.admin_photo_file) {
+    if (data.logo_file || data.logo_2_file || data.logo_icon_file || data.favicon_file || data.login_background_file || data.admin_photo_file) {
       const formData = new FormData();
       Object.keys(data).forEach((key) => {
         const val = data[key];

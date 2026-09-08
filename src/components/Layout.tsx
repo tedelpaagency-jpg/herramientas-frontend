@@ -14,14 +14,63 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const isKanbanPage = pathname === '/crm' || pathname === '/tasks' || pathname?.startsWith('/tasks');
 
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isKanbanPage);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('santun_sidebar_collapsed');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+    }
+    return isKanbanPage;
+  });
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    if (isKanbanPage) {
-      setIsSidebarCollapsed(true);
+  const handleSetIsSidebarCollapsed = (collapsed: boolean) => {
+    setIsSidebarCollapsed(collapsed);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('santun_sidebar_collapsed', String(collapsed));
+      window.dispatchEvent(new Event('sidebar-state-changed'));
     }
-  }, [isKanbanPage]);
+  };
+
+  useEffect(() => {
+    const handleSidebarChange = () => {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('santun_sidebar_collapsed');
+        if (saved !== null) {
+          setIsSidebarCollapsed(saved === 'true');
+        }
+      }
+    };
+    window.addEventListener('sidebar-state-changed', handleSidebarChange);
+    window.addEventListener('branding-updated', handleSidebarChange);
+    return () => {
+      window.removeEventListener('sidebar-state-changed', handleSidebarChange);
+      window.removeEventListener('branding-updated', handleSidebarChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleSyncTheme = () => {
+      if (typeof window !== 'undefined') {
+        const savedTheme = localStorage.getItem('santun_theme') || localStorage.getItem('santun_dark_theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+          document.body.classList.add('dark');
+        } else if (savedTheme === 'light') {
+          document.documentElement.classList.remove('dark');
+          document.body.classList.remove('dark');
+        }
+      }
+    };
+    handleSyncTheme();
+    window.addEventListener('theme-changed', handleSyncTheme);
+    window.addEventListener('branding-updated', handleSyncTheme);
+    return () => {
+      window.removeEventListener('theme-changed', handleSyncTheme);
+      window.removeEventListener('branding-updated', handleSyncTheme);
+    };
+  }, []);
 
 
   useEffect(() => {
@@ -55,7 +104,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden print:h-auto print:overflow-visible bg-background text-on-background font-body-md">
+    <div className="flex h-screen overflow-hidden print:h-auto print:overflow-visible bg-slate-50 dark:bg-[#121413] text-slate-900 dark:text-slate-100 font-body-md transition-colors duration-200">
       {/* Left Navigation Sidebar */}
       <Sidebar
         leftSidebarOpen={leftSidebarOpen}
@@ -64,20 +113,20 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       />
 
       {/* Main Content Container */}
-      <main className={`flex-1 overflow-y-auto relative h-screen transition-all duration-300 print:ml-0 print:p-0 print:bg-white print:overflow-visible print:h-auto ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} ${rightSidebarOpen ? '2xl:mr-80' : 'mr-0'}`}>
+      <main className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden relative h-screen transition-all duration-300 print:ml-0 print:p-0 print:bg-white print:overflow-visible print:h-auto bg-slate-50 dark:bg-[#121413] text-slate-900 dark:text-slate-100 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} ${rightSidebarOpen ? '2xl:mr-80' : 'mr-0'}`}>
         <ImpersonationBanner />
         {/* Header Bar */}
         <Navbar
           leftSidebarOpen={leftSidebarOpen}
           setLeftSidebarOpen={setLeftSidebarOpen}
           isSidebarCollapsed={isSidebarCollapsed}
-          setIsSidebarCollapsed={setIsSidebarCollapsed}
+          setIsSidebarCollapsed={handleSetIsSidebarCollapsed}
           rightSidebarOpen={rightSidebarOpen}
           setRightSidebarOpen={setRightSidebarOpen}
         />
 
         {/* Dynamic Page Views */}
-        <div className={isKanbanPage ? 'p-4 lg:p-6 pb-6 animate-fade-in w-full max-w-none' : 'p-6 lg:p-8 pb-32 animate-fade-in max-w-[1400px] mx-auto w-full'}>
+        <div className={isKanbanPage ? 'p-2 sm:p-4 lg:p-6 pb-6 animate-fade-in w-full max-w-none min-w-0' : 'p-3 sm:p-4 md:p-6 lg:p-8 pb-24 sm:pb-32 animate-fade-in max-w-[1400px] mx-auto w-full min-w-0'}>
           <PageTransition>
             {children}
           </PageTransition>

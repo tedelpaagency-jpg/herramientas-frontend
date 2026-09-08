@@ -503,35 +503,35 @@ export const ProductsPage: React.FC = () => {
 
       {/* Modal Form: Add / Edit Product or Package */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
             {/* Modal Header */}
-            <div className="p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+            <div className="p-4 sm:p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black shadow-lg">
+                <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black shadow-lg shrink-0">
                   <Globe className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black">{editingProduct ? 'Editar Ítem' : 'Registrar Nuevo Paquete / Producto'}</h3>
+                  <h3 className="text-base sm:text-lg font-black">{editingProduct ? 'Editar Ítem' : 'Registrar Nuevo Paquete / Producto'}</h3>
                   <p className="text-xs text-slate-400">Complete los datos correspondientes al tipo seleccionado</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
               {/* Type Selection */}
               <div>
                 <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">
                   Tipo de Registro
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, type: 1 })}

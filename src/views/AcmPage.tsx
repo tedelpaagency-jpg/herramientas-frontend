@@ -240,6 +240,13 @@ function ACMListView({ onNew, onEdit }: { onNew: () => void; onEdit: (item: AcmE
                     </td>
                     <td className="p-3.5 text-right space-x-1">
                       <button
+                        onClick={(e) => { e.stopPropagation(); acmService.downloadPdf(item.id); }}
+                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                        title="Exportar Informe Pericial en PDF"
+                      >
+                        <FileBadge className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={(e) => { e.stopPropagation(); onEdit(item); }}
                         className="p-1.5 text-slate-500 hover:text-[#00a884] hover:bg-slate-100 rounded-lg transition-colors"
                         title="Ver / Editar Expediente"
@@ -282,10 +289,6 @@ function ACMWizard({
   const [saving, setSaving] = useState(false);
   const [availableZones, setAvailableZones] = useState<AcmZone[]>([]);
 
-  useEffect(() => {
-    acmService.getZones().then((res) => setAvailableZones(res.data || [])).catch(() => {});
-  }, []);
-
   const [photos, setPhotos] = useState<{ [key: string]: any[] }>({
     fachada: initialData?.photos?.fachada || [],
     social: initialData?.photos?.social || [],
@@ -326,6 +329,13 @@ function ACMWizard({
       garaje: false, bbq: false, aire: false, terraza: false,
     },
   });
+
+  // Fetch zones matching the current expediente transaction_type (venta / alquiler)
+  useEffect(() => {
+    acmService.getZones({ transaction_type: formData.transactionType })
+      .then((res) => setAvailableZones(res.data || []))
+      .catch(() => {});
+  }, [formData.transactionType]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -380,7 +390,7 @@ function ACMWizard({
         locationStr: prev.locationStr || 'Av. Walter Andrade, Quevedo, Los Ríos',
       }));
 
-      const res = await acmService.detectZone(targetLat, targetLng);
+      const res = await acmService.detectZone(targetLat, targetLng, formData.transactionType);
       if (res.detected && res.zone) {
         setZoneDetected({
           name: res.zone.name,
@@ -817,7 +827,7 @@ function ACMWizard({
                     lng: newLng,
                   }));
                   // Auto-detect zone when marker is placed manually
-                  acmService.detectZone(newLat, newLng).then((res) => {
+                  acmService.detectZone(newLat, newLng, formData.transactionType).then((res) => {
                     if (res.detected && res.zone) {
                       setZoneDetected({
                         name: res.zone.name,
@@ -1147,10 +1157,15 @@ function ACMWizard({
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             El modelo pericial ha calculado el valor comercial en <strong>{formatCurrency(calculations.valorComercialSugerido)}</strong>.
           </p>
-          <div className="flex justify-center gap-4 pt-4">
-            <button onClick={handleSaveEstimation} disabled={saving} className="px-6 py-2.5 bg-[#00a884] text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md">
+          <div className="flex flex-wrap justify-center gap-3 pt-4">
+            <button onClick={handleSaveEstimation} disabled={saving} className="px-6 py-2.5 bg-[#00a884] hover:bg-[#009272] text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md">
               <Download className="w-4 h-4" /> Guardar Expediente
             </button>
+            {initialData?.id && (
+              <button onClick={() => acmService.downloadPdf(initialData.id)} className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md">
+                <FileBadge className="w-4 h-4" /> Exportar Informe PDF
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1161,14 +1176,24 @@ function ACMWizard({
           {step === 1 ? 'Cancelar' : 'Anterior'}
         </button>
 
-        <button
-          onClick={step < 3 ? () => setStep(step + 1) : handleSaveEstimation}
-          disabled={saving}
-          className="px-6 py-2 bg-[#00a884] hover:bg-[#009272] text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md"
-        >
-          {saving ? 'Guardando...' : step === 1 ? 'Continuar a Valuación' : step === 2 ? 'Finalizar Análisis' : 'Guardar Expediente'}
-          {step < 3 && <ChevronRight className="w-4 h-4" />}
-        </button>
+        <div className="flex items-center gap-3">
+          {initialData?.id && (
+            <button
+              onClick={() => acmService.downloadPdf(initialData.id)}
+              className="px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <FileBadge className="w-4 h-4" /> PDF
+            </button>
+          )}
+          <button
+            onClick={step < 3 ? () => setStep(step + 1) : handleSaveEstimation}
+            disabled={saving}
+            className="px-6 py-2 bg-[#00a884] hover:bg-[#009272] text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md"
+          >
+            {saving ? 'Guardando...' : step === 1 ? 'Continuar a Valuación' : step === 2 ? 'Finalizar Análisis' : 'Guardar Expediente'}
+            {step < 3 && <ChevronRight className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1178,9 +1203,11 @@ function AcmZonesView() {
   const [zones, setZones] = useState<AcmZone[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterTransactionType, setFilterTransactionType] = useState<'all' | 'venta' | 'alquiler'>('all');
 
   // Zone creation form
   const [name, setName] = useState('');
+  const [transactionType, setTransactionType] = useState<'venta' | 'alquiler'>('venta');
   const [suggestedSuelo, setSuggestedSuelo] = useState('');
   const [suggestedConstruccion, setSuggestedConstruccion] = useState('');
   const [color, setColor] = useState('#00a884');
@@ -1191,7 +1218,10 @@ function AcmZonesView() {
   const fetchZones = async () => {
     setLoading(true);
     try {
-      const res = await acmService.getZones({ search });
+      const res = await acmService.getZones({
+        search,
+        transaction_type: filterTransactionType !== 'all' ? filterTransactionType : undefined,
+      });
       setZones(res.data || []);
     } catch (err) {
       console.error(err);
@@ -1203,7 +1233,7 @@ function AcmZonesView() {
 
   useEffect(() => {
     fetchZones();
-  }, [search]);
+  }, [search, filterTransactionType]);
 
   const handleCreateZone = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1215,6 +1245,7 @@ function AcmZonesView() {
     try {
       await acmService.createZone({
         name,
+        transaction_type: transactionType,
         suggested_suelo: Number(suggestedSuelo),
         suggested_construccion: Number(suggestedConstruccion),
         coordinates: currentVertices,
@@ -1222,7 +1253,7 @@ function AcmZonesView() {
         description,
       });
 
-      toast.success('Zona delimitada y guardada exitosamente');
+      toast.success(`Zona para ${transactionType.toUpperCase()} registrada exitosamente`);
       setName('');
       setSuggestedSuelo('');
       setSuggestedConstruccion('');
@@ -1255,7 +1286,7 @@ function AcmZonesView() {
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <Layers className="w-5 h-5 text-blue-600" />
-            <h2 className="text-base font-bold text-slate-800">Delimitador de Zonas de Valoración por Polígonos</h2>
+            <h2 className="text-base font-bold text-slate-800">Delimitador de Zonas por Polígonos</h2>
           </div>
           <span className="text-xs text-slate-500">
             Haz clic en el mapa para definir la forma de la zona.
@@ -1296,6 +1327,30 @@ function AcmZonesView() {
 
           <form onSubmit={handleCreateZone} className="space-y-4 bg-slate-50/50 p-4 rounded-xl border border-slate-200">
             <h3 className="text-xs font-bold text-slate-700 uppercase">Parámetros de la Zona</h3>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase">Modalidad de Zona *</label>
+              <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => { setTransactionType('venta'); setColor('#00a884'); }}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                    transactionType === 'venta' ? 'bg-white text-slate-800 shadow-sm border border-slate-200' : 'text-slate-500'
+                  }`}
+                >
+                  Zona Venta
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setTransactionType('alquiler'); setColor('#2563eb'); }}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                    transactionType === 'alquiler' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'
+                  }`}
+                >
+                  Zona Alquiler
+                </button>
+              </div>
+            </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase">Nombre de la Zona *</label>
@@ -1357,8 +1412,37 @@ function AcmZonesView() {
 
       {/* Zones List Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-800">Zonas Registradas ({zones.length})</h3>
+        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-bold text-slate-800">Zonas Registradas ({zones.length})</h3>
+            <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-bold">
+              <button
+                onClick={() => setFilterTransactionType('all')}
+                className={`px-3 py-1 rounded-md transition-all ${
+                  filterTransactionType === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
+                }`}
+              >
+                Todas
+              </button>
+              <button
+                onClick={() => setFilterTransactionType('venta')}
+                className={`px-3 py-1 rounded-md transition-all ${
+                  filterTransactionType === 'venta' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500'
+                }`}
+              >
+                Venta
+              </button>
+              <button
+                onClick={() => setFilterTransactionType('alquiler')}
+                className={`px-3 py-1 rounded-md transition-all ${
+                  filterTransactionType === 'alquiler' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'
+                }`}
+              >
+                Alquiler
+              </button>
+            </div>
+          </div>
+
           <div className="relative w-64">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -1373,7 +1457,7 @@ function AcmZonesView() {
           <div className="p-8 text-center text-slate-400">Cargando zonas...</div>
         ) : zones.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-xs font-medium">
-            No existen zonas de valoración delimitadas aún.
+            No existen zonas de valoración delimitadas para esta modalidad.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -1381,6 +1465,7 @@ function AcmZonesView() {
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold text-[10px]">
                 <tr>
                   <th className="p-3">Zona</th>
+                  <th className="p-3">Modalidad</th>
                   <th className="p-3">Suelo ($/m²)</th>
                   <th className="p-3">Construcción ($/m²)</th>
                   <th className="p-3">Vértices</th>
@@ -1393,6 +1478,17 @@ function AcmZonesView() {
                     <td className="p-3 font-bold flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full border" style={{ backgroundColor: zone.color || '#3b82f6' }}></span>
                       {zone.name}
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${
+                          zone.transaction_type === 'alquiler'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}
+                      >
+                        {zone.transaction_type || 'venta'}
+                      </span>
                     </td>
                     <td className="p-3 font-bold text-emerald-600">${zone.suggested_suelo} / m²</td>
                     <td className="p-3 font-bold text-blue-600">${zone.suggested_construccion} / m²</td>

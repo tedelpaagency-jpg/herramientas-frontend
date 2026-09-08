@@ -159,25 +159,25 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
           className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 border border-slate-200 overflow-hidden my-auto flex flex-col max-h-[90vh]"
         >
-          <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white">
+          <div className="bg-slate-900 text-white px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 flex-shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shrink-0">
                 <FileText className="w-5 h-5" />
               </div>
-              <div>
-                <h3 className="font-extrabold text-sm text-white">
+              <div className="min-w-0">
+                <h3 className="font-extrabold text-sm text-white truncate">
                   {templateToEdit ? 'Editar Plantilla Legal' : 'Nueva Plantilla Legal LexVault'}
                 </h3>
                 <p className="text-[11px] text-slate-400">{"Configure los marcadores dinámicos tipo {{NOMBRE_TOKEN}}"}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700">
                 <button
                   type="button"
                   onClick={() => setActiveTab('editor')}
-                  className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${
+                  className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition-colors ${
                     activeTab === 'editor' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -186,7 +186,7 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('preview')}
-                  className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${
+                  className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition-colors ${
                     activeTab === 'preview' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -200,7 +200,7 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Título de la Plantilla</label>

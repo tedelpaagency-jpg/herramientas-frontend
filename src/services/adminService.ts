@@ -116,7 +116,29 @@ export const adminService = {
     return res.data?.data || res.data;
   },
 
-  updateAgency: async (id: number, data: Partial<Agency>): Promise<Agency> => {
+  updateAgency: async (id: number, data: any): Promise<Agency> => {
+    if (data instanceof FormData) {
+      const res = await apiClient.post(`/v1/agencies/${id}/update`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data?.data || res.data;
+    }
+    const hasFiles = data.logo_file || data.logo_2_file || data.logo_icon_file || data.favicon_file || data.login_background_file;
+    if (hasFiles) {
+      const formData = new FormData();
+      Object.keys(data).forEach((key) => {
+        const val = data[key];
+        if (val instanceof File) {
+          formData.append(key, val);
+        } else if (val !== null && val !== undefined && val !== '') {
+          formData.append(key, String(val));
+        }
+      });
+      const res = await apiClient.post(`/v1/agencies/${id}/update`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data?.data || res.data;
+    }
     const res = await apiClient.post(`/v1/agencies/${id}/update`, data);
     return res.data?.data || res.data;
   },

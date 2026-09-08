@@ -110,56 +110,58 @@ export const AdminPricingRulesPage: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xl">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                <th className="py-4 px-6">Prioridad</th>
-                <th className="py-4 px-6">Nombre de Regla</th>
-                <th className="py-4 px-6">Nivel (Target)</th>
-                <th className="py-4 px-6">Categoría / Target ID</th>
-                <th className="py-4 px-6">Margen Plataforma</th>
-                <th className="py-4 px-6 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
-              {rules.map((rule) => (
-                <tr key={rule.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="py-4 px-6 font-black text-cyan-600 dark:text-cyan-400">
-                    Priority #{rule.priority}
-                  </td>
-                  <td className="py-4 px-6 font-bold text-slate-900 dark:text-white">
-                    {rule.name}
-                  </td>
-                  <td className="py-4 px-6 text-xs uppercase font-semibold text-slate-500">
-                    {rule.target_type}
-                  </td>
-                  <td className="py-4 px-6 text-xs font-medium text-slate-600 dark:text-slate-300">
-                    {rule.target_type === 'category' ? rule.category : `Target ID #${rule.target_id}`}
-                  </td>
-                  <td className="py-4 px-6 font-extrabold text-slate-900 dark:text-white">
-                    {rule.markup_type === 'percentage' ? `${rule.markup_value}%` : `$${rule.markup_value}`}
-                  </td>
-                  <td className="py-4 px-6 text-right">
-                    <button
-                      onClick={() => handleDeleteRule(rule.id)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
+          <div className="w-full overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Prioridad</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Nombre de Regla</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Nivel (Target)</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Categoría / Target ID</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Margen Plataforma</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-right whitespace-nowrap">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                {rules.map((rule) => (
+                  <tr key={rule.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 font-black text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
+                      Priority #{rule.priority}
+                    </td>
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                      {rule.name}
+                    </td>
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-xs uppercase font-semibold text-slate-500 whitespace-nowrap">
+                      {rule.target_type}
+                    </td>
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                      {rule.target_type === 'category' ? rule.category : `Target ID #${rule.target_id}`}
+                    </td>
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 font-extrabold text-slate-900 dark:text-white whitespace-nowrap">
+                      {rule.markup_type === 'percentage' ? `${rule.markup_value}%` : `$${rule.markup_value}`}
+                    </td>
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => handleDeleteRule(rule.id)}
+                        className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Modal Nueva Regla */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <form
             onSubmit={handleCreateRule}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 max-w-md w-full space-y-4 shadow-2xl"
           >
             <h3 className="text-lg font-black text-slate-900 dark:text-white">
               Nueva Regla de PricingEngine

@@ -18,19 +18,19 @@ export function Skeleton({ className }: { className?: string }) {
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div className="w-full bg-surface rounded-xl border border-outline-variant overflow-hidden">
-      <div className="flex border-b border-outline-variant bg-surface-container-low p-4 gap-4">
+      <div className="flex border-b border-outline-variant bg-surface-container-low p-3 sm:p-4 gap-2 sm:gap-4">
         {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-4 flex-1 rounded-sm" />
+          <Skeleton key={i} className={`h-4 flex-1 rounded-sm ${i > 3 ? 'hidden sm:block' : ''}`} />
         ))}
       </div>
       {Array.from({ length: rows }).map((_, idx) => (
-        <div key={idx} className="flex p-5 gap-4 border-b border-outline-variant last:border-b-0">
-          <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-          <div className="flex-1 space-y-2 py-1">
+        <div key={idx} className="flex p-3 sm:p-5 gap-3 sm:gap-4 border-b border-outline-variant last:border-b-0 items-center">
+          <Skeleton className="h-8 w-8 sm:h-10 sm:w-10 rounded-full shrink-0" />
+          <div className="flex-1 space-y-2 py-1 min-w-0">
             <Skeleton className="h-4 w-3/4 rounded-sm" />
             <Skeleton className="h-3 w-1/2 rounded-sm" />
           </div>
-          <Skeleton className="h-8 w-24 rounded-full" />
+          <Skeleton className="h-7 w-16 sm:h-8 sm:w-24 rounded-full shrink-0" />
         </div>
       ))}
     </div>

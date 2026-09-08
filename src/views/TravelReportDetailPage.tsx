@@ -155,7 +155,7 @@ export const TravelReportDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 w-full">
       {/* Top Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div className="flex items-center gap-4">
@@ -217,7 +217,7 @@ export const TravelReportDetailPage: React.FC = () => {
       </div>
 
       {/* Product & General Information Header Banner */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs grid grid-cols-1 md:grid-cols-4 gap-6 text-xs">
+      <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-xs">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 rounded-2xl">
             <Tag className="w-5 h-5" />
@@ -349,7 +349,7 @@ export const TravelReportDetailPage: React.FC = () => {
                 </button>
               </form>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 space-y-1">
                   <span className="text-[10px] font-extrabold text-slate-400 uppercase">Valor Cliente</span>
                   <p className="text-lg font-black text-slate-900 dark:text-white">

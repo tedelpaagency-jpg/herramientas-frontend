@@ -436,8 +436,8 @@ export const WhiteLabelsPage: React.FC = () => {
       {/* CREATE / EDIT WHITE LABEL MODAL */}
       {isCreateModalOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-xl w-full p-6 shadow-2xl space-y-4 my-8">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-8">
               <h2 className="font-extrabold text-base text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                 <Palette className="w-5 h-5 text-blue-600" />
                 {editingWL ? 'Editar Marca Blanca (Branding & Configuración)' : 'Nueva Marca Blanca (White Label)'}
@@ -715,8 +715,8 @@ export const WhiteLabelsPage: React.FC = () => {
       {/* ADD ADMIN MODAL */}
       {addingAdminWL && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4">
               <h3 className="font-extrabold text-base text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-blue-600" />
                 Asignar Administrador a {addingAdminWL.name}
@@ -782,8 +782,8 @@ export const WhiteLabelsPage: React.FC = () => {
       {/* ADD AGENCY MODAL */}
       {addingAgencyWL && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4">
               <h3 className="font-extrabold text-base text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-purple-600" />
                 Agregar Agencia a {addingAgencyWL.name}

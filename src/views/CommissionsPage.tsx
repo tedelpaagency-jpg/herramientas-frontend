@@ -88,7 +88,7 @@ export const CommissionsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 w-full">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div>
@@ -186,21 +186,21 @@ export const CommissionsPage: React.FC = () => {
             <p className="text-xs">Las comisiones aparecerán automáticamente cuando tus reportes de viaje sean autorizados.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-[11px] font-black uppercase text-slate-400 tracking-wider">
-                  <th className="py-4 px-6">Tipo</th>
-                  <th className="py-4 px-6">Concepto / Reporte</th>
-                  <th className="py-4 px-6">Fecha</th>
-                  <th className="py-4 px-6">Monto ($)</th>
-                  <th className="py-4 px-6">Estado</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Tipo</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Concepto / Reporte</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Fecha</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Monto ($)</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Estado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold">
                 {commissions.map((comm) => (
                   <tr key={comm.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="py-4 px-6">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                       {comm.type === 1 ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-extrabold text-[11px]">
                           <ArrowDownRight className="w-3.5 h-3.5" />
@@ -214,28 +214,28 @@ export const CommissionsPage: React.FC = () => {
                       )}
                     </td>
 
-                    <td className="py-4 px-6">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6">
                       <div className="font-extrabold text-slate-900 dark:text-white">
                         {comm.description || 'Movimiento de comisión'}
                       </div>
                       {comm.travel_report && (
-                        <span className="text-[11px] text-slate-400 block mt-0.5">
+                        <span className="text-[11px] text-slate-400 block mt-0.5 whitespace-nowrap">
                           Expediente: {comm.travel_report.code} - {comm.travel_report.name}
                         </span>
                       )}
                     </td>
 
-                    <td className="py-4 px-6 text-slate-500">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-slate-500 whitespace-nowrap">
                       {new Date(comm.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
 
-                    <td className="py-4 px-6">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                       <span className={`font-black ${comm.type === 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
                         ${formatMoney(comm.amount)}
                       </span>
                     </td>
 
-                    <td className="py-4 px-6">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                       {comm.status === 1 ? (
                         <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[11px]">Aprobado</span>
                       ) : comm.status === 2 ? (
@@ -254,8 +254,8 @@ export const CommissionsPage: React.FC = () => {
 
       {/* Modal para solicitar retiro */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-md w-full space-y-6 shadow-2xl border border-slate-200 dark:border-slate-800">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 md:p-8 max-w-md w-full space-y-6 shadow-2xl border border-slate-200 dark:border-slate-800">
             <h3 className="text-xl font-black text-slate-900 dark:text-white">
               Solicitar Retiro de Comisión
             </h3>

@@ -60,7 +60,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
       )}
 
       {/* Right Sidebar Drawer */}
-      <aside className={`fixed right-0 top-0 w-80 h-full bg-surface border-l border-outline-variant z-[60] flex flex-col overflow-y-auto transition-transform duration-300 ease-in-out ${rightSidebarOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'}`}>
+      <aside className={`fixed right-0 top-0 w-80 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 z-[60] flex flex-col overflow-y-auto transition-transform duration-300 ease-in-out ${rightSidebarOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'}`}>
         {/* Mobile Close Button */}
         <button 
           onClick={() => setRightSidebarOpen(false)}

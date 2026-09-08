@@ -440,78 +440,78 @@ export const EstateFormPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* 4. Información Adicional */}
-              <div className={sectionCls}>
-                <div className={sectionHeaderCls}>
-                  <span className="text-lg">📋</span>
-                  <h3 className="font-bold text-slate-800 text-sm">Información Adicional</h3>
+                {/* 4. Información Adicional */}
+                <div className={sectionCls}>
+                  <div className={sectionHeaderCls}>
+                    <span className="text-lg">📋</span>
+                    <h3 className="font-bold text-slate-800 text-sm">Información Adicional</h3>
+                  </div>
+                  <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className={labelCls}>Tipo de Propiedad <span className="text-rose-500">*</span></label>
+                      <select className={inputCls} value={form.property_type} onChange={e => handleChange('property_type', e.target.value)} required>
+                        <option value="">Seleccionar</option>
+                        <option value="1">Casa</option>
+                        <option value="2">Departamento</option>
+                        <option value="3">Terreno / Lote</option>
+                        <option value="4">Comercial</option>
+                        <option value="5">Oficina</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Tipo de Transacción <span className="text-rose-500">*</span></label>
+                      <select className={inputCls} value={form.property_status} onChange={e => handleChange('property_status', e.target.value)}>
+                        <option value="1">En Alquiler</option>
+                        <option value="2">En Venta</option>
+                        <option value="3">En Remate</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Estado <span className="text-rose-500">*</span></label>
+                      <select className={inputCls} value={form.status} onChange={e => handleChange('status', e.target.value)}>
+                        <option value="1">Disponible</option>
+                        <option value="2">Vendido</option>
+                        <option value="3">Alquilado</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Terreno (m²)</label>
+                      <input type="number" className={inputCls} value={form.size} onChange={e => handleChange('size', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Construcción (m²)</label>
+                      <input type="text" className={inputCls} value={form.size_bulding} onChange={e => handleChange('size_bulding', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Habitaciones</label>
+                      <input type="number" className={inputCls} value={form.rooms} onChange={e => handleChange('rooms', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Dormitorios</label>
+                      <input type="number" className={inputCls} value={form.bedrooms} onChange={e => handleChange('bedrooms', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Baños</label>
+                      <input type="number" className={inputCls} value={form.bathrooms} onChange={e => handleChange('bathrooms', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Cochera</label>
+                      <input type="number" className={inputCls} value={form.no_garage} onChange={e => handleChange('no_garage', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Año de Construcción</label>
+                      <input type="number" className={inputCls} value={form.construction_year} onChange={e => handleChange('construction_year', e.target.value)} />
+                    </div>
+                  </div>
                 </div>
-                <div className="p-5 grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className={labelCls}>Tipo de Propiedad <span className="text-rose-500">*</span></label>
-                    <select className={inputCls} value={form.property_type} onChange={e => handleChange('property_type', e.target.value)} required>
-                      <option value="">Seleccionar</option>
-                      <option value="1">Casa</option>
-                      <option value="2">Departamento</option>
-                      <option value="3">Terreno / Lote</option>
-                      <option value="4">Comercial</option>
-                      <option value="5">Oficina</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Tipo de Transacción <span className="text-rose-500">*</span></label>
-                    <select className={inputCls} value={form.property_status} onChange={e => handleChange('property_status', e.target.value)}>
-                      <option value="1">En Alquiler</option>
-                      <option value="2">En Venta</option>
-                      <option value="3">En Remate</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Estado <span className="text-rose-500">*</span></label>
-                    <select className={inputCls} value={form.status} onChange={e => handleChange('status', e.target.value)}>
-                      <option value="1">Disponible</option>
-                      <option value="2">Vendido</option>
-                      <option value="3">Alquilado</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Terreno (m²)</label>
-                    <input type="number" className={inputCls} value={form.size} onChange={e => handleChange('size', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Construcción (m²)</label>
-                    <input type="text" className={inputCls} value={form.size_bulding} onChange={e => handleChange('size_bulding', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Habitaciones</label>
-                    <input type="number" className={inputCls} value={form.rooms} onChange={e => handleChange('rooms', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Dormitorios</label>
-                    <input type="number" className={inputCls} value={form.bedrooms} onChange={e => handleChange('bedrooms', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Baños</label>
-                    <input type="number" className={inputCls} value={form.bathrooms} onChange={e => handleChange('bathrooms', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Cochera</label>
-                    <input type="number" className={inputCls} value={form.no_garage} onChange={e => handleChange('no_garage', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Año de Construcción</label>
-                    <input type="number" className={inputCls} value={form.construction_year} onChange={e => handleChange('construction_year', e.target.value)} />
-                  </div>
-                </div>
-              </div>
 
-              {/* 5. Amenidades */}
-              <div className={sectionCls}>
-                <div className={sectionHeaderCls}>
-                  <span className="text-lg">✨</span>
-                  <h3 className="font-bold text-slate-800 text-sm">Servicios y Comodidades</h3>
-                </div>
-                <div className="p-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {/* 5. Amenidades */}
+                <div className={sectionCls}>
+                  <div className={sectionHeaderCls}>
+                    <span className="text-lg">✨</span>
+                    <h3 className="font-bold text-slate-800 text-sm">Servicios y Comodidades</h3>
+                  </div>
+                  <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {AMENITIES.map(amenity => (
                     <label key={amenity.key} className="flex items-center gap-2 cursor-pointer group">
                       <div

@@ -560,24 +560,24 @@ export const GamificationPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-extrabold uppercase tracking-wider">
-                  <th className="py-3 px-4">ID</th>
-                  <th className="py-3 px-4">Fecha</th>
-                  <th className="py-3 px-4">Agencia / Usuario</th>
-                  <th className="py-3 px-4">Premio</th>
-                  <th className="py-3 px-4">Origen</th>
-                  <th className="py-3 px-4">Estado</th>
-                  <th className="py-3 px-4 text-right">Acciones</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">ID</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">Fecha</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">Agencia / Usuario</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">Premio</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">Origen</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">Estado</th>
+                  <th className="py-3 px-3 sm:px-4 text-right whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {giftsList.map((g) => (
                   <tr key={g.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">#{g.id}</td>
-                    <td className="py-3.5 px-4 font-semibold text-slate-600 dark:text-slate-400">
+                    <td className="py-3 sm:py-3.5 px-3 sm:px-4 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">#{g.id}</td>
+                    <td className="py-3 sm:py-3.5 px-3 sm:px-4 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
                       {g.assigned_at ? new Date(g.assigned_at).toLocaleDateString() : 'Reciente'}
                     </td>
                     <td className="py-3.5 px-4">

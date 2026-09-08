@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import apiClient, { getApiBaseUrl } from './apiClient';
 import { AcmEstimation, AcmZone } from '../types/acm';
 
 export const acmService = {
@@ -33,8 +33,15 @@ export const acmService = {
     return response.data;
   },
 
+  downloadPdf(id: number) {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('santun_auth_token') : '';
+    const baseUrl = apiClient.defaults.baseURL || getApiBaseUrl();
+    const url = `${baseUrl}/v1/acm/estimations/${id}/pdf-stream?token=${token}`;
+    window.open(url, '_blank');
+  },
+
   // Zones (Polygons)
-  async getZones(params?: { search?: string }) {
+  async getZones(params?: { search?: string; transaction_type?: string }) {
     const response = await apiClient.get('/v1/acm/zones', { params });
     return response.data;
   },
@@ -42,6 +49,7 @@ export const acmService = {
   async createZone(data: {
     name: string;
     code?: string;
+    transaction_type?: 'venta' | 'alquiler';
     color?: string;
     suggested_suelo: number;
     suggested_construccion: number;
@@ -62,8 +70,8 @@ export const acmService = {
     return response.data;
   },
 
-  async detectZone(lat: number, lng: number) {
-    const response = await apiClient.post('/v1/acm/zones/detect', { lat, lng });
+  async detectZone(lat: number, lng: number, transaction_type?: string) {
+    const response = await apiClient.post('/v1/acm/zones/detect', { lat, lng, transaction_type });
     return response.data;
   }
 };

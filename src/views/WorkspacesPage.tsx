@@ -160,18 +160,18 @@ export const WorkspacesPage: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="px-5 py-4">Workspace</th>
-                  <th className="px-5 py-4">Agencia</th>
-                  <th className="px-5 py-4">Estado Integration</th>
-                  <th className="px-5 py-4">Campaña Meta</th>
-                  <th className="px-5 py-4">Formulario Meta</th>
-                  <th className="px-5 py-4 text-center">Leads</th>
-                  <th className="px-5 py-4">Fecha</th>
-                  <th className="px-5 py-4 text-right">Acciones</th>
+                  <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">Workspace</th>
+                  <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">Agencia</th>
+                  <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">Estado Integration</th>
+                  <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">Campaña Meta</th>
+                  <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">Formulario Meta</th>
+                  <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 text-center whitespace-nowrap">Leads</th>
+                  <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">Fecha</th>
+                  <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 text-right whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -184,17 +184,17 @@ export const WorkspacesPage: React.FC = () => {
                       className="group transition-all duration-200 hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
                     >
                       {/* Workspace Name & Description */}
-                      <td className="px-5 py-4">
+                      <td className="px-3 sm:px-4 md:px-5 py-3 sm:py-4">
                         <div className="flex items-center gap-3">
                           <div
                             className="w-3.5 h-10 rounded-full flex-shrink-0"
                             style={{ backgroundColor: ws.color || '#3B82F6' }}
                           />
                           <div>
-                            <p className="font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors text-sm">
+                            <p className="font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors text-sm whitespace-nowrap">
                               {ws.name}
                             </p>
-                            <p className="text-[11px] text-slate-500 font-medium line-clamp-1">
+                            <p className="text-[11px] text-slate-500 font-medium line-clamp-1 whitespace-nowrap">
                               {ws.description || 'Sin descripción'}
                             </p>
                           </div>
@@ -202,12 +202,12 @@ export const WorkspacesPage: React.FC = () => {
                       </td>
 
                       {/* Agency */}
-                      <td className="px-5 py-4 font-semibold text-slate-700 dark:text-slate-300">
+                      <td className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                         {ws.agency?.name || 'Agencia Principal'}
                       </td>
 
                       {/* Meta Status Badge */}
-                      <td className="px-5 py-4">
+                      <td className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
                           isMeta
                             ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200/60'
@@ -219,7 +219,7 @@ export const WorkspacesPage: React.FC = () => {
                       </td>
 
                       {/* Meta Campaign */}
-                      <td className="px-5 py-4 font-medium text-slate-700 dark:text-slate-300">
+                      <td className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
                         {isMeta && ws.meta_campaign_name ? (
                           <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold">
                             <Share2 className="w-3.5 h-3.5 flex-shrink-0" />
@@ -231,7 +231,7 @@ export const WorkspacesPage: React.FC = () => {
                       </td>
 
                       {/* Meta Form */}
-                      <td className="px-5 py-4 font-medium text-slate-700 dark:text-slate-300">
+                      <td className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
                         {isMeta && ws.meta_form_name ? (
                           <span className="font-semibold text-slate-900 dark:text-white">{ws.meta_form_name}</span>
                         ) : (
@@ -240,19 +240,19 @@ export const WorkspacesPage: React.FC = () => {
                       </td>
 
                       {/* Leads Count */}
-                      <td className="px-5 py-4 text-center">
+                      <td className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 text-center whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200/60">
                           {ws.clients_count ?? 0}
                         </span>
                       </td>
 
                       {/* Created At */}
-                      <td className="px-5 py-4 text-slate-500 font-medium text-[11px] whitespace-nowrap">
+                      <td className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 text-slate-500 font-medium text-[11px] whitespace-nowrap">
                         {ws.created_at ? new Date(ws.created_at).toLocaleDateString() : 'N/A'}
                       </td>
 
                       {/* Actions */}
-                      <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
+                      <td className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 text-right space-x-1.5 whitespace-nowrap">
                         <Link
                           href={`/crm?workspace_id=${ws.id}`}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-[11px] shadow-sm transition-all"
@@ -331,8 +331,8 @@ export const WorkspacesPage: React.FC = () => {
 
       {/* Create / Edit Workspace Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-4 sm:p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <Kanban className="w-5 h-5 text-blue-600" />

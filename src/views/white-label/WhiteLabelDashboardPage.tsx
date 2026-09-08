@@ -30,6 +30,7 @@ import adminService from '../../services/adminService';
 import { useAuth } from '../../context/AuthContext';
 import Portal from '../../components/Portal';
 import toast from 'react-hot-toast';
+import BrandingCustomizationPage from '../admin/BrandingCustomizationPage';
 
 export const WhiteLabelDashboardPage: React.FC = () => {
   const { user, currentWhiteLabel, setCurrentWhiteLabel } = useAuth();
@@ -394,126 +395,17 @@ export const WhiteLabelDashboardPage: React.FC = () => {
 
       {/* TAB 3: BRANDING */}
       {activeTab === 'branding' && (
-        <form onSubmit={handleSaveBranding} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
-          <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-            <Palette className="w-5 h-5 text-blue-600" />
-            Configuración de Identidad Visual (Branding)
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-bold">
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1">Nombre Comercial de Marca Blanca *</label>
-              <input
-                type="text"
-                required
-                value={brandingData.name}
-                onChange={(e) => setBrandingData({ ...brandingData, name: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1">Dominio Personalizado</label>
-              <input
-                type="text"
-                value={brandingData.custom_domain}
-                onChange={(e) => setBrandingData({ ...brandingData, custom_domain: e.target.value })}
-                placeholder="app.micompania.com"
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1">Descripción para SEO Meta Tag</label>
-              <textarea
-                rows={2}
-                value={brandingData.seo_description}
-                onChange={(e) => setBrandingData({ ...brandingData, seo_description: e.target.value })}
-                placeholder="Descripción de la empresa para navegadores y motores de búsqueda SEO..."
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          {/* Logo and Favicon Uploads */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Subir Archivo de Logotipo (PNG/SVG)</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setBrandingData({ ...brandingData, logo_file: e.target.files[0] });
-                  }
-                }}
-                className="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Subir Archivo de Favicon (.ico/.png)</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setBrandingData({ ...brandingData, favicon_file: e.target.files[0] });
-                  }
-                }}
-                className="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-              />
-            </div>
-          </div>
-
-          <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-            <span className="text-[11px] uppercase font-mono font-extrabold text-blue-600 dark:text-blue-400">Paleta de Colores Dinámica</span>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Color Primario</label>
-                <input
-                  type="color"
-                  value={brandingData.primary_color}
-                  onChange={(e) => setBrandingData({ ...brandingData, primary_color: e.target.value })}
-                  className="w-full h-10 rounded-xl cursor-pointer bg-transparent border-0"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Color Secundario</label>
-                <input
-                  type="color"
-                  value={brandingData.secondary_color}
-                  onChange={(e) => setBrandingData({ ...brandingData, secondary_color: e.target.value })}
-                  className="w-full h-10 rounded-xl cursor-pointer bg-transparent border-0"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Color de Botones</label>
-                <input
-                  type="color"
-                  value={brandingData.button_color}
-                  onChange={(e) => setBrandingData({ ...brandingData, button_color: e.target.value })}
-                  className="w-full h-10 rounded-xl cursor-pointer bg-transparent border-0"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
-            >
-              Guardar Cambios de Branding
-            </button>
-          </div>
-        </form>
+        <BrandingCustomizationPage
+          initialTargetType="white_label"
+          initialWhiteLabelId={selectedWL.id}
+        />
       )}
 
       {/* AGENCY PROFILE & USERS MODAL */}
       {selectedAgencyDetail && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-3xl w-full p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-3xl w-full p-4 sm:p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
               {/* Modal Header */}
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div className="flex items-center gap-3">

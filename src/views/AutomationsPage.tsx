@@ -607,8 +607,8 @@ export default function AutomationsPage() {
       {/* CREATE / EDIT AUTOMATION MODAL */}
       {isModalOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-2xl w-full p-6 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-2xl w-full p-4 sm:p-6 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 sticky top-0 bg-white dark:bg-slate-900 z-10">
                 <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <Zap className="w-5 h-5 text-amber-500" />
@@ -1049,8 +1049,8 @@ export default function AutomationsPage() {
       {/* LIVE EMAIL PREVIEW MODAL */}
       {isPreviewOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[10000] bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-3xl w-full p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95">
+          <div className="fixed inset-0 z-[10000] bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-3xl w-full p-4 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95">
               {/* Preview Header */}
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2 font-black text-slate-900 dark:text-white">
@@ -1188,8 +1188,8 @@ export default function AutomationsPage() {
       {/* TEST EMAIL DISPATCH MODAL */}
       {isTestEmailModalOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[20000] bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-5 animate-scale-up">
+          <div className="fixed inset-0 z-[20000] bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-4 sm:p-6 space-y-5 animate-scale-up">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-black text-base">
                   <Send className="w-5 h-5" />

@@ -23,7 +23,7 @@ export default function RootLayout({
           rel="stylesheet" 
         />
       </head>
-      <body suppressHydrationWarning>
+      <body suppressHydrationWarning className="bg-background text-on-background min-h-screen antialiased transition-colors duration-200">
         <AuthProvider>
           {children}
           <Toaster position="top-right" />

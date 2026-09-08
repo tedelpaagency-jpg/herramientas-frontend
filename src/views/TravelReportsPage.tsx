@@ -173,7 +173,7 @@ export const TravelReportsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 w-full">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div>
@@ -377,37 +377,37 @@ export const TravelReportsPage: React.FC = () => {
             <p className="text-xs">No hay ventas registradas que coincidan con los filtros seleccionados.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-[11px] font-black uppercase text-slate-400 tracking-wider">
-                  <th className="py-4 px-6">Código / Venta</th>
-                  {isMultiAgencyAdmin && <th className="py-4 px-6">Agencia</th>}
-                  <th className="py-4 px-6">Vendedor / Equipo</th>
-                  <th className="py-4 px-6">Cliente / Pasajeros</th>
-                  <th className="py-4 px-6">Total Cliente</th>
-                  <th className="py-4 px-6">Comisión Agente</th>
-                  <th className="py-4 px-6">Estado</th>
-                  <th className="py-4 px-6 text-right">Acciones</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Código / Venta</th>
+                  {isMultiAgencyAdmin && <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Agencia</th>}
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Vendedor / Equipo</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Cliente / Pasajeros</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Total Cliente</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Comisión Agente</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">Estado</th>
+                  <th className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-right whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold">
                 {reports.map((report) => (
                   <tr key={report.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="py-4 px-6">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6">
                       <div className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                        <span className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-[11px]">
+                        <span className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-[11px] whitespace-nowrap">
                           {report.code}
                         </span>
-                        <span>{report.name}</span>
+                        <span className="whitespace-nowrap">{report.name}</span>
                       </div>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap">
                         {new Date(report.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     </td>
 
                     {isMultiAgencyAdmin && (
-                      <td className="py-4 px-6">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                         <div className="font-bold text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
                           <Building className="w-3.5 h-3.5 text-indigo-500" />
                           <span>{report.agency?.name || 'N/A'}</span>
@@ -415,7 +415,7 @@ export const TravelReportsPage: React.FC = () => {
                       </td>
                     )}
 
-                    <td className="py-4 px-6">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                       <p className="text-slate-900 dark:text-slate-200 font-bold">{report.user?.name || 'N/A'}</p>
                       <div className="text-[10px] text-slate-400 flex items-center gap-1.5">
                         {report.team && <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md font-semibold">{report.team.name}</span>}
@@ -423,14 +423,14 @@ export const TravelReportsPage: React.FC = () => {
                       </div>
                     </td>
 
-                    <td className="py-4 px-6">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6">
                       {report.passengers && report.passengers.length > 0 ? (
                         <div>
-                          <p className="text-slate-900 dark:text-slate-200 font-bold">
+                          <p className="text-slate-900 dark:text-slate-200 font-bold whitespace-nowrap">
                             {report.passengers[0].name} {report.passengers[0].last_name || ''}
                           </p>
                           {report.passengers.length > 1 && (
-                            <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold">
+                            <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold whitespace-nowrap">
                               +{report.passengers.length - 1} pasajero(s) más
                             </span>
                           )}
@@ -440,23 +440,23 @@ export const TravelReportsPage: React.FC = () => {
                       )}
                     </td>
 
-                    <td className="py-4 px-6">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                       <span className="font-black text-slate-900 dark:text-white">
                         ${(report.total_client || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </span>
                     </td>
 
-                    <td className="py-4 px-6">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                       <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
                         ${(report.commition_percent || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </span>
                     </td>
 
-                    <td className="py-4 px-6">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                       {getStatusBadge(report.status)}
                     </td>
 
-                    <td className="py-4 px-6 text-right">
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/travel-reports/${report.id}`}

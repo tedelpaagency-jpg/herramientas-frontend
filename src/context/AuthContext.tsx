@@ -53,10 +53,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isSuperAdminUser = res.user.role === 'super_admin' || res.user.roles?.some((r: any) => r.name === 'super_admin');
 
         if (isSuperAdminUser) {
-          // Super Admin manages all white labels globally and does not belong to a single locked white label
-          setCurrentWhiteLabel(null);
-          setCurrentAgency(null);
-          localStorage.removeItem('santun_white_label');
+          // Super Admin manages all white labels globally; preserve active selected white label if present in state or localStorage
+          const savedWl = localStorage.getItem('santun_white_label');
+          if (savedWl) {
+            try {
+              const parsedWl = JSON.parse(savedWl);
+              setCurrentWhiteLabel(parsedWl);
+            } catch (e) {
+              // fallback
+            }
+          }
         } else {
           if ((res.user as any).agency) {
             setCurrentAgency((res.user as any).agency);

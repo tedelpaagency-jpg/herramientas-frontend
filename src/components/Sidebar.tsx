@@ -8,7 +8,7 @@ import {
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
   Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
-  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator
+  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator, Palette, X
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -75,14 +75,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }
 
   let brandLogo: string | null = null;
+  let brandLogoDark: string | null = null;
+  let brandLogoIcon: string | null = null;
   let brandName = 'SANTUN';
 
+  // Cached WhiteLabel and Menu Background fallbacks from localStorage
+  const [cachedWl, setCachedWl] = useState<any>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('santun_white_label');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+    }
+    return null;
+  });
+
+  const [cachedMenuBg, setCachedMenuBg] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('santun_menu_background');
+    }
+    return null;
+  });
+
+  const activeWl = currentWhiteLabel || (user as any)?.white_label || (user as any)?.white_labels?.[0] || cachedWl;
+  const activeAgency = currentAgency || agency || (user as any)?.agency;
+  const brandMenuBg = activeWl?.menu_background || activeAgency?.menu_background || cachedMenuBg;
+  const brandPrimaryColor = activeWl?.primary_color || activeAgency?.primary_color;
+
   if (isSuperAdmin || isWhiteLabelAdmin) {
-    const userWl = (user as any)?.white_labels?.[0] || (user as any)?.white_label || currentWhiteLabel;
-    brandLogo = userWl?.logo || currentWhiteLabel?.logo || null;
-    brandName = userWl?.name || currentWhiteLabel?.name || 'SANTUN';
+    brandLogo = activeWl?.logo || null;
+    brandLogoDark = activeWl?.logo_2 || null;
+    brandLogoIcon = activeWl?.logo_icon || null;
+    brandName = activeWl?.name || 'SANTUN';
   } else {
-    const currentPlan = agency?.current_subscription?.plan || agency?.currentSubscription?.plan || agency?.plan;
+    const currentPlan = activeAgency?.current_subscription?.plan || activeAgency?.currentSubscription?.plan || activeAgency?.plan;
     const activePlanPermissions = (
       (currentPlan as any)?.plan_permissions ||
       (currentPlan as any)?.planPermissions ||
@@ -90,31 +116,108 @@ export const Sidebar: React.FC<SidebarProps> = ({
       []
     ).map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim());
     const hasCustomBranding = activePlanPermissions.includes('custom_agency_branding');
-    const hostWhiteLabel = (agency as any)?.white_label || (user as any)?.white_labels?.[0] || currentWhiteLabel;
+    const hostWhiteLabel = activeWl || (activeAgency as any)?.white_label;
 
-    brandLogo = (hasCustomBranding && agency?.logo) ? agency.logo : (hostWhiteLabel?.logo || null);
-    brandName = (hasCustomBranding && agency?.name) ? agency.name : (hostWhiteLabel?.name || 'SANTUN');
+    brandLogo = (hasCustomBranding && activeAgency?.logo) ? activeAgency.logo : (hostWhiteLabel?.logo || null);
+    brandLogoDark = (hasCustomBranding && activeAgency?.logo_2) ? activeAgency.logo_2 : (hostWhiteLabel?.logo_2 || null);
+    brandLogoIcon = (hasCustomBranding && activeAgency?.logo_icon) ? activeAgency.logo_icon : (hostWhiteLabel?.logo_icon || null);
+    brandName = (hasCustomBranding && activeAgency?.name) ? activeAgency.name : (hostWhiteLabel?.name || 'SANTUN');
   }
+
+  // Theme state and listener for dynamic mode switching
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark') || localStorage.getItem('santun_theme') === 'dark';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleThemeOrBrandingChange = () => {
+      if (typeof window !== 'undefined') {
+        setIsDark(document.documentElement.classList.contains('dark') || localStorage.getItem('santun_theme') === 'dark');
+        const savedWl = localStorage.getItem('santun_white_label');
+        if (savedWl) {
+          try { setCachedWl(JSON.parse(savedWl)); } catch (e) {}
+        }
+        const savedMenuBg = localStorage.getItem('santun_menu_background');
+        if (savedMenuBg) setCachedMenuBg(savedMenuBg);
+      }
+    };
+    window.addEventListener('theme-changed', handleThemeOrBrandingChange);
+    window.addEventListener('branding-updated', handleThemeOrBrandingChange);
+    return () => {
+      window.removeEventListener('theme-changed', handleThemeOrBrandingChange);
+      window.removeEventListener('branding-updated', handleThemeOrBrandingChange);
+    };
+  }, []);
 
   // Local storage instant caching for 0ms logo render on page refresh
   const [cachedLogo, setCachedLogo] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('santun_sidebar_logo');
-    }
+    if (typeof window !== 'undefined') return localStorage.getItem('santun_sidebar_logo');
+    return null;
+  });
+  const [cachedLogoDark, setCachedLogoDark] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('santun_sidebar_logo_dark');
+    return null;
+  });
+  const [cachedLogoIcon, setCachedLogoIcon] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('santun_sidebar_logo_icon');
     return null;
   });
 
   useEffect(() => {
-    if (brandLogo) {
-      setCachedLogo(brandLogo);
-      if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined') {
+      if (brandLogo) {
+        setCachedLogo(brandLogo);
         localStorage.setItem('santun_sidebar_logo', brandLogo);
       }
+      if (brandLogoDark) {
+        setCachedLogoDark(brandLogoDark);
+        localStorage.setItem('santun_sidebar_logo_dark', brandLogoDark);
+      }
+      if (brandLogoIcon) {
+        setCachedLogoIcon(brandLogoIcon);
+        localStorage.setItem('santun_sidebar_logo_icon', brandLogoIcon);
+      }
     }
-  }, [brandLogo]);
+  }, [brandLogo, brandLogoDark, brandLogoIcon]);
 
   const effectiveLogo = brandLogo || cachedLogo;
+  const effectiveLogoDark = brandLogoDark || cachedLogoDark;
+  const effectiveLogoIcon = brandLogoIcon || cachedLogoIcon;
   const firstWordOfName = brandName.trim().split(' ')[0];
+
+  const isColorDark = (hex?: string | null): boolean => {
+    if (!hex) return false;
+    let color = hex.replace('#', '');
+    if (color.length === 3) color = color.split('').map(c => c + c).join('');
+    if (color.length !== 6) return false;
+    const r = parseInt(color.substring(0, 2), 16);
+    const g = parseInt(color.substring(2, 4), 16);
+    const b = parseInt(color.substring(4, 6), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness < 160;
+  };
+
+  const targetDarkTheme = activeWl?.dark_theme || activeAgency?.dark_theme || (typeof window !== 'undefined' ? localStorage.getItem('santun_dark_theme') : null);
+  const isDarkBg = targetDarkTheme
+    ? targetDarkTheme === 'dark'
+    : (brandMenuBg ? isColorDark(brandMenuBg) : isDark);
+
+  const resolvedMenuBg = brandMenuBg === '#0f172a' ? '#161a1b' : brandMenuBg;
+  const effectiveMenuBg = resolvedMenuBg
+    ? (isDarkBg
+        ? (isColorDark(resolvedMenuBg) ? (resolvedMenuBg === '#0f172a' ? '#161a1b' : resolvedMenuBg) : '#161a1b')
+        : (isColorDark(resolvedMenuBg) ? '#ffffff' : resolvedMenuBg))
+    : (isDarkBg ? '#161a1b' : '#ffffff');
+
+  let activeLogoToRender: string | null = null;
+  if (isSidebarCollapsed) {
+    activeLogoToRender = effectiveLogoIcon || (isDarkBg ? (effectiveLogoDark || effectiveLogo) : (effectiveLogo || effectiveLogoDark));
+  } else {
+    activeLogoToRender = isDarkBg ? (effectiveLogoDark || effectiveLogo) : (effectiveLogo || effectiveLogoDark);
+  }
 
   const currentPlan =
     agency?.current_subscription?.plan ||
@@ -122,22 +225,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     agency?.plan ||
     (user as any)?.agency_plan;
 
-  const rawPlanPermissions =
-    currentPlan?.plan_permissions ||
-    currentPlan?.planPermissions ||
-    currentPlan?.permissions ||
-    [];
-
   const activePlanPermissions: string[] = (
-    Array.isArray(rawPlanPermissions) ? rawPlanPermissions : []
+    Array.isArray(currentPlan?.plan_permissions || currentPlan?.planPermissions || currentPlan?.permissions)
+      ? (currentPlan?.plan_permissions || currentPlan?.planPermissions || currentPlan?.permissions)
+      : []
   )
-    .map((p: any) => {
-      if (typeof p === 'string') return p.toLowerCase().trim();
-      if (p && typeof p === 'object') {
-        return (p.permission || p.name || p.slug || '').toLowerCase().trim();
-      }
-      return '';
-    })
+    .map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim())
     .filter(Boolean);
 
   const userDirectPermissions: string[] = (user?.permissions || [])
@@ -152,30 +245,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     (agency as any)?.white_label;
 
   const whiteLabelPlan = hostWhiteLabel?.plan;
-  const rawWhiteLabelPlanPermissions =
-    whiteLabelPlan?.plan_permissions ||
-    whiteLabelPlan?.planPermissions ||
-    whiteLabelPlan?.permissions ||
-    [];
-
   const activeWhiteLabelPlanPermissions: string[] = (
-    Array.isArray(rawWhiteLabelPlanPermissions) ? rawWhiteLabelPlanPermissions : []
+    Array.isArray(whiteLabelPlan?.plan_permissions || whiteLabelPlan?.planPermissions || whiteLabelPlan?.permissions)
+      ? (whiteLabelPlan?.plan_permissions || whiteLabelPlan?.planPermissions || whiteLabelPlan?.permissions)
+      : []
   )
-    .map((p: any) => {
-      if (typeof p === 'string') return p.toLowerCase().trim();
-      if (p && typeof p === 'object') {
-        return (typeof p.permission === 'string' ? p.permission : p.permission?.name || p.name || p.slug || '').toLowerCase().trim();
-      }
-      return '';
-    })
+    .map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim())
     .filter(Boolean);
 
   const hasWhiteLabelPlan = Boolean(whiteLabelPlan || hostWhiteLabel?.plan_id);
 
   const isTravelAllowedByPlan = (plan: any) => {
     if (!plan) return false;
-    if (plan.billing_type === 'commission') return true;
-    if (Array.isArray(plan.allowed_agency_types) && plan.allowed_agency_types.includes('travel')) return true;
     const perms = Array.isArray(plan.plan_permissions || plan.planPermissions || plan.permissions)
       ? (plan.plan_permissions || plan.planPermissions || plan.permissions)
       : [];
@@ -197,10 +278,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ((agency as any)?.allowed_agency_types.includes('inmobiliaria') || (agency as any)?.allowed_agency_types.includes('real_estate'))));
 
   const isItemVisible = (item: { permission?: string | string[] }) => {
-    // 1. Super Admin posee acceso global a nivel de plataforma
     if (isSuperAdmin) return true;
-
-    // 2. Si el elemento no requiere permisos específicos (ej. Inicio), es visible
     if (!item.permission) return true;
 
     const requiredPermissions = (
@@ -211,7 +289,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       p.startsWith('packages.') || p.startsWith('requests.') || p.includes('travel') || p.includes('visa') || p === 'commissions.view'
     );
 
-    // 3. Regla Inmobiliaria: bloqueo estricto si la agencia es exclusivamente inmobiliaria (sin módulo de viajes)
     if (isRealEstateAgency) {
       const blockedForRealEstate = [
         'view_visas',
@@ -222,177 +299,99 @@ export const Sidebar: React.FC<SidebarProps> = ({
         'packages.view',
         'requests.view',
         'view_travel_reports',
-        'view_w8_forms',
       ];
-      if (requiredPermissions.some((p) => blockedForRealEstate.includes(p))) {
-        return false;
-      }
+      if (requiredPermissions.some((p) => blockedForRealEstate.includes(p))) return false;
     }
 
-    // 4. Verificación Estricta del Plan de la Agencia:
-    if (isAgencyUser) {
-      const isAllowedByPlan =
-        requiredPermissions.some((p) => activePlanPermissions.includes(p)) ||
-        (isTravelPermission && isTravelPlan);
-
-      if (!isAllowedByPlan) {
-        return false;
-      }
-
-      if (isAgencyAdmin) {
-        return true;
-      }
-
-      return (
-        requiredPermissions.some((p) => userDirectPermissions.includes(p)) ||
-        (isTravelPermission && isTravelPlan)
+    if (isSuperAdmin || isWhiteLabelAdmin) {
+      if (!hasWhiteLabelPlan) return true;
+      if (isTravelPermission && !isWhiteLabelTravelPlan) return false;
+      return requiredPermissions.some(
+        (p) => activeWhiteLabelPlanPermissions.includes(p) || userDirectPermissions.includes(p)
       );
     }
 
-    // 5. Para Administradores de Marca Blanca (white_label_admin):
-    if (isWhiteLabelAdmin) {
-      if (hasWhiteLabelPlan && activeWhiteLabelPlanPermissions.length > 0) {
-        const isAllowedByWLPlan =
-          requiredPermissions.some((p) => activeWhiteLabelPlanPermissions.includes(p)) ||
-          (isTravelPermission && isWhiteLabelTravelPlan);
+    if (!currentPlan && hasAgency) return true;
+    if (isTravelPermission && !isTravelPlan) return false;
 
-        if (!isAllowedByWLPlan) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    // 6. Otros usuarios de plataforma:
-    return (
-      requiredPermissions.some((p) => userDirectPermissions.includes(p)) ||
-      (isTravelPermission && isTravelPlan)
+    return requiredPermissions.some(
+      (p) => activePlanPermissions.includes(p) || userDirectPermissions.includes(p)
     );
   };
 
-  interface NavCategory {
-    title: string;
-    items: {
-      label: string;
-      path: string;
-      icon: React.ElementType;
-      permission?: string | string[];
-    }[];
-  }
-
-  const categories: NavCategory[] = [
+  const categories = [
     {
-      title: 'MENÚ PRINCIPAL',
+      title: 'PRINCIPAL & CRM',
       items: [
         { label: 'Inicio', path: '/', icon: Home },
+        { label: 'CRM Kanban', path: '/crm', icon: LayoutDashboard },
+        { label: 'Workspaces', path: '/workspaces', icon: Briefcase },
+        { label: 'Directorio de Clientes', path: '/clients', icon: Users },
+        { label: 'Gestión de Tareas', path: '/tasks', icon: CheckSquare },
+        { label: 'Calendario', path: '/calendar', icon: Calendar },
       ],
     },
     {
-      title: 'CLIENTES & CRM',
+      title: 'MODULO INMOBILIARIO',
       items: [
-        { label: 'Workspaces', path: '/workspaces', icon: LayoutDashboard, permission: ['view_crm', 'workspaces.view'] },
-        { label: 'Tareas', path: '/tasks', icon: CheckSquare, permission: ['tasks.view', 'view_crm'] },
-        { label: 'Calendario', path: '/calendar', icon: Calendar, permission: ['view_crm', 'calendar.view'] },
-        { label: 'Clientes', path: '/clients', icon: Users, permission: ['view_clients', 'clients.view'] },
-        { label: 'Landings', path: '/landings', icon: Globe, permission: ['landings.view', 'view_landings', 'view_crm'] },
-        { label: 'Marketing', path: '/marketing', icon: Mail, permission: ['email_marketing', 'view_email_marketing', 'marketing.view'] },
-        { label: 'Automatizaciones', path: '/automations', icon: Zap, permission: ['automations', 'view_automations', 'view_crm'] },
-        { label: 'Contratos', path: '/lexvault', icon: ShieldCheck, permission: ['view_lexvault', 'lexvault.view'] },
-        { label: 'Tiendas Hunter', path: '/hunter', icon: Store, permission: ['view_hunter', 'hunter.view'] },
+        { label: 'ACM (Avalúo Comercial)', path: '/acm', icon: Calculator, permission: ['view_acm', 'acm.view'] },
+        { label: 'Propiedades e Inmuebles', path: '/estates', icon: Building2, permission: ['view_properties', 'properties.view', 'view_estates'] },
       ],
     },
     {
-      title: 'ACTIVIDAD INMOBILIARIA',
+      title: 'MODULO VIAJES & PAQUETES',
       items: [
-        { label: 'Propiedades', path: '/estates', icon: Building2, permission: ['view_estates', 'estates.view', 'manage_estates'] },
-        { label: 'Mapa de Inmuebles', path: '/estates?view=map', icon: MapPin, permission: ['view_estates', 'estates.view', 'manage_estates'] },
-        { label: 'Valoración ACM', path: '/acm', icon: Calculator },
+        { label: 'Paquetes Turísticos', path: '/travel-packages', icon: Plane, permission: 'packages.view' },
+        { label: 'Reportes de Viaje', path: '/travel-reports', icon: FileText, permission: ['view_travel_reports', 'travel_reports.view'] },
+        { label: 'Gestión de Visados', path: '/visas', icon: ShieldCheck, permission: ['view_visas', 'manage_visas'] },
+        { label: 'Punto de Venta POS', path: '/pos', icon: ShoppingCart, permission: ['view_pos', 'manage_pos'] },
+        { label: 'Gestión de Comisiones', path: '/commissions', icon: CreditCard, permission: 'commissions.view' },
+        { label: 'Directorio de Proveedores', path: '/supplier', icon: Store, permission: ['view_products', 'packages.view'] },
+        { label: 'Productos e Insumos', path: '/products', icon: Package, permission: ['view_products', 'packages.view'] },
       ],
     },
     {
-      title: 'TURISMO & VIAJES',
+      title: 'MARKETING & LEGAL',
       items: [
-        { label: 'Visas', path: '/visas', icon: FileText, permission: ['view_visas', 'manage_visas'] },
-        { label: 'Reportes', path: '/travel-reports', icon: Plane, permission: ['view_travel_reports'] },
-        { label: 'Comisiones', path: '/commissions', icon: CreditCard, permission: ['view_travel_reports', 'commissions.view', 'packages.view'] },
-        ...(!isProveedor
-          ? [
-              { label: 'Trip Builder B2B', path: '/travel-packages/pos', icon: ShoppingCart, permission: ['packages.view', 'packages.catalog'] },
-              { label: 'Solicitudes', path: '/travel-packages/my-requests', icon: FileText, permission: ['requests.view', 'requests.manage'] },
-            ]
-          : []),
-        ...(isProveedor || isSuperAdmin
-          ? [
-              { label: 'Paquetes', path: '/supplier/packages', icon: Package, permission: ['packages.view', 'packages.manage'] },
-              { label: 'Solicitudes', path: '/supplier/requests', icon: FileText, permission: ['requests.view', 'requests.manage'] },
-            ]
-          : []),
-        ...(isSuperAdmin || (isGerenteComercial && !isAgencyUser)
-          ? [
-              { label: 'Clearing B2B', path: '/admin/clearing', icon: CreditCard },
-              { label: 'Reglas Pricing', path: '/admin/pricing-rules', icon: Layers },
-              { label: 'Paquetes Admin', path: '/admin/travel-packages', icon: Package },
-              { label: 'Solicitudes Viaje', path: '/admin/travel-requests', icon: FileText },
-            ]
-          : []),
+        { label: 'LexVault (Contratos)', path: '/lexvault', icon: FileText, permission: ['view_contracts', 'contracts.view', 'lexvault.view'] },
+        { label: 'Hunter Stores', path: '/hunter', icon: Store },
+        { label: 'Landings', path: '/landings', icon: Globe },
+        { label: 'Marketing & Campañas', path: '/marketing', icon: Zap },
+        { label: 'Automatizaciones', path: '/automations', icon: Wrench },
       ],
     },
     {
-      title: 'COMERCIO & VENTAS',
+      title: 'ACADEMIA & RECURSOS',
       items: [
-        { label: 'Productos', path: '/products', icon: Package, permission: ['view_products', 'products.view'] },
-        { label: 'POS', path: '/pos', icon: ShoppingCart, permission: ['view_pos', 'manage_pos', 'pos.view'] },
-        { label: 'Ruleta & Premios', path: '/gamification', icon: Trophy, permission: ['view_spin_wheel', 'view_gamification'] },
+        { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap },
+        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen },
+        { label: 'Gamificación & Puntos', path: '/gamification', icon: Trophy },
       ],
     },
     {
-      title: 'CAPACITACIÓN',
+      title: 'ADMINISTRACIÓN SISTEMA',
       items: [
-        ...(isSuperAdmin || isWhiteLabelAdmin || (isGerenteComercial && !isAgencyUser)
-          ? [
-              { label: 'Cursos', path: '/courses', icon: GraduationCap, permission: ['courses.view', 'courses.create'] },
-            ]
-          : []),
-        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: ['courses.view'] },
+        { label: 'Gestión de Agencias', path: '/agencies', icon: Building2, permission: ['view_agencies', 'agencies.view'] },
+        { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['view_users', 'users.view'] },
       ],
     },
-    {
-      title: 'GESTIÓN & AGENCIA',
-      items: [
-        { label: 'Usuarios', path: '/users', icon: UserCheck, permission: 'manage_users' },
-        ...(isSuperAdmin
-          ? [{ label: 'Agencias', path: '/admin/agencies', icon: Store }]
-          : []),
-        { label: 'Equipos', path: '/admin/teams', icon: Briefcase, permission: 'manage_users' },
-      ],
-    },
-    ...(isWhiteLabelAdmin && !isSuperAdmin
+    ...((isWhiteLabelAdmin || isSuperAdmin)
       ? [
           {
-            title: 'ORGANIZACIÓN & WHITE LABEL',
+            title: 'ADMINISTRACIÓN MARCA BLANCA',
             items: [
               { label: 'Mi White Label', path: '/white-label/dashboard', icon: Globe },
+              { label: 'Personalizar Marca', path: '/admin/branding', icon: Palette },
               { label: 'Importar Estudiantes', path: '/white-label/import-students', icon: FileSpreadsheet },
               { label: 'Planes de mi Marca', path: '/admin/plans', icon: Layers },
-              { label: 'Agencias y Equipos', path: '/admin/agencies', icon: Building2 },
-              { label: 'Directorio de Usuarios', path: '/users', icon: Users },
             ],
           },
         ]
       : []),
   ];
 
-  const adminNavItems = [
-    { label: 'White Labels', path: '/admin/white-labels', icon: Globe },
-    { label: 'Planes', path: '/admin/plans', icon: Layers },
-    { label: 'Permisos', path: '/admin/permissions', icon: Key },
-    { label: 'Agencias', path: '/admin/agencies', icon: Building2 },
-    { label: 'Suscripciones', path: '/admin/subscriptions', icon: CreditCard },
-  ];
-
   return (
     <>
-      {/* Mobile Overlay - Left Sidebar */}
       {leftSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -401,19 +400,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Minimalist Left Sidebar */}
-      <aside className={`flex flex-col h-full bg-white dark:bg-slate-900 z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden fixed left-0 top-0 ${leftSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isSidebarCollapsed ? 'w-64 lg:w-20' : 'w-64'}`}>
+      <aside 
+        style={{ backgroundColor: effectiveMenuBg }}
+        className={`flex flex-col h-full z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden fixed left-0 top-0 ${
+          isDarkBg ? 'text-white' : 'text-slate-800'
+        } ${leftSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'} lg:translate-x-0 w-[85vw] max-w-[280px] sm:w-64 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
+      >
         
-        {/* Logo Branding Dinámico */}
-        <div className="px-5 py-5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            {effectiveLogo ? (
+        <div className={`py-5 flex items-center transition-all duration-300 ${isSidebarCollapsed ? 'px-3 lg:justify-center' : 'px-5'} justify-between`}>
+          <Link href="/" className="flex items-center gap-3 min-w-0">
+            {activeLogoToRender ? (
               <img
-                src={effectiveLogo}
+                src={activeLogoToRender}
                 alt={brandName}
                 loading="eager"
                 decoding="sync"
-                className="h-9 max-w-[160px] object-contain shrink-0"
+                className={isSidebarCollapsed ? "w-9 h-9 object-contain shrink-0 rounded-lg" : "h-9 max-w-[160px] object-contain shrink-0"}
               />
             ) : (
               <div className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-600/20 shrink-0">
@@ -421,20 +423,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             )}
           </Link>
+          <button
+            type="button"
+            onClick={() => setLeftSidebarOpen(false)}
+            aria-label="Cerrar menú lateral"
+            className={`lg:hidden p-1.5 rounded-lg transition-colors shrink-0 ${
+              isDarkBg
+                ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+            }`}
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Navigation Categories & Links (Espacio Confortable entre Accesos) */}
         <nav className="flex-1 px-3 py-2 space-y-3 overflow-y-auto overflow-x-hidden custom-scrollbar">
-          {(isHunter
-            ? categories.filter(c => c.title === 'CLIENTES & CRM').map(c => ({
-                ...c,
-                items: c.items.filter(i => i.path === '/hunter')
-              }))
-            : isCloser
-            ? categories.filter(c => c.title === 'CLIENTES & CRM').map(c => ({
-                ...c,
-                items: c.items.filter(i => ['/workspaces', '/clients'].includes(i.path))
-              }))
+          {(isAgencyUser
+            ? categories.filter(c => c.title !== 'ADMINISTRACIÓN MARCA BLANCA')
             : categories
           ).map((category) => {
             const visibleCategoryItems = category.items.filter(isItemVisible);
@@ -442,32 +447,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             return (
               <div key={category.title} className="space-y-1">
-                {/* Header de Sección Minimalista */}
                 <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:text-center' : 'px-3 py-0.5'}`}>
-                  <span className={`text-[10px] font-extrabold tracking-widest text-slate-400 dark:text-slate-500 uppercase transition-all duration-300 ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
+                  <span className={`text-[10px] font-extrabold tracking-widest uppercase transition-all duration-300 ${
+                    isDarkBg ? 'text-slate-400' : 'text-slate-500'
+                  } ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
                     {category.title}
                   </span>
                 </div>
 
-                {/* Items / Accesos de Navegación */}
                 {visibleCategoryItems.map((item) => {
                   const isActive = pathname === item.path;
                   const Icon = item.icon;
+                  const activeColor = activeWl?.primary_color || (agency as any)?.primary_color;
 
                   return (
                     <Link 
                       key={item.path} 
                       href={item.path}
                       onClick={() => setLeftSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all duration-150 ${
+                      style={isActive && activeColor ? { color: activeColor } : undefined}
+                      className={`flex items-center gap-3 py-1.5 rounded-xl transition-all duration-150 ${
+                        isSidebarCollapsed ? 'px-2 lg:justify-center' : 'px-3'
+                      } ${
                         isActive 
-                          ? 'bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 font-black' 
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white font-medium'
+                          ? (isDarkBg ? 'bg-slate-800/90 text-white font-black' : 'bg-slate-100 text-slate-900 font-black')
+                          : (isDarkBg ? 'text-slate-300 hover:bg-slate-800/60 hover:text-white font-medium' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium')
                       }`}
                     >
-                      <Icon className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors ${
-                        isActive ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'
-                      }`} />
+                      <Icon 
+                        style={isActive && activeColor ? { color: activeColor } : undefined}
+                        className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors ${
+                          isActive 
+                            ? (activeColor ? '' : (isDarkBg ? 'text-white' : 'text-slate-900')) 
+                            : (isDarkBg ? 'text-slate-400' : 'text-slate-500')
+                        }`} 
+                      />
                       
                       <span className={`text-[13px] leading-snug whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
                         {item.label}
@@ -478,51 +492,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             );
           })}
-
-          {/* Super Admin System Section Minimalista */}
-          {isSuperAdmin && (
-            <div className="space-y-1 pt-1">
-              <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'lg:px-0 lg:text-center' : 'px-3 py-0.5'}`}>
-                <span className={`text-[10px] font-extrabold tracking-widest text-rose-500/80 uppercase transition-all duration-300 ${isSidebarCollapsed ? 'lg:opacity-0 lg:hidden' : 'opacity-100 block'}`}>
-                  ADMINISTRACIÓN
-                </span>
-              </div>
-
-              {adminNavItems.map((item) => {
-                const isActive = pathname === item.path;
-                const Icon = item.icon;
-
-                return (
-                  <Link
-                    key={item.path}
-                    href={item.path}
-                    onClick={() => setLeftSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all duration-150 ${
-                      isActive
-                        ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-black'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white font-medium'
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors ${
-                      isActive ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'
-                    }`} />
-                    <span className={`text-[13px] leading-snug whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
-                      {item.label}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
         </nav>
 
-        {/* Links de Utilidad Inferiores Minimalistas */}
         {configHref && (
           <div className="px-3 py-2.5 mt-auto space-y-1">
             <Link 
               href={configHref} 
               onClick={() => setLeftSidebarOpen(false)}
-              className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+              className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-colors ${
+                isDarkBg
+                  ? 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
             >
               <Settings className="w-4 h-4 stroke-[2]" />
               <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>

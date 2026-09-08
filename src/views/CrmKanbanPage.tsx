@@ -867,7 +867,7 @@ export const CrmKanbanPage: React.FC = () => {
                     handleReorderStagesDrag(fromIndex, idx);
                   }
                 }}
-                className={`w-80 flex-shrink-0 bg-slate-50/80 rounded-2xl p-4 border transition-all flex flex-col max-h-[75vh] ${
+                className={`w-[85vw] sm:w-80 flex-shrink-0 bg-slate-50/80 rounded-2xl p-3 sm:p-4 border transition-all flex flex-col max-h-[75vh] ${
                   dragOverStageId === stage.id
                     ? 'border-blue-500 ring-2 ring-blue-400 bg-blue-50/50'
                     : 'border-slate-200/80'
@@ -1223,8 +1223,8 @@ export const CrmKanbanPage: React.FC = () => {
       {/* Modal: Create Lead */}
       {isAddLeadOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg p-6 shadow-2xl space-y-4">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg p-4 sm:p-6 shadow-2xl space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                   <UserPlus className="w-5 h-5 text-emerald-600" />
@@ -1421,8 +1421,8 @@ export const CrmKanbanPage: React.FC = () => {
       {/* Modal: Add New Stage */}
       {isAddStageOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-md p-6 shadow-2xl space-y-4">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-md p-4 sm:p-6 shadow-2xl space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-lg font-black text-slate-900">Agregar Nueva Etapa</h3>
                 <button onClick={() => setIsAddStageOpen(false)} className="text-slate-400 hover:text-slate-600">
@@ -1480,7 +1480,7 @@ export const CrmKanbanPage: React.FC = () => {
       {/* Comprehensive Lead Detail Modal */}
       {selectedItem && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
               {/* Modal Header */}
               <div className="p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
@@ -2120,8 +2120,8 @@ export const CrmKanbanPage: React.FC = () => {
       {/* EDIT STAGE MODAL */}
       {isEditStageOpen && editingStage && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 border border-slate-100">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-5 border border-slate-100">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                   <Edit3 className="w-5 h-5 text-blue-600" />
@@ -2369,8 +2369,8 @@ export const CrmKanbanPage: React.FC = () => {
       {/* MODAL IMPORTAR LEADS DESDE EXCEL */}
       {isImportModalOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
               {/* Modal Header */}
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2.5">

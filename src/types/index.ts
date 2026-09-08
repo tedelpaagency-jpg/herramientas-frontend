@@ -47,6 +47,17 @@ export interface Agency {
   province?: string;
   domain?: string;
   logo?: string | null;
+  logo_2?: string | null;
+  logo_icon?: string | null;
+  favicon?: string | null;
+  primary_color?: string;
+  secondary_color?: string;
+  button_color?: string;
+  font_family?: string;
+  login_background?: string | null;
+  seo_description?: string | null;
+  whatsapp?: string | null;
+  custom_css?: string | null;
   plan_id?: number;
   plan?: Plan;
   gerente_id?: number;

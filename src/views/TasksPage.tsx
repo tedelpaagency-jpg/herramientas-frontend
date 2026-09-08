@@ -758,7 +758,7 @@ export default function TasksPage() {
                 return (
                   <div
                     key={stage.id}
-                    className="w-80 flex-shrink-0 bg-slate-100/90 dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-4 flex flex-col gap-3 shadow-2xs relative overflow-hidden"
+                    className="w-[85vw] sm:w-80 flex-shrink-0 bg-slate-100/90 dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-3 sm:p-4 flex flex-col gap-3 shadow-2xs relative overflow-hidden"
                   >
                     {/* SYSTEM ACCENT COLOR LINE AT TOP OF STAGE COLUMN */}
                     <div
@@ -942,8 +942,8 @@ export default function TasksPage() {
       {/* MODAL CREAR WORKSPACE */}
       {isAddWorkspaceOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <FolderKanban className="w-5 h-5 text-blue-600" />
@@ -1019,8 +1019,8 @@ export default function TasksPage() {
       {/* MODAL EDITAR WORKSPACE */}
       {editingWorkspace && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <Settings className="w-5 h-5 text-blue-600" />
@@ -1101,8 +1101,8 @@ export default function TasksPage() {
       {/* MODAL CREAR ETAPA */}
       {isAddStageOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-base font-black text-slate-900 dark:text-white">Nueva Etapa en "{activeWorkspace?.name}"</h3>
                 <button
@@ -1164,8 +1164,8 @@ export default function TasksPage() {
       {/* MODAL EDITAR ETAPA */}
       {editingStage && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-base font-black text-slate-900 dark:text-white">Editar Etapa</h3>
                 <button onClick={() => setEditingStage(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
@@ -1232,8 +1232,8 @@ export default function TasksPage() {
       {/* MODAL CREAR / EDITAR TAREA */}
       {(isAddTaskOpen || editingTask) && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-base font-black text-slate-900 dark:text-white">
                   {editingTask ? 'Editar Tarea' : `Nueva Tarea en "${activeWorkspace?.name}"`}

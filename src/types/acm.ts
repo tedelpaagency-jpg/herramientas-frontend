@@ -4,6 +4,7 @@ export interface AcmZone {
   user_id?: number | null;
   name: string;
   code?: string | null;
+  transaction_type?: 'venta' | 'alquiler';
   color?: string;
   suggested_suelo: number;
   suggested_construccion: number;

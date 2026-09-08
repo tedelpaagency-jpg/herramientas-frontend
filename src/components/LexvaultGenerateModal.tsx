@@ -197,7 +197,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

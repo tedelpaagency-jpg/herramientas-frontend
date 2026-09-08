@@ -641,8 +641,8 @@ export const MarketingPage: React.FC = () => {
       {/* Template Create / Edit Modal (Full screen backdrop fix with Portal) */}
       {isTemplateModalOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl p-6 shadow-2xl space-y-4">
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl p-4 sm:p-6 shadow-2xl space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">
                   {editingTemplateId ? 'Editar Plantilla de Correo' : 'Nueva Plantilla HTML'}
@@ -784,7 +784,7 @@ export const MarketingPage: React.FC = () => {
       {/* REALISTIC INBOX EMAIL PREVIEW MODAL */}
       {isPreviewModalOpen && (
         <Portal>
-          <div className="fixed inset-0 top-0 left-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden text-white">
               {/* Top Header Bar */}
               <div className="p-4 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">

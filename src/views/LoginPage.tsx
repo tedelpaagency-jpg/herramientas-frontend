@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -12,9 +12,58 @@ import {
   MoreHorizontal, 
   Heart, 
   Send,
-  Globe,
-  AlertCircle
+  AlertCircle,
+  Play,
+  Video
 } from 'lucide-react';
+
+const isMp4Video = (url?: string | null): boolean => {
+  if (!url) return false;
+  const clean = url.toLowerCase();
+  return clean.endsWith('.mp4') || clean.includes('.mp4') || clean.startsWith('data:video/') || clean.includes('video');
+};
+
+// Componente dedicado con manejo de refs y muted forzado para garantí de autoplay en HTML5 / React 18
+const CardVideoPlayer: React.FC<{ src: string }> = ({ src }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.defaultMuted = true;
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Autoplay falló o fue restringido por el navegador:', err);
+        });
+      }
+    }
+  }, [src]);
+
+  if (hasError) {
+    return (
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-900 via-slate-900 to-indigo-950 z-0" />
+    );
+  }
+
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      loop
+      muted
+      playsInline
+      preload="auto"
+      onError={() => setHasError(true)}
+      className="absolute inset-0 w-full h-full object-cover z-0 filter brightness-[0.85] contrast-[1.05]"
+    >
+      <source src={src} type="video/mp4" />
+      <source src={src} type="video/webm" />
+    </video>
+  );
+};
 
 const rewardsData = [
   { 
@@ -22,24 +71,28 @@ const rewardsData = [
     title: 'Propiedades Exclusivas', 
     subtitle: 'Gestión inmobiliaria premium',
     emoji: '🏢',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
   },
   { 
     id: 2, 
     title: 'Embudo CRM & Leads', 
     subtitle: 'Seguimiento automatizado',
     emoji: '🚀',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
   },
   { 
     id: 3, 
     title: 'Bóveda Legal LexVault', 
     subtitle: 'Contratos y firmas digitales',
     emoji: '📜',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
   },
   { 
     id: 4, 
     title: 'Ruleta & Recompensas', 
     subtitle: 'Gamificación de ventas',
     emoji: '🎁',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoylikes.mp4',
   }
 ];
 
@@ -51,10 +104,19 @@ export const LoginPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const { login } = useAuth();
+  const { login, currentWhiteLabel, currentAgency, user } = useAuth();
   const router = useRouter();
 
+  const activeWl = currentWhiteLabel || (user as any)?.white_label;
+  const brandName = activeWl?.name || currentAgency?.name || 'SANTUN';
+  const brandLogo = activeWl?.logo || currentAgency?.logo || null;
+  const customLoginBg = activeWl?.login_background || currentAgency?.login_background || (typeof window !== 'undefined' ? localStorage.getItem('santun_login_background') : null);
+
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
+    }
     const interval = setInterval(() => {
       setActiveIndex((current) => (current + 1) % rewardsData.length);
     }, 5000);
@@ -100,27 +162,27 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FDFDFE] flex flex-col font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
       
-      <main className="flex-1 w-full flex items-center justify-center p-4 sm:p-6 md:p-12 relative">
+      <main className="flex-1 w-full flex items-center justify-center p-4 sm:p-6 md:p-12 relative z-10">
         <div className="w-full max-w-[1140px] flex flex-col lg:flex-row gap-10 lg:gap-24 items-center justify-center z-10">
           
           {/* ================= TEXTO MÓVIL (Solo visible < lg) ================= */}
           <div className="lg:hidden flex flex-col items-center text-center mt-6 px-4 order-1 max-w-[420px]">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 mb-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 mb-4 shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              <span className="text-[10px] sm:text-[11px] font-bold tracking-wider text-blue-600 uppercase">SANTUN Provider Portal</span>
+              <span className="text-[10px] sm:text-[11px] font-bold tracking-wider text-blue-600 uppercase">{brandName} Provider Portal</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-semibold text-slate-800 tracking-tight leading-[1.2] mb-3">
               Plataforma de gestión empresarial y servicios <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">en tiempo real</span>.
             </h1>
           </div>
 
-          {/* ================= SECCIÓN IZQUIERDA: Carrusel ================= */}
+          {/* ================= SECCIÓN IZQUIERDA: Carrusel de Tarjetas con Video MP4 ================= */}
           <div className="flex w-full lg:w-[55%] flex-col items-center lg:items-start justify-center relative min-h-[400px] lg:min-h-[550px] order-3 lg:order-1 mt-8 lg:mt-0">
             
             <div className="hidden lg:block mb-12 z-40 max-w-[420px]">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 mb-5">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 mb-5 shadow-xs">
                 <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                <span className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">SANTUN Provider Portal</span>
+                <span className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">{brandName} Provider Portal</span>
               </div>
               
               <h1 className="text-3xl font-semibold text-slate-800 tracking-tight leading-[1.2] mb-3">
@@ -133,56 +195,82 @@ export const LoginPage: React.FC = () => {
               </p>
             </div>
 
-            {/* CARRUSEL DE RECOMPENSAS / TARJETAS 3D */}
+            {/* CARRUSEL DE TARJETAS CON REPRODUCCIÓN DE VIDEO MP4 INTEGRADO */}
             <div className="relative w-full max-w-[260px] sm:max-w-[300px] h-[380px] sm:h-[440px] flex items-center justify-center mx-auto lg:mx-0 lg:ml-16">
-              {rewardsData.map((reward, i) => (
-                <div 
-                  key={reward.id} 
-                  className={`absolute w-[230px] sm:w-[270px] h-[360px] sm:h-[420px] rounded-[24px] ${getCardStyle(i)}`}
-                >
-                  <div className="w-full h-full rounded-[24px] p-5 flex flex-col justify-between relative overflow-hidden border border-white/20 bg-gradient-to-br from-blue-900 via-slate-900 to-indigo-950 text-white">
-                    <div className="flex justify-between items-center z-20">
-                      <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-white/90 text-[11px] font-semibold flex items-center gap-1.5 border border-white/10">
-                        <Star className="w-3 h-3 fill-current text-amber-400" /> SANTUN Premium
-                      </div>
-                      <MoreHorizontal className="text-white w-5 h-5 opacity-80" />
-                    </div>
+              {rewardsData.map((reward, i) => {
+                const videoSrc = (customLoginBg && isMp4Video(customLoginBg)) 
+                  ? customLoginBg 
+                  : reward.videoUrl;
 
-                    <div className="z-20 flex flex-col gap-3">
-                      <div>
-                        <h3 className="text-white font-bold text-xl tracking-tight mb-1 flex items-center gap-2">
-                          {reward.title} {reward.emoji}
-                        </h3>
-                        <p className="text-white/80 text-[13px] font-medium">
-                          {reward.subtitle}
-                        </p>
-                      </div>
+                return (
+                  <div 
+                    key={reward.id} 
+                    className={`absolute w-[230px] sm:w-[270px] h-[360px] sm:h-[420px] rounded-[24px] ${getCardStyle(i)}`}
+                  >
+                    <div className="w-full h-full rounded-[24px] p-5 flex flex-col justify-between relative overflow-hidden border border-white/20 bg-slate-900 text-white shadow-2xl">
+                      
+                      {/* Video MP4 reproducido mediante el componente dedicado CardVideoPlayer */}
+                      {videoSrc && <CardVideoPlayer src={videoSrc} />}
 
-                      <div className="flex items-center gap-3">
-                        <div className="flex-grow h-10 rounded-full border border-white/20 bg-white/10 backdrop-blur-md flex items-center px-4">
-                          <span className="text-white/80 text-[12px] font-semibold">Explorar módulo</span>
+                      {/* Capa de degradado dentro de la tarjeta para máxima claridad de texto */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-slate-950/50 z-10 pointer-events-none" />
+
+                      {/* Encabezado de la Tarjeta */}
+                      <div className="flex justify-between items-center z-20">
+                        <div className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-white/90 text-[11px] font-semibold flex items-center gap-1.5 border border-white/20 shadow-sm">
+                          <Star className="w-3 h-3 fill-current text-amber-400" /> {brandName} Premium
                         </div>
-                        <Heart className="w-6 h-6 text-white" />
-                        <Send className="w-6 h-6 text-white" />
+                        <div className="bg-black/30 backdrop-blur-md p-1 rounded-full border border-white/10 flex items-center gap-1 px-2 text-[10px] text-blue-300 font-bold">
+                          <Video className="w-3 h-3 text-blue-400 animate-pulse" /> MP4
+                        </div>
                       </div>
+
+                      {/* Pie de la Tarjeta */}
+                      <div className="z-20 flex flex-col gap-3">
+                        <div>
+                          <h3 className="text-white font-bold text-xl tracking-tight mb-1 flex items-center gap-2 drop-shadow-md">
+                            {reward.title} {reward.emoji}
+                          </h3>
+                          <p className="text-white/90 text-[13px] font-medium drop-shadow-xs">
+                            {reward.subtitle}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="flex-grow h-10 rounded-full border border-white/30 bg-black/40 backdrop-blur-md flex items-center px-4 shadow-sm hover:bg-black/60 transition-colors">
+                            <span className="text-white text-[12px] font-semibold flex items-center gap-1.5">
+                              <Play className="w-3 h-3 text-blue-400 fill-blue-400" /> Explorar módulo
+                            </span>
+                          </div>
+                          <Heart className="w-6 h-6 text-white hover:text-pink-400 transition-colors cursor-pointer" />
+                          <Send className="w-6 h-6 text-white hover:text-blue-400 transition-colors cursor-pointer" />
+                        </div>
+                      </div>
+
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+
           </div>
 
-          {/* ================= SECCIÓN DERECHA: Formulario ================= */}
+          {/* ================= SECCIÓN DERECHA: Formulario de Login ================= */}
           <div className="w-full max-w-[420px] flex flex-col items-center z-20 shrink-0 order-2 lg:order-2">
             <div className="bg-white w-full px-6 py-8 sm:px-8 sm:py-10 flex flex-col rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100/80 min-h-[480px] justify-center relative">
               
               <div className="animate-slide-up-fade w-full flex flex-col">
                 <div className="mb-8">
-                  <div className="bg-blue-600 w-10 h-10 rounded-[10px] flex items-center justify-center mb-5 shadow-sm shadow-blue-600/20">
-                    <Building2 className="w-5 h-5 text-white" />
-                  </div>
+                  {brandLogo ? (
+                    <img src={brandLogo} alt={brandName} className="h-10 max-w-[160px] object-contain mb-5" />
+                  ) : (
+                    <div className="bg-blue-600 w-10 h-10 rounded-[10px] flex items-center justify-center mb-5 shadow-sm shadow-blue-600/20">
+                      <Building2 className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+
                   <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-1.5">
-                    Bienvenido a SANTUN
+                    Bienvenido a {brandName}
                   </h2>
                   <p className="text-[13px] text-slate-500 font-medium">
                     Ingresa tus credenciales para acceder al panel de control.
@@ -262,11 +350,11 @@ export const LoginPage: React.FC = () => {
       {/* ================= SECCIÓN INFERIOR: Aliados ================= */}
       <footer className="w-full py-8 sm:py-10 bg-white border-t border-slate-100 flex flex-col items-center justify-center z-10">
         <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-6 text-center px-4">
-          Con el respaldo de la arquitectura Laravel 12
+          Con el respaldo de la arquitectura Laravel 12 & Next.js
         </p>
         
         <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-10 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-700 cursor-default px-6 text-slate-700 font-bold text-sm">
-          <span>SANTUN ECOSYSTEM</span>
+          <span>{brandName.toUpperCase()} ECOSYSTEM</span>
           <span>•</span>
           <span>LEXVAULT</span>
           <span>•</span>

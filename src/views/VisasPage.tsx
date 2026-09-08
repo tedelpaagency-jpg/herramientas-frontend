@@ -297,38 +297,38 @@ export const VisasPage: React.FC = () => {
                 </h4>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left border-collapse text-xs text-slate-700 dark:text-slate-300">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                      <th className="px-6 py-4 w-20">No.</th>
-                      <th className="px-6 py-4">Nombre del Grupo</th>
-                      <th className="px-6 py-4 text-center">Solicitudes</th>
-                      <th className="px-6 py-4 text-right">Acciones</th>
+                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-20 whitespace-nowrap">No.</th>
+                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Nombre del Grupo</th>
+                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Solicitudes</th>
+                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {/* General / Unassigned Group */}
                     {unassignedVisas.length > 0 && (
                       <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="px-6 py-4 font-mono font-bold text-slate-400">—</td>
-                        <td className="px-6 py-4">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-mono font-bold text-slate-400 whitespace-nowrap">—</td>
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 flex items-center justify-center font-bold">
+                            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 flex items-center justify-center font-bold shrink-0">
                               <Folder className="w-4 h-4" />
                             </div>
                             <div>
-                              <p className="font-extrabold text-slate-900 dark:text-white text-sm">General / Sin Grupo</p>
-                              <p className="text-[11px] text-slate-500 font-medium">Solicitudes registradas sin asignación específica</p>
+                              <p className="font-extrabold text-slate-900 dark:text-white text-sm whitespace-nowrap">General / Sin Grupo</p>
+                              <p className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Solicitudes registradas sin asignación específica</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center whitespace-nowrap">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                             {unassignedVisas.length} {unassignedVisas.length === 1 ? 'solicitud' : 'solicitudes'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right whitespace-nowrap">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right whitespace-nowrap">
                           <button
                             onClick={() => setActiveGroup({ id: 'general', name: 'General / Sin Grupo' })}
                             className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs shadow-xs transition-all"
@@ -346,24 +346,24 @@ export const VisasPage: React.FC = () => {
                       const count = visas.filter((v) => String(v.visa_ref_id) === String(ref.id)).length;
                       return (
                         <tr key={ref.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                          <td className="px-6 py-4 font-mono font-bold text-slate-500">{ref.id}</td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-mono font-bold text-slate-500 whitespace-nowrap">{ref.id}</td>
+                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400 flex items-center justify-center font-bold">
+                              <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400 flex items-center justify-center font-bold shrink-0">
                                 <Folder className="w-4 h-4" />
                               </div>
                               <div>
-                                <p className="font-extrabold text-slate-900 dark:text-white text-sm">{ref.name}</p>
-                                <p className="text-[11px] text-slate-500 font-medium">Expediente de visados grupales</p>
+                                <p className="font-extrabold text-slate-900 dark:text-white text-sm whitespace-nowrap">{ref.name}</p>
+                                <p className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Expediente de visados grupales</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center whitespace-nowrap">
                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
                               {count} {count === 1 ? 'solicitud' : 'solicitudes'}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-right space-x-1.5 whitespace-nowrap">
+                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right space-x-1.5 whitespace-nowrap">
                             {/* Botón Ver detalles (CI3 fa-file-lines) */}
                             <button
                               onClick={() => setActiveGroup(ref)}
@@ -472,24 +472,24 @@ export const VisasPage: React.FC = () => {
                 </h4>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left border-collapse text-xs text-slate-700 dark:text-slate-300">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                      <th className="px-6 py-4">Nombre / Solicitante</th>
-                      <th className="px-6 py-4">Fecha</th>
-                      <th className="px-6 py-4">Visa</th>
-                      <th className="px-6 py-4">Estado</th>
-                      <th className="px-6 py-4 text-right">Acciones</th>
+                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Nombre / Solicitante</th>
+                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Fecha</th>
+                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Visa</th>
+                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Estado</th>
+                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {filteredGroupVisas.map((v) => (
                       <tr key={v.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                         {/* Applicant Name */}
-                        <td className="px-6 py-4">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                           <div>
-                            <p className="font-bold text-slate-900 dark:text-white text-sm">{v.applicant_name}</p>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm whitespace-nowrap">{v.applicant_name}</p>
                             {v.description && (
                               <p className="text-[11px] text-slate-500 font-medium line-clamp-1">{v.description}</p>
                             )}
@@ -497,22 +497,22 @@ export const VisasPage: React.FC = () => {
                         </td>
 
                         {/* Date */}
-                        <td className="px-6 py-4 text-slate-500 font-medium whitespace-nowrap">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-slate-500 font-medium whitespace-nowrap">
                           {v.created_at ? new Date(v.created_at).toLocaleDateString() : 'Hoy'}
                         </td>
 
                         {/* Visa Type (Visa americana / Visa canadiense) */}
-                        <td className="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                           {v.visa_type === 'USA' ? 'Visa americana' : v.visa_type === 'CANADA' ? 'Visa canadiense' : v.visa_type}
                         </td>
 
                         {/* Status Badge */}
-                        <td className="px-6 py-4">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
                           {renderStatusBadge(v.status)}
                         </td>
 
                         {/* Actions matching CI3 visa.php botones */}
-                        <td className="px-6 py-4 text-right space-x-1.5 whitespace-nowrap">
+                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right space-x-1.5 whitespace-nowrap">
                           {/* Copiar enlace público */}
                           <button
                             onClick={() => handleCopyPublicLink(v)}

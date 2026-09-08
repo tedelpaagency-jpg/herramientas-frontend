@@ -244,16 +244,16 @@ export const AdminAgenciesPage: React.FC = () => {
             No se encontraron agencias registradas.
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="py-3.5 px-4">Agencia</th>
-                  <th className="py-3.5 px-4">Contacto / Email</th>
-                  <th className="py-3.5 px-4">Dominio</th>
-                  <th className="py-3.5 px-4">Plan Actual</th>
-                  <th className="py-3.5 px-4">Estado</th>
-                  <th className="py-3.5 px-4 text-right">Acciones</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">Agencia</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">Contacto / Email</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">Dominio</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">Plan Actual</th>
+                  <th className="py-3 px-3 sm:px-4 whitespace-nowrap">Estado</th>
+                  <th className="py-3 px-3 sm:px-4 text-right whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -261,20 +261,20 @@ export const AdminAgenciesPage: React.FC = () => {
                   const currentPlan = agency.current_subscription?.plan || agency.plan;
                   return (
                     <tr key={agency.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900">{agency.name}</p>
+                      <td className="py-3 px-3 sm:px-4">
+                        <p className="font-bold text-slate-900 whitespace-nowrap">{agency.name}</p>
                         {agency.razon_social && (
-                          <p className="text-[11px] text-slate-400">{agency.razon_social}</p>
+                          <p className="text-[11px] text-slate-400 whitespace-nowrap">{agency.razon_social}</p>
                         )}
                         {agency.ruc && (
-                          <p className="text-[10px] font-mono text-slate-500">RUC: {agency.ruc}</p>
+                          <p className="text-[10px] font-mono text-slate-500 whitespace-nowrap">RUC: {agency.ruc}</p>
                         )}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <p className="font-semibold text-slate-800">{agency.email || 'Sin email'}</p>
-                        <p className="text-[11px] text-slate-400">{agency.phone || '-'}</p>
+                      <td className="py-3 px-3 sm:px-4">
+                        <p className="font-semibold text-slate-800 whitespace-nowrap">{agency.email || 'Sin email'}</p>
+                        <p className="text-[11px] text-slate-400 whitespace-nowrap">{agency.phone || '-'}</p>
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                         {agency.domain ? (
                           <span className="inline-flex items-center gap-1 font-mono text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
                             <Globe className="w-3 h-3" />
@@ -284,7 +284,7 @@ export const AdminAgenciesPage: React.FC = () => {
                           <span className="text-slate-400 italic text-[11px]">-</span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                         {currentPlan ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
                             <CreditCard className="w-3 h-3" />
@@ -294,7 +294,7 @@ export const AdminAgenciesPage: React.FC = () => {
                           <span className="text-slate-400 italic text-[11px]">Sin plan activo</span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                         <span
                           className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                             agency.status === 1
@@ -305,7 +305,7 @@ export const AdminAgenciesPage: React.FC = () => {
                           {agency.status === 1 ? 'Activa' : 'Inactiva'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/agencies/${agency.id}`}
@@ -341,8 +341,8 @@ export const AdminAgenciesPage: React.FC = () => {
 
       {/* Create / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-2xl w-full p-6 animate-slide-up-fade max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-2xl w-full p-4 sm:p-6 animate-slide-up-fade max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
               <h3 className="text-lg font-bold text-slate-900">
                 {editingAgency ? 'Editar Agencia' : 'Crear Nueva Agencia'}

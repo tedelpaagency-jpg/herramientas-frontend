@@ -308,16 +308,16 @@ export const UsersPage: React.FC = () => {
             <p className="text-xs text-slate-400 mt-1">Ajuste los filtros o agregue un nuevo usuario.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
-                  <th className="py-3.5 px-6">Usuario</th>
-                  <th className="py-3.5 px-6">Rol</th>
-                  <th className="py-3.5 px-6">Agencia</th>
-                  <th className="py-3.5 px-6">Teléfono</th>
-                  <th className="py-3.5 px-6">Estado</th>
-                  <th className="py-3.5 px-6 text-right">Acciones</th>
+                  <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Usuario</th>
+                  <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Rol</th>
+                  <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Agencia</th>
+                  <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Teléfono</th>
+                  <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Estado</th>
+                  <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 text-right whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
@@ -327,7 +327,7 @@ export const UsersPage: React.FC = () => {
 
                   return (
                     <tr key={u.id} className={`hover:bg-slate-50/80 transition-colors ${isDeleted ? 'bg-rose-50/30' : ''}`}>
-                      <td className="py-4 px-6">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6">
                         <div className="flex items-center gap-3">
                           {u.photo ? (
                             <img
@@ -341,27 +341,27 @@ export const UsersPage: React.FC = () => {
                             </div>
                           )}
                           <div>
-                            <p className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                            <p className="font-bold text-slate-900 text-xs flex items-center gap-1.5 whitespace-nowrap">
                               {u.name}
                               {isDeleted && <span className="px-1.5 py-0.5 text-[9px] font-extrabold bg-rose-100 text-rose-700 rounded-xs">Eliminado</span>}
                             </p>
-                            <p className="text-[11px] text-slate-500 font-medium">{u.email}</p>
+                            <p className="text-[11px] text-slate-500 font-medium whitespace-nowrap">{u.email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                         {getRoleBadge(roleName)}
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 text-slate-800 font-medium">
                           <Building className="w-3.5 h-3.5 text-slate-400" />
                           <span>{u.agency?.name || 'Sin Agencia'}</span>
                         </div>
                       </td>
-                      <td className="py-4 px-6 text-slate-600 font-mono">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-slate-600 font-mono whitespace-nowrap">
                         {u.phone || '—'}
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleStatus(u)}
                           disabled={isDeleted}
@@ -378,7 +378,7 @@ export const UsersPage: React.FC = () => {
                           )}
                         </button>
                       </td>
-                      <td className="py-4 px-6 text-right">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           {isDeleted ? (
                             <button
