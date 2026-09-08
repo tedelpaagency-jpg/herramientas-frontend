@@ -176,7 +176,7 @@ export const UserPermissionsPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Navigation Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="flex items-center gap-4">
           <Link
             href="/users"
@@ -192,7 +192,7 @@ export const UserPermissionsPage: React.FC = () => {
               <span>/</span>
               <span className="text-blue-600">Asignación de Permisos Granulares</span>
             </div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
               <span>Gestión de Permisos de Acceso</span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-blue-50 text-blue-600 border border-blue-200">
                 {selectedPermissions.length} / {totalCatalogPerms} activos
@@ -281,7 +281,7 @@ export const UserPermissionsPage: React.FC = () => {
       </div>
 
       {/* Search & Stats Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -289,7 +289,7 @@ export const UserPermissionsPage: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar permiso o módulo..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
           />
         </div>
 
@@ -308,17 +308,17 @@ export const UserPermissionsPage: React.FC = () => {
           return (
             <div
               key={moduleKey}
-              className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 flex flex-col justify-between space-y-4 hover:border-slate-300 transition-all"
+              className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-6 flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
             >
               <div>
                 {/* Module Card Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
                       <Shield className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="font-black text-sm text-slate-900">{module.name}</h3>
+                      <h3 className="font-black text-sm text-slate-900 dark:text-slate-100">{module.name}</h3>
                       <p className="text-[11px] font-medium text-slate-400">
                         {selectedInModule} de {modulePermKeys.length} permisos activos
                       </p>
@@ -346,7 +346,7 @@ export const UserPermissionsPage: React.FC = () => {
                         className={`p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition-all select-none ${
                           isChecked
                             ? 'bg-blue-50/70 border-blue-300 text-blue-900 font-bold shadow-xs'
-                            : 'bg-slate-50/50 border-slate-200/80 text-slate-600 font-medium hover:border-slate-300 hover:bg-slate-50'
+                            : 'bg-slate-50/50 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 font-medium hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'
                         }`}
                       >
                         <input

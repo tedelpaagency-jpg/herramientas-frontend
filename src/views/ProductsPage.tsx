@@ -278,14 +278,14 @@ export const ProductsPage: React.FC = () => {
       </div>
 
       {/* Filter Tabs & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Tabs */}
-          <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold gap-1">
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold gap-1">
             <button
               onClick={() => setActiveTypeTab('all')}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeTypeTab === 'all' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                activeTypeTab === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Todos
@@ -327,7 +327,7 @@ export const ProductsPage: React.FC = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nombre, SKU o destino..."
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600"
+              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-blue-600"
             />
           </div>
         </div>
@@ -343,9 +343,9 @@ export const ProductsPage: React.FC = () => {
 
         if (productList.length === 0) {
           return (
-            <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-300 space-y-3">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-dashed border-slate-300 dark:border-slate-700 space-y-3">
               <Globe className="w-12 h-12 text-slate-300 mx-auto" />
-              <h3 className="text-base font-bold text-slate-800">No se encontraron ítems en el catálogo</h3>
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">No se encontraron ítems en el catálogo</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
                 Comience creando un nuevo paquete turístico, tour o producto con el botón superior.
               </p>
@@ -376,11 +376,11 @@ export const ProductsPage: React.FC = () => {
               return (
                 <div
                   key={p.id}
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs hover:shadow-xl transition-all duration-200 overflow-hidden flex flex-col justify-between group"
+                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xl transition-all duration-200 overflow-hidden flex flex-col justify-between group"
                 >
                   <div>
                     {/* Image Header with Badge */}
-                    <div className="relative h-48 bg-slate-100 overflow-hidden">
+                    <div className="relative h-48 bg-slate-100 dark:bg-slate-800 overflow-hidden">
                       {p.main_image ? (
                         <img
                           src={p.main_image}
@@ -421,7 +421,7 @@ export const ProductsPage: React.FC = () => {
 
                     {/* Card Content Body */}
                     <div className="p-5 space-y-3">
-                      <h3 className="font-extrabold text-base text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                      <h3 className="font-extrabold text-base text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
                         {p.name}
                       </h3>
 
@@ -429,7 +429,7 @@ export const ProductsPage: React.FC = () => {
                       {isPackage && (
                         <div className="space-y-1.5 text-xs text-slate-600">
                           {p.location && (
-                            <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                            <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
                               <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
                               <span>{p.location}</span>
                             </div>
@@ -504,7 +504,7 @@ export const ProductsPage: React.FC = () => {
       {/* Modal Form: Add / Edit Product or Package */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="p-4 sm:p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
               <div className="flex items-center gap-3">
@@ -528,7 +528,7 @@ export const ProductsPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
               {/* Type Selection */}
               <div>
-                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                   Tipo de Registro
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -538,7 +538,7 @@ export const ProductsPage: React.FC = () => {
                     className={`p-3 rounded-2xl border text-xs font-extrabold flex flex-col items-center gap-1.5 transition-all ${
                       formData.type === 1
                         ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     <Globe className="w-5 h-5 text-emerald-600" />
@@ -551,7 +551,7 @@ export const ProductsPage: React.FC = () => {
                     className={`p-3 rounded-2xl border text-xs font-extrabold flex flex-col items-center gap-1.5 transition-all ${
                       formData.type === 2
                         ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-500/20'
-                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     <Package className="w-5 h-5 text-blue-600" />
@@ -564,7 +564,7 @@ export const ProductsPage: React.FC = () => {
                     className={`p-3 rounded-2xl border text-xs font-extrabold flex flex-col items-center gap-1.5 transition-all ${
                       formData.type === 3
                         ? 'border-purple-600 bg-purple-50 text-purple-800 ring-2 ring-purple-500/20'
-                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     <Sparkles className="w-5 h-5 text-purple-600" />
@@ -574,7 +574,7 @@ export const ProductsPage: React.FC = () => {
               </div>
 
               {/* SECTION: IMAGES (Imagen Principal e Imágenes Adicionales Opcionales) */}
-              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+              <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
                 <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                   <ImageIcon className="w-4 h-4 text-blue-600" />
                   <span>Galería e Imágenes</span>
@@ -582,14 +582,14 @@ export const ProductsPage: React.FC = () => {
 
                 {/* Imagen Principal */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Imagen Principal</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Imagen Principal</label>
                   <div className="flex gap-2 items-center">
                     <input
                       type="text"
                       value={formData.main_image}
                       onChange={(e) => setFormData({ ...formData, main_image: e.target.value })}
                       placeholder="https://ejemplo.com/imagen.jpg o suba un archivo..."
-                      className="flex-1 px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600"
+                      className="flex-1 px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-600"
                     />
                     <label className="cursor-pointer px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-sm">
                       {isUploadingMain ? (
@@ -684,7 +684,7 @@ export const ProductsPage: React.FC = () => {
               {/* Name & SKU */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Nombre</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre</label>
                   <input
                     type="text"
                     required
@@ -696,7 +696,7 @@ export const ProductsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">SKU / Código</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">SKU / Código</label>
                   <input
                     type="text"
                     value={formData.sku}
@@ -711,7 +711,7 @@ export const ProductsPage: React.FC = () => {
               {formData.type === 1 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Destinos (Ubicación)</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Destinos (Ubicación)</label>
                     <input
                       type="text"
                       value={formData.location}
@@ -722,7 +722,7 @@ export const ProductsPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Duración</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Duración</label>
                     <input
                       type="text"
                       value={formData.duration}
@@ -736,7 +736,7 @@ export const ProductsPage: React.FC = () => {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Descripción</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Descripción</label>
                 <textarea
                   rows={2}
                   value={formData.description}
@@ -749,7 +749,7 @@ export const ProductsPage: React.FC = () => {
               {/* Package Specific: Includes */}
               {formData.type === 1 && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Incluye (Atributos)</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Incluye (Atributos)</label>
                   <textarea
                     rows={2}
                     value={formData.includes}
@@ -764,7 +764,7 @@ export const ProductsPage: React.FC = () => {
               {/* Prices */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Precio de Venta ($)</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Precio de Venta ($)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -778,7 +778,7 @@ export const ProductsPage: React.FC = () => {
 
                 {formData.type === 2 && (
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Precio Sugerido ($)</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Precio Sugerido ($)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -829,7 +829,7 @@ export const ProductsPage: React.FC = () => {
                               updated[idx].name = e.target.value;
                               setFormData({ ...formData, product_attributes: updated });
                             }}
-                            className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600"
+                            className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-600"
                           />
                           <input
                             type="text"
@@ -840,7 +840,7 @@ export const ProductsPage: React.FC = () => {
                               updated[idx].value = e.target.value;
                               setFormData({ ...formData, product_attributes: updated });
                             }}
-                            className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-600"
+                            className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-600"
                           />
                           <button
                             type="button"

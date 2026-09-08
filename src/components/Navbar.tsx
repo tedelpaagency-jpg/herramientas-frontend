@@ -14,6 +14,8 @@ interface NavbarProps {
   setRightSidebarOpen: (open: boolean) => void;
 }
 
+import { useTheme } from '../context/ThemeContext';
+
 export const Navbar: React.FC<NavbarProps> = ({
   leftSidebarOpen,
   setLeftSidebarOpen,
@@ -23,36 +25,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   setRightSidebarOpen,
 }) => {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark') || localStorage.getItem('santun_theme') === 'dark';
-    }
-    return false;
-  });
-
-  const toggleDarkMode = () => {
-    const newDark = !isDarkMode;
-    setIsDarkMode(newDark);
-    if (typeof window !== 'undefined') {
-      if (newDark) {
-        document.documentElement.classList.add('dark');
-        document.body.classList.add('dark');
-        localStorage.setItem('santun_theme', 'dark');
-        localStorage.setItem('santun_dark_theme', 'dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        document.body.classList.remove('dark');
-        localStorage.setItem('santun_theme', 'light');
-        localStorage.setItem('santun_dark_theme', 'light');
-      }
-      window.dispatchEvent(new Event('theme-changed'));
-      window.dispatchEvent(new Event('branding-updated'));
-    }
-  };
 
   const isSuperAdmin =
     user?.role === 'super_admin' ||
@@ -112,13 +88,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
         {/* Dark / Light Mode Toggle Button */}
         <button 
-          onClick={toggleDarkMode}
+          onClick={toggleTheme}
           className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-          title={isDarkMode ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
-          aria-label="Cambiar tema de color"
+          title={isDark ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
+          aria-label={isDark ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
         >
-          <span className="material-symbols-outlined text-primary text-[20px] sm:text-[24px]">
-            {isDarkMode ? 'light_mode' : 'dark_mode'}
+          <span className={`material-symbols-outlined text-[20px] sm:text-[24px] ${isDark ? 'text-amber-400' : 'text-slate-700'}`}>
+            {isDark ? 'light_mode' : 'dark_mode'}
           </span>
         </button>
         {/* Right Sidebar Toggle Button */}

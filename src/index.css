@@ -111,27 +111,94 @@ html.dark {
   scrollbar-color: #2b3236 #121413;
 }
 
-/* Global Dark Mode Input, Select, Textarea & Label Overrides */
-.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]),
+/* Custom Dark Mode Slate Border & Divide Overrides */
+.dark\:border-slate-800:is(.dark *),
+.dark .dark\:border-slate-800,
+html.dark .dark\:border-slate-800,
+html.dark [class*="dark:border-slate-800"] {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(22 26 27) !important;
+}
+
+.dark\:border-slate-800\/80:is(.dark *),
+.dark .dark\:border-slate-800\/80,
+html.dark .dark\:border-slate-800\/80 {
+  border-color: rgba(22, 26, 27, 0.8) !important;
+}
+
+.dark\:border-slate-800\/60:is(.dark *),
+.dark .dark\:border-slate-800\/60,
+html.dark .dark\:border-slate-800\/60 {
+  border-color: rgba(22, 26, 27, 0.6) !important;
+}
+
+.dark\:border-slate-800\/50:is(.dark *),
+.dark .dark\:border-slate-800\/50,
+html.dark .dark\:border-slate-800\/50 {
+  border-color: rgba(22, 26, 27, 0.5) !important;
+}
+
+.dark\:divide-slate-800:is(.dark *) > :not([hidden]) ~ :not([hidden]),
+.dark .dark\:divide-slate-800 > :not([hidden]) ~ :not([hidden]),
+html.dark .dark\:divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-opacity: 1 !important;
+  border-color: rgb(22 26 27) !important;
+}
+
+.dark\:divide-slate-800\/60:is(.dark *) > :not([hidden]) ~ :not([hidden]),
+.dark .dark\:divide-slate-800\/60 > :not([hidden]) ~ :not([hidden]),
+html.dark .dark\:divide-slate-800\/60 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(22, 26, 27, 0.6) !important;
+}
+
+/* Custom Dark Mode Slate Surface Background Overrides */
+.dark\:bg-slate-900:is(.dark *),
+.dark .dark\:bg-slate-900,
+html.dark .dark\:bg-slate-900,
+html.dark [class*="dark:bg-slate-900"] {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(22 26 27) !important;
+}
+
+.dark\:bg-slate-900\/90:is(.dark *),
+.dark .dark\:bg-slate-900\/90,
+html.dark .dark\:bg-slate-900\/90 {
+  background-color: rgba(22, 26, 27, 0.9) !important;
+}
+
+.dark\:bg-slate-900\/80:is(.dark *),
+.dark .dark\:bg-slate-900\/80,
+html.dark .dark\:bg-slate-900\/80 {
+  background-color: rgba(22, 26, 27, 0.8) !important;
+}
+
+.dark\:bg-slate-900\/50:is(.dark *),
+.dark .dark\:bg-slate-900\/50,
+html.dark .dark\:bg-slate-900\/50 {
+  background-color: rgba(22, 26, 27, 0.5) !important;
+}
+
+/* Global Dark Mode Input, Select, Textarea & Label Defaults */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]):not([class*="bg-transparent"]),
 .dark select,
 .dark textarea {
-  background-color: #161a1b !important;
-  color: #f8fafc !important;
-  border-color: #2b3236 !important;
+  background-color: #161a1b;
+  color: #f8fafc;
+  border-color: #2b3236;
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
-  color: #64748b !important;
+  color: #64748b;
 }
 
 .dark option {
-  background-color: #0f172a !important;
-  color: #f8fafc !important;
+  background-color: #0f172a;
+  color: #f8fafc;
 }
 
-.dark label {
-  color: #cbd5e1 !important;
+.dark label:not([class*="text-"]) {
+  color: #cbd5e1;
 }
 
 /* 3D Digital Credential Styles */

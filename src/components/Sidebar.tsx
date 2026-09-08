@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { 
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
@@ -124,18 +125,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     brandName = (hasCustomBranding && activeAgency?.name) ? activeAgency.name : (hostWhiteLabel?.name || 'SANTUN');
   }
 
-  // Theme state and listener for dynamic mode switching
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark') || localStorage.getItem('santun_theme') === 'dark';
-    }
-    return false;
-  });
+  const { isDark } = useTheme();
 
   useEffect(() => {
-    const handleThemeOrBrandingChange = () => {
+    const handleBrandingChange = () => {
       if (typeof window !== 'undefined') {
-        setIsDark(document.documentElement.classList.contains('dark') || localStorage.getItem('santun_theme') === 'dark');
         const savedWl = localStorage.getItem('santun_white_label');
         if (savedWl) {
           try { setCachedWl(JSON.parse(savedWl)); } catch (e) {}
@@ -144,11 +138,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         if (savedMenuBg) setCachedMenuBg(savedMenuBg);
       }
     };
-    window.addEventListener('theme-changed', handleThemeOrBrandingChange);
-    window.addEventListener('branding-updated', handleThemeOrBrandingChange);
+    window.addEventListener('branding-updated', handleBrandingChange);
     return () => {
-      window.removeEventListener('theme-changed', handleThemeOrBrandingChange);
-      window.removeEventListener('branding-updated', handleThemeOrBrandingChange);
+      window.removeEventListener('branding-updated', handleBrandingChange);
     };
   }, []);
 
@@ -200,17 +192,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return brightness < 160;
   };
 
-  const targetDarkTheme = activeWl?.dark_theme || activeAgency?.dark_theme || (typeof window !== 'undefined' ? localStorage.getItem('santun_dark_theme') : null);
-  const isDarkBg = targetDarkTheme
-    ? targetDarkTheme === 'dark'
-    : (brandMenuBg ? isColorDark(brandMenuBg) : isDark);
+  const isDarkBg = brandMenuBg ? isColorDark(brandMenuBg) : isDark;
 
   const resolvedMenuBg = brandMenuBg === '#0f172a' ? '#161a1b' : brandMenuBg;
   const effectiveMenuBg = resolvedMenuBg
-    ? (isDarkBg
-        ? (isColorDark(resolvedMenuBg) ? (resolvedMenuBg === '#0f172a' ? '#161a1b' : resolvedMenuBg) : '#161a1b')
+    ? (isDark
+        ? (isColorDark(resolvedMenuBg) ? resolvedMenuBg : '#161a1b')
         : (isColorDark(resolvedMenuBg) ? '#ffffff' : resolvedMenuBg))
-    : (isDarkBg ? '#161a1b' : '#ffffff');
+    : (isDark ? '#161a1b' : '#ffffff');
 
   let activeLogoToRender: string | null = null;
   if (isSidebarCollapsed) {
@@ -402,7 +391,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <aside 
         style={{ backgroundColor: effectiveMenuBg }}
-        className={`flex flex-col h-full z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden fixed left-0 top-0 ${
+        className={`flex flex-col h-full z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden fixed left-0 top-0 border-r border-slate-200/80 dark:border-slate-800/80 ${
           isDarkBg ? 'text-white' : 'text-slate-800'
         } ${leftSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'} lg:translate-x-0 w-[85vw] max-w-[280px] sm:w-64 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
       >

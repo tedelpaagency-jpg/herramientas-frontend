@@ -113,10 +113,6 @@ export const LoginPage: React.FC = () => {
   const customLoginBg = activeWl?.login_background || currentAgency?.login_background || (typeof window !== 'undefined' ? localStorage.getItem('santun_login_background') : null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
-    }
     const interval = setInterval(() => {
       setActiveIndex((current) => (current + 1) % rewardsData.length);
     }, 5000);
@@ -160,7 +156,7 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFE] flex flex-col font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
+    <div className="min-h-screen bg-[#FDFDFE] dark:bg-[#121413] flex flex-col font-sans text-slate-900 dark:text-slate-100 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden transition-colors">
       
       <main className="flex-1 w-full flex items-center justify-center p-4 sm:p-6 md:p-12 relative z-10">
         <div className="w-full max-w-[1140px] flex flex-col lg:flex-row gap-10 lg:gap-24 items-center justify-center z-10">
@@ -171,7 +167,7 @@ export const LoginPage: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5 text-blue-600" />
               <span className="text-[10px] sm:text-[11px] font-bold tracking-wider text-blue-600 uppercase">{brandName} Provider Portal</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-800 tracking-tight leading-[1.2] mb-3">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-800 dark:text-slate-100 tracking-tight leading-[1.2] mb-3">
               Plataforma de gestión empresarial y servicios <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">en tiempo real</span>.
             </h1>
           </div>
@@ -185,12 +181,12 @@ export const LoginPage: React.FC = () => {
                 <span className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">{brandName} Provider Portal</span>
               </div>
               
-              <h1 className="text-3xl font-semibold text-slate-800 tracking-tight leading-[1.2] mb-3">
+              <h1 className="text-3xl font-semibold text-slate-800 dark:text-slate-100 tracking-tight leading-[1.2] mb-3">
                 Plataforma de gestión <br />
                 empresarial <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">conectada a Laravel</span>.
               </h1>
               
-              <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
+              <p className="text-[13px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
                 Accede a tu panel centralizado para inmuebles, CRM, POS y documentos legales.
               </p>
             </div>
@@ -257,7 +253,7 @@ export const LoginPage: React.FC = () => {
 
           {/* ================= SECCIÓN DERECHA: Formulario de Login ================= */}
           <div className="w-full max-w-[420px] flex flex-col items-center z-20 shrink-0 order-2 lg:order-2">
-            <div className="bg-white w-full px-6 py-8 sm:px-8 sm:py-10 flex flex-col rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100/80 min-h-[480px] justify-center relative">
+            <div className="bg-white dark:bg-slate-900 w-full px-6 py-8 sm:px-8 sm:py-10 flex flex-col rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-none border border-slate-100/80 dark:border-slate-800 min-h-[480px] justify-center relative">
               
               <div className="animate-slide-up-fade w-full flex flex-col">
                 <div className="mb-8">
@@ -269,10 +265,10 @@ export const LoginPage: React.FC = () => {
                     </div>
                   )}
 
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-1.5">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-1.5">
                     Bienvenido a {brandName}
                   </h2>
-                  <p className="text-[13px] text-slate-500 font-medium">
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400 font-medium">
                     Ingresa tus credenciales para acceder al panel de control.
                   </p>
                 </div>
@@ -295,7 +291,7 @@ export const LoginPage: React.FC = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="admin@tedelpa.com"
-                      className="w-full h-11 bg-slate-50/50 border border-slate-200 rounded-xl px-4 text-[14px] focus:bg-white focus:outline-none focus:ring-[2px] focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full h-11 bg-slate-50/50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-[14px] focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-[2px] focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </div>
 
@@ -315,7 +311,7 @@ export const LoginPage: React.FC = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full h-11 bg-slate-50/50 border border-slate-200 rounded-xl pl-4 pr-11 text-[14px] focus:bg-white focus:outline-none focus:ring-[2px] focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium text-slate-900 placeholder-slate-400"
+                        className="w-full h-11 bg-slate-50/50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-4 pr-11 text-[14px] focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-[2px] focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
                       />
                       <button
                         type="button"
@@ -348,12 +344,12 @@ export const LoginPage: React.FC = () => {
       </main>
 
       {/* ================= SECCIÓN INFERIOR: Aliados ================= */}
-      <footer className="w-full py-8 sm:py-10 bg-white border-t border-slate-100 flex flex-col items-center justify-center z-10">
+      <footer className="w-full py-8 sm:py-10 bg-white dark:bg-[#121413] border-t border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center z-10">
         <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-6 text-center px-4">
           Con el respaldo de la arquitectura Laravel 12 & Next.js
         </p>
         
-        <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-10 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-700 cursor-default px-6 text-slate-700 font-bold text-sm">
+        <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-10 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-700 cursor-default px-6 text-slate-700 dark:text-slate-300 font-bold text-sm">
           <span>{brandName.toUpperCase()} ECOSYSTEM</span>
           <span>•</span>
           <span>LEXVAULT</span>

@@ -157,7 +157,7 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 border border-slate-200 overflow-hidden my-auto flex flex-col max-h-[90vh]"
+          className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 overflow-hidden my-auto flex flex-col max-h-[90vh]"
         >
           <div className="bg-slate-900 text-white px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 flex-shrink-0">
             <div className="flex items-center gap-3 min-w-0">
@@ -203,23 +203,23 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
           <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Título de la Plantilla</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Título de la Plantilla</label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
                   placeholder="Ej. Promesa de Compraventa Inmobiliaria"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Categoría</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Categoría</label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
                 >
                   <option value="Contrato">Contrato</option>
                   <option value="Promesa">Promesa de Compraventa</option>
@@ -285,7 +285,7 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
                     Cuerpo del Documento Legal (HTML / Texto)
                   </label>
                   <textarea
@@ -356,7 +356,7 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
 
             <form onSubmit={handleAddCustomField} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre de la Variable (Token)</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Nombre de la Variable (Token)</label>
                 <input
                   type="text"
                   required
@@ -369,7 +369,7 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Etiqueta / Descripción para el Usuario</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Etiqueta / Descripción para el Usuario</label>
                 <input
                   type="text"
                   value={newFieldLabel}

@@ -194,17 +194,17 @@ export const AdminPlansPage: React.FC = () => {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
         <div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                 Gestión de Planes
               </h1>
-              <p className="text-xs text-slate-500 font-semibold">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
                 Administra los planes de suscripción globales del sistema
               </p>
             </div>
@@ -235,19 +235,19 @@ export const AdminPlansPage: React.FC = () => {
       )}
 
       {/* Search & Filter */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3 max-w-md">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 max-w-md">
         <Search className="w-4 h-4 text-slate-400" />
         <input
           type="text"
           placeholder="Buscar planes por nombre..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-transparent text-xs font-medium outline-none text-slate-800 placeholder-slate-400"
+          className="w-full bg-transparent text-xs font-medium outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
         />
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
         {loading ? (
           <TableSkeleton rows={5} />
         ) : filteredPlans.length === 0 ? (
@@ -257,7 +257,7 @@ export const AdminPlansPage: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="py-3.5 px-4">Plan</th>
                   <th className="py-3.5 px-4">Método de Cobro</th>
@@ -268,18 +268,18 @@ export const AdminPlansPage: React.FC = () => {
                   <th className="py-3.5 px-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {filteredPlans.map((plan) => (
-                  <tr key={plan.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={plan.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-slate-900">{plan.name}</p>
+                        <p className="font-bold text-slate-900 dark:text-slate-100">{plan.name}</p>
                         <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold text-[10px] shrink-0">
                           {plan.white_label?.name || 'Marca Blanca'}
                         </span>
                       </div>
                       {plan.description && (
-                        <p className="text-[11px] text-slate-500 line-clamp-1">{plan.description}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">{plan.description}</p>
                       )}
                     </td>
                     <td className="py-3.5 px-4 font-semibold">
@@ -296,8 +296,8 @@ export const AdminPlansPage: React.FC = () => {
                         </span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      ${Number(plan.price).toFixed(2)} <span className="text-[10px] text-slate-400 font-normal">/mes</span>
+                    <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
+                      ${Number(plan.price).toFixed(2)} <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">/mes</span>
                     </td>
                     <td className="py-3.5 px-4">
                       {plan.allowed_agency_types && plan.allowed_agency_types.length > 0 ? (
@@ -305,7 +305,7 @@ export const AdminPlansPage: React.FC = () => {
                           {plan.allowed_agency_types.map((type, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200"
+                              className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                             >
                               {type}
                             </span>
@@ -350,14 +350,14 @@ export const AdminPlansPage: React.FC = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openEditModal(plan)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                           title="Editar"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(plan.id)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -375,14 +375,14 @@ export const AdminPlansPage: React.FC = () => {
       {/* Create / Edit Plan Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-slide-up-fade">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-              <h3 className="text-lg font-bold text-slate-900">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-slide-up-fade">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {editingPlan ? 'Editar Plan' : 'Crear Nuevo Plan'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -390,31 +390,31 @@ export const AdminPlansPage: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Nombre del Plan *</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre del Plan *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="ej. Plan Premium Inmobiliario"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Descripción</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Descripción</label>
                 <textarea
                   rows={2}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Detalles sobre los beneficios de este plan..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Método de Cobro *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Método de Cobro *</label>
                   {(() => {
                     const isTravelAllowed = formData.allowedAgencyTypesStr.toLowerCase().includes('travel') || 
                       (editingPlan ? (editingPlan.allowed_agency_types?.includes('travel') || editingPlan.plan_permissions?.some(p => p.permission.startsWith('packages.') || p.permission.startsWith('requests.') || p.permission.includes('travel') || p.permission.includes('visa'))) : true);
@@ -423,7 +423,7 @@ export const AdminPlansPage: React.FC = () => {
                         <select
                           value={formData.billing_type}
                           onChange={(e) => setFormData({ ...formData, billing_type: e.target.value as 'fixed' | 'commission' })}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs bg-white font-semibold"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 bg-white font-semibold"
                         >
                           <option value="fixed">Cargo Fijo</option>
                           <option value="commission" disabled={!isTravelAllowed}>
@@ -442,7 +442,7 @@ export const AdminPlansPage: React.FC = () => {
 
                 {formData.billing_type === 'commission' ? (
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">% de Comisión *</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">% de Comisión *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -452,16 +452,16 @@ export const AdminPlansPage: React.FC = () => {
                       value={formData.commission_percentage}
                       onChange={(e) => setFormData({ ...formData, commission_percentage: parseFloat(e.target.value) || 0 })}
                       placeholder="ej. 5.00"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     />
                   </div>
                 ) : (
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Estado</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Estado</label>
                     <select
                       value={formData.status ? '1' : '0'}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value === '1' })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs bg-white"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 bg-white"
                     >
                       <option value="1">Activo</option>
                       <option value="0">Inactivo</option>
@@ -472,7 +472,7 @@ export const AdminPlansPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Precio Mensual ($) *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Precio Mensual ($) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -480,17 +480,17 @@ export const AdminPlansPage: React.FC = () => {
                     required
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
                 {formData.billing_type === 'commission' && (
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Estado</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Estado</label>
                     <select
                       value={formData.status ? '1' : '0'}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value === '1' })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs bg-white"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 bg-white"
                     >
                       <option value="1">Activo</option>
                       <option value="0">Inactivo</option>
@@ -500,7 +500,7 @@ export const AdminPlansPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Características (separadas por comas)
                 </label>
                 <input
@@ -508,12 +508,12 @@ export const AdminPlansPage: React.FC = () => {
                   value={formData.featuresStr}
                   onChange={(e) => setFormData({ ...formData, featuresStr: e.target.value })}
                   placeholder="CRM Ilimitado, 50 Propiedades, Soporte 24/7"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Tipos de Agencia Permitidos (separados por comas)
                 </label>
                 <input
@@ -521,15 +521,15 @@ export const AdminPlansPage: React.FC = () => {
                   value={formData.allowedAgencyTypesStr}
                   onChange={(e) => setFormData({ ...formData, allowedAgencyTypesStr: e.target.value })}
                   placeholder="real_estate, travel"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Cancelar
                 </button>

@@ -148,15 +148,15 @@ export const AgencyCustomFieldsModal: React.FC<AgencyCustomFieldsModalProps> = (
   return (
     <Portal>
       <div className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-        <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold border border-indigo-100">
                 <Sliders className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-extrabold text-slate-900">Campos Personalizados de Clientes</h3>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Campos Personalizados de Clientes</h3>
                 <p className="text-xs text-slate-500">
                   Configura los campos adicionales que tu agencia solicita a los clientes
                 </p>
@@ -169,30 +169,30 @@ export const AgencyCustomFieldsModal: React.FC<AgencyCustomFieldsModalProps> = (
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto pr-1 flex-1">
             {/* Form Column */}
-            <form onSubmit={handleSubmitField} className="space-y-4 bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80">
+            <form onSubmit={handleSubmitField} className="space-y-4 bg-slate-50/80 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
               <h4 className="text-xs font-black uppercase text-indigo-600 tracking-wider">
                 {isEditing ? 'Editar Campo' : 'Nuevo Campo Personalizado'}
               </h4>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Nombre / Etiqueta del Campo *</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Nombre / Etiqueta del Campo *</label>
                 <input
                   type="text"
                   required
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                   placeholder="Ej: Número de Pasaporte, Fecha Visa"
-                  className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 transition-all"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Tipo de Campo</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Tipo de Campo</label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 transition-all"
                   >
                     <option value="text">Texto Corto</option>
                     <option value="textarea">Texto Largo / Área</option>
@@ -204,11 +204,11 @@ export const AgencyCustomFieldsModal: React.FC<AgencyCustomFieldsModalProps> = (
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Obligatorio</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Obligatorio</label>
                   <select
                     value={formData.is_required ? '1' : '0'}
                     onChange={(e) => setFormData({ ...formData, is_required: e.target.value === '1' })}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 transition-all"
                   >
                     <option value="0">Opcional</option>
                     <option value="1">Requerido (*)</option>
@@ -218,13 +218,13 @@ export const AgencyCustomFieldsModal: React.FC<AgencyCustomFieldsModalProps> = (
 
               {formData.type === 'select' && (
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Opciones (separadas por coma)</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Opciones (separadas por coma)</label>
                   <input
                     type="text"
                     value={formData.optionsText}
                     onChange={(e) => setFormData({ ...formData, optionsText: e.target.value })}
                     placeholder="Opción 1, Opción 2, Opción 3"
-                    className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                    className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 transition-all"
                   />
                 </div>
               )}
@@ -282,11 +282,11 @@ export const AgencyCustomFieldsModal: React.FC<AgencyCustomFieldsModalProps> = (
                   {fields.map((f) => (
                     <div
                       key={f.id}
-                      className="p-3 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-3 shadow-xs hover:border-slate-300 transition-all"
+                      className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-between gap-3 shadow-xs hover:border-slate-300 dark:hover:border-slate-600 transition-all"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-900">{f.label}</span>
+                          <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{f.label}</span>
                           {f.is_required && (
                             <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
                               *

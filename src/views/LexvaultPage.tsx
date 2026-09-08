@@ -168,11 +168,11 @@ export const LexvaultPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <ShieldCheck className="w-7 h-7 text-blue-600" />
             LexVault - Bóveda de Documentos Legales
           </h2>
-          <p className="text-sm text-slate-500 font-medium mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
             Generación dinámica de contratos, sustitución de tokens y firma digital.
           </p>
         </div>
@@ -180,7 +180,7 @@ export const LexvaultPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleOpenCreateTemplate}
-            className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 px-4 py-2.5 rounded-xl font-bold text-sm shadow-2xs transition-all flex items-center gap-2"
+            className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 rounded-xl font-bold text-sm shadow-2xs transition-all flex items-center gap-2"
           >
             <Plus className="w-4 h-4 text-blue-600" />
             <span>Nueva Plantilla</span>
@@ -198,17 +198,17 @@ export const LexvaultPage: React.FC = () => {
 
       {/* Stats Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
             <FileText className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-lg font-black text-slate-900 leading-none">{documents.length}</p>
+            <p className="text-lg font-black text-slate-900 dark:text-white leading-none">{documents.length}</p>
             <p className="text-[11px] font-bold text-slate-500 uppercase mt-1">Contratos Totales</p>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
             <CheckCircle2 className="w-5 h-5" />
           </div>
@@ -218,7 +218,7 @@ export const LexvaultPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
             <Clock className="w-5 h-5" />
           </div>
@@ -228,7 +228,7 @@ export const LexvaultPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
             <XCircle className="w-5 h-5" />
           </div>
@@ -310,7 +310,7 @@ export const LexvaultPage: React.FC = () => {
                     const isDeclined = doc.status === 'declined' || (doc.status as any) == 3;
 
                     return (
-                      <tr key={doc.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={doc.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3.5 px-4 font-mono font-bold text-blue-600">
                           {doc.document_number || `#LEX-${doc.id}`}
                         </td>
@@ -421,7 +421,7 @@ export const LexvaultPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {filteredTemplates.map((tmpl) => (
-                    <tr key={tmpl.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={tmpl.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="py-3.5 px-4 font-mono font-bold text-blue-600">
                         #{tmpl.id}
                       </td>

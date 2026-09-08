@@ -188,13 +188,13 @@ export const UsersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
               Directorio de Usuarios
             </h1>
             <p className="text-xs text-slate-500 font-medium">
@@ -225,16 +225,16 @@ export const UsersPage: React.FC = () => {
       )}
 
       {/* Control Bar: Búsqueda y Filtros */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-4">
         {/* Search */}
-        <div className="flex items-center gap-2 bg-slate-100 rounded-xl px-4 py-2 flex-1 min-w-[240px]">
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-2 flex-1 min-w-[240px]">
           <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
           <input
             type="text"
             placeholder="Buscar por nombre, correo o teléfono..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="bg-transparent border-none outline-none text-xs text-slate-800 w-full placeholder-slate-400 font-medium"
+            className="bg-transparent border-none outline-none text-xs text-slate-800 dark:text-slate-100 w-full placeholder-slate-400 dark:placeholder-slate-500 font-medium"
           />
         </div>
 
@@ -244,7 +244,7 @@ export const UsersPage: React.FC = () => {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+            className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
           >
             <option value="">Todos los Roles</option>
             <option value="user">Agentes / Users</option>
@@ -277,7 +277,7 @@ export const UsersPage: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value !== '' ? Number(e.target.value) : '')}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+            className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
           >
             <option value="">Todos los Estados</option>
             <option value="1">Activos</option>
@@ -285,7 +285,7 @@ export const UsersPage: React.FC = () => {
           </select>
 
           {/* Trashed Checkbox */}
-          <label className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer">
+          <label className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
             <input
               type="checkbox"
               checked={withTrashed}
@@ -298,7 +298,7 @@ export const UsersPage: React.FC = () => {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         {isLoading ? (
           <TableSkeleton rows={5} />
         ) : users.length === 0 ? (
@@ -311,7 +311,7 @@ export const UsersPage: React.FC = () => {
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
+                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/50 text-[11px] font-extrabold uppercase text-slate-400 dark:text-slate-500 tracking-wider">
                   <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Usuario</th>
                   <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Rol</th>
                   <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Agencia</th>
@@ -320,13 +320,13 @@ export const UsersPage: React.FC = () => {
                   <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 text-right whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {users.map((u) => {
                   const isDeleted = Boolean(u.deleted_at);
                   const roleName = u.role || (u.roles?.[0]?.name ?? 'user');
 
                   return (
-                    <tr key={u.id} className={`hover:bg-slate-50/80 transition-colors ${isDeleted ? 'bg-rose-50/30' : ''}`}>
+                    <tr key={u.id} className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors ${isDeleted ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
                       <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6">
                         <div className="flex items-center gap-3">
                           {u.photo ? (
@@ -341,7 +341,7 @@ export const UsersPage: React.FC = () => {
                             </div>
                           )}
                           <div>
-                            <p className="font-bold text-slate-900 text-xs flex items-center gap-1.5 whitespace-nowrap">
+                            <p className="font-bold text-slate-900 dark:text-slate-100 text-xs flex items-center gap-1.5 whitespace-nowrap">
                               {u.name}
                               {isDeleted && <span className="px-1.5 py-0.5 text-[9px] font-extrabold bg-rose-100 text-rose-700 rounded-xs">Eliminado</span>}
                             </p>
@@ -353,7 +353,7 @@ export const UsersPage: React.FC = () => {
                         {getRoleBadge(roleName)}
                       </td>
                       <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 text-slate-800 font-medium">
+                        <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium">
                           <Building className="w-3.5 h-3.5 text-slate-400" />
                           <span>{u.agency?.name || 'Sin Agencia'}</span>
                         </div>
@@ -425,7 +425,7 @@ export const UsersPage: React.FC = () => {
 
         {/* Pagination Footer */}
         {pagination.last_page > 1 && (
-          <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+          <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">
               Página {pagination.current_page} de {pagination.last_page} ({pagination.total} usuarios)
             </span>
@@ -433,14 +433,14 @@ export const UsersPage: React.FC = () => {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={pagination.current_page === 1}
-                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition-colors"
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setPage(p => Math.min(pagination.last_page, p + 1))}
                 disabled={pagination.current_page === pagination.last_page}
-                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition-colors"
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

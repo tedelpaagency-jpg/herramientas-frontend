@@ -427,7 +427,7 @@ export const GoogleCalendarPage: React.FC = () => {
 
       {/* Tabs Navigation (Developer Tab ONLY for super_admin) */}
       {isSuperAdmin && (
-        <div className="flex border-b border-slate-200 bg-white rounded-2xl p-1.5 border border-slate-200/80 shadow-2xs gap-2">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl p-1.5 border border-slate-200/80 dark:border-slate-800 shadow-2xs gap-2">
           <button
             onClick={() => setActiveTab('calendar')}
             className={`flex-1 py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2 ${
@@ -507,7 +507,7 @@ export const GoogleCalendarPage: React.FC = () => {
 
               <button
                 onClick={handleDisconnect}
-                className="px-4 py-2 bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-2xl font-bold text-xs transition-all shadow-2xs hover:shadow-sm shrink-0 flex items-center gap-1.5 self-start sm:self-auto"
+                className="px-4 py-2 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800 rounded-2xl font-bold text-xs transition-all shadow-2xs hover:shadow-sm shrink-0 flex items-center gap-1.5 self-start sm:self-auto"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Desvincular Mi Cuenta</span>
@@ -516,26 +516,26 @@ export const GoogleCalendarPage: React.FC = () => {
           )}
 
           {/* Calendar Toolbar Header */}
-          <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             {/* Month & Navigation */}
             <div className="flex items-center gap-3">
               <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
                 <button
                   onClick={handlePrevMonth}
-                  className="p-2 hover:bg-white text-slate-600 hover:text-slate-900 rounded-xl transition-all"
+                  className="p-2 hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl transition-all"
                   title="Mes Anterior"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleToday}
-                  className="px-3 py-1 text-xs font-black text-slate-700 hover:bg-white rounded-xl transition-all"
+                  className="px-3 py-1 text-xs font-black text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all"
                 >
                   Hoy
                 </button>
                 <button
                   onClick={handleNextMonth}
-                  className="p-2 hover:bg-white text-slate-600 hover:text-slate-900 rounded-xl transition-all"
+                  className="p-2 hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl transition-all"
                   title="Mes Siguiente"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -573,7 +573,7 @@ export const GoogleCalendarPage: React.FC = () => {
 
           {/* VIEW MODE 1: GRID CALENDAR */}
           {viewMode === 'grid' && (
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xs overflow-hidden">
               <div className="overflow-x-auto custom-scrollbar">
                 <div className="min-w-[640px]">
                   {/* Day Names Header */}
@@ -598,7 +598,7 @@ export const GoogleCalendarPage: React.FC = () => {
                       key={index}
                       onClick={() => handleCellClick(dateString)}
                       className={`min-h-[110px] p-2 transition-all flex flex-col justify-between cursor-pointer group ${
-                        isCurrentMonth ? 'bg-white hover:bg-blue-50/40' : 'bg-slate-50/60 text-slate-400'
+                        isCurrentMonth ? 'bg-white dark:bg-slate-900 hover:bg-blue-50/40 dark:hover:bg-slate-800/60' : 'bg-slate-50/60 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500'
                       }`}
                     >
                       {/* Day Number Header */}
@@ -667,7 +667,7 @@ export const GoogleCalendarPage: React.FC = () => {
               {isLoading ? (
                 <TableSkeleton rows={4} />
               ) : events.length === 0 ? (
-                <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-300 space-y-3">
+                <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-dashed border-slate-300 dark:border-slate-700 space-y-3">
                   <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto" />
                   <h3 className="text-base font-bold text-slate-800">No tiene eventos agendados</h3>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
@@ -683,7 +683,7 @@ export const GoogleCalendarPage: React.FC = () => {
                     return (
                       <div
                         key={ev.id}
-                        className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                        className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
                       >
                         <div className="space-y-3">
                           <div className="flex justify-between items-start gap-2">
@@ -757,7 +757,7 @@ export const GoogleCalendarPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Credentials Form */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-6">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-6">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
                   <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
@@ -781,7 +781,7 @@ export const GoogleCalendarPage: React.FC = () => {
                     value={clientId}
                     onChange={(e) => setClientId(e.target.value)}
                     placeholder="Ej: 123456789-abcdef.apps.googleusercontent.com"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-blue-600"
                   />
                 </div>
 
@@ -795,7 +795,7 @@ export const GoogleCalendarPage: React.FC = () => {
                       value={clientSecret}
                       onChange={(e) => setClientSecret(e.target.value)}
                       placeholder={settings?.has_secret ? '••••••••••••••••••••••••' : 'Ingrese el Client Secret de Google Cloud'}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600 pr-10"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-blue-600 pr-10"
                     />
                     <button
                       type="button"
@@ -815,7 +815,7 @@ export const GoogleCalendarPage: React.FC = () => {
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       placeholder="AIzaSy..."
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-blue-600"
                     />
                   </div>
 
@@ -826,7 +826,7 @@ export const GoogleCalendarPage: React.FC = () => {
                       value={calendarId}
                       onChange={(e) => setCalendarId(e.target.value)}
                       placeholder="primary"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-blue-600"
                     />
                   </div>
                 </div>
@@ -1094,7 +1094,7 @@ export const GoogleCalendarPage: React.FC = () => {
       {/* Modal 2: Event Details Preview */}
       {selectedEvent && (
         <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-md p-4 sm:p-6 shadow-2xl space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-4 sm:p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <span className="p-2 rounded-xl bg-blue-50 text-blue-600">

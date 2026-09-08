@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 import { acmService } from '../services/acmService';
+import { useTheme } from '../context/ThemeContext';
 import { AcmEstimation, AcmZone } from '../types/acm';
 
 const AcmZoneDrawerMap = dynamic(() => import('../components/acm/AcmZoneDrawerMap'), { ssr: false });
@@ -28,13 +29,13 @@ export function AcmPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Tab Navigation Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00a884] to-teal-500 text-white flex items-center justify-center shadow-md shadow-[#00a884]/20">
             <Activity className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-800 leading-tight">
+            <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-tight">
               Módulo de Valoración ACM & Zonas Geoespaciales
             </h1>
             <p className="text-xs text-slate-500">
@@ -43,13 +44,13 @@ export function AcmPage() {
           </div>
         </div>
 
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
           <button
             onClick={() => { setActiveTab('estimations'); setView('list'); }}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
               activeTab === 'estimations'
-                ? 'bg-white text-slate-800 shadow-sm border border-slate-200'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200 dark:border-slate-700'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <FileText className="w-4 h-4 text-[#00a884]" /> Expedientes ACM
@@ -58,8 +59,8 @@ export function AcmPage() {
             onClick={() => setActiveTab('zones')}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
               activeTab === 'zones'
-                ? 'bg-white text-slate-800 shadow-sm border border-slate-200'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200 dark:border-slate-700'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <Layers className="w-4 h-4 text-blue-600" /> Zonas & Polígonos
@@ -124,7 +125,7 @@ function ACMListView({ onNew, onEdit }: { onNew: () => void; onEdit: (item: AcmE
 
   return (
     <div className="space-y-5">
-      <div className="bg-white rounded-xl p-4 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -132,13 +133,13 @@ function ACMListView({ onNew, onEdit }: { onNew: () => void; onEdit: (item: AcmE
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por cliente, id, dirección..."
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs focus:bg-white focus:border-[#00a884] outline-none transition-all"
+            className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-[#00a884] outline-none transition-all"
           />
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
           <button
             onClick={fetchEstimations}
-            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors border border-slate-200"
+            className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
             title="Actualizar"
           >
             <RefreshCw className="w-4 h-4" />
@@ -153,14 +154,14 @@ function ACMListView({ onNew, onEdit }: { onNew: () => void; onEdit: (item: AcmE
       </div>
 
       {loading ? (
-        <div className="p-12 text-center text-slate-400 bg-white rounded-xl border border-slate-200">
+        <div className="p-12 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
           <Activity className="w-8 h-8 animate-spin mx-auto text-[#00a884] mb-2" />
           <p className="text-sm font-semibold">Cargando expedientes de tasación...</p>
         </div>
       ) : inspections.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
+        <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
           <Calculator className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-700">Sin expedientes registrados</h3>
+          <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">Sin expedientes registrados</h3>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
             Haga clic en "Nueva Valoración ACM" para iniciar una tasación comparativa pericial.
           </p>
@@ -172,10 +173,10 @@ function ACMListView({ onNew, onEdit }: { onNew: () => void; onEdit: (item: AcmE
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold text-[10px] tracking-wider">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase font-bold text-[10px] tracking-wider">
                 <tr>
                   <th className="p-3.5">Código / Expediente</th>
                   <th className="p-3.5">Cliente / Propietario</th>
@@ -281,6 +282,7 @@ function ACMWizard({
   onCancel: () => void;
   onSave: () => void;
 }) {
+  const { isDark } = useTheme();
   const [step, setStep] = useState(1);
   const [isLocating, setIsLocating] = useState(false);
   const [zoneDetected, setZoneDetected] = useState<{ name: string; suggestedSuelo: number; suggestedConstruccion: number } | null>(null);
@@ -616,7 +618,7 @@ function ACMWizard({
 
     return (
       <div
-        className={`border rounded-xl overflow-hidden transition-all flex flex-col bg-white shadow-sm ${
+        className={`border rounded-xl overflow-hidden transition-all flex flex-col bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm ${
           hasPhotos ? 'border-slate-200' : 'border-dashed border-slate-300 hover:bg-slate-50 cursor-pointer hover:border-[#00a884]/50'
         }`}
       >
@@ -628,7 +630,7 @@ function ACMWizard({
         >
           <div className={`flex ${hasPhotos ? 'items-center gap-3' : 'flex-col items-center'}`}>
             <div
-              className={`rounded-full flex items-center justify-center bg-white border border-slate-200 shadow-sm ${
+              className={`rounded-full flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm ${
                 hasPhotos ? 'w-8 h-8' : 'w-12 h-12 mb-3'
               }`}
             >
@@ -643,7 +645,7 @@ function ACMWizard({
           {hasPhotos && (
             <button
               onClick={(e) => { e.stopPropagation(); triggerFileInput(id); }}
-              className="w-7 h-7 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-600 hover:text-[#00a884]"
+              className="w-7 h-7 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#00a884]"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -651,7 +653,7 @@ function ACMWizard({
         </div>
 
         {hasPhotos && (
-          <div className="p-3 bg-white min-h-[90px]">
+          <div className="p-3 bg-white dark:bg-slate-900 min-h-[90px]">
             <div className="flex flex-wrap gap-2">
               {categoryPhotos.map((photo) => (
                 <div key={photo.id} className="relative group w-14 h-14 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
@@ -679,7 +681,7 @@ function ACMWizard({
         <input type="file" multiple accept="image/*" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileUpload} />
 
         {/* Identificación Panel */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-100 gap-4">
             <div className="flex items-center gap-2">
               <User className="w-5 h-5 text-[#00a884]" />
@@ -690,7 +692,7 @@ function ACMWizard({
               <button
                 onClick={() => setFormData((prev) => ({ ...prev, transactionType: 'venta' }))}
                 className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${
-                  formData.transactionType === 'venta' ? 'bg-white text-slate-800 shadow-sm border border-slate-200' : 'text-slate-500'
+                  formData.transactionType === 'venta' ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200 dark:border-slate-700' : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
                 Avalúo para Venta
@@ -711,7 +713,7 @@ function ACMWizard({
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Propietario / Solicitante *</label>
               <input
                 type="text" name="clientName" value={formData.clientName} onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs focus:bg-white focus:border-[#00a884] outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-[#00a884] outline-none"
                 placeholder="Nombre completo del cliente"
               />
             </div>
@@ -719,7 +721,7 @@ function ACMWizard({
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Identificación</label>
               <input
                 type="text" name="clientId" value={formData.clientId} onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs focus:bg-white focus:border-[#00a884] outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-[#00a884] outline-none"
                 placeholder="C.I. / RUC"
               />
             </div>
@@ -727,7 +729,7 @@ function ACMWizard({
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Tipología Principal</label>
               <select
                 name="propertyType" value={formData.propertyType} onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs focus:bg-white focus:border-[#00a884] outline-none font-medium"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-[#00a884] outline-none font-medium"
               >
                 <option>Departamento</option>
                 <option>Casa Independiente</option>
@@ -739,7 +741,7 @@ function ACMWizard({
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Subtipología</label>
               <input
                 type="text" name="propertySubtype" value={formData.propertySubtype} onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs focus:bg-white focus:border-[#00a884] outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-[#00a884] outline-none"
                 placeholder="Ej. Duplex, Esquinero"
               />
             </div>
@@ -747,7 +749,7 @@ function ACMWizard({
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Teléfono Contacto</label>
               <input
                 type="text" name="clientPhone" value={formData.clientPhone} onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs focus:bg-white focus:border-[#00a884] outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-[#00a884] outline-none"
                 placeholder="09..."
               />
             </div>
@@ -755,7 +757,7 @@ function ACMWizard({
         </div>
 
         {/* Geoespacial Panel */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <MapIcon className="w-5 h-5 text-[#00a884]" />
@@ -797,7 +799,7 @@ function ACMWizard({
               <label className="block text-xs font-bold text-slate-500 uppercase">Dirección Verificada</label>
               <textarea
                 name="locationStr" value={formData.locationStr} onChange={handleChange} rows={3}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs focus:bg-white focus:border-[#00a884] outline-none resize-none"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-[#00a884] outline-none resize-none"
                 placeholder="Referencia exacta para la pericia..."
               />
               {formData.lat && (
@@ -846,7 +848,7 @@ function ACMWizard({
         </div>
 
         {/* Fotográfico Panel */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-4 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <Camera className="w-5 h-5 text-[#00a884]" />
@@ -878,7 +880,7 @@ function ACMWizard({
         {/* Left Column: Inputs Form */}
         <div className="flex-1 space-y-6">
           {/* Dimensional Data */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
             <div className="px-5 py-3 border-b border-slate-100 bg-slate-50">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <Maximize className="w-4 h-4 text-[#00a884]" />
@@ -942,7 +944,7 @@ function ACMWizard({
           </div>
 
           {/* Homogenization Factors */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
             <div className="px-5 py-3 border-b border-slate-100 bg-slate-50">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <TrendingDown className="w-4 h-4 text-rose-500" /> Factores de Homogeneización Pericial
@@ -999,7 +1001,7 @@ function ACMWizard({
 
           {/* Amenities */}
           {!calculations.isTerrain && (
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
               <div className="px-5 py-3 border-b border-slate-100 bg-slate-50">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Servicios y Plusvalía (Amenities)
@@ -1031,7 +1033,7 @@ function ACMWizard({
 
         {/* Right Column: Recharts Analytics Panel */}
         <div className="w-full xl:w-[400px] shrink-0">
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm sticky top-6 space-y-4 p-5">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm sticky top-6 space-y-4 p-5">
             <div className="flex items-center justify-between border-b pb-3 border-slate-100">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-[#00a884]" /> Analítica Pericial
@@ -1060,8 +1062,8 @@ function ACMWizard({
                   <div className="h-44 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={calculations.waterfallData} margin={{ top: 5, right: 5, left: -25, bottom: 20 }}>
-                        <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#64748b' }} angle={-30} textAnchor="end" />
-                        <Tooltip formatter={(val: any) => formatCurrency(Math.abs(val))} />
+                        <XAxis dataKey="name" tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#64748b' }} angle={-30} textAnchor="end" />
+                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: isDark ? '#334155' : '#e2e8f0', color: isDark ? '#f8fafc' : '#0f172a', borderRadius: '8px' }} formatter={(val: any) => formatCurrency(Math.abs(val))} />
                         <Bar dataKey="valor" radius={[3, 3, 0, 0]}>
                           {calculations.waterfallData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.type === 'base' ? '#94a3b8' : entry.type === 'sub' ? '#f43f5e' : '#10b981'} />
@@ -1083,8 +1085,8 @@ function ACMWizard({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(val: any) => formatCurrency(val)} />
-                        <Legend verticalAlign="middle" align="right" layout="vertical" wrapperStyle={{ fontSize: '10px' }} />
+                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: isDark ? '#334155' : '#e2e8f0', color: isDark ? '#f8fafc' : '#0f172a', borderRadius: '8px' }} formatter={(val: any) => formatCurrency(val)} />
+                        <Legend verticalAlign="middle" align="right" layout="vertical" wrapperStyle={{ fontSize: '10px', color: isDark ? '#94a3b8' : '#475569' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -1096,8 +1098,8 @@ function ACMWizard({
                   <div className="h-40 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart cx="50%" cy="50%" outerRadius="60%" data={calculations.radarData}>
-                        <PolarGrid stroke="#e2e8f0" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 9 }} />
+                        <PolarGrid stroke={isDark ? '#334155' : '#e2e8f0'} />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: isDark ? '#94a3b8' : '#475569', fontSize: 9 }} />
                         <Radar name="Score" dataKey="score" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.2} />
                       </RadarChart>
                     </ResponsiveContainer>
@@ -1135,9 +1137,9 @@ function ACMWizard({
         ].map((s) => (
           <div key={s.num} className="flex flex-col items-center cursor-pointer" onClick={() => step > s.num && setStep(s.num)}>
             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 ${
-              step === s.num ? 'bg-white border-[#00a884] text-[#00a884] shadow-md' :
+              step === s.num ? 'bg-white dark:bg-slate-800 border-[#00a884] text-[#00a884] shadow-md' :
               step > s.num ? 'bg-[#00a884] border-[#00a884] text-white' :
-              'bg-white border-slate-200 text-slate-400'
+              'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500'
             }`}>
               {step > s.num ? <CheckCircle2 className="w-5 h-5" /> : s.num}
             </div>
@@ -1149,7 +1151,7 @@ function ACMWizard({
       {step === 1 && renderStep1()}
       {step === 2 && renderStep2()}
       {step === 3 && (
-        <div className="max-w-2xl mx-auto text-center space-y-6 py-10 bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+        <div className="max-w-2xl mx-auto text-center space-y-6 py-10 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
           <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
             <CheckCircle2 className="w-8 h-8" />
           </div>
@@ -1171,8 +1173,8 @@ function ACMWizard({
       )}
 
       {/* Floating Footer Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 p-4 flex justify-between items-center z-50 md:pl-64 shadow-lg">
-        <button onClick={() => (step === 1 ? onCancel() : setStep(step - 1))} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center z-50 md:pl-64 shadow-lg">
+        <button onClick={() => (step === 1 ? onCancel() : setStep(step - 1))} className="px-5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
           {step === 1 ? 'Cancelar' : 'Anterior'}
         </button>
 
@@ -1282,7 +1284,7 @@ function AcmZonesView() {
   return (
     <div className="space-y-6">
       {/* Interactive Map & Zone Delimitation Form */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-5">
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-5">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <Layers className="w-5 h-5 text-blue-600" />
@@ -1310,7 +1312,7 @@ function AcmZonesView() {
                 <button
                   onClick={() => setCurrentVertices((prev) => prev.slice(0, -1))}
                   disabled={currentVertices.length === 0}
-                  className="px-2.5 py-1 bg-white border border-slate-200 rounded text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                  className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   Deshacer Último Punto
                 </button>
@@ -1335,7 +1337,7 @@ function AcmZonesView() {
                   type="button"
                   onClick={() => { setTransactionType('venta'); setColor('#00a884'); }}
                   className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
-                    transactionType === 'venta' ? 'bg-white text-slate-800 shadow-sm border border-slate-200' : 'text-slate-500'
+                    transactionType === 'venta' ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200 dark:border-slate-700' : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
                   Zona Venta
@@ -1356,7 +1358,7 @@ function AcmZonesView() {
               <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase">Nombre de la Zona *</label>
               <input
                 type="text" value={name} onChange={(e) => setName(e.target.value)} required
-                className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs font-semibold outline-none"
+                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 font-semibold outline-none"
                 placeholder="Ej. Zona Comercial Norte"
               />
             </div>
@@ -1366,7 +1368,7 @@ function AcmZonesView() {
                 <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase">Suelo ($/m²) *</label>
                 <input
                   type="number" value={suggestedSuelo} onChange={(e) => setSuggestedSuelo(e.target.value)} required
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs font-bold text-emerald-600 outline-none"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-emerald-600 outline-none"
                   placeholder="250"
                 />
               </div>
@@ -1374,7 +1376,7 @@ function AcmZonesView() {
                 <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase">Construcción ($/m²) *</label>
                 <input
                   type="number" value={suggestedConstruccion} onChange={(e) => setSuggestedConstruccion(e.target.value)} required
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs font-bold text-blue-600 outline-none"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-blue-600 outline-none"
                   placeholder="750"
                 />
               </div>
@@ -1395,7 +1397,7 @@ function AcmZonesView() {
               <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase">Descripción / Observaciones</label>
               <textarea
                 value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
-                className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs outline-none resize-none"
+                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-900 dark:text-slate-100 outline-none resize-none"
                 placeholder="Detalles sobre sectorización..."
               />
             </div>
@@ -1411,7 +1413,7 @@ function AcmZonesView() {
       </div>
 
       {/* Zones List Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <h3 className="text-sm font-bold text-slate-800">Zonas Registradas ({zones.length})</h3>
@@ -1419,7 +1421,7 @@ function AcmZonesView() {
               <button
                 onClick={() => setFilterTransactionType('all')}
                 className={`px-3 py-1 rounded-md transition-all ${
-                  filterTransactionType === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
+                  filterTransactionType === 'all' ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
                 Todas

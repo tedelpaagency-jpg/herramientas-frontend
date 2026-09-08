@@ -47,15 +47,15 @@ export const SuperAdminRoute: React.FC<{ children: React.ReactNode; allowWhiteLa
   if (!isAuthorized) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl shadow-xl p-8 text-center">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-8 text-center">
           <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <ShieldAlert className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-2">
+          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mb-2">
             Acceso Restringido (403)
           </h2>
-          <p className="text-sm text-slate-600 mb-6">
-            Esta sección de Administración requiere un rol de <strong className="text-slate-900">super_admin</strong> o <strong className="text-slate-900">administrador de marca blanca</strong>.
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+            Esta sección de Administración requiere un rol de <strong className="text-slate-900 dark:text-slate-200">super_admin</strong> o <strong className="text-slate-900 dark:text-slate-200">administrador de marca blanca</strong>.
           </p>
           <Link
             href="/"

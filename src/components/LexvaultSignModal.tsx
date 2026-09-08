@@ -156,7 +156,7 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 border border-slate-200 overflow-hidden my-auto flex flex-col max-h-[90vh]"
+          className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 overflow-hidden my-auto flex flex-col max-h-[90vh]"
         >
           {/* Header */}
           <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between flex-shrink-0">
@@ -177,7 +177,7 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
 
           <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
             {/* Document Paper Preview */}
-            <div className="max-h-[45vh] overflow-y-auto border border-slate-200 rounded-2xl">
+            <div className="max-h-[45vh] overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
               <WordDocumentPaper
                 htmlContent={bodyHtml}
                 title={document.title}
@@ -186,12 +186,12 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
               />
             </div>
             {/* Mode Switcher */}
-            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setSignatureMode('draw')}
                 className={`flex-1 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-                  signatureMode === 'draw' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  signatureMode === 'draw' ? 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 <PenTool className="w-3.5 h-3.5" />
@@ -201,7 +201,7 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
                 type="button"
                 onClick={() => setSignatureMode('upload')}
                 className={`flex-1 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-                  signatureMode === 'upload' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  signatureMode === 'upload' ? 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 <Upload className="w-3.5 h-3.5" />

@@ -199,15 +199,15 @@ export const LandingsPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre de landing, plantilla o agencia..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:bg-white focus:border-teal-600"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-teal-600"
           />
         </div>
 
-        <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold gap-1">
+        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold gap-1">
           <button
             onClick={() => setViewMode('table')}
             className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-              viewMode === 'table' ? 'bg-white text-teal-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+              viewMode === 'table' ? 'bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-400 shadow-2xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             <LayoutList className="w-4 h-4" />
@@ -216,7 +216,7 @@ export const LandingsPage: React.FC = () => {
           <button
             onClick={() => setViewMode('grid')}
             className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-              viewMode === 'grid' ? 'bg-white text-teal-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+              viewMode === 'grid' ? 'bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-400 shadow-2xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             <LayoutGrid className="w-4 h-4" />
@@ -229,14 +229,14 @@ export const LandingsPage: React.FC = () => {
       {isLoading ? (
         <TableSkeleton rows={4} />
       ) : filteredLandings.length === 0 ? (
-        <div className="py-16 text-center bg-white rounded-2xl border border-slate-200 p-8 space-y-3">
+        <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 space-y-3">
           <Globe className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="text-lg font-bold text-slate-700">No hay Landing Pages registradas</h3>
+          <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200">No hay Landing Pages registradas</h3>
           <p className="text-xs text-slate-400">No se encontraron plantillas asociadas a tu búsqueda o cuenta.</p>
         </div>
       ) : viewMode === 'table' ? (
         /* TABLE VIEW FORMAT */
-        <div className="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-2xs">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-2xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-900 text-slate-300 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
@@ -251,17 +251,17 @@ export const LandingsPage: React.FC = () => {
                   <th className="p-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-800 dark:text-slate-200">
                 {filteredLandings.map((landing) => {
                   const publicUrl = getPublicUrl(landing);
                   const activeEvent = landing.events?.find((e) => e.status === 1);
                   const isSuspended = landing.status === 0;
 
                   return (
-                    <tr key={landing.id} className={`hover:bg-slate-50/80 transition-colors ${isSuspended ? 'bg-slate-50/50' : ''}`}>
+                    <tr key={landing.id} className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors ${isSuspended ? 'bg-slate-50/50' : ''}`}>
                       <td className="p-4">
                         <div className="flex flex-col gap-1">
-                          <span className="font-mono text-xs font-black text-slate-900">#{landing.id}</span>
+                          <span className="font-mono text-xs font-black text-slate-900 dark:text-slate-100">#{landing.id}</span>
                           <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-teal-50 text-teal-700 border border-teal-200/80 w-max">
                             {landing.encoded_id || base64Encode(landing.id)}
                           </span>
@@ -269,7 +269,7 @@ export const LandingsPage: React.FC = () => {
                       </td>
                       <td className="p-4">
                         <div className="space-y-0.5">
-                          <div className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
+                          <div className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
                             <Globe className={`w-4 h-4 shrink-0 ${isSuspended ? 'text-amber-500' : 'text-teal-600'}`} />
                             <span className={isSuspended ? 'line-through text-slate-500' : ''}>{landing.name}</span>
                           </div>

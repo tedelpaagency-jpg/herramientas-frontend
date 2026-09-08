@@ -75,7 +75,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 border border-slate-200 overflow-hidden my-auto max-h-[90vh] flex flex-col"
+          className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 border border-slate-200 dark:border-slate-800 overflow-hidden my-auto max-h-[90vh] flex flex-col"
         >
           {/* Top Bar Header */}
           <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800 flex-shrink-0">
@@ -109,7 +109,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
           {/* Modal Content Scrollable Area */}
           <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
             {/* Title & Badges Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -119,7 +119,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
                     {canvasData.property_type || 'Inmueble'}
                   </span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{canvasData.title}</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{canvasData.title}</h2>
                 <p className="text-xs font-semibold text-slate-500 mt-0.5">
                   📍 {canvasData.location?.summary || canvasData.location?.full_address || 'Ubicación no disponible'}
                 </p>
@@ -133,13 +133,13 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
             </div>
 
             {/* Key Specs Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
                   <Bed className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-base font-extrabold text-slate-900 leading-none">{canvasData.specs?.bedrooms || '-'}</p>
+                  <p className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-none">{canvasData.specs?.bedrooms || '-'}</p>
                   <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Habitaciones</p>
                 </div>
               </div>
@@ -149,7 +149,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
                   <Bath className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-base font-extrabold text-slate-900 leading-none">{canvasData.specs?.bathrooms || '-'}</p>
+                  <p className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-none">{canvasData.specs?.bathrooms || '-'}</p>
                   <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Baños</p>
                 </div>
               </div>
@@ -159,7 +159,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
                   <Car className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-base font-extrabold text-slate-900 leading-none">{canvasData.specs?.garage || '-'}</p>
+                  <p className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-none">{canvasData.specs?.garage || '-'}</p>
                   <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Garaje</p>
                 </div>
               </div>
@@ -169,7 +169,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
                   <Maximize className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-base font-extrabold text-slate-900 leading-none">{canvasData.specs?.size ? `${canvasData.specs.size} m²` : '-'}</p>
+                  <p className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-none">{canvasData.specs?.size ? `${canvasData.specs.size} m²` : '-'}</p>
                   <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Área Total</p>
                 </div>
               </div>
@@ -209,7 +209,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-3">Amenidades y Características</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {canvasData.features.map((feat: any, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 text-xs font-semibold text-slate-700">
+                    <div key={idx} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 text-xs font-semibold text-slate-700 dark:text-slate-300">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                       <span className="truncate">{typeof feat === 'string' ? feat : feat.name}</span>
                     </div>
@@ -254,10 +254,10 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
           </div>
 
           {/* Modal Footer Controls */}
-          <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+          <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
             <button
               onClick={handleCopyLink}
-              className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold text-xs flex items-center gap-2 transition-colors"
+              className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-xs flex items-center gap-2 transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
               <span>Copiar Enlace Público</span>

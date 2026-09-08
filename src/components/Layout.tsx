@@ -8,6 +8,7 @@ import RightSidebar from './RightSidebar';
 import PageTransition from './PageTransition';
 
 import ImpersonationBanner from './ImpersonationBanner';
+import { useTheme } from '../context/ThemeContext';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
@@ -50,25 +51,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     };
   }, []);
 
+  const { theme } = useTheme();
+
   useEffect(() => {
-    const handleSyncTheme = () => {
-      if (typeof window !== 'undefined') {
-        const savedTheme = localStorage.getItem('santun_theme') || localStorage.getItem('santun_dark_theme');
-        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.classList.add('dark');
-          document.body.classList.add('dark');
-        } else if (savedTheme === 'light') {
-          document.documentElement.classList.remove('dark');
-          document.body.classList.remove('dark');
-        }
-      }
+    // Sync any branding-updated changes
+    const handleBrandingUpdate = () => {
+      // handled reactively
     };
-    handleSyncTheme();
-    window.addEventListener('theme-changed', handleSyncTheme);
-    window.addEventListener('branding-updated', handleSyncTheme);
+    window.addEventListener('branding-updated', handleBrandingUpdate);
     return () => {
-      window.removeEventListener('theme-changed', handleSyncTheme);
-      window.removeEventListener('branding-updated', handleSyncTheme);
+      window.removeEventListener('branding-updated', handleBrandingUpdate);
     };
   }, []);
 

@@ -227,11 +227,11 @@ export const EstatesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <Building2 className="w-7 h-7 text-blue-600" />
             Directorio Inmobiliario SANTUN
           </h2>
-          <p className="text-sm text-slate-500 font-medium mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
             Gestión de propiedades con exportación para WhatsApp, Canvas y PDF.
           </p>
         </div>
@@ -246,7 +246,7 @@ export const EstatesPage: React.FC = () => {
       </div>
 
       {/* Filter & View Switcher Bar */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex flex-wrap gap-4 items-center justify-between">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-4 items-center justify-between">
         <div className="flex flex-wrap gap-3 items-center flex-grow">
           <div className="flex-grow max-w-md relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -258,7 +258,7 @@ export const EstatesPage: React.FC = () => {
                 setPage(1);
               }}
               placeholder="Buscar por título, ID o ubicación..."
-              className="w-full pl-10 pr-4 py-2 bg-[#F4F5F7] border border-slate-200 rounded-lg text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-[#F4F5F7] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
             />
           </div>
 
@@ -268,7 +268,7 @@ export const EstatesPage: React.FC = () => {
               setTypeFilter(e.target.value);
               setPage(1);
             }}
-            className="bg-[#F4F5F7] border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+            className="bg-[#F4F5F7] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
           >
             <option value="">Todos los tipos</option>
             <option value="house">Casa</option>
@@ -284,7 +284,7 @@ export const EstatesPage: React.FC = () => {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="bg-[#F4F5F7] border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+            className="bg-[#F4F5F7] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
           >
             <option value="">Todos los estados</option>
             <option value="available">Disponible</option>
@@ -299,7 +299,7 @@ export const EstatesPage: React.FC = () => {
               setAgentFilter(e.target.value);
               setPage(1);
             }}
-            className="bg-[#F4F5F7] border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+            className="bg-[#F4F5F7] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
           >
             <option value="">👤 Todos los Agentes / Asesores</option>
             {agents.map((ag) => (
@@ -315,7 +315,7 @@ export const EstatesPage: React.FC = () => {
           <button
             onClick={() => setViewMode('table')}
             className={`p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              viewMode === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              viewMode === 'table' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
             title="Vista Lista Tabla"
           >
@@ -325,7 +325,7 @@ export const EstatesPage: React.FC = () => {
           <button
             onClick={() => setViewMode('grid')}
             className={`p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              viewMode === 'grid' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
             title="Vista Cuadrícula Tarjetas"
           >
@@ -335,7 +335,7 @@ export const EstatesPage: React.FC = () => {
           <button
             onClick={() => setViewMode('map')}
             className={`p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              viewMode === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              viewMode === 'map' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
             title="Vista Mapa Interactivo"
           >
@@ -355,20 +355,20 @@ export const EstatesPage: React.FC = () => {
       ) : isLoading ? (
         <TableSkeleton rows={5} />
       ) : estates.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center border border-slate-200/80 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-12 text-center border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <Building2 className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-700">No se encontraron propiedades</h3>
+          <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">No se encontraron propiedades</h3>
           <p className="text-xs text-slate-500 mt-1">Ajuste sus filtros o registre un nuevo inmueble.</p>
         </div>
       ) : (
         <div className="space-y-6">
           {viewMode === 'table' ? (
             /* Table View Mode */
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-800 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-slate-700 border-collapse">
+                <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300 border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-500 tracking-wider">
+                    <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-xs font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
                       <th className="py-3.5 px-4 w-16 text-center">ID</th>
                       <th className="py-3.5 px-4">Título</th>
                       <th className="py-3.5 px-4">Asesor</th>
@@ -379,13 +379,13 @@ export const EstatesPage: React.FC = () => {
                       <th className="py-3.5 px-4 text-center min-w-[200px]">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {estates.map((estate) => {
                       const imgUrl = getEstateImageUrl(estate);
                       const isMenuOpen = activeMenuId === estate.id;
 
                       return (
-                        <tr key={estate.id} className="hover:bg-slate-50/80 transition-colors">
+                        <tr key={estate.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                           {/* ID */}
                           <td className="py-3.5 px-4 font-mono text-xs text-slate-500 font-bold text-center">
                             #{estate.id}
@@ -408,7 +408,7 @@ export const EstatesPage: React.FC = () => {
                                 )}
                               </div>
                               <div>
-                                <h4 className="font-bold text-slate-900 text-sm hover:text-blue-600 transition-colors line-clamp-1">
+                                <h4 className="font-bold text-slate-900 dark:text-white text-sm hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
                                   {estate.title}
                                 </h4>
                                 <div className="flex items-center gap-2 mt-0.5">
@@ -535,7 +535,7 @@ export const EstatesPage: React.FC = () => {
                                       className="fixed inset-0 z-30"
                                       onClick={() => setActiveMenuId(null)}
                                     />
-                                    <div className="absolute right-0 top-full mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left animate-slide-up-fade">
+                                    <div className="absolute right-0 top-full mt-1.5 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left animate-slide-up-fade">
                                       <button
                                         onClick={() => handleCopyWhatsApp(estate)}
                                         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
@@ -568,11 +568,11 @@ export const EstatesPage: React.FC = () => {
                                         <span>Ver Galería Canva 3D</span>
                                       </button>
 
-                                      <div className="h-px bg-slate-100 my-1"></div>
+                                      <div className="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
 
                                       <button
                                         onClick={() => handleCopyLink(estate)}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                                       >
                                         <Copy className="w-4 h-4 text-slate-500 flex-shrink-0" />
                                         <span>Copiar Enlace Público</span>
@@ -583,7 +583,7 @@ export const EstatesPage: React.FC = () => {
                                           setActiveMenuId(null);
                                           handleOpenEditModal(estate);
                                         }}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                                       >
                                         <Edit3 className="w-4 h-4 text-amber-600 flex-shrink-0" />
                                         <span>Editar Inmueble</span>
@@ -622,10 +622,10 @@ export const EstatesPage: React.FC = () => {
                 return (
                   <div
                     key={estate.id}
-                    className="bg-white rounded-xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group relative"
+                    className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group relative"
                   >
                     <div>
-                      <div className="h-48 bg-slate-100 relative flex items-center justify-center overflow-hidden">
+                      <div className="h-48 bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center overflow-hidden">
                         {imgUrl ? (
                           <img
                             src={imgUrl}
@@ -658,7 +658,7 @@ export const EstatesPage: React.FC = () => {
                           {isMenuOpen && (
                             <>
                               <div className="fixed inset-0 z-30" onClick={() => setActiveMenuId(null)} />
-                              <div className="absolute right-0 top-full mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left text-xs animate-slide-up-fade">
+                              <div className="absolute right-0 top-full mt-1.5 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left text-xs animate-slide-up-fade">
                                 <button
                                   onClick={() => handleCopyWhatsApp(estate)}
                                   className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
@@ -683,14 +683,14 @@ export const EstatesPage: React.FC = () => {
                                   <span>Ver Canvas</span>
                                 </button>
 
-                                <div className="h-px bg-slate-100 my-1"></div>
+                                <div className="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
 
                                 <button
                                   onClick={() => {
                                     setActiveMenuId(null);
                                     handleOpenEditModal(estate);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                                 >
                                   <Edit3 className="w-4 h-4 text-amber-600 flex-shrink-0" />
                                   <span>Editar Inmueble</span>

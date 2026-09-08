@@ -93,7 +93,7 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-slate-800">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#121413] flex flex-col items-center justify-center p-4 text-slate-800 dark:text-slate-100">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-sm font-bold text-slate-500">Cargando perfil del asesor Hunter...</p>
       </div>
@@ -102,12 +102,12 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
 
   if (error || !store) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-4 shadow-xl">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#121413] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl">
           <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto border border-rose-100">
             <AlertTriangle className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-black text-slate-900">Tienda o Asesor no disponible</h2>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">Tienda o Asesor no disponible</h2>
           <p className="text-xs text-slate-500 leading-relaxed">
             {error || 'El enlace de la tienda Hunter no es válido o ha finalizado su periodo de vigencia.'}
           </p>
@@ -197,7 +197,7 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between selection:bg-blue-600 selection:text-white relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#121413] text-slate-900 dark:text-slate-100 flex flex-col justify-between selection:bg-blue-600 selection:text-white relative overflow-hidden font-sans">
       {/* Soft Pastel Background Ambient Glow Blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-40 -left-40 w-[550px] h-[550px] bg-blue-200/50 rounded-full blur-[140px]" />
@@ -218,12 +218,12 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
                 <span>{agency?.name || 'SANTUN Hunter Network'}</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.15]">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.15]">
                 Conéctate con tu asesor <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">Hunter de confianza</span>.
               </h1>
 
               {locationText && (
-                <p className="text-xs text-slate-600 font-bold flex items-center justify-center lg:justify-start gap-1.5">
+                <p className="text-xs text-slate-600 dark:text-slate-300 font-bold flex items-center justify-center lg:justify-start gap-1.5">
                   <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
                   <span>{locationText}</span>
                   {store.ruc_dni && (
@@ -277,7 +277,7 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
 
           {/* ================= SECCIÓN DERECHA: Formulario de Captura Claro (Estilo Card) ================= */}
           <div className="w-full max-w-[440px] flex flex-col items-center z-20 shrink-0">
-            <div className="bg-white w-full px-6 py-8 sm:px-8 sm:py-9 flex flex-col rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-slate-200/80 relative">
+            <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-full px-6 py-8 sm:px-8 sm:py-9 flex flex-col rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-slate-200/80 dark:border-slate-800 relative">
               
               {isSubmitted ? (
                 /* SUCCESS STATE CLARO */
@@ -293,7 +293,7 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
                     </p>
                   </div>
 
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2 font-mono">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 text-left text-xs space-y-2 font-mono">
                     <p className="text-slate-400 uppercase text-[10px] font-bold">Resumen de Registro:</p>
                     <p><span className="text-slate-500">Cliente:</span> <span className="text-slate-900 font-bold">{clientName}</span></p>
                     {phone && <p><span className="text-slate-500">Teléfono:</span> <span className="text-emerald-700 font-bold">{phone}</span></p>}
@@ -336,10 +336,10 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
                     <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20 mb-3">
                       <UserCheck className="w-5 h-5" />
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                       Registro de Información
                     </h2>
-                    <p className="text-xs text-slate-500 font-medium">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                       Completa tus datos para recibir atención directa de tu asesor.
                     </p>
                   </div>
@@ -356,7 +356,7 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
                         value={clientName}
                         onChange={(e) => setClientName(e.target.value)}
                         placeholder="Ej. Carlos Mendoza"
-                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 font-bold text-xs transition-all"
+                        className="w-full h-11 px-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 font-bold text-xs transition-all"
                       />
                     </div>
 
@@ -372,7 +372,7 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           placeholder="Ej. 0991234567"
-                          className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 font-bold text-xs transition-all"
+                          className="w-full h-11 px-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 font-bold text-xs transition-all"
                         />
                       </div>
 
@@ -385,7 +385,7 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="ejemplo@correo.com"
-                          className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 font-bold text-xs transition-all"
+                          className="w-full h-11 px-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 font-bold text-xs transition-all"
                         />
                       </div>
                     </div>
@@ -400,7 +400,7 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
                         value={serviceName}
                         onChange={(e) => setServiceName(e.target.value)}
                         placeholder="Ej. Asesoría de Visas, Paquete de Viaje, Inmueble..."
-                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 font-bold text-xs transition-all"
+                        className="w-full h-11 px-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 font-bold text-xs transition-all"
                       />
                     </div>
 

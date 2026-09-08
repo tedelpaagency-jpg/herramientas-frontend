@@ -36,7 +36,7 @@ export default function AcmPrintableReportModal({ estimation, onClose }: AcmPrin
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex justify-center overflow-y-auto p-2 sm:p-6 print:p-0 print:bg-white print:static print:overflow-visible">
-      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto print:shadow-none print:w-full print:max-w-none print:my-0 print:rounded-none">
+      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto print:shadow-none print:w-full print:max-w-none print:my-0 print:rounded-none print:bg-white print:text-black">
         
         {/* Modal Action Header (Hidden in Print) */}
         <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between print:hidden">

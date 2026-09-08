@@ -80,9 +80,9 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
 
   if (error || (!document && !template)) {
     return (
-      <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm max-w-lg mx-auto my-8">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-sm max-w-lg mx-auto my-8">
         <FileText className="w-12 h-12 text-rose-500 mx-auto mb-3" />
-        <h3 className="text-base font-bold text-slate-800">Elemento no encontrado</h3>
+        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Elemento no encontrado</h3>
         <p className="text-xs text-slate-500 mt-1 mb-6">{error || 'No fue posible cargar el registro seleccionado.'}</p>
         <Link
           href="/lexvault"
@@ -117,18 +117,18 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-2xs">
         <div className="flex items-center gap-3">
           <Link
             href="/lexvault"
-            className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors shrink-0"
+            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors shrink-0"
             title="Volver a Bóveda Legal"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">{title}</h2>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h2>
               {document && (
                 isSigned ? (
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">

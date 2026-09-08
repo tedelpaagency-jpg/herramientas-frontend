@@ -132,16 +132,16 @@ export const AdminSubscriptionsPage: React.FC = () => {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
             <CreditCard className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
               Administración de Suscripciones
             </h1>
-            <p className="text-xs text-slate-500 font-semibold">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
               Control de suscripciones de agencias a los planes del sistema (Agencia → Suscripción → Plan)
             </p>
           </div>
@@ -171,19 +171,19 @@ export const AdminSubscriptionsPage: React.FC = () => {
       )}
 
       {/* Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3 max-w-md">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 max-w-md">
         <Search className="w-4 h-4 text-slate-400" />
         <input
           type="text"
           placeholder="Buscar por agencia o nombre de plan..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-transparent text-xs font-medium outline-none text-slate-800 placeholder-slate-400"
+          className="w-full bg-transparent text-xs font-medium outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
         />
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
         {loading ? (
           <TableSkeleton rows={5} />
         ) : filteredSubscriptions.length === 0 ? (
@@ -193,7 +193,7 @@ export const AdminSubscriptionsPage: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="py-3.5 px-4">Agencia</th>
                   <th className="py-3.5 px-4">Plan Suscrito</th>
@@ -203,14 +203,14 @@ export const AdminSubscriptionsPage: React.FC = () => {
                   <th className="py-3.5 px-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {filteredSubscriptions.map((sub) => (
-                  <tr key={sub.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={sub.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2">
                         <Building className="w-4 h-4 text-slate-400" />
                         <div>
-                          <p className="font-bold text-slate-900">{sub.agency?.name || `Agencia #${sub.agency_id}`}</p>
+                          <p className="font-bold text-slate-900 dark:text-slate-100">{sub.agency?.name || `Agencia #${sub.agency_id}`}</p>
                           {sub.agency?.email && (
                             <p className="text-[10px] text-slate-400">{sub.agency.email}</p>
                           )}
@@ -256,14 +256,14 @@ export const AdminSubscriptionsPage: React.FC = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openEditModal(sub)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                           title="Cambiar Plan / Editar"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleCancel(sub.id)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors"
                           title="Cancelar Suscripción"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -281,14 +281,14 @@ export const AdminSubscriptionsPage: React.FC = () => {
       {/* Create / Edit Subscription Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slide-up-fade">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-              <h3 className="text-base font-bold text-slate-900">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slide-up-fade">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-4">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                 {editingSub ? 'Editar Suscripción / Cambiar Plan' : 'Asignar Suscripción a Agencia'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -296,13 +296,13 @@ export const AdminSubscriptionsPage: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Agencia *</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Agencia *</label>
                 <select
                   disabled={!!editingSub}
                   required
                   value={formData.agency_id}
                   onChange={(e) => setFormData({ ...formData, agency_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs bg-white disabled:bg-slate-100"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800/50"
                 >
                   <option value="">Seleccionar Agencia...</option>
                   {agencies.map((agency) => (
@@ -314,12 +314,12 @@ export const AdminSubscriptionsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Plan de Suscripción *</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Plan de Suscripción *</label>
                 <select
                   required
                   value={formData.plan_id}
                   onChange={(e) => setFormData({ ...formData, plan_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs bg-white font-bold text-amber-700"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 font-bold text-amber-700 dark:text-amber-400"
                 >
                   <option value="">Seleccionar Plan...</option>
                   {plans.map((plan) => (
@@ -332,33 +332,33 @@ export const AdminSubscriptionsPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Fecha de Inicio *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha de Inicio *</label>
                   <input
                     type="date"
                     required
                     value={formData.started_at}
                     onChange={(e) => setFormData({ ...formData, started_at: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Fecha Expiración</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha Expiración</label>
                   <input
                     type="date"
                     value={formData.expires_at}
                     onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Estado de la Suscripción</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Estado de la Suscripción</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-amber-500 text-xs bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 >
                   <option value="active">Activa</option>
                   <option value="canceled">Cancelada</option>
@@ -366,11 +366,11 @@ export const AdminSubscriptionsPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Cancelar
                 </button>

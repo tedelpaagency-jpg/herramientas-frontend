@@ -267,10 +267,10 @@ export const EstateFormPage: React.FC = () => {
     }
   };
 
-  const labelCls = 'block text-xs font-bold text-slate-600 mb-1';
-  const inputCls = 'w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors';
-  const sectionCls = 'bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-5';
-  const sectionHeaderCls = 'px-5 py-3.5 border-b border-slate-100 flex items-center gap-2';
+  const labelCls = 'block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1';
+  const inputCls = 'w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors';
+  const sectionCls = 'bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-5';
+  const sectionHeaderCls = 'px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2';
 
   if (isLoading) {
     return (
@@ -286,16 +286,16 @@ export const EstateFormPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push('/estates')}
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Building2 className="w-6 h-6 text-blue-600" />
               {isEditing ? 'Editar Inmueble' : 'Agregar Inmueble'}
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">Completa todos los campos y guarda los cambios.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Completa todos los campos y guarda los cambios.</p>
           </div>
         </div>
       </div>
@@ -305,7 +305,7 @@ export const EstateFormPage: React.FC = () => {
         <div className={sectionCls}>
           <div className={sectionHeaderCls}>
             <ImagePlus className="w-5 h-5 text-blue-600" />
-            <h3 className="font-bold text-slate-800 text-sm">Galería de Imágenes</h3>
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Galería de Imágenes</h3>
           </div>
           <div className="p-5">
             <button
@@ -571,16 +571,16 @@ export const EstateFormPage: React.FC = () => {
             {/* Modal Subir Imágenes */}
             {showImageModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                   {/* Modal Header */}
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       <ImagePlus className="w-5 h-5 text-blue-600" />
                       Subir Imágenes
                     </h3>
                     <button
                       onClick={() => { setShowImageModal(false); setSelectedFiles([]); }}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -593,12 +593,12 @@ export const EstateFormPage: React.FC = () => {
                       onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                       onDragLeave={() => setDragOver(false)}
                       onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50'
+                      className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${dragOver ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'border-slate-200 dark:border-slate-700 hover:border-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                         }`}
                     >
                       <Upload className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-                      <p className="text-sm font-bold text-slate-700">Arrastra las fotos aquí</p>
-                      <p className="text-xs text-slate-500 mt-1">o haz click para seleccionar archivos</p>
+                      <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Arrastra las fotos aquí</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">o haz click para seleccionar archivos</p>
                       <input
                         ref={fileInputRef}
                         type="file"

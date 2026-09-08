@@ -112,7 +112,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col justify-center items-center text-slate-800 space-y-3">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#121413] flex flex-col justify-center items-center text-slate-800 dark:text-slate-200 space-y-3">
         <div className="w-10 h-10 border-4 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
         <p className="text-xs font-bold text-slate-500">Cargando formulario consular...</p>
       </div>
@@ -121,10 +121,10 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
 
   if (!visaData) {
     return (
-      <div className="min-h-screen bg-white flex flex-col justify-center items-center text-slate-800 p-4">
-        <div className="bg-white border border-slate-200 p-8 rounded-2xl max-w-md text-center space-y-3 shadow-md">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#121413] flex flex-col justify-center items-center text-slate-800 dark:text-slate-200 p-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl max-w-md text-center space-y-3 shadow-md">
           <FileCheck className="w-12 h-12 text-rose-500 mx-auto" />
-          <h2 className="text-lg font-black text-slate-900">Formulario No Disponible</h2>
+          <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">Formulario No Disponible</h2>
           <p className="text-xs text-slate-500">
             Este formulario ya no se encuentra disponible o la URL ha caducado. Consulta con tu asesor para más información.
           </p>
@@ -140,28 +140,28 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
 
   const getInputClass = (fieldName: string) => {
     const st = fieldStatuses[fieldName];
-    let base = "w-full px-3.5 py-2.5 bg-white border rounded-xl text-slate-900 text-xs font-medium focus:outline-none transition-colors ";
+    let base = "w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border rounded-xl text-slate-900 dark:text-slate-100 text-xs font-medium focus:outline-none transition-colors ";
     if (st === 'valid') return base + "border-emerald-500 ring-1 ring-emerald-500/30";
     if (st === 'invalid') return base + "border-rose-500 ring-1 ring-rose-500/30";
     return base + "border-slate-300 focus:border-sky-600";
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 py-8 px-4 font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#121413] text-slate-900 dark:text-slate-100 py-8 px-4 font-sans">
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Top Header Card */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 rounded-2xl bg-sky-600 flex items-center justify-center text-white font-bold shadow-md shadow-sky-600/20">
               <FileCheck className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-black text-slate-900 tracking-tight">
+              <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                 {isUsa ? 'Formulario - Visa Americana (DS-160)' : isCanada ? 'Formulario - Visa Canadiense (IMM-5257)' : 'Solicitud de Visado Schengen (Oficial)'}
               </h1>
               <p className="text-xs text-slate-600 font-medium mt-0.5">
-                Solicitante: <strong className="text-slate-900">{visaData.applicant_name}</strong> | {visaData.agency_name}
+                Solicitante: <strong className="text-slate-900 dark:text-slate-100">{visaData.applicant_name}</strong> | {visaData.agency_name}
               </p>
             </div>
           </div>
@@ -186,15 +186,15 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
           <div className="space-y-6">
             
             {/* SCHENGEN BLOQUE 1: DATOS PERSONALES (CASILLAS 1 A 11) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <User className="w-4 h-4 text-sky-600" />
                 <span>Casillas 1-11: Datos Personales e Identificación</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">1. Apellido(s) *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">1. Apellido(s) *</label>
                   <input
                     type="text"
                     name="surname"
@@ -207,7 +207,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">2. Apellido(s) de nacimiento (anteriores)</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">2. Apellido(s) de nacimiento (anteriores)</label>
                   <input
                     type="text"
                     name="birth_surname"
@@ -220,7 +220,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">3. Nombre(s) *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">3. Nombre(s) *</label>
                   <input
                     type="text"
                     name="first_names"
@@ -233,7 +233,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">4. Fecha de nacimiento (día-mes-año) *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">4. Fecha de nacimiento (día-mes-año) *</label>
                   <input
                     type="date"
                     name="birthday"
@@ -245,7 +245,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">5. Lugar de nacimiento *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">5. Lugar de nacimiento *</label>
                   <input
                     type="text"
                     name="birth_place"
@@ -258,7 +258,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">6. País de nacimiento *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">6. País de nacimiento *</label>
                   <input
                     type="text"
                     name="birth_country"
@@ -271,7 +271,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">7. Nacionalidad actual *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">7. Nacionalidad actual *</label>
                   <input
                     type="text"
                     name="current_nationality"
@@ -284,7 +284,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">7. Nacionalidad de nacimiento (si difiere)</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">7. Nacionalidad de nacimiento (si difiere)</label>
                   <input
                     type="text"
                     name="birth_nationality"
@@ -297,7 +297,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">7. Otras nacionalidades</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">7. Otras nacionalidades</label>
                   <input
                     type="text"
                     name="other_nationalities"
@@ -310,7 +310,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">8. Sexo *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">8. Sexo *</label>
                   <select
                     name="sex"
                     value={dynamicFields['sex'] || ''}
@@ -328,7 +328,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">9. Estado civil *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">9. Estado civil *</label>
                   <select
                     name="marital_status"
                     value={dynamicFields['marital_status'] || ''}
@@ -350,7 +350,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">10. Persona que ejerce la patria potestad (menores) / tutor legal</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">10. Persona que ejerce la patria potestad (menores) / tutor legal</label>
                   <textarea
                     rows={2}
                     name="tutor_details"
@@ -363,7 +363,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">11. Número de documento nacional de identidad *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">11. Número de documento nacional de identidad *</label>
                   <input
                     type="text"
                     name="cedula"
@@ -376,7 +376,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Lugar donde se tramita la visa *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Lugar donde se tramita la visa *</label>
                   <select
                     name="processing_location"
                     value={dynamicFields['processing_location'] || ''}
@@ -395,15 +395,15 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* SCHENGEN BLOQUE 2: DOCUMENTO DE VIAJE (CASILLAS 12 A 16) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-sky-600" />
                 <span>Casillas 12-16: Documento de Viaje / Pasaporte</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">12. Tipo de documento de viaje *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">12. Tipo de documento de viaje *</label>
                   <select
                     name="travel_document_type"
                     value={dynamicFields['travel_document_type'] || ''}
@@ -424,7 +424,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">13. Número del documento de viaje *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">13. Número del documento de viaje *</label>
                   <input
                     type="text"
                     name="passport_number"
@@ -437,7 +437,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">14. Fecha de expedición *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">14. Fecha de expedición *</label>
                   <input
                     type="date"
                     name="passport_issue_date"
@@ -449,7 +449,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">15. Válido hasta *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">15. Válido hasta *</label>
                   <input
                     type="date"
                     name="passport_expiry_date"
@@ -461,7 +461,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">16. Expedido por (país) *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">16. Expedido por (país) *</label>
                   <input
                     type="text"
                     name="passport_country_city"
@@ -476,15 +476,15 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* SCHENGEN BLOQUE 3: FAMILIAR DE CIUDADANO UE/EEE/SUIZA/RU (CASILLAS 17 Y 18) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Users className="w-4 h-4 text-sky-600" />
                 <span>Casillas 17-18: Datos de Familiar Ciudadano UE / EEE / Suiza / RU</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">17. ¿Es familiar de un ciudadano de la UE, del EEE, de Suiza o RU?</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">17. ¿Es familiar de un ciudadano de la UE, del EEE, de Suiza o RU?</label>
                   <select
                     name="eu_family_member"
                     value={dynamicFields['eu_family_member'] || ''}
@@ -558,7 +558,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-700 mb-1">18. Relación de parentesco con el ciudadano de la UE/EEE/Suiza/RU</label>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">18. Relación de parentesco con el ciudadano de la UE/EEE/Suiza/RU</label>
                       <select
                         name="eu_family_relationship"
                         value={dynamicFields['eu_family_relationship'] || ''}
@@ -583,15 +583,15 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* SCHENGEN BLOQUE 4: DOMICILIO, CONTACTO Y RESIDENCIA (CASILLAS 19 Y 20) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Home className="w-4 h-4 text-sky-600" />
                 <span>Casillas 19-20: Domicilio, Contacto y Residencia</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">19. Domicilio postal y dirección de correo electrónico del solicitante *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">19. Domicilio postal y dirección de correo electrónico del solicitante *</label>
                   <input
                     type="text"
                     name="home_address"
@@ -604,7 +604,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Número(s) de teléfono *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Número(s) de teléfono *</label>
                   <input
                     type="text"
                     name="phone_primary"
@@ -617,7 +617,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Correo electrónico</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Correo electrónico</label>
                   <input
                     type="email"
                     name="email_primary"
@@ -630,7 +630,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">20. ¿Residente en un país distinto del país de nacionalidad actual?</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">20. ¿Residente en un país distinto del país de nacionalidad actual?</label>
                   <select
                     name="resident_other_country"
                     value={dynamicFields['resident_other_country'] || ''}
@@ -675,15 +675,15 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* SCHENGEN BLOQUE 5: PROFESIÓN Y EMPLEADOR / ESTUDIOS (CASILLAS 21 Y 22) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Briefcase className="w-4 h-4 text-sky-600" />
                 <span>Casillas 21-22: Profesión y Datos del Empleador / Centro de Estudios</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">21. Profesión actual *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">21. Profesión actual *</label>
                   <input
                     type="text"
                     name="current_occupation"
@@ -696,7 +696,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">22. Nombre, dirección y número de teléfono del empleador. (Para estudiantes: centro de enseñanza)</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">22. Nombre, dirección y número de teléfono del empleador. (Para estudiantes: centro de enseñanza)</label>
                   <textarea
                     rows={3}
                     name="current_employer_school"
@@ -711,15 +711,15 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* SCHENGEN BLOQUE 6: MOTIVO Y DATOS DEL VIAJE (CASILLAS 23 A 28) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Globe className="w-4 h-4 text-sky-600" />
                 <span>Casillas 23-28: Motivos del Viaje y Datos de la Estancia</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">23. Motivo(s) del viaje *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">23. Motivo(s) del viaje *</label>
                   <select
                     name="travel_purpose"
                     value={dynamicFields['travel_purpose'] || ''}
@@ -744,7 +744,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">24. Información adicional sobre el motivo de la estancia</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">24. Información adicional sobre el motivo de la estancia</label>
                   <textarea
                     rows={2}
                     name="travel_purpose_details"
@@ -757,7 +757,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">25. Estado miembro de destino principal *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">25. Estado miembro de destino principal *</label>
                   <input
                     type="text"
                     name="schengen_main_destination"
@@ -770,7 +770,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">26. Estado miembro de primera entrada *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">26. Estado miembro de primera entrada *</label>
                   <input
                     type="text"
                     name="schengen_first_entry"
@@ -783,7 +783,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">27. Número de entradas que solicita *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">27. Número de entradas que solicita *</label>
                   <select
                     name="entries_requested"
                     value={dynamicFields['entries_requested'] || ''}
@@ -801,7 +801,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">28. Fecha prevista de llegada al espacio Schengen *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">28. Fecha prevista de llegada al espacio Schengen *</label>
                   <input
                     type="date"
                     name="schengen_arrival_date"
@@ -813,7 +813,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">28. Fecha prevista de salida del espacio Schengen *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">28. Fecha prevista de salida del espacio Schengen *</label>
                   <input
                     type="date"
                     name="schengen_departure_date"
@@ -827,15 +827,15 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* SCHENGEN BLOQUE 7: ANTECEDENTES Y PERMISOS (CASILLAS 29 Y 30) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <ShieldAlert className="w-4 h-4 text-sky-600" />
                 <span>Casillas 29-30: Impresiones Dactilares y Permisos de Entrada</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">29. Impresiones dactilares tomadas anteriormente para solicitudes de visado Schengen</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">29. Impresiones dactilares tomadas anteriormente para solicitudes de visado Schengen</label>
                   <select
                     name="fingerprints_taken"
                     value={dynamicFields['fingerprints_taken'] || ''}
@@ -879,7 +879,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 )}
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">30. Permiso de entrada al país de destino final, si ha lugar</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">30. Permiso de entrada al país de destino final, si ha lugar</label>
                   <textarea
                     rows={2}
                     name="final_destination_permit"
@@ -894,15 +894,15 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* SCHENGEN BLOQUE 8: INVITACIÓN / ALOJAMIENTO / ORGANIZACIÓN (CASILLAS 31 Y 32) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Building className="w-4 h-4 text-sky-600" />
                 <span>Casillas 31-32: Invitación, Hotel u Organización en el Estado Miembro</span>
               </h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">31. Apellido(s) y nombre(s) de la persona que invita / Nombre del hotel u hostal</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">31. Apellido(s) y nombre(s) de la persona que invita / Nombre del hotel u hostal</label>
                   <textarea
                     rows={3}
                     name="host_invitation_details"
@@ -915,7 +915,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div className="pt-3 border-t border-slate-100">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">32. Nombre y dirección de la empresa u organización que ha emitido la invitación</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">32. Nombre y dirección de la empresa u organización que ha emitido la invitación</label>
                   <textarea
                     rows={3}
                     name="company_invitation_details"
@@ -930,15 +930,15 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* SCHENGEN BLOQUE 9: GASTOS DE VIAJE Y SUBSISTENCIA (CASILLA 33) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <CreditCard className="w-4 h-4 text-sky-600" />
                 <span>Casilla 33: Gastos de Viaje y Medios de Subsistencia</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">33. Los gastos de viaje y subsistencia del solicitante durante su estancia están cubiertos por:</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">33. Los gastos de viaje y subsistencia del solicitante durante su estancia están cubiertos por:</label>
                   <select
                     name="travel_expenses_covered_by"
                     value={dynamicFields['travel_expenses_covered_by'] || ''}
@@ -955,7 +955,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Medios de subsistencia y detalles de cobertura</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Medios de subsistencia y detalles de cobertura</label>
                   <textarea
                     rows={3}
                     name="means_of_support"
@@ -970,8 +970,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* SCHENGEN BLOQUE 10: TERCERA PERSONA CUMPLIMENTADORA (CASILLA 34) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <HelpCircle className="w-4 h-4 text-sky-600" />
                 <span>Casilla 34: Datos de la persona que cumplimenta el impreso (si difiere)</span>
               </h2>
@@ -994,8 +994,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
           <div className="space-y-6">
             
             {/* 1. INFORMACIÓN PERSONAL */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <User className="w-4 h-4 text-sky-600" />
                 <span>1. Información Personal</span>
               </h2>
@@ -1204,8 +1204,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* 2. INFORMACIÓN DEL VIAJE 1 */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Globe className="w-4 h-4 text-sky-600" />
                 <span>2. Información del Viaje 1</span>
               </h2>
@@ -1315,8 +1315,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* 3. INFORMACIÓN DEL VIAJE 2 */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Globe className="w-4 h-4 text-sky-600" />
                 <span>3. Información del Viaje 2</span>
               </h2>
@@ -1389,8 +1389,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* 4. INFORMACIÓN DEL VIAJE 3 */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Globe className="w-4 h-4 text-sky-600" />
                 <span>4. Información del Viaje 3</span>
               </h2>
@@ -1673,8 +1673,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* 5. DOMICILIO E INFORMACIÓN DE CONTACTO */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Home className="w-4 h-4 text-sky-600" />
                 <span>5. Domicilio e Información de Contacto</span>
               </h2>
@@ -1948,8 +1948,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* 6. INFORMACIÓN DEL PASAPORTE */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-sky-600" />
                 <span>6. Información del Pasaporte</span>
               </h2>
@@ -2056,8 +2056,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* 7. INFORMACIÓN DE CONTACTO EN LOS ESTADOS UNIDOS / CANADÁ */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Building className="w-4 h-4 text-sky-600" />
                 <span>7. Información de contacto en los {countryName}</span>
               </h2>
@@ -2174,8 +2174,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* 8. INFORMACIÓN FAMILIAR */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Users className="w-4 h-4 text-sky-600" />
                 <span>8. Información Familiar</span>
               </h2>
@@ -2638,8 +2638,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* 9. INFORMACIÓN LABORAL / EDUCATIVA */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <Briefcase className="w-4 h-4 text-sky-600" />
                 <span>9. Información Laboral / Educativa</span>
               </h2>
@@ -2906,8 +2906,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
 
             {/* 10. INFORMACIÓN ADICIONAL */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
                 <HelpCircle className="w-4 h-4 text-sky-600" />
                 <span>10. Información Adicional</span>
               </h2>
@@ -2970,7 +2970,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">¿Ha servido en la milicia?</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">¿Ha servido en la milicia?</label>
                   <select
                     name="military_service"
                     value={dynamicFields['military_service'] || ''}
@@ -3043,8 +3043,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
         )}
 
         {/* SUBIR DOCUMENTOS CON PREVIEW */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-          <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider pb-3 border-b border-slate-200 flex items-center space-x-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+          <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2">
             <Upload className="w-4 h-4 text-sky-600" />
             <span>Subir Documentos</span>
           </h2>
