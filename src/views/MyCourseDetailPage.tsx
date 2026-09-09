@@ -12,6 +12,7 @@ import courseService from '../services/courseService';
 import { Course, CourseUserAssignment, CourseSection, CourseSectionMaterial } from '../types/course';
 import toast from 'react-hot-toast';
 import { sanitizeHtml } from '../utils/sanitize';
+import SectionVideo from '../components/SectionVideo';
 
 const formatImageUrl = (url?: string | null) => {
   if (!url) return null;
@@ -492,17 +493,7 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
               {activeMaterial ? (
                 <div className="relative flex-1 flex flex-col">
                   {activeMaterial.type === 'video' ? (
-                    <video
-                      controls
-                      autoPlay
-                      controlsList="nodownload noremoteplayback"
-                      disablePictureInPicture
-                      onContextMenu={(e) => e.preventDefault()}
-                      className="w-full aspect-video bg-black rounded-t-3xl select-none"
-                      src={courseService.getMaterialStreamUrl(activeMaterial.id)}
-                    >
-                      Tu navegador no soporta el reproductor de video HTML5.
-                    </video>
+                    <SectionVideo material={activeMaterial} />
                   ) : activeMaterial.type === 'pdf' ? (
                     <div className="p-6 bg-slate-900 text-white space-y-4 flex-1">
                       <div className="flex items-center justify-between">

@@ -67,6 +67,8 @@ export const CourseFormPage: React.FC = () => {
   const [secDuration, setSecDuration] = useState('');
   const [secContent, setSecContent] = useState('');
   const [secPrimaryType, setSecPrimaryType] = useState<'video' | 'pdf' | 'file'>('video');
+  const [secVideoProvider, setSecVideoProvider] = useState<'local' | 'drive' | 'youtube'>('local');
+  const [secExternalUrl, setSecExternalUrl] = useState('');
   const [secPrimaryFile, setSecPrimaryFile] = useState<File | null>(null);
   const [secCoverFile, setSecCoverFile] = useState<File | null>(null);
   const [secCoverPreview, setSecCoverPreview] = useState<string | null>(null);
@@ -280,6 +282,8 @@ export const CourseFormPage: React.FC = () => {
     setSecDuration('');
     setSecContent('');
     setSecPrimaryType('video');
+    setSecVideoProvider('local');
+    setSecExternalUrl('');
     setSecPrimaryFile(null);
     setSecCoverFile(null);
     setSecCoverPreview(null);
@@ -311,6 +315,11 @@ export const CourseFormPage: React.FC = () => {
     const firstMat = sec.materials?.[0];
     if (firstMat) {
       setSecPrimaryType(firstMat.type);
+      setSecVideoProvider(firstMat.video_provider || 'local');
+      setSecExternalUrl(firstMat.external_url || '');
+    } else {
+      setSecVideoProvider('local');
+      setSecExternalUrl('');
     }
     setSecPrimaryFile(null);
     setShowSecPreview(false);
@@ -346,6 +355,11 @@ export const CourseFormPage: React.FC = () => {
       return;
     }
 
+    if (secPrimaryType === 'video' && secVideoProvider !== 'local' && !secExternalUrl.trim()) {
+      toast.error(`Debes ingresar la URL del video de ${secVideoProvider === 'youtube' ? 'YouTube' : 'Google Drive'}`);
+      return;
+    }
+
     setSavingSection(true);
     try {
       const payload = {
@@ -359,17 +373,39 @@ export const CourseFormPage: React.FC = () => {
         cover_image_file: secCoverFile || undefined,
       };
 
+      let secRes;
       if (editingSection) {
-        await courseService.updateSection(editingSection.id, payload);
+        secRes = await courseService.updateSection(editingSection.id, payload);
         toast.success('Sección actualizada');
       } else {
-        await courseService.createSection(courseId, payload);
+        secRes = await courseService.createSection(courseId, payload);
         toast.success('Sección agregada al módulo');
       }
+
+      const savedSecId = editingSection?.id || secRes?.data?.id;
+      if (savedSecId && secPrimaryType === 'video' && secVideoProvider !== 'local' && secExternalUrl.trim()) {
+        const firstMat = editingSection?.materials?.[0];
+        if (firstMat) {
+          await courseService.updateMaterial(firstMat.id, {
+            title: secTitle.trim(),
+            type: 'video',
+            video_provider: secVideoProvider,
+            external_url: secExternalUrl.trim(),
+          });
+        } else {
+          await courseService.uploadMaterial(savedSecId, {
+            title: secTitle.trim(),
+            type: 'video',
+            video_provider: secVideoProvider,
+            external_url: secExternalUrl.trim(),
+          });
+        }
+      }
+
       resetSectionForm();
       fetchCourseDetail();
     } catch (err: any) {
-      toast.error('Error al guardar la sección');
+      toast.error(err.response?.data?.message || 'Error al guardar la sección');
     } finally {
       setSavingSection(false);
     }
@@ -892,7 +928,7 @@ export const CourseFormPage: React.FC = () => {
                       onChange={(e) => setSecPrimaryType(e.target.value as any)}
                       className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white"
                     >
-                      <option value="video">Video (MP4, WebM, MOV)</option>
+                      <option value="video">Video (Local, YouTube, Drive)</option>
                       <option value="pdf">Documento PDF</option>
                       <option value="file">Archivo General</option>
                     </select>
@@ -912,24 +948,101 @@ export const CourseFormPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Subida del Archivo Principal */}
-                <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
-                  <label className="block text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                    {editingSection ? 'Reemplazar Video o Archivo Principal' : 'Subir Video o Archivo Principal de la Sección (Opcional)'}
-                  </label>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Selecciona tu video principal (MP4, WebM, MOV, AVI) o documento para esta lección.
-                  </p>
-                  <input
-                    type="file"
-                    accept={secPrimaryType === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : secPrimaryType === 'pdf' ? 'application/pdf,.pdf' : '*/*'}
-                    onChange={(e) => setSecPrimaryFile(e.target.files?.[0] || null)}
-                    className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
-                  />
-                  {secPrimaryFile && (
-                    <p className="text-xs font-bold text-emerald-600 dark:text-[#00e699]">
-                      ✓ Video seleccionado: {secPrimaryFile.name} ({(secPrimaryFile.size / (1024 * 1024)).toFixed(2)} MB)
-                    </p>
+                {/* Subida del Archivo Principal / Origen del Video */}
+                <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                      {secPrimaryType === 'video' ? 'Origen del Video de la Sección' : (editingSection ? 'Reemplazar Archivo Principal' : 'Subir Archivo Principal (Opcional)')}
+                    </label>
+                    {secPrimaryType === 'video' && (
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-[#00e699]">
+                        3 Orígenes Disponibles
+                      </span>
+                    )}
+                  </div>
+
+                  {secPrimaryType === 'video' && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSecVideoProvider('local')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                          secVideoProvider === 'local'
+                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-[#00e699]'
+                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                        <span>Video Local</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSecVideoProvider('youtube')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                          secVideoProvider === 'youtube'
+                            ? 'bg-rose-500/10 border-rose-500 text-rose-600 dark:text-rose-400'
+                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        <PlayCircle className="w-3.5 h-3.5" />
+                        <span>YouTube</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSecVideoProvider('drive')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                          secVideoProvider === 'drive'
+                            ? 'bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400'
+                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        <FolderOpen className="w-3.5 h-3.5" />
+                        <span>Google Drive</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {secPrimaryType === 'video' && secVideoProvider !== 'local' ? (
+                    <div className="space-y-1.5 pt-1">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                        URL del Video ({secVideoProvider === 'youtube' ? 'YouTube' : 'Google Drive'}) *
+                      </label>
+                      <input
+                        type="url"
+                        value={secExternalUrl}
+                        onChange={(e) => setSecExternalUrl(e.target.value)}
+                        placeholder={
+                          secVideoProvider === 'youtube'
+                            ? 'Ej. https://www.youtube.com/watch?v=XXXXXXXX o https://youtu.be/XXXXXXXX'
+                            : 'Ej. https://drive.google.com/file/d/XXXXXXXX/view'
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      />
+                      {secVideoProvider === 'drive' && (
+                        <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                          * Recuerda otorgar permisos de visibilidad pública ("Cualquier persona con el enlace") en Google Drive.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+                        Selecciona tu archivo {secPrimaryType === 'video' ? 'video local (MP4, WebM, MOV)' : 'documento'} para esta lección.
+                      </p>
+                      <input
+                        type="file"
+                        accept={secPrimaryType === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : secPrimaryType === 'pdf' ? 'application/pdf,.pdf' : '*/*'}
+                        onChange={(e) => setSecPrimaryFile(e.target.files?.[0] || null)}
+                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
+                      />
+                      {secPrimaryFile && (
+                        <p className="text-xs font-bold text-emerald-600 dark:text-[#00e699] mt-1">
+                          ✓ Archivo seleccionado: {secPrimaryFile.name} ({(secPrimaryFile.size / (1024 * 1024)).toFixed(2)} MB)
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -1020,9 +1133,9 @@ export const CourseFormPage: React.FC = () => {
             (() => {
               let globalSectionCounter = 0;
               return (
-                <div className="relative pl-3 space-y-8 pt-2 overflow-x-hidden">
-                  {/* Línea Vertical Continua (Pasando por el CENTRO EXACTO de las insignias en x = 24px) */}
-                  <div className="absolute left-[24px] top-3 bottom-3 w-0.5 bg-emerald-500/30 dark:bg-emerald-500/20 z-0 pointer-events-none" />
+                <div className="relative pl-4 space-y-8 pt-2 overflow-x-hidden">
+                  {/* Línea Vertical Continua (Pasando por el CENTRO EXACTO de las insignias en x = 20px) */}
+                  <div className="absolute left-[20px] top-3 bottom-3 w-0.5 bg-emerald-500/30 dark:bg-emerald-500/20 z-0 pointer-events-none" />
 
                   {modules.map((mod) => {
                     const modSections = sections.filter(s => s.course_module_id === mod.id);
@@ -1030,8 +1143,8 @@ export const CourseFormPage: React.FC = () => {
                     return (
                       <div key={mod.id} className="space-y-4 relative">
                         {/* Header del Módulo Principal en la Línea de Tiempo */}
-                        <div className="flex items-center justify-between gap-4 relative pl-9">
-                          <div className="absolute left-[3px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0 z-10 shadow-xs" />
+                        <div className="flex items-center justify-between gap-4 relative pl-11">
+                          <div className="absolute left-[12px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0 z-10 shadow-xs" />
                           <div className="flex items-center gap-3">
                             <div>
                               <h3 className="text-base font-black text-slate-900 dark:text-white">
@@ -1072,7 +1185,7 @@ export const CourseFormPage: React.FC = () => {
 
                         {/* Secciones del Módulo */}
                         {modSections.length === 0 ? (
-                          <div className="py-2 pl-9 text-xs font-medium text-slate-400 italic">
+                          <div className="py-2 pl-11 text-xs font-medium text-slate-400 italic">
                             Este módulo no tiene secciones aún. Haz clic en "+ Sección" para agregar una.
                           </div>
                         ) : (
@@ -1082,9 +1195,9 @@ export const CourseFormPage: React.FC = () => {
                               const currentSecNumber = globalSectionCounter;
                               const materials = section.materials || [];
                               return (
-                                <div key={section.id} className="relative flex items-center justify-between gap-3 py-1.5 pl-9 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs">
-                                  {/* Número Correlativo en la Línea del Timeline (Centrado exacto en x = 24px, 12px de padding izquierdo) */}
-                                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-xs flex items-center justify-center shrink-0 z-10 shadow-xs transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110">
+                                <div key={section.id} className="relative flex items-center justify-between gap-3 py-1.5 pl-11 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs">
+                                  {/* Número Correlativo en la Línea del Timeline (Centrado exacto sobre la línea vertical) */}
+                                  <div className="absolute left-[8px] top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-xs flex items-center justify-center shrink-0 z-10 shadow-xs transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110">
                                     {currentSecNumber}
                                   </div>
 

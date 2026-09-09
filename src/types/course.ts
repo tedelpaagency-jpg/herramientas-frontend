@@ -3,9 +3,11 @@ export interface CourseSectionMaterial {
   course_section_id: number;
   title: string;
   type: 'video' | 'pdf' | 'file';
+  video_provider?: 'local' | 'drive' | 'youtube' | null;
+  external_url?: string | null;
   duration?: string | null;
-  file_path: string;
-  file_name: string;
+  file_path?: string | null;
+  file_name?: string | null;
   mime_type?: string;
   file_size?: number;
   sort_order: number;
@@ -47,9 +49,11 @@ export interface CourseResource {
   course_id: number;
   title: string;
   type: 'video' | 'pdf' | 'text';
+  video_provider?: 'local' | 'drive' | 'youtube' | null;
+  external_url?: string | null;
   content?: string | null;
-  file_path: string;
-  file_name: string;
+  file_path?: string | null;
+  file_name?: string | null;
   mime_type?: string;
   file_size?: number;
   sort_order: number;
