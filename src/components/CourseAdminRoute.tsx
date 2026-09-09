@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
 export const CourseAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, hasPermission } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -39,7 +39,17 @@ export const CourseAdminRoute: React.FC<{ children: React.ReactNode }> = ({ chil
     user?.role === 'gerente_comercial' ||
     user?.roles?.some((r) => r.name === 'gerente_comercial');
 
-  if (!isSuperAdmin && !isGerenteComercial) {
+  const isWhiteLabelAdmin =
+    user?.role === 'white_label_admin' ||
+    user?.roles?.some((r) => r.name === 'white_label_admin');
+
+  const hasCoursePermission =
+    hasPermission('courses.view') ||
+    hasPermission('courses.create') ||
+    hasPermission('courses.update') ||
+    hasPermission('courses.resources');
+
+  if (!isSuperAdmin && !isGerenteComercial && !isWhiteLabelAdmin && !hasCoursePermission) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-8 text-center">
@@ -50,7 +60,7 @@ export const CourseAdminRoute: React.FC<{ children: React.ReactNode }> = ({ chil
             Acceso Restringido (403)
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-            La administración de cursos es exclusiva para los roles de <strong className="text-slate-900 dark:text-slate-200">super_admin</strong> y <strong className="text-slate-900 dark:text-slate-200">gerente_comercial</strong>.
+            La administración de cursos requiere permisos del plan de tu Marca Blanca o rol administrativo.
           </p>
           <Link
             href="/my-courses"
