@@ -12,7 +12,6 @@ import courseService from '../services/courseService';
 import { Course, CourseModule, CourseSection, CourseSectionMaterial } from '../types/course';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
-import CoursePreviewModal from './CoursePreviewModal';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
@@ -22,7 +21,6 @@ export const CourseFormPage: React.FC = () => {
   const params = useParams();
   const courseId = params?.id ? Number(params.id) : null;
   const isEditing = Boolean(courseId);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Información del Curso
   const [title, setTitle] = useState('');
@@ -99,7 +97,7 @@ export const CourseFormPage: React.FC = () => {
         const c = res.data;
         setTitle(c.title);
         setDescription(c.description || '');
-        setContent(c.content || '');
+        setContent(c.content || c.description || '');
         setStatus(c.status || 'active');
         
         setMainImage(c.main_image || null);
@@ -193,7 +191,7 @@ export const CourseFormPage: React.FC = () => {
 
       const payload = {
         title: title.trim(),
-        description: description.trim() || null,
+        description: content || null,
         content: content || null,
         main_image: uploadedMainImageUrl,
         banner_image: uploadedBannerImageUrl,
@@ -541,14 +539,13 @@ export const CourseFormPage: React.FC = () => {
 
         <div className="flex items-center gap-3">
           {isEditing && courseId && (
-            <button
-              type="button"
-              onClick={() => setShowPreviewModal(true)}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 font-bold text-sm transition-all active:scale-95"
+            <Link
+              href={`/courses/${courseId}/preview`}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 font-bold text-sm transition-all active:scale-95 shadow-sm"
             >
               <Eye className="w-5 h-5" />
               <span>Vista Previa</span>
-            </button>
+            </Link>
           )}
 
           <button
@@ -567,7 +564,7 @@ export const CourseFormPage: React.FC = () => {
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* SECCIÓN 1: DATOS PRINCIPALES Y PORTADAS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Columna Izquierda (Título, Descripción, Editor Teórico) */}
+          {/* Columna Izquierda (Título, Editor Teórico Enriquecido) */}
           <div className="lg:col-span-2 space-y-6">
             {/* Title */}
             <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
@@ -584,20 +581,6 @@ export const CourseFormPage: React.FC = () => {
               />
             </div>
 
-            {/* Description */}
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-              <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                Descripción Corta / Resumen
-              </label>
-              <textarea
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Resumen ejecutivo o descripción general de lo que aprenderá el colaborador..."
-                className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
-              />
-            </div>
-
             {/* Content (Rich Text Editor with ReactQuill) */}
             <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
               <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
@@ -609,7 +592,7 @@ export const CourseFormPage: React.FC = () => {
                   value={content}
                   onChange={setContent}
                   placeholder="Escribe el contenido teórico, instrucciones o temario del curso..."
-                  className="min-h-[200px] text-slate-900 dark:text-white"
+                  className="min-h-[220px] text-slate-900 dark:text-white"
                 />
               </div>
             </div>
@@ -1162,13 +1145,6 @@ export const CourseFormPage: React.FC = () => {
           )}
         </div>
       </form>
-
-      {showPreviewModal && courseId && (
-        <CoursePreviewModal
-          courseId={courseId}
-          onClose={() => setShowPreviewModal(false)}
-        />
-      )}
     </div>
   );
 };

@@ -6,11 +6,12 @@ import Link from 'next/link';
 import { 
   ArrowLeft, BookOpen, Video, FileText, CheckCircle2, PlayCircle, Download, 
   ExternalLink, Loader2, Sparkles, AlertCircle, Clock, Layers, Lock, Play, Plus, Award, GraduationCap,
-  AlignLeft, Check, FolderOpen, File, Folder
+  AlignLeft, Check, FolderOpen, File, Folder, ChevronDown, ChevronUp, Eye
 } from 'lucide-react';
 import courseService from '../services/courseService';
 import { Course, CourseUserAssignment, CourseSection, CourseSectionMaterial } from '../types/course';
 import toast from 'react-hot-toast';
+import { sanitizeHtml } from '../utils/sanitize';
 
 const formatImageUrl = (url?: string | null) => {
   if (!url) return null;
@@ -19,7 +20,11 @@ const formatImageUrl = (url?: string | null) => {
   return `${baseUrl}/${url.replace(/^\//, '')}`;
 };
 
-export const MyCourseDetailPage: React.FC = () => {
+export interface MyCourseDetailPageProps {
+  isPreview?: boolean;
+}
+
+export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPreview = false }) => {
   const router = useRouter();
   const params = useParams();
   const courseId = params?.id ? Number(params.id) : null;
@@ -28,6 +33,7 @@ export const MyCourseDetailPage: React.FC = () => {
   const [assignment, setAssignment] = useState<CourseUserAssignment | null>(null);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
+  const [isTheoreticalOpen, setIsTheoreticalOpen] = useState(true);
   
   // Estado de Sección y Material Activos
   const [activeSectionId, setActiveSectionId] = useState<number | null>(null);
@@ -40,23 +46,37 @@ export const MyCourseDetailPage: React.FC = () => {
     if (!courseId) return;
     setLoading(true);
     try {
-      const res = await courseService.getMyCourseDetail(courseId);
-      if (res.status === 'success' && res.data) {
-        setCourse(res.data.course);
-        setAssignment(res.data.assignment);
-        
-        const secs = res.data.course.sections || [];
-        if (secs.length > 0) {
-          setActiveSectionId(secs[0].id);
-          const firstMat = secs[0].materials?.[0];
-          if (firstMat) {
-            setActiveMaterialId(firstMat.id);
+      if (isPreview) {
+        const res = await courseService.getCoursePreview(courseId);
+        if (res.status === 'success' && res.data) {
+          setCourse(res.data);
+          setAssignment(null);
+          const secs = res.data.sections || [];
+          if (secs.length > 0) {
+            setActiveSectionId(secs[0].id);
+            const firstMat = secs[0].materials?.[0];
+            if (firstMat) setActiveMaterialId(firstMat.id);
+          }
+        }
+      } else {
+        const res = await courseService.getMyCourseDetail(courseId);
+        if (res.status === 'success' && res.data) {
+          setCourse(res.data.course);
+          setAssignment(res.data.assignment);
+          
+          const secs = res.data.course.sections || [];
+          if (secs.length > 0) {
+            setActiveSectionId(secs[0].id);
+            const firstMat = secs[0].materials?.[0];
+            if (firstMat) {
+              setActiveMaterialId(firstMat.id);
+            }
           }
         }
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'No tienes acceso a este curso o no existe');
-      router.push('/my-courses');
+      router.push(isPreview ? '/courses' : '/my-courses');
     } finally {
       setLoading(false);
     }
@@ -125,13 +145,22 @@ export const MyCourseDetailPage: React.FC = () => {
       
       {/* BARRA SUPERIOR DE NAVEGACIÓN */}
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
-        <Link
-          href="/my-courses"
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs font-bold shadow-2xs"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Volver a Mis Cursos</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href={isPreview ? '/courses' : '/my-courses'}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs font-bold shadow-2xs"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{isPreview ? 'Volver a Administrar Cursos' : 'Volver a Mis Cursos'}</span>
+          </Link>
+
+          {isPreview && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-extrabold shadow-2xs">
+              <Eye className="w-3.5 h-3.5" />
+              <span>Vista Previa</span>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-3">
           {viewMode === 'player' && (
@@ -143,7 +172,16 @@ export const MyCourseDetailPage: React.FC = () => {
             </button>
           )}
 
-          {isCompleted ? (
+          {isPreview ? (
+            <button
+              disabled
+              title="Modo Vista previa - No modifica avance"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-extrabold text-xs cursor-not-allowed border border-slate-200 dark:border-slate-700 opacity-80"
+            >
+              <CheckCircle2 className="w-4 h-4 text-slate-400" />
+              <span>Marcar como Completado (Vista previa)</span>
+            </button>
+          ) : isCompleted ? (
             <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs border border-emerald-200 dark:border-emerald-500/30">
               <CheckCircle2 className="w-4 h-4" />
               <span>Curso Completado</span>
@@ -206,11 +244,52 @@ export const MyCourseDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 2. COMPONENTE: DESCRIPCIÓN Y OBJETIVOS */}
+            {/* 2. COMPONENTE COLLAPSE: CONTENIDO TEÓRICO DETALLADO */}
             <div className="pt-2">
-              <p className="text-slate-700 dark:text-slate-300 text-base leading-relaxed font-medium">
-                {course.description || 'Domina esta tecnología más allá de los fundamentos. Construye proyectos reales aplicando principios profesionales de arquitectura moderna, optimización y desarrollo continuo.'}
-              </p>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm transition-all duration-300">
+                <button
+                  type="button"
+                  onClick={() => setIsTheoreticalOpen(!isTheoreticalOpen)}
+                  className="w-full p-5 sm:p-6 flex items-center justify-between gap-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20 shrink-0">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight truncate">
+                        Contenido Teórico Detallado
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold truncate">
+                        Haz clic para {isTheoreticalOpen ? 'contraer' : 'expandir'} las instrucciones y guía teórica general
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                    {isTheoreticalOpen ? (
+                      <ChevronUp className="w-5 h-5" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5" />
+                    )}
+                  </div>
+                </button>
+
+                {isTheoreticalOpen && (
+                  <div className="px-6 pb-6 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    {(course.content || course.description) ? (
+                      <div
+                        className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed font-medium prose dark:prose-invert max-w-none pt-2"
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(course.content || course.description) }}
+                      />
+                    ) : (
+                      <p className="text-slate-500 dark:text-slate-400 text-sm italic font-medium pt-2">
+                        Sin notas teóricas adicionales cargadas para este curso.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 3. TIMELINE DE SECCIONES DEL CURSO */}
