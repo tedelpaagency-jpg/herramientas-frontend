@@ -14,6 +14,12 @@ export const courseService = {
     return response.data;
   },
 
+  // Admin: Obtener vista previa del curso (Preview)
+  getCoursePreview: async (id: number | string) => {
+    const response = await apiClient.get<{ status: string; data: Course }>(`/v1/courses/${id}/preview`);
+    return response.data;
+  },
+
   // Admin: Crear curso (POST)
   createCourse: async (data: Partial<Course>) => {
     const response = await apiClient.post<{ status: string; message: string; data: Course }>('/v1/courses', data);

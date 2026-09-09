@@ -12,6 +12,7 @@ import courseService from '../services/courseService';
 import { Course, CourseModule, CourseSection, CourseSectionMaterial } from '../types/course';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
+import CoursePreviewModal from './CoursePreviewModal';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
@@ -21,6 +22,7 @@ export const CourseFormPage: React.FC = () => {
   const params = useParams();
   const courseId = params?.id ? Number(params.id) : null;
   const isEditing = Boolean(courseId);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Información del Curso
   const [title, setTitle] = useState('');
@@ -537,15 +539,28 @@ export const CourseFormPage: React.FC = () => {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/30 active:scale-95 disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-          <span>{isEditing ? 'Guardar Cambios' : 'Publicar Curso'}</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {isEditing && courseId && (
+            <button
+              type="button"
+              onClick={() => setShowPreviewModal(true)}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 font-bold text-sm transition-all active:scale-95"
+            >
+              <Eye className="w-5 h-5" />
+              <span>Vista Previa</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/30 active:scale-95 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            <span>{isEditing ? 'Guardar Cambios' : 'Publicar Curso'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Form */}
@@ -1031,10 +1046,10 @@ export const CourseFormPage: React.FC = () => {
 
                     return (
                       <div key={mod.id} className="space-y-4 relative">
-                        {/* Header del Módulo Principal en la Línea de Tiempo (Centrado en x = 24px) */}
+                        {/* Header del Módulo Principal en la Línea de Tiempo */}
                         <div className="flex items-center justify-between gap-4 relative pl-9">
-                          <div className="flex items-center gap-3 relative">
-                            <div className="absolute left-[4px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0 z-10 shadow-xs" />
+                          <div className="absolute left-[3px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0 z-10 shadow-xs" />
+                          <div className="flex items-center gap-3">
                             <div>
                               <h3 className="text-base font-black text-slate-900 dark:text-white">
                                 {mod.title}
@@ -1147,6 +1162,13 @@ export const CourseFormPage: React.FC = () => {
           )}
         </div>
       </form>
+
+      {showPreviewModal && courseId && (
+        <CoursePreviewModal
+          courseId={courseId}
+          onClose={() => setShowPreviewModal(false)}
+        />
+      )}
     </div>
   );
 };

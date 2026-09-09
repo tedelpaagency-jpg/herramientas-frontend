@@ -12,6 +12,7 @@ import { Course } from '../types/course';
 import toast from 'react-hot-toast';
 import CourseResourcesModal from './CourseResourcesModal';
 import CourseAssignmentsModal from './CourseAssignmentsModal';
+import CoursePreviewModal from './CoursePreviewModal';
 
 export const CoursesPage: React.FC = () => {
   const router = useRouter();
@@ -29,6 +30,7 @@ export const CoursesPage: React.FC = () => {
 
   const [resourceCourse, setResourceCourse] = useState<Course | null>(null);
   const [assignmentCourse, setAssignmentCourse] = useState<Course | null>(null);
+  const [previewCourseId, setPreviewCourseId] = useState<number | string | null>(null);
 
   const fetchCourses = async () => {
     setLoading(true);
@@ -247,6 +249,13 @@ export const CoursesPage: React.FC = () => {
 
                   <div className="flex items-center gap-1">
                     <button
+                      onClick={() => setPreviewCourseId(course.id)}
+                      title="Vista Previa del Curso (Simulación Estudiante)"
+                      className="p-2 rounded-xl text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => setResourceCourse(course)}
                       title="Administrar Recursos"
                       className="p-2 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors"
@@ -352,6 +361,14 @@ export const CoursesPage: React.FC = () => {
         <CourseAssignmentsModal
           course={assignmentCourse}
           onClose={() => { setAssignmentCourse(null); fetchCourses(); }}
+        />
+      )}
+
+      {/* Preview Modal */}
+      {previewCourseId && (
+        <CoursePreviewModal
+          courseId={previewCourseId}
+          onClose={() => setPreviewCourseId(null)}
         />
       )}
     </div>
