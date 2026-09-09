@@ -40,6 +40,7 @@ export const courseService = {
 
     const response = await apiClient.post<{ status: string; message: string; url: string; path: string }>('/v1/courses/upload-image', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000,
     });
     return response.data;
   },
@@ -55,6 +56,7 @@ export const courseService = {
 
     const response = await apiClient.post<{ status: string; message: string; data: CourseResource }>(`/v1/courses/${courseId}/resources`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000,
     });
     return response.data;
   },
@@ -70,6 +72,7 @@ export const courseService = {
 
     const response = await apiClient.post<{ status: string; message: string; data: CourseResource }>(`/v1/courses/resources/${resourceId}/update`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000,
     });
     return response.data;
   },
@@ -181,6 +184,7 @@ export const courseService = {
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/${courseId}/sections`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000,
     });
     return response.data;
   },
@@ -200,6 +204,7 @@ export const courseService = {
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/${sectionId}/update`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000,
     });
     return response.data;
   },
@@ -226,6 +231,7 @@ export const courseService = {
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/${sectionId}/materials`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000,
     });
     return response.data;
   },
@@ -240,6 +246,7 @@ export const courseService = {
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/materials/${materialId}/update`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000,
     });
     return response.data;
   },

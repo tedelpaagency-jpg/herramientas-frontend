@@ -254,7 +254,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
                       </label>
                       <input
                         type="file"
-                        accept={type === 'video' ? 'video/mp4,video/webm,video/quicktime,video/x-matroska' : 'application/pdf'}
+                        accept={type === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : 'application/pdf,.pdf'}
                         onChange={(e) => setFile(e.target.files?.[0] || null)}
                         className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-950 dark:file:text-blue-400 hover:file:bg-blue-100"
                       />

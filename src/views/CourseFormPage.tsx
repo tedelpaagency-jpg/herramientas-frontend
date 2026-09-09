@@ -917,14 +917,22 @@ export const CourseFormPage: React.FC = () => {
                 {/* Subida del Archivo Principal */}
                 <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
                   <label className="block text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                    {editingSection ? 'Reemplazar Archivo Principal de la Sección (Opcional)' : 'Subir Archivo Principal de la Sección (Opcional)'}
+                    {editingSection ? 'Reemplazar Video o Archivo Principal' : 'Subir Video o Archivo Principal de la Sección (Opcional)'}
                   </label>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Selecciona tu video principal (MP4, WebM, MOV, AVI) o documento para esta lección.
+                  </p>
                   <input
                     type="file"
-                    accept={secPrimaryType === 'video' ? 'video/*' : secPrimaryType === 'pdf' ? 'application/pdf' : '*/*'}
+                    accept={secPrimaryType === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : secPrimaryType === 'pdf' ? 'application/pdf,.pdf' : '*/*'}
                     onChange={(e) => setSecPrimaryFile(e.target.files?.[0] || null)}
                     className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
                   />
+                  {secPrimaryFile && (
+                    <p className="text-xs font-bold text-emerald-600 dark:text-[#00e699]">
+                      ✓ Video seleccionado: {secPrimaryFile.name} ({(secPrimaryFile.size / (1024 * 1024)).toFixed(2)} MB)
+                    </p>
+                  )}
                 </div>
 
                 {/* Editor de Texto Enriquecido para la Sección */}
