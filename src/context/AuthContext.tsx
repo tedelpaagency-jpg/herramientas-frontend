@@ -18,6 +18,9 @@ interface AuthContextType {
   impersonatingFrom: { id: number; name: string; email: string } | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  effectivePermissions: string[];
+  dashboardType: 'super_admin' | 'white_label_admin' | 'agency_admin' | 'agent';
+  hasPermission: (permission?: string | string[]) => boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -257,6 +260,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
+
+  const dashboardType: 'super_admin' | 'white_label_admin' | 'agency_admin' | 'agent' = (() => {
+    if (isSuperAdmin) return 'super_admin';
+    if ((user as any)?.dashboard_type) return (user as any).dashboard_type;
+    if (user?.role === 'white_label_admin') return 'white_label_admin';
+    if (['admin', 'agency_admin', 'gerente_comercial', 'gerente'].includes(user?.role || '')) return 'agency_admin';
+    return 'agent';
+  })();
+
+  const effectivePermissions: string[] = (() => {
+    if (isSuperAdmin) return ['*'];
+    if (Array.isArray((user as any)?.effective_permissions) && (user as any).effective_permissions.length > 0) {
+      return (user as any).effective_permissions;
+    }
+    // Fallback extraction from agency plan or direct permissions
+    const agency = (user as any)?.agency || currentAgency;
+    const plan = agency?.current_subscription?.plan || agency?.currentSubscription?.plan || agency?.plan;
+    const planPerms = Array.isArray(plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
+      ? (plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
+      : [];
+    const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase());
+    const extracted = planPerms.map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase()).filter(Boolean);
+    return Array.from(new Set([...extracted, ...directPerms]));
+  })();
+
+  const hasPermission = (permission?: string | string[]): boolean => {
+    if (!permission) return true;
+    if (isSuperAdmin || effectivePermissions.includes('*')) return true;
+
+    const required = (Array.isArray(permission) ? permission : [permission]).map((p) => p.toLowerCase().trim());
+    return required.some((req) => effectivePermissions.map((ep) => ep.toLowerCase().trim()).includes(req));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -270,6 +307,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         impersonatingFrom,
         isAuthenticated: !!token && !!user,
         isLoading,
+        effectivePermissions,
+        dashboardType,
+        hasPermission,
         login,
         logout,
         refreshUser,

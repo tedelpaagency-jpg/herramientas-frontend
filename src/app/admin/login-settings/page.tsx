@@ -3,13 +3,13 @@
 import React from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
-import { ProductsPage } from '@/views/ProductsPage';
+import LoginSettingsPage from '@/views/admin/LoginSettingsPage';
 
-export default function ProductsRoute() {
+export default function LoginSettingsRoute() {
   return (
-    <ProtectedRoute permission="view_products">
+    <ProtectedRoute>
       <Layout>
-        <ProductsPage />
+        <LoginSettingsPage />
       </Layout>
     </ProtectedRoute>
   );

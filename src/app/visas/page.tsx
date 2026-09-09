@@ -7,7 +7,7 @@ import { VisasPage } from '@/views/VisasPage';
 
 export default function VisasRoute() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute permission="view_visas">
       <Layout>
         <VisasPage />
       </Layout>

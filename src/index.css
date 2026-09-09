@@ -16,18 +16,18 @@
   /* Stitch Design Tokens (SANTUN Tedelpa) */
   --color-primary: #0052cc;
   --color-secondary: #36b37e;
-  --color-background: #F4F5F7;
+  --color-background: #f1f5f9;
   --color-surface: #ffffff;
-  --color-surface-container: #ededf8;
-  --color-surface-container-high: #e7e7f2;
-  --color-surface-variant: #e1e2ec;
-  --color-danger: #FF5630;
-  --color-warning: #FFAB00;
+  --color-surface-container: #e2e8f0;
+  --color-surface-container-high: #cbd5e1;
+  --color-surface-variant: #e2e8f0;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
   
-  --color-text-primary: #191b23;
-  --color-text-secondary: #434654;
-  --border-color: #DFE1E6;
-  --border-outline-variant: #c3c6d6;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --border-color: #cbd5e1;
+  --border-outline-variant: #94a3b8;
   
   --border-radius: 8px;
   --shadow-sm: 0px 4px 8px rgba(9, 30, 66, 0.08);
@@ -66,6 +66,18 @@
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
     transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-text-primary);
+  }
+
+  label {
+    color: var(--color-text-secondary);
+  }
+
+  th {
+    color: var(--color-text-secondary);
   }
 }
 

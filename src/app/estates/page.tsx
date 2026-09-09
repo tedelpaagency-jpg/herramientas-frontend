@@ -7,7 +7,7 @@ import { EstatesPage } from '@/views/EstatesPage';
 
 export default function EstatesRoute() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute permission="view_estates">
       <Layout>
         <EstatesPage />
       </Layout>

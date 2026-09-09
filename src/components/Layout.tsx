@@ -96,7 +96,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden print:h-auto print:overflow-visible bg-slate-50 dark:bg-[#121413] text-slate-900 dark:text-slate-100 font-body-md transition-colors duration-200">
+    <div className="flex h-screen overflow-hidden print:h-auto print:overflow-visible bg-slate-100 dark:bg-[#121413] text-slate-900 dark:text-slate-100 font-body-md transition-colors duration-200">
       {/* Left Navigation Sidebar */}
       <Sidebar
         leftSidebarOpen={leftSidebarOpen}
@@ -105,7 +105,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       />
 
       {/* Main Content Container */}
-      <main className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden relative h-screen transition-all duration-300 print:ml-0 print:p-0 print:bg-white print:overflow-visible print:h-auto bg-slate-50 dark:bg-[#121413] text-slate-900 dark:text-slate-100 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} ${rightSidebarOpen ? '2xl:mr-80' : 'mr-0'}`}>
+      <main className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden relative h-screen transition-all duration-300 print:ml-0 print:p-0 print:bg-white print:overflow-visible print:h-auto bg-slate-100 dark:bg-[#121413] text-slate-900 dark:text-slate-100 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} ${rightSidebarOpen ? '2xl:mr-80' : 'mr-0'}`}>
         <ImpersonationBanner />
         {/* Header Bar */}
         <Navbar

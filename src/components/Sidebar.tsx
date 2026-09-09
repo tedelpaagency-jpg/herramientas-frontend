@@ -9,7 +9,7 @@ import {
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
   Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
-  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator, Palette, X
+  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator, Palette, X, Film
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -24,7 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setLeftSidebarOpen,
 }) => {
   const pathname = usePathname();
-  const { user, currentWhiteLabel, currentAgency } = useAuth();
+  const { user, currentWhiteLabel, currentAgency, hasPermission } = useAuth();
   const isSuperAdmin =
     user?.role === 'super_admin' ||
     user?.roles?.some((r) => r.name === 'super_admin');
@@ -192,14 +192,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return brightness < 160;
   };
 
-  const isDarkBg = brandMenuBg ? isColorDark(brandMenuBg) : isDark;
-
   const resolvedMenuBg = brandMenuBg === '#0f172a' ? '#161a1b' : brandMenuBg;
-  const effectiveMenuBg = resolvedMenuBg
-    ? (isDark
-        ? (isColorDark(resolvedMenuBg) ? resolvedMenuBg : '#161a1b')
-        : (isColorDark(resolvedMenuBg) ? '#ffffff' : resolvedMenuBg))
-    : (isDark ? '#161a1b' : '#ffffff');
+  const effectiveMenuBg = isDark
+    ? (resolvedMenuBg && isColorDark(resolvedMenuBg) ? resolvedMenuBg : '#161a1b')
+    : (resolvedMenuBg && !isColorDark(resolvedMenuBg) ? resolvedMenuBg : '#ffffff');
+
+  const isDarkBg = isColorDark(effectiveMenuBg);
 
   let activeLogoToRender: string | null = null;
   if (isSidebarCollapsed) {
@@ -269,43 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isItemVisible = (item: { permission?: string | string[] }) => {
     if (isSuperAdmin) return true;
     if (!item.permission) return true;
-
-    const requiredPermissions = (
-      Array.isArray(item.permission) ? item.permission : [item.permission]
-    ).map((p) => p.toLowerCase().trim());
-
-    const isTravelPermission = requiredPermissions.some((p) =>
-      p.startsWith('packages.') || p.startsWith('requests.') || p.includes('travel') || p.includes('visa') || p === 'commissions.view'
-    );
-
-    if (isRealEstateAgency) {
-      const blockedForRealEstate = [
-        'view_visas',
-        'manage_visas',
-        'view_pos',
-        'manage_pos',
-        'view_products',
-        'packages.view',
-        'requests.view',
-        'view_travel_reports',
-      ];
-      if (requiredPermissions.some((p) => blockedForRealEstate.includes(p))) return false;
-    }
-
-    if (isSuperAdmin || isWhiteLabelAdmin) {
-      if (!hasWhiteLabelPlan) return true;
-      if (isTravelPermission && !isWhiteLabelTravelPlan) return false;
-      return requiredPermissions.some(
-        (p) => activeWhiteLabelPlanPermissions.includes(p) || userDirectPermissions.includes(p)
-      );
-    }
-
-    if (!currentPlan && hasAgency) return true;
-    if (isTravelPermission && !isTravelPlan) return false;
-
-    return requiredPermissions.some(
-      (p) => activePlanPermissions.includes(p) || userDirectPermissions.includes(p)
-    );
+    return hasPermission(item.permission);
   };
 
   const categories = [
@@ -313,11 +275,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'PRINCIPAL & CRM',
       items: [
         { label: 'Inicio', path: '/', icon: Home },
-        { label: 'CRM Kanban', path: '/crm', icon: LayoutDashboard },
-        { label: 'Workspaces', path: '/workspaces', icon: Briefcase },
-        { label: 'Directorio de Clientes', path: '/clients', icon: Users },
-        { label: 'Gestión de Tareas', path: '/tasks', icon: CheckSquare },
-        { label: 'Calendario', path: '/calendar', icon: Calendar },
+        { label: 'CRM Kanban', path: '/crm', icon: LayoutDashboard, permission: ['view_crm', 'manage_crm'] },
+        { label: 'Workspaces', path: '/workspaces', icon: Briefcase, permission: ['view_crm', 'manage_crm'] },
+        { label: 'Directorio de Clientes', path: '/clients', icon: Users, permission: ['view_clients', 'view_crm'] },
+        { label: 'Gestión de Tareas', path: '/tasks', icon: CheckSquare, permission: ['tasks.view', 'view_tasks'] },
+        { label: 'Calendario', path: '/calendar', icon: Calendar, permission: ['view_crm', 'tasks.view'] },
       ],
     },
     {
@@ -342,26 +304,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'MARKETING & LEGAL',
       items: [
-        { label: 'LexVault (Contratos)', path: '/lexvault', icon: FileText, permission: ['view_contracts', 'contracts.view', 'lexvault.view'] },
-        { label: 'Hunter Stores', path: '/hunter', icon: Store },
-        { label: 'Landings', path: '/landings', icon: Globe },
-        { label: 'Marketing & Campañas', path: '/marketing', icon: Zap },
-        { label: 'Automatizaciones', path: '/automations', icon: Wrench },
+        { label: 'LexVault (Contratos)', path: '/lexvault', icon: FileText, permission: ['view_lexvault', 'manage_lexvault', 'view_contracts', 'contracts.view'] },
+        { label: 'Hunter Stores', path: '/hunter', icon: Store, permission: ['view_products', 'packages.view', 'view_crm'] },
+        { label: 'Landings', path: '/landings', icon: Globe, permission: ['view_crm', 'view_estates'] },
+        { label: 'Marketing & Campañas', path: '/marketing', icon: Zap, permission: ['view_crm', 'campaigns.view'] },
+        { label: 'Automatizaciones', path: '/automations', icon: Wrench, permission: ['view_crm', 'manage_crm'] },
       ],
     },
     {
       title: 'ACADEMIA & RECURSOS',
       items: [
-        { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap },
-        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen },
-        { label: 'Gamificación & Puntos', path: '/gamification', icon: Trophy },
+        { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap, permission: 'courses.view' },
+        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: 'courses.view' },
+        { label: 'Gamificación & Puntos', path: '/gamification', icon: Trophy, permission: ['view_spin_wheel', 'view_gamification'] },
       ],
     },
     {
       title: 'ADMINISTRACIÓN SISTEMA',
       items: [
-        { label: 'Gestión de Agencias', path: '/agencies', icon: Building2, permission: ['view_agencies', 'agencies.view'] },
-        { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['view_users', 'users.view'] },
+        { label: 'Gestión de Agencias', path: '/agencies', icon: Building2, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
+        { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
       ],
     },
     ...((isWhiteLabelAdmin || isSuperAdmin)
@@ -371,6 +333,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             items: [
               { label: 'Mi White Label', path: '/white-label/dashboard', icon: Globe },
               { label: 'Personalizar Marca', path: '/admin/branding', icon: Palette },
+              { label: 'Configuración del Login', path: '/admin/login-settings', icon: Film },
               { label: 'Importar Estudiantes', path: '/white-label/import-students', icon: FileSpreadsheet },
               { label: 'Planes de mi Marca', path: '/admin/plans', icon: Layers },
             ],
@@ -459,16 +422,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         isSidebarCollapsed ? 'px-2 lg:justify-center' : 'px-3'
                       } ${
                         isActive 
-                          ? (isDarkBg ? 'bg-slate-800/90 text-white font-black' : 'bg-slate-100 text-slate-900 font-black')
-                          : (isDarkBg ? 'text-slate-300 hover:bg-slate-800/60 hover:text-white font-medium' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium')
+                          ? (isDarkBg 
+                              ? 'bg-slate-800/90 text-white font-extrabold border border-slate-700/80 shadow-xs' 
+                              : 'bg-blue-50 text-blue-700 font-extrabold border border-blue-200/80 shadow-xs')
+                          : (isDarkBg 
+                              ? 'text-slate-300 hover:bg-slate-800/60 hover:text-white font-medium' 
+                              : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium')
                       }`}
                     >
                       <Icon 
                         style={isActive && activeColor ? { color: activeColor } : undefined}
                         className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors ${
                           isActive 
-                            ? (activeColor ? '' : (isDarkBg ? 'text-white' : 'text-slate-900')) 
-                            : (isDarkBg ? 'text-slate-400' : 'text-slate-500')
+                            ? (activeColor ? '' : (isDarkBg ? 'text-white' : 'text-blue-600')) 
+                            : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
                         }`} 
                       />
                       
@@ -489,12 +456,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               href={configHref} 
               onClick={() => setLeftSidebarOpen(false)}
               className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-colors ${
-                isDarkBg
-                  ? 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                pathname === configHref
+                  ? (isDarkBg
+                      ? 'bg-slate-800/90 text-white font-extrabold border border-slate-700/80 shadow-xs'
+                      : 'bg-blue-50 text-blue-700 font-extrabold border border-blue-200/80 shadow-xs')
+                  : (isDarkBg
+                      ? 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                      : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100')
               }`}
             >
-              <Settings className="w-4 h-4 stroke-[2]" />
+              <Settings className={`w-4 h-4 stroke-[2] ${
+                pathname === configHref
+                  ? (isDarkBg ? 'text-white' : 'text-blue-600')
+                  : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
+              }`} />
               <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
             </Link>
           </div>

@@ -89,34 +89,34 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Dark / Light Mode Toggle Button */}
         <button 
           onClick={toggleTheme}
-          className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+          className="w-9 h-9 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
           title={isDark ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
           aria-label={isDark ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
         >
-          <span className={`material-symbols-outlined text-[20px] sm:text-[24px] ${isDark ? 'text-amber-400' : 'text-slate-700'}`}>
+          <span className="material-symbols-outlined text-[20px] sm:text-[24px]">
             {isDark ? 'light_mode' : 'dark_mode'}
           </span>
         </button>
         {/* Right Sidebar Toggle Button */}
         <button 
           onClick={() => setRightSidebarOpen(!rightSidebarOpen)} 
-          className={`w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${rightSidebarOpen ? 'bg-primary text-white shadow-md' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200'}`}
+          className={`w-9 h-9 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${rightSidebarOpen ? 'bg-primary text-white shadow-md' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
           title="Menú Lateral"
           aria-label="Abrir menú secundario"
           aria-expanded={rightSidebarOpen}
         >
-          <span className={`material-symbols-outlined text-[20px] sm:text-[24px] ${rightSidebarOpen ? 'text-white' : 'text-primary'}`}>menu_open</span>
+          <span className={`material-symbols-outlined text-[20px] sm:text-[24px] ${rightSidebarOpen ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>menu_open</span>
         </button>
 
         {/* Notifications Dropdown Button & Popover */}
         <div className="relative">
           <button 
             onClick={() => setShowNotifications(!showNotifications)} 
-            className={`hidden lg:flex w-11 h-11 items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${showNotifications ? 'bg-primary text-white shadow-md' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200'}`}
+            className={`hidden lg:flex w-11 h-11 flex-shrink-0 items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${showNotifications ? 'bg-primary text-white shadow-md' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
             aria-label="Notificaciones"
             aria-expanded={showNotifications}
           >
-            <span className={`material-symbols-outlined ${showNotifications ? 'text-white' : 'text-primary'}`}>notifications</span>
+            <span className={`material-symbols-outlined text-[20px] sm:text-[24px] ${showNotifications ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>notifications</span>
           </button>
           
           <AnimatePresence>

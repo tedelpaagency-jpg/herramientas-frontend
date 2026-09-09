@@ -1,192 +1,130 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Building2, 
-  Users, 
-  ShoppingBag, 
-  FileCheck, 
-  ArrowUpRight, 
-  Kanban,
-  ShieldCheck,
-  Gift,
-} from 'lucide-react';
-import estateService from '../services/estateService';
-import crmService from '../services/crmService';
-import productService from '../services/productService';
-import visaService from '../services/visaService';
+import dashboardService, { DashboardSummaryResponse } from '../services/dashboardService';
+import SuperAdminDashboard from '../components/dashboard/SuperAdminDashboard';
+import WhiteLabelDashboard from '../components/dashboard/WhiteLabelDashboard';
+import AgencyAdminDashboard from '../components/dashboard/AgencyAdminDashboard';
+import AgentDashboard from '../components/dashboard/AgentDashboard';
+import NoPermissionsState from '../components/dashboard/NoPermissionsState';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    estatesCount: 0,
-    clientsCount: 0,
-    productsCount: 0,
-    visasCount: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<DashboardSummaryResponse | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSummary = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await dashboardService.getSummary();
+      setDashboardData(res);
+    } catch (err: any) {
+      console.error('Error fetching dynamic dashboard summary:', err);
+      setError(
+        err?.response?.data?.message ||
+        'No se pudo conectar con el servicio de dashboard de Laravel. Por favor, intenta de nuevo.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [estatesRes, clientsRes, productsRes, visasRes] = await Promise.allSettled([
-          estateService.getEstates({ limit: 1 }),
-          crmService.getClients(),
-          productService.getProducts(),
-          visaService.getVisas(),
-        ]);
-
-        setStats({
-          estatesCount: estatesRes.status === 'fulfilled' ? (estatesRes.value.pagination?.total ?? estatesRes.value.data?.length ?? 0) : 0,
-          clientsCount: clientsRes.status === 'fulfilled' ? (clientsRes.value.pagination?.total ?? clientsRes.value.data?.length ?? (Array.isArray(clientsRes.value) ? (clientsRes.value as any).length : 0)) : 0,
-          productsCount: productsRes.status === 'fulfilled' ? productsRes.value.length : 0,
-          visasCount: visasRes.status === 'fulfilled' ? visasRes.value.length : 0,
-        });
-      } catch (err) {
-        console.error('Error fetching dashboard summary:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDashboardData();
+    fetchSummary();
   }, []);
 
-  const cards = [
-    {
-      title: 'Propiedades e Inmuebles',
-      value: stats.estatesCount,
-      label: 'Inmuebles en catálogo',
-      icon: Building2,
-      color: 'from-blue-600 to-indigo-600',
-      link: '/estates',
-    },
-    {
-      title: 'Clientes / Leads',
-      value: stats.clientsCount,
-      label: 'Prospectos registrados',
-      icon: Users,
-      color: 'from-emerald-500 to-teal-600',
-      link: '/clients',
-    },
-    {
-      title: 'Productos & POS',
-      value: stats.productsCount,
-      label: 'Items en inventario',
-      icon: ShoppingBag,
-      color: 'from-violet-500 to-purple-600',
-      link: '/products',
-    },
-    {
-      title: 'Trámites de Visados',
-      value: stats.visasCount,
-      label: 'Solicitudes en proceso',
-      icon: FileCheck,
-      color: 'from-amber-500 to-orange-600',
-      link: '/visas',
-    },
-  ];
-
-  return (
-    <div className="space-y-8">
-      {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="relative z-10 max-w-2xl">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 mb-4">
-            Bienvenido a SANTUN
-          </span>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight sm:text-4xl">
-            Hola, {user?.name || 'Usuario'}
-          </h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
-            Plataforma centralizada conectada en tiempo real con el backend de Laravel. Administra inmuebles, embudos CRM, ventas e integración de servicios.
-          </p>
+  // Loading Skeleton State
+  if (isLoading && !dashboardData) {
+    return (
+      <div className="space-y-8 animate-pulse">
+        {/* Banner Skeleton */}
+        <div className="rounded-3xl bg-white dark:bg-slate-900 p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded-full mb-4" />
+          <div className="h-10 w-72 bg-slate-200 dark:bg-slate-800 rounded-xl mb-3" />
+          <div className="h-4 w-96 bg-slate-200 dark:bg-slate-800 rounded-md" />
         </div>
-      </div>
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {cards.map((card, idx) => {
-          const Icon = card.icon;
-          return (
+        {/* Metric Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[1, 2, 3, 4].map((i) => (
             <div
-              key={idx}
-              className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
+              key={i}
+              className="h-36 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm"
             >
-              <div>
-                <div className="flex items-center justify-between">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${card.color} flex items-center justify-center shadow-md`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <Link
-                    href={card.link}
-                    className="p-2 rounded-xl text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors"
-                  >
-                    <ArrowUpRight className="w-5 h-5" />
-                  </Link>
+              <div className="flex justify-between items-start">
+                <div className="space-y-2">
+                  <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="h-8 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                  <div className="h-3 w-28 bg-slate-200 dark:bg-slate-800 rounded" />
                 </div>
-                <h3 className="mt-4 text-2xl font-black text-slate-900 dark:text-white">
-                  {isLoading ? '...' : card.value}
-                </h3>
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">{card.title}</p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                <span>{card.label}</span>
-                <span className="text-blue-600 dark:text-blue-400 font-bold">Ver módulo →</span>
+                <div className="w-12 h-12 rounded-2xl bg-slate-200 dark:bg-slate-800" />
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
 
-      {/* Quick Access Modules Grid */}
-      <div>
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Acceso Rápido a Módulos Laravel</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <Link
-            href="/crm"
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-blue-500/50 hover:shadow-md transition-all group"
-          >
-            <div className="flex items-center space-x-3 text-blue-600 dark:text-blue-400">
-              <Kanban className="w-6 h-6" />
-              <h3 className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Tablero Kanban CRM</h3>
-            </div>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Mueve etapas de prospectos mediante `/v1/crm/move-stage` y registra actividades.
-            </p>
-          </Link>
-
-          <Link
-            href="/lexvault"
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-indigo-500/50 hover:shadow-md transition-all group"
-          >
-            <div className="flex items-center space-x-3 text-indigo-600 dark:text-indigo-400">
-              <ShieldCheck className="w-6 h-6" />
-              <h3 className="font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Bóveda Legal LexVault</h3>
-            </div>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Genera documentos contractuales en PDF a partir de plantillas dinámicas en `/v1/lexvault`.
-            </p>
-          </Link>
-
-          <Link
-            href="/spin-wheel"
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all group"
-          >
-            <div className="flex items-center space-x-3 text-emerald-600 dark:text-emerald-400">
-              <Gift className="w-6 h-6" />
-              <h3 className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Ruletas de Premios</h3>
-            </div>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Ejecuta giros de ruletas activas con el motor probabilístico `/v1/spin-wheels/{'{id}'}/spin`.
-            </p>
-          </Link>
+        {/* Content Widgets Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6" />
+          <div className="h-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6" />
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/50 p-10 text-center shadow-sm max-w-xl mx-auto my-12">
+        <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-7 h-7" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+          Error al cargar el Dashboard
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+          {error}
+        </p>
+        <button
+          onClick={fetchSummary}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md shadow-blue-600/20 hover:bg-blue-700 transition-colors"
+        >
+          <RefreshCw className="w-4 h-4" />
+          <span>Reintentar</span>
+        </button>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return null;
+  }
+
+  // Check if plan has no permissions
+  if (
+    dashboardData.dashboard_type !== 'super_admin' &&
+    dashboardData.plan &&
+    dashboardData.effective_permissions.length === 0
+  ) {
+    return <NoPermissionsState planName={dashboardData.plan.name} />;
+  }
+
+  // Render experience according to dynamic dashboard_type resolved by Laravel
+  switch (dashboardData.dashboard_type) {
+    case 'super_admin':
+      return <SuperAdminDashboard data={dashboardData} isLoading={isLoading} />;
+    case 'white_label_admin':
+      return <WhiteLabelDashboard data={dashboardData} isLoading={isLoading} />;
+    case 'agency_admin':
+      return <AgencyAdminDashboard data={dashboardData} isLoading={isLoading} />;
+    case 'agent':
+    default:
+      return <AgentDashboard data={dashboardData} isLoading={isLoading} />;
+  }
 };
 
 export default DashboardPage;

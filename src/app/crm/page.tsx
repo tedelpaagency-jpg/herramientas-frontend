@@ -7,7 +7,7 @@ import { CrmKanbanPage } from '@/views/CrmKanbanPage';
 
 export default function CrmRoute() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute permission={['view_crm', 'manage_crm']}>
       <Layout>
         <CrmKanbanPage />
       </Layout>

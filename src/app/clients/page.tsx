@@ -7,7 +7,7 @@ import { ClientsPage } from '@/views/ClientsPage';
 
 export default function ClientsRoute() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute permission={['view_clients', 'view_crm']}>
       <Layout>
         <ClientsPage />
       </Layout>

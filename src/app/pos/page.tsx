@@ -7,7 +7,7 @@ import { PosPage } from '@/views/PosPage';
 
 export default function PosRoute() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute permission="view_pos">
       <Layout>
         <PosPage />
       </Layout>
