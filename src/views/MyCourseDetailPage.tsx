@@ -110,13 +110,46 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
   const handleCompleteMaterial = async (materialId: number) => {
     if (isPreview || !courseId) return;
     try {
-      const res = await courseService.completeMaterial(materialId);
+      const res = await courseService.completeMaterial(courseId, materialId);
       if (res.status === 'success' && res.data) {
-        setAssignment(res.data.assignment);
+        if (res.data.assignment) {
+          setAssignment(res.data.assignment);
+        }
         toast.success('¡Avance guardado exitosamente!');
+      } else if (res.message) {
+        toast.error(res.message);
       }
     } catch (err: any) {
       console.error('Error al guardar avance:', err);
+      toast.error(err.response?.data?.message || 'Error al marcar como completado');
+    }
+  };
+
+  const handleCompleteSection = async (sectionToComplete = activeSection) => {
+    if (isPreview || !courseId || !sectionToComplete) return;
+    const mats = sectionToComplete.materials || [];
+    try {
+      if (mats.length > 0) {
+        let latestAssignment = assignment;
+        for (const m of mats) {
+          if (!completedMaterialIds.has(m.id)) {
+            const res = await courseService.completeMaterial(courseId, m.id);
+            if (res.status === 'success' && res.data?.assignment) {
+              latestAssignment = res.data.assignment;
+            }
+          }
+        }
+        if (latestAssignment) setAssignment(latestAssignment);
+      } else {
+        const res = await courseService.completeMaterial(courseId);
+        if (res.status === 'success' && res.data?.assignment) {
+          setAssignment(res.data.assignment);
+        }
+      }
+      toast.success(`Sección "${sectionToComplete.title}" marcada como completada 🎉`);
+    } catch (err: any) {
+      console.error('Error al marcar sección:', err);
+      toast.error(err.response?.data?.message || 'Error al marcar la sección como completada');
     }
   };
 
@@ -165,6 +198,11 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
   const activeSection = sections.find(s => s.id === activeSectionId) || sections[0];
   const sectionMaterials = activeSection?.materials || [];
 
+  const isActiveSectionCompleted = Boolean(
+    activeSection &&
+    (sectionMaterials.length === 0 || sectionMaterials.every(m => completedMaterialIds.has(m.id)))
+  );
+
   // Video propio de la sección (pertenece al contenido directo de la sección, no a los recursos)
   const sectionVideoMaterial = sectionMaterials.find(m => m.type === 'video');
 
@@ -189,8 +227,8 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 text-slate-900 dark:text-slate-100">
       
       {/* BARRA SUPERIOR DE NAVEGACIÓN */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 pb-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Link
             href={isPreview ? '/courses' : '/my-courses'}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs font-bold shadow-2xs"
@@ -207,11 +245,11 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-start sm:justify-end">
           {viewMode === 'player' && (
             <button
               onClick={() => setViewMode('overview')}
-              className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-extrabold text-slate-800 dark:text-white transition-colors border border-slate-200 dark:border-slate-700"
+              className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-extrabold text-slate-800 dark:text-white transition-colors border border-slate-200 dark:border-slate-700"
             >
               Ver Resumen del Curso
             </button>
@@ -221,13 +259,14 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
             <button
               disabled
               title="Modo Vista previa - No modifica avance"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-extrabold text-xs cursor-not-allowed border border-slate-200 dark:border-slate-700 opacity-80"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-extrabold text-xs cursor-not-allowed border border-slate-200 dark:border-slate-700 opacity-80"
             >
               <CheckCircle2 className="w-4 h-4 text-slate-400" />
-              <span>Marcar como Completado (Vista previa)</span>
+              <span className="hidden sm:inline">Marcar como Completado (Vista previa)</span>
+              <span className="sm:hidden">Completado (Vista previa)</span>
             </button>
           ) : isCompleted ? (
-            <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs border border-emerald-200 dark:border-emerald-500/30">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs border border-emerald-200 dark:border-emerald-500/30">
               <CheckCircle2 className="w-4 h-4" />
               <span>Curso Completado</span>
             </div>
@@ -288,36 +327,6 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                 </span>
               </div>
             </div>
-
-            {/* 1.5 RECURSO PRINCIPAL DE PRESENTACIÓN DEL CURSO (VIDEO O IMAGEN DE DETALLE - OCULTO SI ES NULL) */}
-            {course.detail_media_url && (
-              <div className="pt-2">
-                <div className="rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 bg-slate-950">
-                  {course.detail_media_type === 'image' ? (
-                    <img
-                      src={formatImageUrl(course.detail_media_url)!}
-                      alt={`Detalle de ${course.title}`}
-                      className="w-full h-auto max-h-[480px] object-cover"
-                    />
-                  ) : (
-                    <SectionVideo
-                      material={{
-                        id: 0,
-                        course_section_id: 0,
-                        title: course.title,
-                        type: 'video',
-                        video_provider: course.detail_media_provider || 'local',
-                        external_url: course.detail_media_url,
-                        sort_order: 1,
-                        created_at: '',
-                        updated_at: '',
-                      }}
-                      autoPlay={false}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* 2. COMPONENTE COLLAPSE: CONTENIDO TEÓRICO DETALLADO */}
             <div className="pt-2">
@@ -544,25 +553,62 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                 </div>
               )}
 
-              {/* Media Preview Card */}
-              <div 
-                onClick={handleContinueCourse}
-                className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/80 h-48 bg-slate-100 dark:bg-slate-950 cursor-pointer group shadow-md"
-              >
-                {course.main_image ? (
-                  <img src={course.main_image} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              {/* Contenedor de Video/Foto de Bienvenida de Detalle (Directamente arriba del Botón de Iniciar Aprendizaje) */}
+              <div className="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 shadow-xl">
+                {course.detail_media_url ? (
+                  course.detail_media_type === 'image' ? (
+                    <div 
+                      onClick={handleContinueCourse}
+                      className="relative h-52 w-full cursor-pointer group overflow-hidden"
+                    >
+                      <img
+                        src={formatImageUrl(course.detail_media_url)!}
+                        alt={course.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/20 transition-colors">
+                        <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-2xl">
+                          <Play className="w-6 h-6 fill-white translate-x-0.5" />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <SectionVideo
+                      material={{
+                        id: 0,
+                        course_section_id: 0,
+                        title: course.title,
+                        type: 'video',
+                        video_provider: course.detail_media_provider || 'local',
+                        external_url: course.detail_media_url,
+                        sort_order: 1,
+                        created_at: '',
+                        updated_at: '',
+                      }}
+                      autoPlay={false}
+                    />
+                  )
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-indigo-950 to-slate-900 text-indigo-500">
-                    <Video className="w-10 h-10 opacity-60 mb-1" />
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Vista Previa del Curso</span>
+                  <div 
+                    onClick={handleContinueCourse}
+                    className="relative rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-700/80 h-48 bg-slate-100 dark:bg-slate-950 cursor-pointer group shadow-md"
+                  >
+                    {course.main_image ? (
+                      <img src={course.main_image} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-indigo-950 to-slate-900 text-indigo-500">
+                        <Video className="w-10 h-10 opacity-60 mb-1" />
+                        <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Vista Previa del Curso</span>
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/20 transition-colors">
+                      <div className="w-14 h-14 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-2xl">
+                        <Play className="w-7 h-7 fill-white translate-x-0.5" />
+                      </div>
+                    </div>
                   </div>
                 )}
-
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/20 transition-colors">
-                  <div className="w-14 h-14 rounded-full bg-white/30 backdrop-blur-md border border-white/40 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-2xl">
-                    <Play className="w-7 h-7 fill-white translate-x-0.5" />
-                  </div>
-                </div>
               </div>
 
               {/* Botones de Acción CTA */}
@@ -653,7 +699,7 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
 
             {/* 2. CONTENIDO TEÓRICO / EXPLICACIÓN DE LA SECCIÓN */}
             <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div>
                   <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-[#00e699] tracking-widest">
                     Contenido Teórico / Explicación de la Sección
@@ -662,6 +708,22 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                     {activeSection?.title || course.title}
                   </h3>
                 </div>
+
+                {isActiveSectionCompleted ? (
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs border border-emerald-200 dark:border-emerald-500/30 shrink-0">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <span>Sección Completada</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleCompleteSection(activeSection)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition-all shadow-md shadow-emerald-600/20 active:scale-95 shrink-0"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Marcar Sección como Completada</span>
+                  </button>
+                )}
               </div>
 
               {(activeSection?.content || activeSection?.description) ? (
