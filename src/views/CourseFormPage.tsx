@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { 
   ArrowLeft, BookOpen, Save, ImagePlus, Upload, Trash2, Loader2, Sparkles, CheckCircle2,
   GripVertical, Plus, Video, PlayCircle, FileText, AlignLeft, Bold, Italic, Underline, List, ListOrdered,
-  Quote, Code, Eye, Edit2, MoveUp, MoveDown, Layers, Check, LayoutGrid, AlertCircle, File, FolderPlus, Folder, FolderOpen, Clock 
+  Quote, Code, Eye, Edit2, MoveUp, MoveDown, Layers, Check, LayoutGrid, AlertCircle, File, FolderPlus, Folder, FolderOpen, Clock,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import courseService from '../services/courseService';
 import { Course, CourseModule, CourseSection, CourseSectionMaterial } from '../types/course';
@@ -76,6 +77,9 @@ export const CourseFormPage: React.FC = () => {
   const [savingSection, setSavingSection] = useState(false);
   const [deletingSecId, setDeletingSecId] = useState<number | null>(null);
 
+  // Estado para el Collapse del Contenido Teórico Detallado (Frontend Only)
+  const [isContentExpanded, setIsContentExpanded] = useState(true);
+
   // Formulario Inline para Material de Sección
   const [activeMaterialSecId, setActiveMaterialSecId] = useState<number | null>(null);
   const [editingMaterial, setEditingMaterial] = useState<CourseSectionMaterial | null>(null);
@@ -120,6 +124,20 @@ export const CourseFormPage: React.FC = () => {
       router.push('/courses');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Refresco localizado de solo módulos y secciones (SIN recargar la página completa ni estado general)
+  const refreshSectionsOnly = async () => {
+    if (!courseId) return;
+    try {
+      const res = await courseService.getCourse(courseId);
+      if (res.status === 'success' && res.data) {
+        setModules(res.data.modules || []);
+        setSections(res.data.sections || []);
+      }
+    } catch (err: any) {
+      console.error('Error al refrescar secciones:', err);
     }
   };
 
@@ -251,7 +269,7 @@ export const CourseFormPage: React.FC = () => {
         toast.success('Módulo creado exitosamente');
       }
       resetModuleForm();
-      fetchCourseDetail();
+      await refreshSectionsOnly();
     } catch (err: any) {
       toast.error('Error al guardar el módulo');
     } finally {
@@ -265,7 +283,7 @@ export const CourseFormPage: React.FC = () => {
     try {
       await courseService.deleteModule(moduleId);
       toast.success('Módulo eliminado');
-      fetchCourseDetail();
+      await refreshSectionsOnly();
     } catch (err: any) {
       toast.error('Error al eliminar el módulo');
     } finally {
@@ -403,7 +421,7 @@ export const CourseFormPage: React.FC = () => {
       }
 
       resetSectionForm();
-      fetchCourseDetail();
+      await refreshSectionsOnly();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al guardar la sección');
     } finally {
@@ -416,7 +434,7 @@ export const CourseFormPage: React.FC = () => {
     try {
       await courseService.deleteSection(id);
       toast.success('Sección eliminada');
-      fetchCourseDetail();
+      await refreshSectionsOnly();
     } catch (err) {
       toast.error('Error al eliminar la sección');
     } finally {
@@ -469,7 +487,7 @@ export const CourseFormPage: React.FC = () => {
         toast.success('Orden de secciones actualizado');
       } catch (err) {
         toast.error('Error al reordenar');
-        fetchCourseDetail();
+        await refreshSectionsOnly();
       }
     }
   };
@@ -521,7 +539,7 @@ export const CourseFormPage: React.FC = () => {
         toast.success('Material adjuntado a la sección');
       }
       resetMaterialForm();
-      fetchCourseDetail();
+      await refreshSectionsOnly();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al guardar el material');
     } finally {
@@ -534,7 +552,7 @@ export const CourseFormPage: React.FC = () => {
     try {
       await courseService.deleteMaterial(id);
       toast.success('Material eliminado');
-      fetchCourseDetail();
+      await refreshSectionsOnly();
     } catch (err) {
       toast.error('Error al eliminar el material');
     } finally {
@@ -617,20 +635,32 @@ export const CourseFormPage: React.FC = () => {
               />
             </div>
 
-            {/* Content (Rich Text Editor with ReactQuill) */}
+            {/* Content (Rich Text Editor with ReactQuill) - REQUERIMIENTO 2: COMPORTAMIENTO COLLAPSE */}
             <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-              <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                Contenido Teórico Detallado (Texto Enriquecido General)
-              </label>
-              <div className="bg-white dark:bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
-                <ReactQuill
-                  theme="snow"
-                  value={content}
-                  onChange={setContent}
-                  placeholder="Escribe el contenido teórico, instrucciones o temario del curso..."
-                  className="min-h-[220px] text-slate-900 dark:text-white"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsContentExpanded(!isContentExpanded)}
+                className="w-full flex items-center justify-between text-left group focus:outline-none"
+              >
+                <span className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider group-hover:text-blue-600 transition-colors">
+                  Contenido Teórico Detallado (Texto Enriquecido General)
+                </span>
+                <span className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:text-blue-600 transition-colors">
+                  {isContentExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </span>
+              </button>
+
+              {isContentExpanded && (
+                <div className="bg-white dark:bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in duration-200">
+                  <ReactQuill
+                    theme="snow"
+                    value={content}
+                    onChange={setContent}
+                    placeholder="Escribe el contenido teórico, instrucciones o temario del curso..."
+                    className="min-h-[220px] text-slate-900 dark:text-white"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -1139,6 +1169,7 @@ export const CourseFormPage: React.FC = () => {
 
                   {modules.map((mod) => {
                     const modSections = sections.filter(s => s.course_module_id === mod.id);
+                    const isFormForThisModule = isAddingSection && targetModuleId === mod.id;
 
                     return (
                       <div key={mod.id} className="space-y-4 relative">
@@ -1185,9 +1216,11 @@ export const CourseFormPage: React.FC = () => {
 
                         {/* Secciones del Módulo */}
                         {modSections.length === 0 ? (
-                          <div className="py-2 pl-11 text-xs font-medium text-slate-400 italic">
-                            Este módulo no tiene secciones aún. Haz clic en "+ Sección" para agregar una.
-                          </div>
+                          !isFormForThisModule && (
+                            <div className="py-2 pl-11 text-xs font-medium text-slate-400 italic">
+                              Este módulo no tiene secciones aún. Haz clic en "+ Sección" para agregar una.
+                            </div>
+                          )
                         ) : (
                           <div className="space-y-0.5 pt-0.5">
                             {modSections.map((section) => {
@@ -1247,6 +1280,283 @@ export const CourseFormPage: React.FC = () => {
                                 </div>
                               );
                             })}
+                          </div>
+                        )}
+
+                        {/* REQUERIMIENTO 3: FORMULARIO UBICADO INMEDIATAMENTE DEBAJO DE LA ÚLTIMA SECCIÓN DEL MÓDULO */}
+                        {isFormForThisModule && (
+                          <div className="pl-11 pt-1">
+                            <div className="bg-slate-50 dark:bg-slate-950 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in shadow-xs">
+                              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                                <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                                  {editingSection ? 'Editar Sección' : 'Agregar Nueva Sección'}
+                                </h3>
+                                <button
+                                  type="button"
+                                  onClick={resetSectionForm}
+                                  className="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                      Módulo Principal (Seleccionar)
+                                    </label>
+                                    <select
+                                      value={targetModuleId || ''}
+                                      onChange={(e) => {
+                                        const val = e.target.value ? Number(e.target.value) : null;
+                                        setTargetModuleId(val);
+                                        const selectedMod = modules.find(m => m.id === val);
+                                        if (selectedMod) setSecGroupName(selectedMod.title);
+                                      }}
+                                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                                    >
+                                      <option value="">-- Sin Módulo / Sección General --</option>
+                                      {modules.map((m) => (
+                                        <option key={m.id} value={m.id}>
+                                          {m.title}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Título de la Sección *</label>
+                                    <input
+                                      type="text"
+                                      value={secTitle}
+                                      onChange={(e) => setSecTitle(e.target.value)}
+                                      placeholder="Ej. Lección 1.1: Políticas de Uso y Bienvenida"
+                                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                                      required
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Portada e Imagen de la Sección + Duración */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                      Portada de la Sección (Miniatura)
+                                    </label>
+                                    <div className="flex items-center gap-3">
+                                      {secCoverPreview ? (
+                                        <img src={secCoverPreview} alt="Portada" className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0" />
+                                      ) : (
+                                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 shrink-0">
+                                          <ImagePlus className="w-5 h-5" />
+                                        </div>
+                                      )}
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => e.target.files?.[0] && handleSecCoverChange(e.target.files[0])}
+                                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Formato Principal *</label>
+                                    <select
+                                      value={secPrimaryType}
+                                      onChange={(e) => setSecPrimaryType(e.target.value as any)}
+                                      className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white"
+                                    >
+                                      <option value="video">Video (Local, YouTube, Drive)</option>
+                                      <option value="pdf">Documento PDF</option>
+                                      <option value="file">Archivo General</option>
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                      Duración del Video (ej. 12:45 min)
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={secDuration}
+                                      onChange={(e) => setSecDuration(e.target.value)}
+                                      placeholder="Ej. 12:45 min o 08:30"
+                                      className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Subida del Archivo Principal / Origen del Video */}
+                                <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <label className="block text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                                      {secPrimaryType === 'video' ? 'Origen del Video de la Sección' : (editingSection ? 'Reemplazar Archivo Principal' : 'Subir Archivo Principal (Opcional)')}
+                                    </label>
+                                    {secPrimaryType === 'video' && (
+                                      <span className="text-[10px] font-bold text-emerald-600 dark:text-[#00e699]">
+                                        3 Orígenes Disponibles
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {secPrimaryType === 'video' && (
+                                    <div className="grid grid-cols-3 gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => setSecVideoProvider('local')}
+                                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                          secVideoProvider === 'local'
+                                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-[#00e699]'
+                                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                                        }`}
+                                      >
+                                        <Video className="w-3.5 h-3.5" />
+                                        <span>Video Local</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => setSecVideoProvider('youtube')}
+                                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                          secVideoProvider === 'youtube'
+                                            ? 'bg-rose-500/10 border-rose-500 text-rose-600 dark:text-rose-400'
+                                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                                        }`}
+                                      >
+                                        <PlayCircle className="w-3.5 h-3.5" />
+                                        <span>YouTube</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => setSecVideoProvider('drive')}
+                                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                          secVideoProvider === 'drive'
+                                            ? 'bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400'
+                                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                                        }`}
+                                      >
+                                        <FolderOpen className="w-3.5 h-3.5" />
+                                        <span>Google Drive</span>
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {secPrimaryType === 'video' && secVideoProvider !== 'local' ? (
+                                    <div className="space-y-1.5 pt-1">
+                                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                        URL del Video ({secVideoProvider === 'youtube' ? 'YouTube' : 'Google Drive'}) *
+                                      </label>
+                                      <input
+                                        type="url"
+                                        value={secExternalUrl}
+                                        onChange={(e) => setSecExternalUrl(e.target.value)}
+                                        placeholder={
+                                          secVideoProvider === 'youtube'
+                                            ? 'Ej. https://www.youtube.com/watch?v=XXXXXXXX o https://youtu.be/XXXXXXXX'
+                                            : 'Ej. https://drive.google.com/file/d/XXXXXXXX/view'
+                                        }
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                      />
+                                      {secVideoProvider === 'drive' && (
+                                        <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                          * Recuerda otorgar permisos de visibilidad pública ("Cualquier persona con el enlace") en Google Drive.
+                                        </p>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+                                        Selecciona tu archivo {secPrimaryType === 'video' ? 'video local (MP4, WebM, MOV)' : 'documento'} para esta lección.
+                                      </p>
+                                      <input
+                                        type="file"
+                                        accept={secPrimaryType === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : secPrimaryType === 'pdf' ? 'application/pdf,.pdf' : '*/*'}
+                                        onChange={(e) => setSecPrimaryFile(e.target.files?.[0] || null)}
+                                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
+                                      />
+                                      {secPrimaryFile && (
+                                        <p className="text-xs font-bold text-emerald-600 dark:text-[#00e699] mt-1">
+                                          ✓ Archivo seleccionado: {secPrimaryFile.name} ({(secPrimaryFile.size / (1024 * 1024)).toFixed(2)} MB)
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Editor de Texto Enriquecido para la Sección */}
+                                <div className="space-y-2 pt-1">
+                                  <div className="flex items-center justify-between">
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                      Contenido de Texto Enriquecido de la Sección
+                                    </label>
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowSecPreview(!showSecPreview)}
+                                      className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-[#00e699] hover:underline"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                      <span>{showSecPreview ? 'Editar HTML' : 'Ver Vista Previa'}</span>
+                                    </button>
+                                  </div>
+
+                                  {!showSecPreview && (
+                                    <div className="flex flex-wrap items-center gap-1.5 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+                                      <button type="button" onClick={() => insertFormatTag('<b>', '</b>')} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300" title="Negrita"><Bold className="w-4 h-4" /></button>
+                                      <button type="button" onClick={() => insertFormatTag('<i>', '</i>')} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300" title="Cursiva"><Italic className="w-4 h-4" /></button>
+                                      <button type="button" onClick={() => insertFormatTag('<u>', '</u>')} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300" title="Subrayado"><Underline className="w-4 h-4" /></button>
+                                      <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+                                      <button type="button" onClick={() => insertFormatTag('<h2>', '</h2>')} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs">H2</button>
+                                      <button type="button" onClick={() => insertFormatTag('<h3>', '</h3>')} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs">H3</button>
+                                      <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+                                      <button type="button" onClick={() => insertFormatTag('<ul className="list-disc pl-5 space-y-1">\n  <li>', '</li>\n</ul>')} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300" title="Lista con viñetas"><List className="w-4 h-4" /></button>
+                                      <button type="button" onClick={() => insertFormatTag('<ol className="list-decimal pl-5 space-y-1">\n  <li>', '</li>\n</ol>')} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300" title="Lista numerada"><ListOrdered className="w-4 h-4" /></button>
+                                      <button type="button" onClick={() => insertFormatTag('<blockquote className="border-l-4 border-emerald-500 pl-4 py-1 italic text-slate-600 dark:text-slate-400">\n  ', '\n</blockquote>')} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300" title="Cita"><Quote className="w-4 h-4" /></button>
+                                      <button type="button" onClick={() => insertFormatTag('<pre className="bg-slate-900 text-emerald-400 p-3 rounded-xl overflow-x-auto text-xs font-mono">\n  <code>', '</code>\n</pre>')} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300" title="Código"><Code className="w-4 h-4" /></button>
+                                    </div>
+                                  )}
+
+                                  {showSecPreview ? (
+                                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[140px] text-sm text-slate-800 dark:text-slate-200 prose dark:prose-invert max-w-none">
+                                      {secContent.trim() ? (
+                                        <div dangerouslySetInnerHTML={{ __html: secContent }} />
+                                      ) : (
+                                        <p className="text-xs text-slate-400 italic">Sin contenido enriquecido cargado para la sección.</p>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <textarea
+                                      rows={5}
+                                      value={secContent}
+                                      onChange={(e) => setSecContent(e.target.value)}
+                                      placeholder="Escribe la explicación teórica, lección o contenido HTML de esta sección..."
+                                      className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-mono text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 outline-none leading-relaxed"
+                                    />
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                  type="button"
+                                  onClick={resetSectionForm}
+                                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleSaveSection}
+                                  disabled={savingSection}
+                                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-500 transition-all shadow-md shadow-emerald-600/20"
+                                >
+                                  {savingSection ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                  <span>{editingSection ? 'Guardar Sección' : 'Agregar Sección'}</span>
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
