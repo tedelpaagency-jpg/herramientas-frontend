@@ -17,7 +17,7 @@ import {
   Video 
 } from 'lucide-react';
 import { loginMediaService } from '../services/loginMediaService';
-import { PublicLoginVideoItem, PublicLoginLogoItem, LoginTexts } from '../types/loginMedia';
+import { PublicLoginVideoItem, PublicLoginLogoItem, LoginTexts, PublicWhiteLabelInfo } from '../types/loginMedia';
 import { normalizeFileUrl } from '../services/apiClient';
 
 const isMp4Video = (url?: string | null): boolean => {
@@ -131,7 +131,8 @@ export const LoginPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Estados dinámicos de videos, logos y textos configurables
+  // Estados dinámicos de videos, logos y textos configurables por Marca Blanca / Dominio
+  const [dynamicWhiteLabel, setDynamicWhiteLabel] = useState<PublicWhiteLabelInfo | null>(null);
   const [dynamicVideos, setDynamicVideos] = useState<PublicLoginVideoItem[]>([]);
   const [dynamicLogos, setDynamicLogos] = useState<PublicLoginLogoItem[]>([]);
   const [dynamicTexts, setDynamicTexts] = useState<LoginTexts | null>(null);
@@ -139,18 +140,22 @@ export const LoginPage: React.FC = () => {
   const { login, currentWhiteLabel, currentAgency, user } = useAuth();
   const router = useRouter();
 
-  const activeWl = currentWhiteLabel || (user as any)?.white_label;
+  const activeWl = dynamicWhiteLabel || currentWhiteLabel || (user as any)?.white_label;
   const brandName = activeWl?.name || currentAgency?.name || 'SANTUN';
-  const brandLogo = activeWl?.logo || currentAgency?.logo || null;
-  const customLoginBg = activeWl?.login_background || currentAgency?.login_background || (typeof window !== 'undefined' ? localStorage.getItem('santun_login_background') : null);
+  const brandLogoRaw = activeWl?.logo || activeWl?.logo_2 || activeWl?.logo_icon || currentAgency?.logo || null;
+  const brandLogo = brandLogoRaw ? normalizeFileUrl(brandLogoRaw) : null;
+  const customLoginBg = activeWl?.login_background ? normalizeFileUrl(activeWl.login_background) : (currentAgency?.login_background || (typeof window !== 'undefined' ? localStorage.getItem('santun_login_background') : null));
 
-  // Carga de configuración pública del login con fallback seguro
+  // Carga de configuración pública del login con resolución por dominio
   useEffect(() => {
     let isMounted = true;
     const loadConfiguration = async () => {
       try {
         const config = await loginMediaService.getPublicConfiguration();
         if (isMounted && config) {
+          if (config.white_label) {
+            setDynamicWhiteLabel(config.white_label);
+          }
           if (config.texts) {
             setDynamicTexts(config.texts);
           }

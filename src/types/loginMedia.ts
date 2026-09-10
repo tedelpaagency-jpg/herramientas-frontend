@@ -50,7 +50,22 @@ export interface PublicLoginLogoItem {
   sort_order: number;
 }
 
+export interface PublicWhiteLabelInfo {
+  id: number;
+  name: string;
+  slug?: string | null;
+  logo?: string | null;
+  logo_2?: string | null;
+  logo_icon?: string | null;
+  login_background?: string | null;
+  primary_color?: string | null;
+  secondary_color?: string | null;
+  button_color?: string | null;
+  custom_domain?: string | null;
+}
+
 export interface PublicLoginConfiguration {
+  white_label?: PublicWhiteLabelInfo | null;
   texts?: LoginTexts;
   videos: PublicLoginVideoItem[];
   logos: PublicLoginLogoItem[];

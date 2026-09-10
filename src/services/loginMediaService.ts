@@ -3,13 +3,17 @@ import { LoginVideo, LoginLogo, PublicLoginConfiguration, LoginTexts } from '../
 
 export const loginMediaService = {
   // === CONFIGURACIÓN PÚBLICA (Consumida por /login) ===
-  getPublicConfiguration: async (): Promise<PublicLoginConfiguration> => {
+  getPublicConfiguration: async (domain?: string): Promise<PublicLoginConfiguration> => {
     try {
-      const res = await apiClient.get('/v1/login/configuration');
+      const currentDomain = domain || (typeof window !== 'undefined' ? window.location.hostname : '');
+      const params = currentDomain ? { domain: currentDomain } : {};
+      const res = await apiClient.get('/v1/login/configuration', { params });
       return res.data || { videos: [], logos: [] };
     } catch {
       try {
-        const res = await apiClient.get('/login/configuration');
+        const currentDomain = domain || (typeof window !== 'undefined' ? window.location.hostname : '');
+        const params = currentDomain ? { domain: currentDomain } : {};
+        const res = await apiClient.get('/login/configuration', { params });
         return res.data || { videos: [], logos: [] };
       } catch (err) {
         console.warn('No se pudo obtener la configuración pública del login desde el backend:', err);
