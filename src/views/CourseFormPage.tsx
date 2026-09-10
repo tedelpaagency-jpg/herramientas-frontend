@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, BookOpen, Save, ImagePlus, Upload, Trash2, Loader2, Sparkles, CheckCircle2,
-  GripVertical, Plus, Video, FileText, AlignLeft, Bold, Italic, Underline, List, ListOrdered,
+  GripVertical, Plus, Video, PlayCircle, FileText, AlignLeft, Bold, Italic, Underline, List, ListOrdered,
   Quote, Code, Eye, Edit2, MoveUp, MoveDown, Layers, Check, LayoutGrid, AlertCircle, File, FolderPlus, Folder, FolderOpen, Clock
 } from 'lucide-react';
 import courseService from '../services/courseService';

@@ -127,8 +127,15 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
 
   const activeSection = sections.find(s => s.id === activeSectionId) || sections[0];
   const sectionMaterials = activeSection?.materials || [];
-  // Seleccionar automáticamente el material principal (Video por defecto si existe, o el primer archivo)
-  const activeMaterial = sectionMaterials.find(m => m.id === activeMaterialId) || sectionMaterials.find(m => m.type === 'video') || sectionMaterials[0];
+
+  // Video propio de la sección (pertenece al contenido directo de la sección, no a los recursos)
+  const sectionVideoMaterial = sectionMaterials.find(m => m.type === 'video');
+
+  // Recursos adicionales de la sección (PDFs, documentos, archivos) excluyendo el video propio de la sección
+  const sectionResources = sectionMaterials.filter(m => m.id !== sectionVideoMaterial?.id);
+
+  // Recurso activo seleccionado dentro de los recursos de la sección
+  const activeResource = sectionResources.find(m => m.id === activeMaterialId) || sectionResources[0];
 
   const getMaterialIcon = (resType: 'video' | 'pdf' | 'file', className = "w-4 h-4") => {
     switch (resType) {
@@ -488,85 +495,53 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
           {/* Visualizador Principal de la Sección Activa */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Reproductor / Visor Principal de la Sección */}
-            <div className="bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex flex-col min-h-[400px]">
-              {activeMaterial ? (
+            {/* 1. VIDEO PRINCIPAL DE LA SECCIÓN (CONTENIDO DIRECTO DE LA SECCIÓN) */}
+            <div className="bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex flex-col min-h-[360px]">
+              {sectionVideoMaterial ? (
                 <div className="relative flex-1 flex flex-col">
-                  {activeMaterial.type === 'video' ? (
-                    <SectionVideo material={activeMaterial} />
-                  ) : activeMaterial.type === 'pdf' ? (
-                    <div className="p-6 bg-slate-900 text-white space-y-4 flex-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-8 h-8 text-rose-500" />
-                          <div>
-                            <h4 className="font-extrabold text-base">{activeMaterial.title}</h4>
-                            <p className="text-xs text-slate-400">{activeMaterial.file_name}</p>
-                          </div>
-                        </div>
-                        <a
-                          href={courseService.getMaterialStreamUrl(activeMaterial.id, true)}
-                          download
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors shadow-md shadow-blue-600/20"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span>Descargar PDF</span>
-                        </a>
-                      </div>
-                      <div className="w-full h-[550px] bg-white rounded-2xl overflow-hidden border border-slate-800">
-                        <iframe
-                          src={courseService.getMaterialStreamUrl(activeMaterial.id)}
-                          className="w-full h-full"
-                          title={activeMaterial.title}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    /* Tipo 'file' / Documento general */
-                    <div className="p-8 bg-slate-900 text-white space-y-4 flex-1 flex flex-col items-center justify-center text-center">
-                      <File className="w-12 h-12 text-blue-400" />
-                      <div>
-                        <h4 className="font-extrabold text-lg">{activeMaterial.title}</h4>
-                        <p className="text-xs text-slate-400 mt-1">{activeMaterial.file_name}</p>
-                      </div>
-                      <a
-                        href={courseService.getMaterialStreamUrl(activeMaterial.id, true)}
-                        download
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md"
-                      >
-                        <Download className="w-4 h-4" />
-                        <span>Descargar Archivo Adjunto</span>
-                      </a>
-                    </div>
-                  )}
-
-                  {/* Barra de Estado del Reproductor */}
-                  <div className="p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
+                  <SectionVideo material={sectionVideoMaterial} />
+                  <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
                     <span className="font-bold flex items-center gap-2">
-                      {getMaterialIcon(activeMaterial.type, "w-4 h-4 text-emerald-400")}
-                      <span>Video / Material Principal: {activeMaterial.title}</span>
+                      <Video className="w-4 h-4 text-emerald-400" />
+                      <span>Video de la Sección: {sectionVideoMaterial.title}</span>
                     </span>
-                    {activeMaterial.type !== 'video' && (
-                      <a
-                        href={courseService.getMaterialStreamUrl(activeMaterial.id, true)}
-                        download
-                        className="hover:text-blue-400 font-semibold flex items-center gap-1"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Descargar</span>
-                      </a>
-                    )}
                   </div>
                 </div>
               ) : (
-                <div className="aspect-video bg-slate-900 flex flex-col items-center justify-center text-slate-500 space-y-2 p-8 text-center">
+                <div className="aspect-video bg-slate-900 flex flex-col items-center justify-center text-slate-500 space-y-2 p-8 text-center rounded-3xl">
                   <BookOpen className="w-12 h-12 text-slate-700" />
-                  <p className="text-sm font-bold">Esta sección contiene solo lección escrita o no tiene video principal.</p>
+                  <p className="text-sm font-bold text-slate-300">Esta sección no contiene video propio.</p>
+                  <p className="text-xs text-slate-500">Revisa la lección escrita o consulta los recursos adjuntos abajo.</p>
                 </div>
               )}
             </div>
 
-            {/* CONTENEDOR ESTILO CARPETA: RECURSOS Y MATERIALES DE LA SECCIÓN (Fondo Blanco) */}
+            {/* 2. CONTENIDO TEÓRICO / EXPLICACIÓN DE LA SECCIÓN */}
+            <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-[#00e699] tracking-widest">
+                    Contenido Teórico / Explicación de la Sección
+                  </span>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                    {activeSection?.title || course.title}
+                  </h3>
+                </div>
+              </div>
+
+              {(activeSection?.content || activeSection?.description) ? (
+                <div 
+                  className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed font-medium prose dark:prose-invert max-w-none pt-1"
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeSection.content || activeSection.description || '') }}
+                />
+              ) : (
+                <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-medium italic">
+                  Sin notas teóricas ni descripción adicional para esta sección.
+                </p>
+              )}
+            </div>
+
+            {/* 3. CARPETA DE RECURSOS DE LA SECCIÓN (ARCHIVOS ADICIONALES EXCLUYENDO EL VIDEO PROPIO) */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 relative shadow-sm">
               {/* Tab/Solapa de la Carpeta */}
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -576,57 +551,55 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                   </div>
                   <div>
                     <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                      <span>Carpeta de Recursos: {activeSection?.title}</span>
+                      <span>Recursos de la Sección: {activeSection?.title}</span>
                     </h4>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {sectionMaterials.length} archivo(s) almacenado(s) en esta carpeta
+                      {sectionResources.length} recurso(s) adicional(es) en esta sección
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Grilla de Archivos con Iconos dentro de la Carpeta */}
-              {sectionMaterials.length === 0 ? (
+              {/* Grilla de Recursos */}
+              {sectionResources.length === 0 ? (
                 <div className="text-center py-6 text-xs text-slate-400 font-medium italic">
-                  Esta sección no posee archivos ni documentos adjuntos en su carpeta.
+                  Esta sección no posee recursos ni documentos adicionales en su carpeta.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  {sectionMaterials.map((mat) => {
-                    const isSelected = activeMaterial?.id === mat.id;
-                    const isVideo = mat.type === 'video';
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {sectionResources.map((mat) => {
+                      const isSelected = activeResource?.id === mat.id;
 
-                    return (
-                      <div
-                        key={mat.id}
-                        onClick={() => setActiveMaterialId(mat.id)}
-                        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 group ${
-                          isSelected
-                            ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-900 dark:text-emerald-100 shadow-sm ring-2 ring-emerald-500/20'
-                            : 'bg-slate-50 dark:bg-slate-900/90 border-slate-200/80 dark:border-slate-800 hover:border-emerald-400/60'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-                            isVideo ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400' :
-                            mat.type === 'pdf' ? 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400' :
-                            'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
-                          }`}>
-                            {getMaterialIcon(mat.type, "w-5 h-5")}
+                      return (
+                        <div
+                          key={mat.id}
+                          onClick={() => setActiveMaterialId(mat.id)}
+                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 group ${
+                            isSelected
+                              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-900 dark:text-emerald-100 shadow-sm ring-2 ring-emerald-500/20'
+                              : 'bg-slate-50 dark:bg-slate-900/90 border-slate-200/80 dark:border-slate-800 hover:border-emerald-400/60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+                              mat.type === 'pdf' ? 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400' :
+                              'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+                            }`}>
+                              {getMaterialIcon(mat.type, "w-5 h-5")}
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-xs font-black truncate text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                {mat.title}
+                              </p>
+                              <p className="text-[10px] text-slate-400 uppercase tracking-wider truncate">
+                                {mat.file_name || mat.type}
+                              </p>
+                            </div>
                           </div>
 
-                          <div className="min-w-0">
-                            <p className="text-xs font-black truncate text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                              {mat.title}
-                            </p>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wider truncate">
-                              {mat.file_name || mat.type}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 flex items-center gap-1.5">
-                          {!isVideo ? (
+                          <div className="shrink-0 flex items-center gap-1.5">
                             <a
                               href={courseService.getMaterialStreamUrl(mat.id, true)}
                               download
@@ -636,41 +609,39 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                             >
                               <Download className="w-4 h-4" />
                             </a>
-                          ) : (
-                            <span title="Video Protegido" className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400">
-                              <Play className="w-4 h-4" />
-                            </span>
-                          )}
+                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Previsualizador de Recurso Seleccionado */}
+                  {activeResource && activeResource.type === 'pdf' && (
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-rose-500" />
+                          <span>Vista Previa del Documento: {activeResource.title}</span>
+                        </span>
+                        <a
+                          href={courseService.getMaterialStreamUrl(activeResource.id, true)}
+                          download
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Descargar PDF</span>
+                        </a>
                       </div>
-                    );
-                  })}
+                      <div className="w-full h-[500px] bg-white rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner">
+                        <iframe
+                          src={courseService.getMaterialStreamUrl(activeResource.id)}
+                          className="w-full h-full"
+                          title={activeResource.title}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-
-            {/* Contenido Teórico (Texto Enriquecido) de la Sección Activa */}
-            <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-[#00e699] tracking-widest">
-                    Explicación Teórica & Lectura de la Sección
-                  </span>
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                    {activeSection?.title || course.title}
-                  </h3>
-                </div>
-              </div>
-
-              {activeSection?.content ? (
-                <div 
-                  className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed font-medium prose dark:prose-invert max-w-none pt-1"
-                  dangerouslySetInnerHTML={{ __html: activeSection.content }}
-                />
-              ) : (
-                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed font-medium">
-                  {course.description || 'Sin notas teóricas adicionales para esta sección.'}
-                </p>
               )}
             </div>
           </div>
