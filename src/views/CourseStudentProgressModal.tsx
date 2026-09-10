@@ -154,7 +154,7 @@ export const CourseStudentProgressModal: React.FC<CourseStudentProgressModalProp
                     {selectedStudent.progress_percentage}%
                   </span>
                   <span className="text-[11px] text-slate-400 font-bold">
-                    {selectedStudent.completed_materials_count ?? selectedStudent.completed_count} / {selectedStudent.total_materials_count ?? selectedStudent.total_count} Materiales
+                    {selectedStudent.completed_sections_count ?? selectedStudent.completed_materials_count ?? selectedStudent.completed_count} / {selectedStudent.total_sections_count ?? selectedStudent.total_materials_count ?? selectedStudent.total_count} {(selectedStudent.total_sections_count ?? selectedStudent.total_count) === 1 ? 'Sección' : 'Secciones'}
                   </span>
                 </div>
 
@@ -373,7 +373,7 @@ export const CourseStudentProgressModal: React.FC<CourseStudentProgressModalProp
                           </div>
                         </td>
                         <td className="p-3.5 font-bold text-slate-700 dark:text-slate-300">
-                          {s.completed_materials_count ?? s.completed_count} / {s.total_materials_count ?? s.total_count}
+                          {s.completed_sections_count ?? s.completed_materials_count ?? s.completed_count} / {s.total_sections_count ?? s.total_materials_count ?? s.total_count} {(s.total_sections_count ?? s.total_count) === 1 ? 'Sección' : 'Secciones'}
                         </td>
                         <td className="p-3.5 pr-5 text-right">
                           <button

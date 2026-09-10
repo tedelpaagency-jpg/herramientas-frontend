@@ -203,6 +203,19 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
     (sectionMaterials.length === 0 || sectionMaterials.every(m => completedMaterialIds.has(m.id)))
   );
 
+  const completedSectionsCount = isCompleted
+    ? sections.length
+    : sections.filter(sec => {
+        const mats = sec.materials || [];
+        return mats.length > 0 ? mats.every(m => completedMaterialIds.has(m.id)) : false;
+      }).length;
+
+  const sectionProgressPercentage = isCompleted
+    ? 100
+    : sections.length > 0
+      ? Math.round((completedSectionsCount / sections.length) * 100)
+      : (assignment?.progress_percentage ?? 0);
+
   // Video propio de la sección (pertenece al contenido directo de la sección, no a los recursos)
   const sectionVideoMaterial = sectionMaterials.find(m => m.type === 'video');
 
@@ -531,20 +544,20 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                       Avance del Curso
                     </span>
                     <span className="text-sm font-black text-emerald-400">
-                      {assignment.progress_percentage ?? 0}%
+                      {sectionProgressPercentage}%
                     </span>
                   </div>
 
                   <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
                     <div
                       className="bg-gradient-to-r from-emerald-500 to-indigo-500 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${assignment.progress_percentage ?? 0}%` }}
+                      style={{ width: `${sectionProgressPercentage}%` }}
                     />
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-slate-400 font-bold pt-1">
                     <span>
-                      {assignment.completed_materials_count ?? 0} / {assignment.total_materials_count ?? 1} completados
+                      {completedSectionsCount} / {sections.length || 1} {sections.length === 1 ? 'Sección completada' : 'Secciones completadas'}
                     </span>
                     <span className="capitalize px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px]">
                       {assignment.status === 'completed' ? 'Completado' : assignment.status === 'in_progress' ? 'En Progreso' : 'No Iniciado'}
