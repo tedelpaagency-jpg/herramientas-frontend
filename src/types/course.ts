@@ -36,6 +36,7 @@ export interface CourseSection {
   title: string;
   cover_image?: string | null;
   content?: string | null;
+  description?: string | null;
   duration?: string | null;
   sort_order: number;
   materials?: CourseSectionMaterial[];
