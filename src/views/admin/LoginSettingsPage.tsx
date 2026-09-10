@@ -180,15 +180,6 @@ export const LoginSettingsPage: React.FC = () => {
   const handleToggleVideoStatus = async (video: LoginVideo) => {
     const targetState = !video.is_active;
 
-    // Si intenta activar y ya hay 3 activos
-    if (targetState) {
-      const activeCount = videos.filter(v => v.id !== video.id && v.is_active).length;
-      if (activeCount >= 3) {
-        toast.error('Ya existen 3 videos activos. Desactiva uno antes de activar este.');
-        return;
-      }
-    }
-
     try {
       const formData = new FormData();
       formData.append('is_active', targetState ? '1' : '0');
@@ -461,7 +452,7 @@ export const LoginSettingsPage: React.FC = () => {
 
   // Contadores y restricciones
   const activeVideosCount = videos.filter(v => v.is_active).length;
-  const canAddMoreVideos = videos.length < 3;
+  const canAddMoreVideos = true;
 
   return (
     <div className="space-y-10 pb-16 animate-fade-in text-slate-800 dark:text-slate-100">
@@ -489,7 +480,7 @@ export const LoginSettingsPage: React.FC = () => {
             </h1>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-            Administra los 3 videos MP4 del carrusel y la cinta inferior de logos que se visualizan en la pantalla de inicio de sesión.
+            Administra los videos MP4 dinámicos del carrusel y la cinta inferior de logos que se visualizan en la pantalla de inicio de sesión.
           </p>
         </div>
 
@@ -568,16 +559,12 @@ export const LoginSettingsPage: React.FC = () => {
                 <Video className="w-5 h-5 text-blue-600" />
                 <span>Videos del Carrusel</span>
               </h2>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                activeVideosCount === 3
-                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
-              }`}>
-                {videos.length} de 3 configurados ({activeVideosCount} activos)
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                {videos.length} configurados ({activeVideosCount} activos)
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Puedes configurar hasta exactamente 3 videos MP4 para el carrusel interactivo en perspectiva.
+              Puedes configurar múltiples videos MP4 para el carrusel interactivo en perspectiva.
             </p>
           </div>
 
@@ -589,22 +576,12 @@ export const LoginSettingsPage: React.FC = () => {
                 ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-95 shadow-blue-600/20'
                 : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-300 dark:border-slate-700'
             }`}
-            title={canAddMoreVideos ? 'Agregar nuevo video' : 'Límite de 3 videos alcanzado'}
+            title="Agregar nuevo video"
           >
             <Plus className="w-4 h-4" />
             <span>Agregar Video</span>
           </button>
         </div>
-
-        {/* Notificación informativa del límite */}
-        {!canAddMoreVideos && (
-          <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-center gap-3 text-amber-800 dark:text-amber-200 text-xs font-medium">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-            <span>
-              <strong>Límite de 3 videos alcanzado.</strong> El carrusel admite exactamente hasta 3 videos. Si deseas cambiar uno, puedes usar el botón <strong>Reemplazar</strong> o eliminar el existente.
-            </span>
-          </div>
-        )}
 
         {/* Estado de subida en progreso */}
         {isUploadingVideo && (
@@ -779,26 +756,24 @@ export const LoginSettingsPage: React.FC = () => {
           <span className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 block mb-2 text-center">
             Vista Previa de la Cinta Inferior
           </span>
-          <div className="flex flex-wrap justify-center items-center gap-6 md:gap-10 py-3 text-slate-700 dark:text-slate-300 font-bold text-xs opacity-75">
+          <div className="flex flex-wrap justify-center items-center gap-6 md:gap-10 py-3">
             {logos.filter(l => l.is_active).length === 0 ? (
-              <span className="italic text-slate-400">
+              <span className="italic text-slate-400 text-xs">
                 Usando fallback actual: SANTUN ECOSYSTEM • LEXVAULT • POS SALES • CRM PIPELINE
               </span>
             ) : (
-              logos.filter(l => l.is_active).map((logo, idx, arr) => (
-                <React.Fragment key={logo.id}>
-                  <div className="flex items-center gap-2">
-                    {logo.url && (
-                      <img
-                        src={normalizeFileUrl(logo.url)}
-                        alt={logo.name}
-                        className="h-5 max-w-[80px] object-contain"
-                      />
-                    )}
-                    <span>{logo.name}</span>
-                  </div>
-                  {idx < arr.length - 1 && <span className="text-slate-400">•</span>}
-                </React.Fragment>
+              logos.filter(l => l.is_active).map((logo) => (
+                <div key={logo.id} className="flex items-center justify-center transition-all opacity-100">
+                  {logo.url ? (
+                    <img
+                      src={normalizeFileUrl(logo.url)}
+                      alt={logo.name}
+                      className="h-8 max-h-8 max-w-[120px] object-contain"
+                    />
+                  ) : (
+                    <span className="text-slate-800 dark:text-slate-200 font-bold text-xs">{logo.name}</span>
+                  )}
+                </div>
               ))
             )}
           </div>

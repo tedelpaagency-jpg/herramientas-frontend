@@ -155,7 +155,7 @@ export const LoginPage: React.FC = () => {
             setDynamicTexts(config.texts);
           }
           if (Array.isArray(config.videos) && config.videos.length > 0) {
-            setDynamicVideos(config.videos.slice(0, 3));
+            setDynamicVideos(config.videos);
           }
           if (Array.isArray(config.logos) && config.logos.length > 0) {
             setDynamicLogos(config.logos);
@@ -170,7 +170,7 @@ export const LoginPage: React.FC = () => {
     return () => { isMounted = false; };
   }, []);
 
-  // Lista efectiva de videos (hasta 3 videos dinámicos si existen, de lo contrario fallback a rewardsData)
+  // Lista efectiva de videos dinámicos si existen, de lo contrario fallback a rewardsData
   const effectiveVideos = (dynamicVideos.length > 0)
     ? dynamicVideos.map((dv, idx) => ({
         id: dv.id,
@@ -443,32 +443,32 @@ export const LoginPage: React.FC = () => {
           {dynamicTexts?.footer_text || 'Con el respaldo de la arquitectura Laravel 12 & Next.js'}
         </p>
         
-        <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-10 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-700 cursor-default px-6 text-slate-700 dark:text-slate-300 font-bold text-sm">
+        <div className="flex flex-wrap justify-center items-center gap-8 sm:gap-12 md:gap-16 px-6">
           {dynamicLogos.length > 0 ? (
-            dynamicLogos.map((logo, idx, arr) => (
-              <React.Fragment key={logo.id}>
-                <span className="flex items-center gap-2">
-                  {logo.url && (
-                    <img
-                      src={normalizeFileUrl(logo.url)}
-                      alt={logo.name}
-                      className="h-5 sm:h-6 max-w-[90px] object-contain"
-                    />
-                  )}
-                  <span>{logo.name.toUpperCase()}</span>
-                </span>
-                {idx < arr.length - 1 && <span>•</span>}
-              </React.Fragment>
+            dynamicLogos.map((logo) => (
+              <div key={logo.id} className="flex items-center justify-center transition-all duration-300 opacity-100 hover:scale-105 cursor-default">
+                {logo.url ? (
+                  <img
+                    src={normalizeFileUrl(logo.url)}
+                    alt={logo.name}
+                    className="h-8 sm:h-10 max-h-10 max-w-[140px] object-contain drop-shadow-xs"
+                  />
+                ) : (
+                  <span className="text-slate-800 dark:text-slate-200 font-bold text-sm tracking-wider uppercase">
+                    {logo.name}
+                  </span>
+                )}
+              </div>
             ))
           ) : (
             <>
-              <span>{brandName.toUpperCase()} ECOSYSTEM</span>
-              <span>•</span>
-              <span>LEXVAULT</span>
-              <span>•</span>
-              <span>POS SALES</span>
-              <span>•</span>
-              <span>CRM PIPELINE</span>
+              <span className="text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm tracking-wider uppercase">{brandName.toUpperCase()} ECOSYSTEM</span>
+              <span className="text-slate-300 dark:text-slate-700 font-bold">•</span>
+              <span className="text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm tracking-wider uppercase">LEXVAULT</span>
+              <span className="text-slate-300 dark:text-slate-700 font-bold">•</span>
+              <span className="text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm tracking-wider uppercase">POS SALES</span>
+              <span className="text-slate-300 dark:text-slate-700 font-bold">•</span>
+              <span className="text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm tracking-wider uppercase">CRM PIPELINE</span>
             </>
           )}
         </div>
