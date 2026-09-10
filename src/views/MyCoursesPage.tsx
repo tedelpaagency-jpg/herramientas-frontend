@@ -41,9 +41,12 @@ export const MyCoursesPage: React.FC = () => {
     fetchMyCourses();
   }, [search, statusFilter, page]);
 
-  const getProgressPercentage = (status: string) => {
-    if (status === 'completed') return 100;
-    if (status === 'in_progress') return 50;
+  const getProgressPercentage = (assignment: MyCourseAssignment) => {
+    if (typeof assignment.progress_percentage === 'number') {
+      return assignment.progress_percentage;
+    }
+    if (assignment.status === 'completed') return 100;
+    if (assignment.status === 'in_progress') return 50;
     return 0;
   };
 
@@ -115,14 +118,10 @@ export const MyCoursesPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-12 gap-x-6 pt-10">
           {assignments.map((assignment) => {
             const course = assignment.course;
-            const progress = getProgressPercentage(assignment.status);
+            const progress = getProgressPercentage(assignment);
 
-            const totalModules = course.resources?.length || 15;
-            const completedModules = assignment.status === 'completed' 
-              ? totalModules 
-              : assignment.status === 'in_progress' 
-              ? Math.ceil(totalModules / 2) 
-              : 0;
+            const totalModules = assignment.total_materials_count || 1;
+            const completedModules = assignment.completed_materials_count || (assignment.status === 'completed' ? totalModules : 0);
 
             const courseImages = [
               course.main_image || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80',

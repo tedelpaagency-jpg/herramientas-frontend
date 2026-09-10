@@ -8,6 +8,8 @@ import courseService from '../services/courseService';
 export interface SectionVideoProps {
   material: CourseSectionMaterial | CourseResource;
   autoPlay?: boolean;
+  onEnded?: () => void;
+  isCompleted?: boolean;
 }
 
 /**
@@ -37,7 +39,7 @@ export function extractGoogleDriveId(url?: string | null): string | null {
   return null;
 }
 
-export const SectionVideo: React.FC<SectionVideoProps> = ({ material, autoPlay = true }) => {
+export const SectionVideo: React.FC<SectionVideoProps> = ({ material, autoPlay = true, onEnded, isCompleted = false }) => {
   const url = material.external_url || material.file_path || '';
   let provider = material.video_provider;
 
@@ -51,6 +53,25 @@ export const SectionVideo: React.FC<SectionVideoProps> = ({ material, autoPlay =
       provider = 'local';
     }
   }
+
+  // Escuchar evento de finalización para YouTube iframe API via postMessage
+  React.useEffect(() => {
+    if (provider !== 'youtube' || !onEnded) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data && (data.event === 'onStateChange' || data.info === 0) && data.info === 0) {
+          onEnded();
+        }
+      } catch (e) {
+        // Ignorar mensajes no sintácticamente JSON
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [provider, onEnded]);
 
   // 1. REPRODUCTOR YOUTUBE
   if (provider === 'youtube') {
@@ -80,14 +101,16 @@ export const SectionVideo: React.FC<SectionVideoProps> = ({ material, autoPlay =
     }
 
     return (
-      <div className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=${autoPlay ? 1 : 0}&rel=0`}
-          title={material.title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-          className="w-full h-full border-0 select-none"
-        />
+      <div className="space-y-3">
+        <div className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=${autoPlay ? 1 : 0}&rel=0&enablejsapi=1`}
+            title={material.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="w-full h-full border-0 select-none"
+          />
+        </div>
       </div>
     );
   }
@@ -129,6 +152,27 @@ export const SectionVideo: React.FC<SectionVideoProps> = ({ material, autoPlay =
             className="w-full h-full border-0 select-none"
           />
         </div>
+
+        {/* Botón de completado manual para Google Drive */}
+        {onEnded && (
+          <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
+            <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+              Al finalizar de ver el video en Google Drive, marca como visto:
+            </span>
+            <button
+              type="button"
+              onClick={onEnded}
+              disabled={isCompleted}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                isCompleted
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 cursor-default'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-95'
+              }`}
+            >
+              {isCompleted ? '✓ Material Completado' : 'Marcar como completado'}
+            </button>
+          </div>
+        )}
         
         {/* Banner informativo sobre permisos de visibilidad */}
         <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-xs font-semibold">
@@ -149,6 +193,7 @@ export const SectionVideo: React.FC<SectionVideoProps> = ({ material, autoPlay =
         autoPlay={autoPlay}
         controlsList="nodownload noremoteplayback"
         disablePictureInPicture
+        onEnded={onEnded}
         onContextMenu={(e) => e.preventDefault()}
         className="w-full h-full object-contain select-none"
         src={courseService.getMaterialStreamUrl(material.id)}

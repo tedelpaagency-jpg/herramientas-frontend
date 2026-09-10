@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { Course, CourseResource, CourseUserAssignment, MyCourseAssignment, PaginatedResponse } from '../types/course';
+import { Course, CourseResource, CourseUserAssignment, MyCourseAssignment, PaginatedResponse, StudentProgressItem, StudentDetailProgressResponse } from '../types/course';
 
 export const courseService = {
   // Admin: Listar cursos
@@ -48,6 +48,28 @@ export const courseService = {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 300000,
     });
+    return response.data;
+  },
+
+  // Admin: Subir recurso de detalle de curso (imagen o video)
+  uploadDetailMedia: async (courseId: number | string, data: { media_type: 'image' | 'video'; video_provider?: 'local' | 'youtube' | 'drive'; file?: File | null; external_url?: string }) => {
+    const formData = new FormData();
+    formData.append('course_id', courseId.toString());
+    formData.append('media_type', data.media_type);
+    if (data.video_provider) formData.append('video_provider', data.video_provider);
+    if (data.file) formData.append('file', data.file);
+    if (data.external_url) formData.append('external_url', data.external_url);
+
+    const response = await apiClient.post<{ status: string; message: string; data: Course }>('/v1/courses/upload-detail-media', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000,
+    });
+    return response.data;
+  },
+
+  // Admin: Eliminar recurso de detalle de curso (POST)
+  deleteDetailMedia: async (courseId: number | string) => {
+    const response = await apiClient.post<{ status: string; message: string; data: Course }>('/v1/courses/delete-detail-media', { course_id: courseId });
     return response.data;
   },
 
@@ -116,6 +138,18 @@ export const courseService = {
     return response.data;
   },
 
+  // Instructor/Admin: Obtener tabla de avance de alumnos de un curso
+  getStudentsProgress: async (courseId: number | string, params?: { search?: string; status?: string; page?: number; per_page?: number }) => {
+    const response = await apiClient.get<{ status: string; course: { id: number; title: string }; data: PaginatedResponse<StudentProgressItem> }>(`/v1/courses/${courseId}/students-progress`, { params });
+    return response.data;
+  },
+
+  // Instructor/Admin: Obtener desglose de progreso de un alumno específico
+  getStudentDetailProgress: async (courseId: number | string, userId: number | string) => {
+    const response = await apiClient.get<{ status: string; data: StudentDetailProgressResponse }>(`/v1/courses/${courseId}/students/${userId}/progress`);
+    return response.data;
+  },
+
   // Estudiante: Listar "Mis Cursos"
   getMyCourses: async (params?: { search?: string; status?: string; page?: number; per_page?: number }) => {
     const response = await apiClient.get<{ status: string; data: PaginatedResponse<MyCourseAssignment> }>('/v1/my-courses', { params });
@@ -124,7 +158,7 @@ export const courseService = {
 
   // Estudiante: Ver detalle de mi curso asignado
   getMyCourseDetail: async (courseId: number | string) => {
-    const response = await apiClient.get<{ status: string; data: { course: Course; assignment: CourseUserAssignment | null } }>(`/v1/my-courses/${courseId}`);
+    const response = await apiClient.get<{ status: string; data: { course: Course; assignment: CourseUserAssignment | null; progress?: any } }>(`/v1/my-courses/${courseId}`);
     return response.data;
   },
 
@@ -137,6 +171,22 @@ export const courseService = {
   // Estudiante: Completar curso (POST)
   completeCourse: async (courseId: number | string) => {
     const response = await apiClient.post<{ status: string; message: string; data: CourseUserAssignment }>(`/v1/my-courses/${courseId}/complete`);
+    return response.data;
+  },
+
+  // Estudiante: Marcar recurso/material como COMPLETADO (POST)
+  completeMaterial: async (materialIdOrCourseId: number | string, materialId?: number, resourceId?: number) => {
+    let payload: any = {};
+    if (typeof materialIdOrCourseId === 'number' && materialId === undefined && resourceId === undefined) {
+      payload = { material_id: materialIdOrCourseId };
+    } else {
+      payload = {
+        course_id: materialIdOrCourseId,
+        material_id: materialId,
+        resource_id: resourceId,
+      };
+    }
+    const response = await apiClient.post<{ status: string; message: string; data: any }>('/v1/my-courses/complete-material', payload);
     return response.data;
   },
 
@@ -176,7 +226,7 @@ export const courseService = {
   },
 
   // Admin: Crear sección de curso asociada a un módulo o curso (POST)
-  createSection: async (courseId: number | string, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'file'; file?: File; cover_image_file?: File }) => {
+  createSection: async (courseId: number | string, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'file'; file?: File; cover_image_file?: File; certificate_image_file?: File }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     if (data.course_module_id) formData.append('course_module_id', data.course_module_id.toString());
@@ -187,6 +237,7 @@ export const courseService = {
     if (data.primary_type) formData.append('primary_type', data.primary_type);
     if (data.file) formData.append('file', data.file);
     if (data.cover_image_file) formData.append('cover_image_file', data.cover_image_file);
+    if (data.certificate_image_file) formData.append('certificate_image_file', data.certificate_image_file);
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/${courseId}/sections`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -196,7 +247,7 @@ export const courseService = {
   },
 
   // Admin: Actualizar sección (POST)
-  updateSection: async (sectionId: number, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'file'; file?: File; cover_image_file?: File }) => {
+  updateSection: async (sectionId: number, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'file'; file?: File; cover_image_file?: File; certificate_image_file?: File; remove_certificate_image?: boolean }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     if (data.course_module_id !== undefined) formData.append('course_module_id', data.course_module_id ? data.course_module_id.toString() : '');
@@ -207,6 +258,8 @@ export const courseService = {
     if (data.primary_type) formData.append('primary_type', data.primary_type);
     if (data.file) formData.append('file', data.file);
     if (data.cover_image_file) formData.append('cover_image_file', data.cover_image_file);
+    if (data.certificate_image_file) formData.append('certificate_image_file', data.certificate_image_file);
+    if (data.remove_certificate_image) formData.append('remove_certificate_image', '1');
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/${sectionId}/update`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

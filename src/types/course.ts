@@ -35,6 +35,7 @@ export interface CourseSection {
   group_name?: string | null;
   title: string;
   cover_image?: string | null;
+  certificate_image?: string | null;
   content?: string | null;
   description?: string | null;
   duration?: string | null;
@@ -72,6 +73,12 @@ export interface CourseUserAssignment {
   started_at?: string | null;
   completed_at?: string | null;
   status: 'assigned' | 'in_progress' | 'completed';
+  progress_percentage?: number;
+  completed_count?: number;
+  total_count?: number;
+  completed_materials_count?: number;
+  total_materials_count?: number;
+  completed_materials?: any[];
   user?: {
     id: number;
     name: string;
@@ -96,6 +103,9 @@ export interface Course {
   main_image?: string | null;
   banner_image?: string | null;
   thumb_image?: string | null;
+  detail_media_type?: 'image' | 'video' | null;
+  detail_media_provider?: 'local' | 'youtube' | 'drive' | null;
+  detail_media_url?: string | null;
   category?: string | null;
   status: 'active' | 'inactive' | 'draft';
   created_by?: number | null;
@@ -123,6 +133,17 @@ export interface Course {
   assignments_count?: number;
 }
 
+export interface CourseProgressMetrics {
+  progress_percentage: number;
+  completed_count: number;
+  total_count: number;
+  status: 'assigned' | 'in_progress' | 'completed';
+  completed_material_ids: number[];
+  completed_resource_ids: number[];
+  last_completed_material_id?: number | null;
+  last_completed_at?: string | null;
+}
+
 export interface MyCourseAssignment {
   id: number;
   course_id: number;
@@ -132,11 +153,73 @@ export interface MyCourseAssignment {
   started_at?: string | null;
   completed_at?: string | null;
   status: 'assigned' | 'in_progress' | 'completed';
+  computed_status?: 'assigned' | 'in_progress' | 'completed';
+  progress_percentage?: number;
+  completed_count?: number;
+  total_count?: number;
+  completed_materials_count?: number;
+  total_materials_count?: number;
   course: Course;
   assigner?: {
     id: number;
     name: string;
   };
+}
+
+export interface StudentProgressItem {
+  assignment_id: number;
+  user_id: number;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role?: string;
+    phone?: string;
+  };
+  assigned_at: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  status: 'assigned' | 'in_progress' | 'completed';
+  status_label: string;
+  progress_percentage: number;
+  completed_count: number;
+  total_count: number;
+  completed_materials_count?: number;
+  total_materials_count?: number;
+}
+
+export interface StudentMaterialProgressDetail {
+  id: number;
+  title: string;
+  type: string;
+  section_title?: string;
+  is_completed: boolean;
+  completed_at?: string | null;
+}
+
+export interface StudentSectionProgressDetail {
+  id: number;
+  title: string;
+  group_name?: string | null;
+  completed_count: number;
+  total_count: number;
+  is_completed: boolean;
+  materials: StudentMaterialProgressDetail[];
+}
+
+export interface StudentDetailProgressResponse {
+  course: {
+    id: number;
+    title: string;
+  };
+  student: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  metrics: CourseProgressMetrics;
+  sections: StudentSectionProgressDetail[];
+  materials?: StudentMaterialProgressDetail[];
 }
 
 export interface PaginatedResponse<T> {

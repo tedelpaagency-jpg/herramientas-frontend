@@ -7,10 +7,11 @@ import {
   ArrowLeft, BookOpen, Save, ImagePlus, Upload, Trash2, Loader2, Sparkles, CheckCircle2,
   GripVertical, Plus, Video, PlayCircle, FileText, AlignLeft, Bold, Italic, Underline, List, ListOrdered,
   Quote, Code, Eye, Edit2, MoveUp, MoveDown, Layers, Check, LayoutGrid, AlertCircle, File, FolderPlus, Folder, FolderOpen, Clock,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Users, Award, Film, X
 } from 'lucide-react';
 import courseService from '../services/courseService';
 import { Course, CourseModule, CourseSection, CourseSectionMaterial } from '../types/course';
+import CourseStudentProgressModal from './CourseStudentProgressModal';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
@@ -59,6 +60,18 @@ export const CourseFormPage: React.FC = () => {
   const [draggedSecIndex, setDraggedSecIndex] = useState<number | null>(null);
   const [dragOverSecIndex, setDragOverSecIndex] = useState<number | null>(null);
 
+  // Media de Detalle del Curso (Video o Imagen)
+  const [detailMediaType, setDetailMediaType] = useState<'image' | 'video' | null>(null);
+  const [detailMediaProvider, setDetailMediaProvider] = useState<'local' | 'youtube' | 'drive' | null>(null);
+  const [detailMediaUrl, setDetailMediaUrl] = useState<string | null>(null);
+  const [detailMediaFile, setDetailMediaFile] = useState<File | null>(null);
+  const [detailMediaPreview, setDetailMediaPreview] = useState<string | null>(null);
+  const [savingDetailMedia, setSavingDetailMedia] = useState(false);
+  const [deletingDetailMedia, setDeletingDetailMedia] = useState(false);
+
+  // Modal de Avance de Alumnos
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
+
   // Formulario Inline para Crear/Editar Sección
   const [isAddingSection, setIsAddingSection] = useState(false);
   const [targetModuleId, setTargetModuleId] = useState<number | null>(null);
@@ -73,6 +86,8 @@ export const CourseFormPage: React.FC = () => {
   const [secPrimaryFile, setSecPrimaryFile] = useState<File | null>(null);
   const [secCoverFile, setSecCoverFile] = useState<File | null>(null);
   const [secCoverPreview, setSecCoverPreview] = useState<string | null>(null);
+  const [secCertificateFile, setSecCertificateFile] = useState<File | null>(null);
+  const [secCertificatePreview, setSecCertificatePreview] = useState<string | null>(null);
   const [showSecPreview, setShowSecPreview] = useState(false);
   const [savingSection, setSavingSection] = useState(false);
   const [deletingSecId, setDeletingSecId] = useState<number | null>(null);
@@ -114,6 +129,12 @@ export const CourseFormPage: React.FC = () => {
 
         setThumbImage(c.thumb_image || null);
         setImagePreview3(c.thumb_image || null);
+
+        // Media de detalle
+        setDetailMediaType(c.detail_media_type || null);
+        setDetailMediaProvider(c.detail_media_provider || null);
+        setDetailMediaUrl(c.detail_media_url || null);
+        setDetailMediaPreview(c.detail_media_url ? formatImageUrl(c.detail_media_url) : null);
         
         // Cargar módulos y secciones
         setModules(c.modules || []);
@@ -305,6 +326,8 @@ export const CourseFormPage: React.FC = () => {
     setSecPrimaryFile(null);
     setSecCoverFile(null);
     setSecCoverPreview(null);
+    setSecCertificateFile(null);
+    setSecCertificatePreview(null);
     setShowSecPreview(false);
   };
 
@@ -330,6 +353,8 @@ export const CourseFormPage: React.FC = () => {
     setSecContent(sec.content || '');
     setSecCoverPreview(formatImageUrl(sec.cover_image));
     setSecCoverFile(null);
+    setSecCertificatePreview(formatImageUrl(sec.certificate_image));
+    setSecCertificateFile(null);
     const firstMat = sec.materials?.[0];
     if (firstMat) {
       setSecPrimaryType(firstMat.type);
@@ -351,6 +376,70 @@ export const CourseFormPage: React.FC = () => {
       setSecCoverPreview(reader.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleSecCertificateChange = (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSecCertificateFile(file);
+      setSecCertificatePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeSecCertificate = () => {
+    setSecCertificateFile(null);
+    setSecCertificatePreview(null);
+  };
+
+  const handleSaveDetailMedia = async (mediaType: 'image' | 'video', provider?: 'local' | 'youtube' | 'drive', file?: File | null, externalUrl?: string) => {
+    if (!courseId) {
+      toast.error('Guarda primero la información básica del curso para subir la media de detalle.');
+      return;
+    }
+
+    setSavingDetailMedia(true);
+    try {
+      const res = await courseService.uploadDetailMedia(courseId, {
+        media_type: mediaType,
+        video_provider: provider,
+        file: file || undefined,
+        external_url: externalUrl || undefined,
+      });
+      if (res.data) {
+        setDetailMediaType(res.data.detail_media_type || null);
+        setDetailMediaProvider(res.data.detail_media_provider || null);
+        setDetailMediaUrl(res.data.detail_media_url || null);
+        setDetailMediaPreview(res.data.detail_media_url ? formatImageUrl(res.data.detail_media_url) : null);
+        toast.success('Recurso de detalle guardado exitosamente');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al guardar el recurso de detalle');
+    } finally {
+      setSavingDetailMedia(false);
+    }
+  };
+
+  const handleDeleteDetailMedia = async () => {
+    if (!courseId) return;
+    if (!confirm('¿Deseas eliminar el recurso de detalle del curso?')) return;
+
+    setDeletingDetailMedia(true);
+    try {
+      const res = await courseService.deleteDetailMedia(courseId);
+      if (res.data) {
+        setDetailMediaType(null);
+        setDetailMediaProvider(null);
+        setDetailMediaUrl(null);
+        setDetailMediaPreview(null);
+        setDetailMediaFile(null);
+        toast.success('Recurso de detalle eliminado');
+      }
+    } catch (err: any) {
+      toast.error('Error al eliminar el recurso de detalle');
+    } finally {
+      setDeletingDetailMedia(false);
+    }
   };
 
   const insertFormatTag = (openTag: string, closeTag: string = '') => {
@@ -389,6 +478,7 @@ export const CourseFormPage: React.FC = () => {
         primary_type: secPrimaryType,
         file: secPrimaryFile || undefined,
         cover_image_file: secCoverFile || undefined,
+        certificate_image_file: secCertificateFile || undefined,
       };
 
       let secRes;
@@ -593,13 +683,23 @@ export const CourseFormPage: React.FC = () => {
 
         <div className="flex items-center gap-3">
           {isEditing && courseId && (
-            <Link
-              href={`/courses/${courseId}/preview`}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 font-bold text-sm transition-all active:scale-95 shadow-sm"
-            >
-              <Eye className="w-5 h-5" />
-              <span>Vista Previa</span>
-            </Link>
+            <>
+              <button
+                type="button"
+                onClick={() => setIsProgressModalOpen(true)}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-sm transition-all active:scale-95 shadow-sm"
+              >
+                <Users className="w-5 h-5" />
+                <span>Avance de Alumnos</span>
+              </button>
+              <Link
+                href={`/courses/${courseId}/preview`}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 font-bold text-sm transition-all active:scale-95 shadow-sm"
+              >
+                <Eye className="w-5 h-5" />
+                <span>Vista Previa</span>
+              </Link>
+            </>
           )}
 
           <button
@@ -680,6 +780,141 @@ export const CourseFormPage: React.FC = () => {
                 <option value="draft">Borrador (Solo visible para admin)</option>
                 <option value="inactive">Inactivo</option>
               </select>
+            </div>
+
+            {/* SECCIÓN: VIDEO O IMAGEN DE DETALLE DEL CURSO */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Film className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  <h3 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Video o Imagen de Detalle del Curso
+                  </h3>
+                </div>
+                {detailMediaType && (
+                  <span className="text-[10px] font-extrabold text-purple-500 uppercase">
+                    {detailMediaType}
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Recurso principal en la vista de detalle. Si no se sube, se ocultará automáticamente en la vista del alumno.
+              </p>
+
+              {detailMediaPreview || detailMediaUrl ? (
+                <div className="space-y-3">
+                  {detailMediaType === 'image' ? (
+                    <div className="relative rounded-2xl overflow-hidden group border border-slate-200 dark:border-slate-800 h-36 bg-slate-950">
+                      <img src={detailMediaPreview || detailMediaUrl!} alt="Media de detalle" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono truncate">
+                      📹 {detailMediaUrl} ({detailMediaProvider})
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleDeleteDetailMedia}
+                    disabled={deletingDetailMedia}
+                    className="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs transition-colors flex items-center justify-center gap-2"
+                  >
+                    {deletingDetailMedia ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    <span>Eliminar Recurso de Detalle</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setDetailMediaType('image'); setDetailMediaProvider(null); }}
+                      className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                        detailMediaType === 'image'
+                          ? 'bg-purple-500/10 border-purple-500 text-purple-600 dark:text-purple-400'
+                          : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      Imagen
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDetailMediaType('video')}
+                      className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                        detailMediaType === 'video'
+                          ? 'bg-purple-500/10 border-purple-500 text-purple-600 dark:text-purple-400'
+                          : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      Video
+                    </button>
+                  </div>
+
+                  {detailMediaType === 'image' && (
+                    <div className="space-y-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleSaveDetailMedia('image', undefined, file);
+                        }}
+                        className="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700"
+                      />
+                    </div>
+                  )}
+
+                  {detailMediaType === 'video' && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {(['local', 'youtube', 'drive'] as const).map((prov) => (
+                          <button
+                            key={prov}
+                            type="button"
+                            onClick={() => setDetailMediaProvider(prov)}
+                            className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border capitalize ${
+                              detailMediaProvider === prov
+                                ? 'bg-purple-600 text-white border-purple-600'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-transparent'
+                            }`}
+                          >
+                            {prov}
+                          </button>
+                        ))}
+                      </div>
+
+                      {detailMediaProvider === 'local' ? (
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleSaveDetailMedia('video', 'local', file);
+                          }}
+                          className="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700"
+                        />
+                      ) : detailMediaProvider ? (
+                        <div className="space-y-2">
+                          <input
+                            type="url"
+                            placeholder={detailMediaProvider === 'youtube' ? 'https://youtube.com/watch?v=...' : 'https://drive.google.com/file/d/...'}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const url = (e.target as HTMLInputElement).value;
+                                if (url.trim()) handleSaveDetailMedia('video', detailMediaProvider, null, url.trim());
+                              }
+                            }}
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white"
+                          />
+                          <p className="text-[10px] text-slate-400">Presiona Enter para guardar la URL del video.</p>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* SECCIÓN: 3 IMÁGENES DE PORTADA DEL CURSO */}
@@ -928,8 +1163,8 @@ export const CourseFormPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Portada e Imagen de la Sección + Duración */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                {/* Portada e Imagen de la Sección + Certificado + Duración */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Portada de la Sección (Miniatura)
@@ -947,6 +1182,37 @@ export const CourseFormPage: React.FC = () => {
                         accept="image/*"
                         onChange={(e) => e.target.files?.[0] && handleSecCoverChange(e.target.files[0])}
                         className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Imagen de Certificado (Opcional)
+                    </label>
+                    <div className="flex items-center gap-3">
+                      {secCertificatePreview ? (
+                        <div className="relative group shrink-0">
+                          <img src={secCertificatePreview} alt="Certificado" className="w-12 h-12 rounded-xl object-cover border border-amber-500 shrink-0" />
+                          <button
+                            type="button"
+                            onClick={removeSecCertificate}
+                            className="absolute -top-1 -right-1 p-0.5 rounded-full bg-rose-600 text-white shadow-sm"
+                            title="Eliminar certificado"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                          <Award className="w-5 h-5" />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files?.[0] && handleSecCertificateChange(e.target.files[0])}
+                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-amber-100 file:text-amber-700 dark:file:bg-amber-950 dark:file:text-amber-300"
                       />
                     </div>
                   </div>
@@ -1338,8 +1604,8 @@ export const CourseFormPage: React.FC = () => {
                                   </div>
                                 </div>
 
-                                {/* Portada e Imagen de la Sección + Duración */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                                {/* Portada e Imagen de la Sección + Certificado + Duración */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                                   <div>
                                     <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                                       Portada de la Sección (Miniatura)
@@ -1357,6 +1623,37 @@ export const CourseFormPage: React.FC = () => {
                                         accept="image/*"
                                         onChange={(e) => e.target.files?.[0] && handleSecCoverChange(e.target.files[0])}
                                         className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                      Imagen de Certificado (Opcional)
+                                    </label>
+                                    <div className="flex items-center gap-3">
+                                      {secCertificatePreview ? (
+                                        <div className="relative group shrink-0">
+                                          <img src={secCertificatePreview} alt="Certificado" className="w-12 h-12 rounded-xl object-cover border border-amber-500 shrink-0" />
+                                          <button
+                                            type="button"
+                                            onClick={removeSecCertificate}
+                                            className="absolute -top-1 -right-1 p-0.5 rounded-full bg-rose-600 text-white shadow-sm"
+                                            title="Eliminar certificado"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                                          <Award className="w-5 h-5" />
+                                        </div>
+                                      )}
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => e.target.files?.[0] && handleSecCertificateChange(e.target.files[0])}
+                                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-amber-100 file:text-amber-700 dark:file:bg-amber-950 dark:file:text-amber-300"
                                       />
                                     </div>
                                   </div>
@@ -1568,6 +1865,16 @@ export const CourseFormPage: React.FC = () => {
           )}
         </div>
       </form>
+
+      {/* Modal de Avance de Alumnos */}
+      {isEditing && courseId && (
+        <CourseStudentProgressModal
+          courseId={courseId}
+          courseTitle={title}
+          isOpen={isProgressModalOpen}
+          onClose={() => setIsProgressModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

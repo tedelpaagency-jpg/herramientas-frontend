@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   BookOpen, Plus, Search, Filter, Edit, Trash2, FolderOpen, Users, 
-  Eye, CheckCircle2, Clock, XCircle, AlertCircle, Loader2, Sparkles
+  Eye, CheckCircle2, Clock, XCircle, AlertCircle, Loader2, Sparkles, BarChart3
 } from 'lucide-react';
 import courseService from '../services/courseService';
 import { Course } from '../types/course';
 import toast from 'react-hot-toast';
 import CourseResourcesModal from './CourseResourcesModal';
 import CourseAssignmentsModal from './CourseAssignmentsModal';
+import CourseStudentProgressModal from './CourseStudentProgressModal';
 
 export const CoursesPage: React.FC = () => {
   const router = useRouter();
@@ -29,6 +30,7 @@ export const CoursesPage: React.FC = () => {
 
   const [resourceCourse, setResourceCourse] = useState<Course | null>(null);
   const [assignmentCourse, setAssignmentCourse] = useState<Course | null>(null);
+  const [progressCourse, setProgressCourse] = useState<Course | null>(null);
   const [previewCourseId, setPreviewCourseId] = useState<number | string | null>(null);
 
   const fetchCourses = async () => {
@@ -247,6 +249,13 @@ export const CoursesPage: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setProgressCourse(course)}
+                      title="Ver Avance de Alumnos"
+                      className="p-2 rounded-xl text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                    </button>
                     <Link
                       href={`/courses/${course.id}/preview`}
                       title="Vista Previa del Curso (Simulación Estudiante)"
@@ -360,6 +369,16 @@ export const CoursesPage: React.FC = () => {
         <CourseAssignmentsModal
           course={assignmentCourse}
           onClose={() => { setAssignmentCourse(null); fetchCourses(); }}
+        />
+      )}
+
+      {/* Student Progress Report Modal */}
+      {progressCourse && (
+        <CourseStudentProgressModal
+          courseId={progressCourse.id}
+          courseTitle={progressCourse.title}
+          isOpen={Boolean(progressCourse)}
+          onClose={() => setProgressCourse(null)}
         />
       )}
     </div>

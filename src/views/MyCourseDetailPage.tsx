@@ -101,6 +101,43 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
     }
   };
 
+  const completedMaterialIds = new Set<number>(
+    assignment?.completed_materials
+      ? assignment.completed_materials.map((m: any) => typeof m === 'number' ? m : m.material_id)
+      : []
+  );
+
+  const handleCompleteMaterial = async (materialId: number) => {
+    if (isPreview || !courseId) return;
+    try {
+      const res = await courseService.completeMaterial(materialId);
+      if (res.status === 'success' && res.data) {
+        setAssignment(res.data.assignment);
+        toast.success('¡Avance guardado exitosamente!');
+      }
+    } catch (err: any) {
+      console.error('Error al guardar avance:', err);
+    }
+  };
+
+  const handleContinueCourse = () => {
+    const secs = course?.sections || [];
+    for (const sec of secs) {
+      const uncompleted = (sec.materials || []).find(m => !completedMaterialIds.has(m.id));
+      if (uncompleted) {
+        setActiveSectionId(sec.id);
+        setActiveMaterialId(uncompleted.id);
+        setViewMode('player');
+        return;
+      }
+    }
+    if (secs.length > 0) {
+      setActiveSectionId(secs[0].id);
+      if (secs[0].materials?.[0]) setActiveMaterialId(secs[0].materials[0].id);
+      setViewMode('player');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
@@ -252,6 +289,36 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
               </div>
             </div>
 
+            {/* 1.5 RECURSO PRINCIPAL DE PRESENTACIÓN DEL CURSO (VIDEO O IMAGEN DE DETALLE - OCULTO SI ES NULL) */}
+            {course.detail_media_url && (
+              <div className="pt-2">
+                <div className="rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 bg-slate-950">
+                  {course.detail_media_type === 'image' ? (
+                    <img
+                      src={formatImageUrl(course.detail_media_url)!}
+                      alt={`Detalle de ${course.title}`}
+                      className="w-full h-auto max-h-[480px] object-cover"
+                    />
+                  ) : (
+                    <SectionVideo
+                      material={{
+                        id: 0,
+                        course_section_id: 0,
+                        title: course.title,
+                        type: 'video',
+                        video_provider: course.detail_media_provider || 'local',
+                        external_url: course.detail_media_url,
+                        sort_order: 1,
+                        created_at: '',
+                        updated_at: '',
+                      }}
+                      autoPlay={false}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* 2. COMPONENTE COLLAPSE: CONTENIDO TEÓRICO DETALLADO */}
             <div className="pt-2">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm transition-all duration-300">
@@ -333,6 +400,8 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                                 globalSectionCounter++;
                                 const currentSecNumber = globalSectionCounter;
                                 const mats = sec.materials || [];
+                                const isSecCompleted = mats.length > 0 && mats.every(m => completedMaterialIds.has(m.id));
+
                                 return (
                                   <div 
                                     key={sec.id}
@@ -343,9 +412,13 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                                     }}
                                     className="relative flex items-center justify-between gap-3 py-1.5 pl-9 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs"
                                   >
-                                    {/* Número Correlativo en la Línea del Timeline (Centrado exacto en x = 24px, 12px de padding izquierdo) */}
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-xs flex items-center justify-center shrink-0 z-10 shadow-xs transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110">
-                                      {currentSecNumber}
+                                    {/* Número Correlativo en la Línea del Timeline */}
+                                    <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square text-xs font-black flex items-center justify-center shrink-0 z-10 shadow-xs transition-all duration-200 ${
+                                      isSecCompleted
+                                        ? 'bg-emerald-500 text-white border-2 border-emerald-400'
+                                        : 'bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] group-hover/sec:bg-emerald-500 group-hover/sec:text-white'
+                                    }`}>
+                                      {isSecCompleted ? '✓' : currentSecNumber}
                                     </div>
 
                                     <div className="flex items-center gap-3 min-w-0">
@@ -437,25 +510,43 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
 
           </div>
 
-          {/* 3. COLUMNA LATERAL DERECHA (PANEL DE ACCIÓN Y MULTIMEDIA STICKY SIN FONDO NI BORDE EN EL PADRE) */}
+          {/* 3. COLUMNA LATERAL DERECHA (PANEL DE ACCIÓN Y MULTIMEDIA STICKY) */}
           <div className="space-y-6">
             <div className="sticky top-6 space-y-6">
               
-              {/* Banner de Beneficios (Sin fondo y sin borde) */}
-              <div className="flex items-center gap-3 py-1">
-                <div className="w-9 h-9 rounded-xl text-emerald-600 dark:text-[#00e699] flex items-center justify-center flex-shrink-0">
-                  <Award className="w-6 h-6" />
+              {/* Tarjeta de Avance del Estudiante */}
+              {assignment && (
+                <div className="p-5 rounded-3xl bg-slate-900 text-white space-y-3 border border-slate-800 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                      Avance del Curso
+                    </span>
+                    <span className="text-sm font-black text-emerald-400">
+                      {assignment.progress_percentage ?? 0}%
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-emerald-500 to-indigo-500 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${assignment.progress_percentage ?? 0}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-slate-400 font-bold pt-1">
+                    <span>
+                      {assignment.completed_materials_count ?? 0} / {assignment.total_materials_count ?? 1} completados
+                    </span>
+                    <span className="capitalize px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px]">
+                      {assignment.status === 'completed' ? 'Completado' : assignment.status === 'in_progress' ? 'En Progreso' : 'No Iniciado'}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  <p className="font-bold text-slate-900 dark:text-white leading-snug">
-                    Capacitación profesional por secciones con video principal y carpetas de recursos.
-                  </p>
-                </div>
-              </div>
+              )}
 
               {/* Media Preview Card */}
               <div 
-                onClick={() => setViewMode('player')}
+                onClick={handleContinueCourse}
                 className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/80 h-48 bg-slate-100 dark:bg-slate-950 cursor-pointer group shadow-md"
               >
                 {course.main_image ? (
@@ -477,11 +568,13 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
               {/* Botones de Acción CTA */}
               <div className="space-y-3">
                 <button
-                  onClick={() => setViewMode('player')}
+                  onClick={handleContinueCourse}
                   className="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 dark:bg-[#00e699] dark:hover:bg-[#00c985] text-white dark:text-slate-950 font-black text-sm transition-all shadow-lg shadow-emerald-500/20 dark:shadow-[#00e699]/20 flex items-center justify-center gap-2 active:scale-95"
                 >
                   <Play className="w-4 h-4 fill-current" />
-                  <span>Iniciar Aprendizaje</span>
+                  <span>
+                    {assignment?.status === 'in_progress' ? 'Continuar Curso' : assignment?.status === 'completed' ? 'Repasar Curso' : 'Iniciar Aprendizaje'}
+                  </span>
                 </button>
               </div>
 
@@ -499,12 +592,28 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
             <div className="bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex flex-col min-h-[360px]">
               {sectionVideoMaterial ? (
                 <div className="relative flex-1 flex flex-col">
-                  <SectionVideo material={sectionVideoMaterial} />
+                  <SectionVideo
+                    material={sectionVideoMaterial}
+                    onEnded={() => handleCompleteMaterial(sectionVideoMaterial.id)}
+                    isCompleted={completedMaterialIds.has(sectionVideoMaterial.id)}
+                  />
                   <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
                     <span className="font-bold flex items-center gap-2">
                       <Video className="w-4 h-4 text-emerald-400" />
                       <span>Video de la Sección: {sectionVideoMaterial.title}</span>
                     </span>
+                    {completedMaterialIds.has(sectionVideoMaterial.id) ? (
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[11px]">
+                        ✓ Completado
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleCompleteMaterial(sectionVideoMaterial.id)}
+                        className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors"
+                      >
+                        Marcar como completado
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -515,6 +624,32 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                 </div>
               )}
             </div>
+
+            {/* 1.5 IMAGEN DE CERTIFICADO DE LA SECCIÓN (DEBAJO DEL VIDEO - OCULTO SI ES NULL) */}
+            {activeSection?.certificate_image && (
+              <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-amber-200 dark:border-amber-900/50 shadow-sm space-y-4">
+                <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                    <Award className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                      Certificado / Reconocimiento de la Sección
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                      Material acreditativo asociado a esta lección
+                    </p>
+                  </div>
+                </div>
+                <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 flex items-center justify-center p-2">
+                  <img
+                    src={formatImageUrl(activeSection.certificate_image)!}
+                    alt={`Certificado de ${activeSection.title}`}
+                    className="max-w-full h-auto max-h-[500px] object-contain rounded-xl"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* 2. CONTENIDO TEÓRICO / EXPLICACIÓN DE LA SECCIÓN */}
             <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
