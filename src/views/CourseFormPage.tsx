@@ -80,7 +80,7 @@ export const CourseFormPage: React.FC = () => {
   const [secGroupName, setSecGroupName] = useState('');
   const [secDuration, setSecDuration] = useState('');
   const [secContent, setSecContent] = useState('');
-  const [secPrimaryType, setSecPrimaryType] = useState<'video' | 'pdf' | 'image' | 'file'>('video');
+  const [secPrimaryType, setSecPrimaryType] = useState<'video' | 'pdf' | 'image' | 'file' | 'none'>('video');
   const [secVideoProvider, setSecVideoProvider] = useState<'local' | 'drive' | 'youtube'>('local');
   const [secExternalUrl, setSecExternalUrl] = useState('');
   const [secPrimaryFile, setSecPrimaryFile] = useState<File | null>(null);
@@ -357,14 +357,31 @@ export const CourseFormPage: React.FC = () => {
     setSecCoverFile(null);
     setSecCertificatePreview(formatImageUrl(sec.certificate_image));
     setSecCertificateFile(null);
-    const firstMat = sec.materials?.[0];
-    if (firstMat) {
-      setSecPrimaryType(firstMat.type);
-      setSecVideoProvider(firstMat.video_provider || 'local');
-      setSecExternalUrl(firstMat.external_url || '');
-    } else {
+    if (sec.primary_type === 'none') {
+      setSecPrimaryType('none');
       setSecVideoProvider('local');
       setSecExternalUrl('');
+    } else if (sec.primary_type) {
+      setSecPrimaryType(sec.primary_type as any);
+      const firstMat = sec.materials?.[0];
+      if (firstMat) {
+        setSecVideoProvider(firstMat.video_provider || 'local');
+        setSecExternalUrl(firstMat.external_url || '');
+      } else {
+        setSecVideoProvider('local');
+        setSecExternalUrl('');
+      }
+    } else {
+      const firstMat = sec.materials?.[0];
+      if (firstMat) {
+        setSecPrimaryType(firstMat.type);
+        setSecVideoProvider(firstMat.video_provider || 'local');
+        setSecExternalUrl(firstMat.external_url || '');
+      } else {
+        setSecPrimaryType('none');
+        setSecVideoProvider('local');
+        setSecExternalUrl('');
+      }
     }
     setSecPrimaryFile(null);
     setShowSecPreview(false);
@@ -1239,6 +1256,7 @@ export const CourseFormPage: React.FC = () => {
                       onChange={(e) => setSecPrimaryType(e.target.value as any)}
                       className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white"
                     >
+                      <option value="none">Ninguno (Sin archivo principal)</option>
                       <option value="video">Video (Local, YouTube, Drive)</option>
                       <option value="pdf">Documento PDF</option>
                       <option value="file">Archivo General</option>
@@ -1260,102 +1278,104 @@ export const CourseFormPage: React.FC = () => {
                 </div>
 
                 {/* Subida del Archivo Principal / Origen del Video */}
-                <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                      {secPrimaryType === 'video' ? 'Origen del Video de la Sección' : (editingSection ? 'Reemplazar Archivo Principal' : 'Subir Archivo Principal (Opcional)')}
-                    </label>
+                {secPrimaryType !== 'none' && (
+                  <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                        {secPrimaryType === 'video' ? 'Origen del Video de la Sección' : (editingSection ? 'Reemplazar Archivo Principal' : 'Subir Archivo Principal (Opcional)')}
+                      </label>
+                      {secPrimaryType === 'video' && (
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-[#00e699]">
+                          3 Orígenes Disponibles
+                        </span>
+                      )}
+                    </div>
+
                     {secPrimaryType === 'video' && (
-                      <span className="text-[10px] font-bold text-emerald-600 dark:text-[#00e699]">
-                        3 Orígenes Disponibles
-                      </span>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSecVideoProvider('local')}
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            secVideoProvider === 'local'
+                              ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-[#00e699]'
+                              : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>Video Local</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSecVideoProvider('youtube')}
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            secVideoProvider === 'youtube'
+                              ? 'bg-rose-500/10 border-rose-500 text-rose-600 dark:text-rose-400'
+                              : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          <PlayCircle className="w-3.5 h-3.5" />
+                          <span>YouTube</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSecVideoProvider('drive')}
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            secVideoProvider === 'drive'
+                              ? 'bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400'
+                              : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          <FolderOpen className="w-3.5 h-3.5" />
+                          <span>Google Drive</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {secPrimaryType === 'video' && secVideoProvider !== 'local' ? (
+                      <div className="space-y-1.5 pt-1">
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                          URL del Video ({secVideoProvider === 'youtube' ? 'YouTube' : 'Google Drive'}) *
+                        </label>
+                        <input
+                          type="url"
+                          value={secExternalUrl}
+                          onChange={(e) => setSecExternalUrl(e.target.value)}
+                          placeholder={
+                            secVideoProvider === 'youtube'
+                              ? 'Ej. https://www.youtube.com/watch?v=XXXXXXXX o https://youtu.be/XXXXXXXX'
+                              : 'Ej. https://drive.google.com/file/d/XXXXXXXX/view'
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
+                        />
+                        {secVideoProvider === 'drive' && (
+                          <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                            * Recuerda otorgar permisos de visibilidad pública ("Cualquier persona con el enlace") en Google Drive.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+                          Selecciona tu archivo {secPrimaryType === 'video' ? 'video local (MP4, WebM, MOV)' : 'documento'} para esta lección.
+                        </p>
+                        <input
+                          type="file"
+                          accept={secPrimaryType === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : secPrimaryType === 'pdf' ? 'application/pdf,.pdf' : '*/*'}
+                          onChange={(e) => setSecPrimaryFile(e.target.files?.[0] || null)}
+                          className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
+                        />
+                        {secPrimaryFile && (
+                          <p className="text-xs font-bold text-emerald-600 dark:text-[#00e699] mt-1">
+                            ✓ Archivo seleccionado: {secPrimaryFile.name} ({(secPrimaryFile.size / (1024 * 1024)).toFixed(2)} MB)
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
-
-                  {secPrimaryType === 'video' && (
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setSecVideoProvider('local')}
-                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                          secVideoProvider === 'local'
-                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-[#00e699]'
-                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                        }`}
-                      >
-                        <Video className="w-3.5 h-3.5" />
-                        <span>Video Local</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setSecVideoProvider('youtube')}
-                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                          secVideoProvider === 'youtube'
-                            ? 'bg-rose-500/10 border-rose-500 text-rose-600 dark:text-rose-400'
-                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                        }`}
-                      >
-                        <PlayCircle className="w-3.5 h-3.5" />
-                        <span>YouTube</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setSecVideoProvider('drive')}
-                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                          secVideoProvider === 'drive'
-                            ? 'bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400'
-                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                        }`}
-                      >
-                        <FolderOpen className="w-3.5 h-3.5" />
-                        <span>Google Drive</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {secPrimaryType === 'video' && secVideoProvider !== 'local' ? (
-                    <div className="space-y-1.5 pt-1">
-                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                        URL del Video ({secVideoProvider === 'youtube' ? 'YouTube' : 'Google Drive'}) *
-                      </label>
-                      <input
-                        type="url"
-                        value={secExternalUrl}
-                        onChange={(e) => setSecExternalUrl(e.target.value)}
-                        placeholder={
-                          secVideoProvider === 'youtube'
-                            ? 'Ej. https://www.youtube.com/watch?v=XXXXXXXX o https://youtu.be/XXXXXXXX'
-                            : 'Ej. https://drive.google.com/file/d/XXXXXXXX/view'
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
-                      />
-                      {secVideoProvider === 'drive' && (
-                        <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                          * Recuerda otorgar permisos de visibilidad pública ("Cualquier persona con el enlace") en Google Drive.
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
-                        Selecciona tu archivo {secPrimaryType === 'video' ? 'video local (MP4, WebM, MOV)' : 'documento'} para esta lección.
-                      </p>
-                      <input
-                        type="file"
-                        accept={secPrimaryType === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : secPrimaryType === 'pdf' ? 'application/pdf,.pdf' : '*/*'}
-                        onChange={(e) => setSecPrimaryFile(e.target.files?.[0] || null)}
-                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
-                      />
-                      {secPrimaryFile && (
-                        <p className="text-xs font-bold text-emerald-600 dark:text-[#00e699] mt-1">
-                          ✓ Archivo seleccionado: {secPrimaryFile.name} ({(secPrimaryFile.size / (1024 * 1024)).toFixed(2)} MB)
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* Editor de Texto Enriquecido para la Sección */}
                 <div className="space-y-2 pt-1">
@@ -1878,6 +1898,7 @@ export const CourseFormPage: React.FC = () => {
                                       onChange={(e) => setSecPrimaryType(e.target.value as any)}
                                       className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white"
                                     >
+                                      <option value="none">Ninguno (Sin archivo principal)</option>
                                       <option value="video">Video (Local, YouTube, Drive)</option>
                                       <option value="pdf">Documento PDF</option>
                                       <option value="file">Archivo General</option>
@@ -1899,102 +1920,104 @@ export const CourseFormPage: React.FC = () => {
                                 </div>
 
                                 {/* Subida del Archivo Principal / Origen del Video */}
-                                <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <label className="block text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                                      {secPrimaryType === 'video' ? 'Origen del Video de la Sección' : (editingSection ? 'Reemplazar Archivo Principal' : 'Subir Archivo Principal (Opcional)')}
-                                    </label>
+                                {secPrimaryType !== 'none' && (
+                                  <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <label className="block text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                                        {secPrimaryType === 'video' ? 'Origen del Video de la Sección' : (editingSection ? 'Reemplazar Archivo Principal' : 'Subir Archivo Principal (Opcional)')}
+                                      </label>
+                                      {secPrimaryType === 'video' && (
+                                        <span className="text-[10px] font-bold text-emerald-600 dark:text-[#00e699]">
+                                          3 Orígenes Disponibles
+                                        </span>
+                                      )}
+                                    </div>
+
                                     {secPrimaryType === 'video' && (
-                                      <span className="text-[10px] font-bold text-emerald-600 dark:text-[#00e699]">
-                                        3 Orígenes Disponibles
-                                      </span>
+                                      <div className="grid grid-cols-3 gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => setSecVideoProvider('local')}
+                                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                            secVideoProvider === 'local'
+                                              ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-[#00e699]'
+                                              : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                                          }`}
+                                        >
+                                          <Video className="w-3.5 h-3.5" />
+                                          <span>Video Local</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => setSecVideoProvider('youtube')}
+                                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                            secVideoProvider === 'youtube'
+                                              ? 'bg-rose-500/10 border-rose-500 text-rose-600 dark:text-rose-400'
+                                              : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                                          }`}
+                                        >
+                                          <PlayCircle className="w-3.5 h-3.5" />
+                                          <span>YouTube</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => setSecVideoProvider('drive')}
+                                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                            secVideoProvider === 'drive'
+                                              ? 'bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400'
+                                              : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                                          }`}
+                                        >
+                                          <FolderOpen className="w-3.5 h-3.5" />
+                                          <span>Google Drive</span>
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    {secPrimaryType === 'video' && secVideoProvider !== 'local' ? (
+                                      <div className="space-y-1.5 pt-1">
+                                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                          URL del Video ({secVideoProvider === 'youtube' ? 'YouTube' : 'Google Drive'}) *
+                                        </label>
+                                        <input
+                                          type="url"
+                                          value={secExternalUrl}
+                                          onChange={(e) => setSecExternalUrl(e.target.value)}
+                                          placeholder={
+                                            secVideoProvider === 'youtube'
+                                              ? 'Ej. https://www.youtube.com/watch?v=XXXXXXXX o https://youtu.be/XXXXXXXX'
+                                              : 'Ej. https://drive.google.com/file/d/XXXXXXXX/view'
+                                          }
+                                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                        />
+                                        {secVideoProvider === 'drive' && (
+                                          <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                            * Recuerda otorgar permisos de visibilidad pública ("Cualquier persona con el enlace") en Google Drive.
+                                          </p>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+                                          Selecciona tu archivo {secPrimaryType === 'video' ? 'video local (MP4, WebM, MOV)' : 'documento'} para esta lección.
+                                        </p>
+                                        <input
+                                          type="file"
+                                          accept={secPrimaryType === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : secPrimaryType === 'pdf' ? 'application/pdf,.pdf' : '*/*'}
+                                          onChange={(e) => setSecPrimaryFile(e.target.files?.[0] || null)}
+                                          className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
+                                        />
+                                        {secPrimaryFile && (
+                                          <p className="text-xs font-bold text-emerald-600 dark:text-[#00e699] mt-1">
+                                            ✓ Archivo seleccionado: {secPrimaryFile.name} ({(secPrimaryFile.size / (1024 * 1024)).toFixed(2)} MB)
+                                          </p>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
-
-                                  {secPrimaryType === 'video' && (
-                                    <div className="grid grid-cols-3 gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => setSecVideoProvider('local')}
-                                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                                          secVideoProvider === 'local'
-                                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-[#00e699]'
-                                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                                        }`}
-                                      >
-                                        <Video className="w-3.5 h-3.5" />
-                                        <span>Video Local</span>
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        onClick={() => setSecVideoProvider('youtube')}
-                                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                                          secVideoProvider === 'youtube'
-                                            ? 'bg-rose-500/10 border-rose-500 text-rose-600 dark:text-rose-400'
-                                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                                        }`}
-                                      >
-                                        <PlayCircle className="w-3.5 h-3.5" />
-                                        <span>YouTube</span>
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        onClick={() => setSecVideoProvider('drive')}
-                                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                                          secVideoProvider === 'drive'
-                                            ? 'bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400'
-                                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                                        }`}
-                                      >
-                                        <FolderOpen className="w-3.5 h-3.5" />
-                                        <span>Google Drive</span>
-                                      </button>
-                                    </div>
-                                  )}
-
-                                  {secPrimaryType === 'video' && secVideoProvider !== 'local' ? (
-                                    <div className="space-y-1.5 pt-1">
-                                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                                        URL del Video ({secVideoProvider === 'youtube' ? 'YouTube' : 'Google Drive'}) *
-                                      </label>
-                                      <input
-                                        type="url"
-                                        value={secExternalUrl}
-                                        onChange={(e) => setSecExternalUrl(e.target.value)}
-                                        placeholder={
-                                          secVideoProvider === 'youtube'
-                                            ? 'Ej. https://www.youtube.com/watch?v=XXXXXXXX o https://youtu.be/XXXXXXXX'
-                                            : 'Ej. https://drive.google.com/file/d/XXXXXXXX/view'
-                                        }
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
-                                      />
-                                      {secVideoProvider === 'drive' && (
-                                        <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                                          * Recuerda otorgar permisos de visibilidad pública ("Cualquier persona con el enlace") en Google Drive.
-                                        </p>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div>
-                                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
-                                        Selecciona tu archivo {secPrimaryType === 'video' ? 'video local (MP4, WebM, MOV)' : 'documento'} para esta lección.
-                                      </p>
-                                      <input
-                                        type="file"
-                                        accept={secPrimaryType === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : secPrimaryType === 'pdf' ? 'application/pdf,.pdf' : '*/*'}
-                                        onChange={(e) => setSecPrimaryFile(e.target.files?.[0] || null)}
-                                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
-                                      />
-                                      {secPrimaryFile && (
-                                        <p className="text-xs font-bold text-emerald-600 dark:text-[#00e699] mt-1">
-                                          ✓ Archivo seleccionado: {secPrimaryFile.name} ({(secPrimaryFile.size / (1024 * 1024)).toFixed(2)} MB)
-                                        </p>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
+                                )}
 
                                 {/* Editor de Texto Enriquecido para la Sección */}
                                 <div className="space-y-2 pt-1">

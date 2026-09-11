@@ -239,7 +239,7 @@ export const courseService = {
   },
 
   // Admin: Crear sección de curso asociada a un módulo o curso (POST)
-  createSection: async (courseId: number | string, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file'; file?: File; cover_image_file?: File; certificate_image_file?: File }) => {
+  createSection: async (courseId: number | string, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none'; file?: File; cover_image_file?: File; certificate_image_file?: File }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     if (data.course_module_id) formData.append('course_module_id', data.course_module_id.toString());
@@ -260,7 +260,7 @@ export const courseService = {
   },
 
   // Admin: Actualizar sección (POST)
-  updateSection: async (sectionId: number, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file'; file?: File; cover_image_file?: File; certificate_image_file?: File; remove_certificate_image?: boolean }) => {
+  updateSection: async (sectionId: number, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none'; file?: File; cover_image_file?: File; certificate_image_file?: File; remove_certificate_image?: boolean }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     if (data.course_module_id !== undefined) formData.append('course_module_id', data.course_module_id ? data.course_module_id.toString() : '');

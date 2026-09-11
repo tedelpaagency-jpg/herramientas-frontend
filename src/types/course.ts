@@ -39,6 +39,7 @@ export interface CourseSection {
   content?: string | null;
   description?: string | null;
   duration?: string | null;
+  primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none' | null;
   sort_order: number;
   materials?: CourseSectionMaterial[];
   created_at?: string;

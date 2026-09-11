@@ -217,7 +217,9 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
       : (assignment?.progress_percentage ?? 0);
 
   // Contenido principal de la lección (Video o Documento principal de la sección)
-  const sectionVideoMaterial = sectionMaterials.find(m => m.title?.includes('(Principal)')) || sectionMaterials.find(m => m.type === 'video');
+  const sectionVideoMaterial = activeSection?.primary_type === 'none'
+    ? null
+    : (sectionMaterials.find(m => m.title?.includes('(Principal)')) || sectionMaterials.find(m => m.type === 'video'));
 
   // Recursos y materiales adicionales de la sección (excluyendo el contenido principal de la lección)
   const sectionResources = sectionMaterials.filter(m => m.id !== sectionVideoMaterial?.id);

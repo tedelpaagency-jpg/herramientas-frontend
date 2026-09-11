@@ -80,7 +80,9 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({ courseId
   const activeSection = sections.find(s => s.id === activeSectionId) || sections[0];
   const sectionMaterials = activeSection?.materials || [];
 
-  const sectionVideoMaterial = sectionMaterials.find(m => m.type === 'video');
+  const sectionVideoMaterial = activeSection?.primary_type === 'none'
+    ? null
+    : (sectionMaterials.find(m => m.title?.includes('(Principal)')) || sectionMaterials.find(m => m.type === 'video'));
   const sectionResources = sectionMaterials.filter(m => m.id !== sectionVideoMaterial?.id);
   const activeResource = sectionResources.find(m => m.id === activeMaterialId) || sectionResources[0];
 
@@ -273,24 +275,26 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({ courseId
               <div className="lg:col-span-2 space-y-6">
                 
                 {/* 1. VIDEO PRINCIPAL DE LA SECCIÓN */}
-                <div className="bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col min-h-[340px]">
-                  {sectionVideoMaterial ? (
-                    <div className="relative flex-1 flex flex-col">
-                      <SectionVideo material={sectionVideoMaterial} />
-                      <div className="p-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
-                        <span className="font-bold flex items-center gap-2">
-                          <Video className="w-4 h-4 text-emerald-400" />
-                          <span>Video de la Sección: {sectionVideoMaterial.title}</span>
-                        </span>
+                {activeSection?.primary_type !== 'none' && (
+                  <div className="bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col min-h-[340px]">
+                    {sectionVideoMaterial ? (
+                      <div className="relative flex-1 flex flex-col">
+                        <SectionVideo material={sectionVideoMaterial} />
+                        <div className="p-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
+                          <span className="font-bold flex items-center gap-2">
+                            <Video className="w-4 h-4 text-emerald-400" />
+                            <span>Video de la Sección: {sectionVideoMaterial.title}</span>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-slate-900 flex flex-col items-center justify-center text-slate-500 space-y-2 p-8 text-center rounded-3xl">
-                      <BookOpen className="w-12 h-12 text-slate-700" />
-                      <p className="text-xs font-bold text-slate-300">Esta sección no contiene video propio.</p>
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <div className="aspect-video bg-slate-900 flex flex-col items-center justify-center text-slate-500 space-y-2 p-8 text-center rounded-3xl">
+                        <BookOpen className="w-12 h-12 text-slate-700" />
+                        <p className="text-xs font-bold text-slate-300">Esta sección no contiene video propio.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* 2. CONTENIDO TEÓRICO / EXPLICACIÓN DE LA SECCIÓN */}
                 <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
