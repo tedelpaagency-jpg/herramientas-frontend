@@ -173,14 +173,6 @@ export const SectionVideo: React.FC<SectionVideoProps> = ({ material, autoPlay =
             </button>
           </div>
         )}
-        
-        {/* Banner informativo sobre permisos de visibilidad */}
-        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-xs font-semibold">
-          <AlertCircle className="w-4 h-4 shrink-0 text-amber-500" />
-          <span>
-            Si el video no se reproduce, verifica que el archivo en Google Drive tenga permisos públicos (<strong>"Cualquier persona con el enlace"</strong>).
-          </span>
-        </div>
       </div>
     );
   }

@@ -125,18 +125,22 @@ export const MyCoursesPage: React.FC = () => {
                 ? assignment.completed_materials.map((m: any) => typeof m === 'number' ? m : m.material_id)
                 : []
             );
-            const completedSections = hasSections
-              ? (assignment.status === 'completed'
-                  ? sections.length
-                  : sections.filter(sec => {
-                      const mats = sec.materials || [];
-                      return mats.length > 0 ? mats.every(m => completedMaterialIds.has(m.id)) : false;
-                    }).length)
-              : (assignment.completed_materials_count || (assignment.status === 'completed' ? 1 : 0));
-            const totalSections = hasSections ? sections.length : (assignment.total_materials_count || 1);
-            const progress = hasSections
-              ? Math.round((completedSections / totalSections) * 100)
-              : getProgressPercentage(assignment);
+            const totalSections = assignment.total_sections_count ?? (hasSections ? sections.length : (assignment.total_materials_count || 1));
+            const completedSections = assignment.completed_sections_count ?? (
+              hasSections
+                ? (assignment.status === 'completed'
+                    ? sections.length
+                    : sections.filter(sec => {
+                        const mats = sec.materials || [];
+                        return mats.length > 0 ? mats.every(m => completedMaterialIds.has(m.id)) : false;
+                      }).length)
+                : (assignment.completed_materials_count || (assignment.status === 'completed' ? totalSections : 0))
+            );
+            const progress = typeof assignment.progress_percentage === 'number'
+              ? assignment.progress_percentage
+              : (totalSections > 0
+                  ? Math.round((completedSections / totalSections) * 100)
+                  : getProgressPercentage(assignment));
 
             const courseImages = [
               course.main_image || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80',

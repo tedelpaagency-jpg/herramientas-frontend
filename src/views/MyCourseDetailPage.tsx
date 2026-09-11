@@ -649,42 +649,76 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
           {/* Visualizador Principal de la Sección Activa */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* 1. VIDEO PRINCIPAL DE LA SECCIÓN (CONTENIDO DIRECTO DE LA SECCIÓN) */}
-            <div className="bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex flex-col min-h-[360px]">
-              {sectionVideoMaterial ? (
-                <div className="relative flex-1 flex flex-col">
-                  <SectionVideo
-                    material={sectionVideoMaterial}
-                    onEnded={() => handleCompleteMaterial(sectionVideoMaterial.id)}
-                    isCompleted={completedMaterialIds.has(sectionVideoMaterial.id)}
-                  />
-                  <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
-                    <span className="font-bold flex items-center gap-2">
-                      <Video className="w-4 h-4 text-emerald-400" />
-                      <span>Video de la Sección: {sectionVideoMaterial.title}</span>
-                    </span>
-                    {completedMaterialIds.has(sectionVideoMaterial.id) ? (
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[11px]">
-                        ✓ Completado
+            {/* 1. VIDEO O DOCUMENTO PRINCIPAL DE LA SECCIÓN (CONTENIDO DIRECTO) */}
+            {sectionVideoMaterial && (
+              <div className="bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex flex-col">
+                {sectionVideoMaterial.type === 'video' ? (
+                  <div className="relative flex-1 flex flex-col">
+                    <SectionVideo
+                      material={sectionVideoMaterial}
+                      onEnded={() => handleCompleteMaterial(sectionVideoMaterial.id)}
+                      isCompleted={completedMaterialIds.has(sectionVideoMaterial.id)}
+                    />
+                    <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
+                      <span className="font-bold flex items-center gap-2">
+                        <Video className="w-4 h-4 text-emerald-400" />
+                        <span>Video de la Sección: {sectionVideoMaterial.title}</span>
                       </span>
-                    ) : (
-                      <button
-                        onClick={() => handleCompleteMaterial(sectionVideoMaterial.id)}
-                        className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors"
-                      >
-                        Marcar como completado
-                      </button>
-                    )}
+                      {completedMaterialIds.has(sectionVideoMaterial.id) ? (
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[11px]">
+                          ✓ Completado
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleCompleteMaterial(sectionVideoMaterial.id)}
+                          className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors"
+                        >
+                          Marcar como completado
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="aspect-video bg-slate-900 flex flex-col items-center justify-center text-slate-500 space-y-2 p-8 text-center rounded-3xl">
-                  <BookOpen className="w-12 h-12 text-slate-700" />
-                  <p className="text-sm font-bold text-slate-300">Esta sección no contiene video propio.</p>
-                  <p className="text-xs text-slate-500">Revisa la lección escrita o consulta los recursos adjuntos abajo.</p>
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="relative flex-1 flex flex-col">
+                    <div className="w-full h-[550px] bg-white rounded-3xl overflow-hidden shadow-inner">
+                      <iframe
+                        src={courseService.getMaterialStreamUrl(sectionVideoMaterial.id)}
+                        className="w-full h-full"
+                        title={sectionVideoMaterial.title}
+                      />
+                    </div>
+                    <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
+                      <span className="font-bold flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-rose-400" />
+                        <span>Documento de la Sección: {sectionVideoMaterial.title}</span>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={courseService.getMaterialStreamUrl(sectionVideoMaterial.id, true)}
+                          download
+                          className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors inline-flex items-center gap-1"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Descargar Documento</span>
+                        </a>
+                        {completedMaterialIds.has(sectionVideoMaterial.id) ? (
+                          <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[11px]">
+                            ✓ Completado
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleCompleteMaterial(sectionVideoMaterial.id)}
+                            className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors"
+                          >
+                            Marcar como completado
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 1.5 IMAGEN DE CERTIFICADO DEL CURSO (DEBAJO DEL VIDEO - OCULTO SI ES NULL) */}
             {course?.certificate_image && (
@@ -772,108 +806,51 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                 </div>
               </div>
 
-              {/* Grilla de Recursos */}
+              {/* Grilla de Recursos (Sin previsualizadores desplegables abajo) */}
               {sectionResources.length === 0 ? (
                 <div className="text-center py-6 text-xs text-slate-400 font-medium italic">
                   Esta sección no posee recursos ni documentos adicionales en su carpeta.
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    {sectionResources.map((mat) => {
-                      const isSelected = activeResource?.id === mat.id;
-
-                      return (
-                        <div
-                          key={mat.id}
-                          onClick={() => setActiveMaterialId(mat.id)}
-                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 group ${
-                            isSelected
-                              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-900 dark:text-emerald-100 shadow-sm ring-2 ring-emerald-500/20'
-                              : 'bg-slate-50 dark:bg-slate-900/90 border-slate-200/80 dark:border-slate-800 hover:border-emerald-400/60'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-                              mat.type === 'pdf' ? 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400' :
-                              'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
-                            }`}>
-                              {getMaterialIcon(mat.type, "w-5 h-5")}
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="text-xs font-black truncate text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                                {mat.title}
-                              </p>
-                              <p className="text-[10px] text-slate-400 uppercase tracking-wider truncate">
-                                {mat.file_name || mat.type}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="shrink-0 flex items-center gap-1.5">
-                            <a
-                              href={courseService.getMaterialStreamUrl(mat.id, true)}
-                              download
-                              onClick={(e) => e.stopPropagation()}
-                              title="Descargar documento"
-                              className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-colors"
-                            >
-                              <Download className="w-4 h-4" />
-                            </a>
-                          </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {sectionResources.map((mat) => (
+                    <div
+                      key={mat.id}
+                      className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+                          mat.type === 'pdf' ? 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400' :
+                          mat.type === 'image' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400' :
+                          'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+                        }`}>
+                          {getMaterialIcon(mat.type, "w-5 h-5")}
                         </div>
-                      );
-                    })}
-                  </div>
 
-                  {/* Previsualizador de Recurso Seleccionado (PDF, Imagen o Archivo) */}
-                  {activeResource && (
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                          {activeResource.type === 'image' ? <Eye className="w-4 h-4 text-emerald-500" /> : <FileText className="w-4 h-4 text-rose-500" />}
-                          <span>Vista Previa del Recurso: {activeResource.title}</span>
-                        </span>
-                        <a
-                          href={courseService.getMaterialStreamUrl(activeResource.id, true)}
-                          download
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-colors"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Descargar Recurso</span>
-                        </a>
+                        <div className="min-w-0">
+                          <p className="text-xs font-black truncate text-slate-900 dark:text-white">
+                            {mat.title}
+                          </p>
+                          <p className="text-[10px] text-slate-400 uppercase tracking-wider truncate">
+                            {mat.file_name || mat.type}
+                          </p>
+                        </div>
                       </div>
 
-                      {activeResource.type === 'pdf' ? (
-                        <div className="w-full h-[500px] bg-white rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner">
-                          <iframe
-                            src={courseService.getMaterialStreamUrl(activeResource.id)}
-                            className="w-full h-full"
-                            title={activeResource.title}
-                          />
-                        </div>
-                      ) : activeResource.type === 'image' || (activeResource.file_path && /\.(png|jpe?g|webp|gif|svg)$/i.test(activeResource.file_path)) ? (
-                        <div className="w-full bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex items-center justify-center p-4">
-                          <img
-                            src={courseService.getMaterialStreamUrl(activeResource.id)}
-                            alt={activeResource.title}
-                            className="max-w-full h-auto max-h-[500px] object-contain rounded-xl"
-                          />
-                        </div>
-                      ) : (
-                        <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-2">
-                          <File className="w-8 h-8 text-slate-400 mx-auto" />
-                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                            {activeResource.file_name || activeResource.title}
-                          </p>
-                          <p className="text-[11px] text-slate-400">
-                            Usa el botón de descarga para guardar o abrir este recurso en tu dispositivo.
-                          </p>
-                        </div>
-                      )}
+                      <div className="shrink-0 flex items-center gap-1.5">
+                        <a
+                          href={courseService.getMaterialStreamUrl(mat.id, true)}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] font-bold text-xs transition-colors inline-flex items-center gap-1.5"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>Descargar</span>
+                        </a>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
             </div>

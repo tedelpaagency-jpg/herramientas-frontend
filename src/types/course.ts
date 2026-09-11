@@ -161,6 +161,8 @@ export interface MyCourseAssignment {
   total_count?: number;
   completed_materials_count?: number;
   total_materials_count?: number;
+  completed_sections_count?: number;
+  total_sections_count?: number;
   completed_materials?: any[];
   course: Course;
   assigner?: {
