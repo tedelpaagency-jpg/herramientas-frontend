@@ -103,8 +103,8 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
 
   const completedMaterialIds = new Set<number>(
     assignment?.completed_materials
-      ? assignment.completed_materials.map((m: any) => typeof m === 'number' ? m : m.material_id)
-      : []
+      ? assignment.completed_materials.map((m: any) => typeof m === 'number' ? m : (m.material_id ?? m.id))
+      : (assignment?.completed_material_ids ?? [])
   );
 
   const handleCompleteMaterial = async (materialId: number) => {
