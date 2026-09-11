@@ -100,6 +100,8 @@ export const CourseFormPage: React.FC = () => {
   const [editingMaterial, setEditingMaterial] = useState<CourseSectionMaterial | null>(null);
   const [matTitle, setMatTitle] = useState('');
   const [matType, setMatType] = useState<'video' | 'pdf' | 'image' | 'file'>('video');
+  const [matVideoProvider, setMatVideoProvider] = useState<'local' | 'drive' | 'youtube'>('local');
+  const [matExternalUrl, setMatExternalUrl] = useState('');
   const [matFile, setMatFile] = useState<File | null>(null);
   const [savingMaterial, setSavingMaterial] = useState(false);
   const [deletingMatId, setDeletingMatId] = useState<number | null>(null);
@@ -582,12 +584,14 @@ export const CourseFormPage: React.FC = () => {
     }
   };
 
-  // --- MATERIALES DE SECCIÓN ---
+  // --- MATERIALES / RECURSOS DE SECCIÓN ---
   const resetMaterialForm = () => {
     setActiveMaterialSecId(null);
     setEditingMaterial(null);
     setMatTitle('');
     setMatType('video');
+    setMatVideoProvider('local');
+    setMatExternalUrl('');
     setMatFile(null);
   };
 
@@ -596,18 +600,25 @@ export const CourseFormPage: React.FC = () => {
     setEditingMaterial(mat);
     setMatTitle(mat.title);
     setMatType(mat.type);
+    setMatVideoProvider(mat.video_provider || 'local');
+    setMatExternalUrl(mat.external_url || '');
     setMatFile(null);
   };
 
-  const handleSaveMaterial = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveMaterial = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!matTitle.trim() || !activeMaterialSecId) {
-      toast.error('El título del material es requerido');
+      toast.error('El título del recurso es requerido');
       return;
     }
 
-    if (!editingMaterial && !matFile) {
-      toast.error('Debes seleccionar un archivo (video o PDF)');
+    if (!editingMaterial && matType !== 'video' && !matFile) {
+      toast.error('Debes seleccionar un archivo para el recurso');
+      return;
+    }
+
+    if (!editingMaterial && matType === 'video' && matVideoProvider !== 'local' && !matExternalUrl.trim()) {
+      toast.error('Debes ingresar la URL del video');
       return;
     }
 
@@ -617,21 +628,25 @@ export const CourseFormPage: React.FC = () => {
         await courseService.updateMaterial(editingMaterial.id, {
           title: matTitle.trim(),
           type: matType,
+          video_provider: matType === 'video' ? matVideoProvider : undefined,
+          external_url: matType === 'video' && matVideoProvider !== 'local' ? matExternalUrl.trim() : undefined,
           file: matFile || undefined,
         });
-        toast.success('Material actualizado');
+        toast.success('Recurso actualizado');
       } else {
         await courseService.uploadMaterial(activeMaterialSecId, {
           title: matTitle.trim(),
           type: matType,
-          file: matFile!,
+          video_provider: matType === 'video' ? matVideoProvider : undefined,
+          external_url: matType === 'video' && matVideoProvider !== 'local' ? matExternalUrl.trim() : undefined,
+          file: matFile || null,
         });
-        toast.success('Material adjuntado a la sección');
+        toast.success('Recurso adjuntado a la sección');
       }
       resetMaterialForm();
       await refreshSectionsOnly();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al guardar el material');
+      toast.error(err.response?.data?.message || 'Error al guardar el recurso');
     } finally {
       setSavingMaterial(false);
     }
@@ -1489,59 +1504,255 @@ export const CourseFormPage: React.FC = () => {
                           )
                         ) : (
                           <div className="space-y-0.5 pt-0.5">
-                            {modSections.map((section) => {
+                             {modSections.map((section) => {
                               globalSectionCounter++;
                               const currentSecNumber = globalSectionCounter;
                               const materials = section.materials || [];
                               return (
-                                <div key={section.id} className="relative flex items-center justify-between gap-3 py-1.5 pl-11 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs">
-                                  {/* Número Correlativo en la Línea del Timeline (Centrado exacto sobre la línea vertical) */}
-                                  <div className="absolute left-[8px] top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-xs flex items-center justify-center shrink-0 z-10 shadow-xs transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110">
-                                    {currentSecNumber}
-                                  </div>
+                                <div key={section.id} className="space-y-2">
+                                  <div className="relative flex items-center justify-between gap-3 py-1.5 pl-11 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs">
+                                    {/* Número Correlativo en la Línea del Timeline (Centrado exacto sobre la línea vertical) */}
+                                    <div className="absolute left-[8px] top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-xs flex items-center justify-center shrink-0 z-10 shadow-xs transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110">
+                                      {currentSecNumber}
+                                    </div>
 
-                                  <div className="flex items-center gap-3 min-w-0">
-                                    {section.cover_image ? (
-                                      <img
-                                        src={formatImageUrl(section.cover_image)!}
-                                        alt={section.title}
-                                        className="w-16 h-11 sm:w-20 sm:h-12 rounded-xl object-cover shrink-0 border border-slate-200/60 dark:border-slate-800 shadow-xs transition-transform duration-200 group-hover/sec:scale-105 group-hover/sec:shadow-md"
-                                      />
-                                    ) : (
-                                      <div className="w-16 h-11 sm:w-20 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-slate-900 text-white flex items-center justify-center shrink-0 font-black text-xs shadow-xs transition-transform duration-200 group-hover/sec:scale-105 group-hover/sec:shadow-md">
-                                        {section.title.charAt(0).toUpperCase()}
-                                      </div>
-                                    )}
-
-                                    <div className="space-y-0.5 min-w-0">
-                                      <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200 group-hover/sec:text-emerald-600 dark:group-hover/sec:text-[#00e699] transition-colors truncate">
-                                        {section.title}
-                                      </h4>
-                                      {(section.duration || materials[0]?.duration) && (
-                                        <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                          <Clock className="w-3 h-3" />
-                                          <span>{section.duration || materials[0]?.duration}</span>
-                                        </p>
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      {section.cover_image ? (
+                                        <img
+                                          src={formatImageUrl(section.cover_image)!}
+                                          alt={section.title}
+                                          className="w-16 h-11 sm:w-20 sm:h-12 rounded-xl object-cover shrink-0 border border-slate-200/60 dark:border-slate-800 shadow-xs transition-transform duration-200 group-hover/sec:scale-105 group-hover/sec:shadow-md"
+                                        />
+                                      ) : (
+                                        <div className="w-16 h-11 sm:w-20 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-slate-900 text-white flex items-center justify-center shrink-0 font-black text-xs shadow-xs transition-transform duration-200 group-hover/sec:scale-105 group-hover/sec:shadow-md">
+                                          {section.title.charAt(0).toUpperCase()}
+                                        </div>
                                       )}
+
+                                      <div className="space-y-0.5 min-w-0">
+                                        <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200 group-hover/sec:text-emerald-600 dark:group-hover/sec:text-[#00e699] transition-colors truncate">
+                                          {section.title}
+                                        </h4>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                                          {(section.duration || materials[0]?.duration) && (
+                                            <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                              <Clock className="w-3 h-3" />
+                                              <span>{section.duration || materials[0]?.duration}</span>
+                                            </span>
+                                          )}
+                                          <span className="flex items-center gap-1 text-emerald-600 dark:text-[#00e699]">
+                                            <Folder className="w-3 h-3" />
+                                            <span>{materials.length} recurso(s)</span>
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (activeMaterialSecId === section.id && !editingMaterial) {
+                                            resetMaterialForm();
+                                          } else {
+                                            resetMaterialForm();
+                                            setActiveMaterialSecId(section.id);
+                                          }
+                                        }}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] font-extrabold text-[11px] transition-colors"
+                                        title="Agregar Recurso a esta Sección"
+                                      >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        <span className="hidden sm:inline">+ Recurso</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => startEditSection(section)}
+                                        className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteSection(section.id)}
+                                        disabled={deletingSecId === section.id}
+                                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                                      >
+                                        {deletingSecId === section.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                      </button>
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    <button
-                                      type="button"
-                                      onClick={() => startEditSection(section)}
-                                      className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50"
-                                    >
-                                      <Edit2 className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteSection(section.id)}
-                                      disabled={deletingSecId === section.id}
-                                      className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
-                                    >
-                                      {deletingSecId === section.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                                    </button>
+                                  {/* SECCIÓN DE RECURSOS / MATERIALES DE ESTA LECCIÓN */}
+                                  <div className="pl-11 pr-2 space-y-2">
+                                    {/* Formulario de Agregar / Editar Recurso a esta Sección */}
+                                    {activeMaterialSecId === section.id && (
+                                      <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 animate-in fade-in shadow-xs">
+                                        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                                          <h5 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <FolderPlus className="w-3.5 h-3.5 text-emerald-500" />
+                                            <span>{editingMaterial ? 'Editar Recurso de Sección' : `Agregar Recurso a "${section.title}"`}</span>
+                                          </h5>
+                                          <button
+                                            type="button"
+                                            onClick={resetMaterialForm}
+                                            className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                          >
+                                            Cancelar
+                                          </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          <div>
+                                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                              Título del Recurso (Video, Imagen o Documento) *
+                                            </label>
+                                            <input
+                                              type="text"
+                                              value={matTitle}
+                                              onChange={(e) => setMatTitle(e.target.value)}
+                                              placeholder="Ej. Guía PDF de Ejercicios o Imagen del Diagrama"
+                                              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                              required
+                                            />
+                                          </div>
+
+                                          <div>
+                                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                              Tipo de Recurso *
+                                            </label>
+                                            <select
+                                              value={matType}
+                                              onChange={(e) => setMatType(e.target.value as any)}
+                                              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white outline-none"
+                                            >
+                                              <option value="video">Video (Local, YouTube, Drive)</option>
+                                              <option value="image">Imagen (PNG, JPG, WEBP, SVG)</option>
+                                              <option value="pdf">Documento PDF</option>
+                                              <option value="file">Archivo General (ZIP, DOCX, etc.)</option>
+                                            </select>
+                                          </div>
+                                        </div>
+
+                                        {matType === 'video' && (
+                                          <div className="space-y-2 pt-1">
+                                            <div className="grid grid-cols-3 gap-1.5">
+                                              {(['local', 'youtube', 'drive'] as const).map((prov) => (
+                                                <button
+                                                  key={prov}
+                                                  type="button"
+                                                  onClick={() => setMatVideoProvider(prov)}
+                                                  className={`py-1 px-2 rounded-lg text-[10px] font-bold border capitalize ${
+                                                    matVideoProvider === prov
+                                                      ? 'bg-emerald-600 text-white border-emerald-600'
+                                                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                                                  }`}
+                                                >
+                                                  {prov}
+                                                </button>
+                                              ))}
+                                            </div>
+
+                                            {matVideoProvider !== 'local' ? (
+                                              <input
+                                                type="url"
+                                                value={matExternalUrl}
+                                                onChange={(e) => setMatExternalUrl(e.target.value)}
+                                                placeholder={matVideoProvider === 'youtube' ? 'Ej. https://youtube.com/watch?v=...' : 'Ej. https://drive.google.com/file/d/...'}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white outline-none"
+                                              />
+                                            ) : (
+                                              <input
+                                                type="file"
+                                                accept="video/*"
+                                                onChange={(e) => setMatFile(e.target.files?.[0] || null)}
+                                                className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
+                                              />
+                                            )}
+                                          </div>
+                                        )}
+
+                                        {matType !== 'video' && (
+                                          <div className="pt-1">
+                                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                              {editingMaterial ? 'Reemplazar Archivo del Recurso (Opcional)' : 'Seleccionar Archivo del Recurso *'}
+                                            </label>
+                                            <input
+                                              type="file"
+                                              accept={matType === 'image' ? 'image/*' : matType === 'pdf' ? '.pdf,application/pdf' : '*/*'}
+                                              onChange={(e) => setMatFile(e.target.files?.[0] || null)}
+                                              className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
+                                            />
+                                          </div>
+                                        )}
+
+                                        <div className="flex justify-end gap-2 pt-2">
+                                          <button
+                                            type="button"
+                                            onClick={resetMaterialForm}
+                                            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                          >
+                                            Cancelar
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSaveMaterial()}
+                                            disabled={savingMaterial}
+                                            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-xs"
+                                          >
+                                            {savingMaterial ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                            <span>{editingMaterial ? 'Guardar Cambios' : 'Adjuntar Recurso'}</span>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Lista de Recursos Existentes en esta Sección */}
+                                    {materials.length > 0 && (
+                                      <div className="space-y-1 pt-0.5">
+                                        {materials.map((mat) => (
+                                          <div
+                                            key={mat.id}
+                                            className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2 text-xs shadow-2xs hover:border-emerald-500/30 transition-colors"
+                                          >
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                              <span className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                                                {mat.type === 'video' ? <Video className="w-3.5 h-3.5 text-blue-500" /> :
+                                                 mat.type === 'image' ? <Eye className="w-3.5 h-3.5 text-emerald-500" /> :
+                                                 mat.type === 'pdf' ? <FileText className="w-3.5 h-3.5 text-rose-500" /> :
+                                                 <File className="w-3.5 h-3.5 text-slate-500" />}
+                                              </span>
+                                              <div className="min-w-0">
+                                                <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{mat.title}</p>
+                                                <p className="text-[10px] text-slate-400 font-semibold uppercase">
+                                                  {mat.type} {mat.file_name ? `• ${mat.file_name}` : ''}
+                                                </p>
+                                              </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1 shrink-0">
+                                              <button
+                                                type="button"
+                                                onClick={() => startEditMaterial(section.id, mat)}
+                                                className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                                                title="Editar recurso"
+                                              >
+                                                <Edit2 className="w-3.5 h-3.5" />
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteMaterial(mat.id)}
+                                                disabled={deletingMatId === mat.id}
+                                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                                                title="Eliminar recurso"
+                                              >
+                                                {deletingMatId === mat.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               );
