@@ -216,10 +216,10 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
       ? Math.round((completedSectionsCount / sections.length) * 100)
       : (assignment?.progress_percentage ?? 0);
 
-  // Video propio de la sección (pertenece al contenido directo de la sección, no a los recursos)
-  const sectionVideoMaterial = sectionMaterials.find(m => m.type === 'video');
+  // Contenido principal de la lección (Video o Documento principal de la sección)
+  const sectionVideoMaterial = sectionMaterials.find(m => m.title?.includes('(Principal)')) || sectionMaterials.find(m => m.type === 'video');
 
-  // Recursos adicionales de la sección (PDFs, documentos, archivos) excluyendo el video propio de la sección
+  // Recursos y materiales adicionales de la sección (excluyendo el contenido principal de la lección)
   const sectionResources = sectionMaterials.filter(m => m.id !== sectionVideoMaterial?.id);
 
   // Recurso activo seleccionado dentro de los recursos de la sección

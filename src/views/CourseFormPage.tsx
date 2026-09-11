@@ -1508,6 +1508,8 @@ export const CourseFormPage: React.FC = () => {
                               globalSectionCounter++;
                               const currentSecNumber = globalSectionCounter;
                               const materials = section.materials || [];
+                              const primaryMaterial = materials.find(m => m.title.includes('(Principal)')) || materials.find(m => m.type === 'video');
+                              const additionalResources = materials.filter(m => m.id !== primaryMaterial?.id);
                               return (
                                 <div key={section.id} className="space-y-2">
                                   <div className="relative flex items-center justify-between gap-3 py-1.5 pl-11 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs">
@@ -1542,7 +1544,7 @@ export const CourseFormPage: React.FC = () => {
                                           )}
                                           <span className="flex items-center gap-1 text-emerald-600 dark:text-[#00e699]">
                                             <Folder className="w-3 h-3" />
-                                            <span>{materials.length} recurso(s)</span>
+                                            <span>{additionalResources.length} recurso(s) adicional(es)</span>
                                           </span>
                                         </div>
                                       </div>
@@ -1708,9 +1710,9 @@ export const CourseFormPage: React.FC = () => {
                                     )}
 
                                     {/* Lista de Recursos Existentes en esta Sección */}
-                                    {materials.length > 0 && (
+                                    {additionalResources.length > 0 && (
                                       <div className="space-y-1 pt-0.5">
-                                        {materials.map((mat) => (
+                                        {additionalResources.map((mat) => (
                                           <div
                                             key={mat.id}
                                             className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2 text-xs shadow-2xs hover:border-emerald-500/30 transition-colors"
