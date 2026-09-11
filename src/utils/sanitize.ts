@@ -5,14 +5,20 @@
 export function sanitizeHtml(html: string | null | undefined): string {
   if (!html) return '';
 
+  // Pre-procesar saltos de línea sueltos a <br /> si no hay HTML de bloque explícito
+  let inputHtml = html;
+  if (inputHtml.includes('\n') && !/<p[\s>]|<br\s*\/?>/i.test(inputHtml)) {
+    inputHtml = inputHtml.replace(/\r?\n/g, '<br />');
+  }
+
   if (typeof window === 'undefined') {
     // SSR Fallback básico
-    return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    return inputHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
   }
 
   try {
     const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const doc = parser.parseFromString(inputHtml, 'text/html');
 
     // Listas de etiquetas permitidas
     const allowedTags = new Set([

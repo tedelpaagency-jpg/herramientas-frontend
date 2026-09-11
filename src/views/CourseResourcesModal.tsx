@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Video, FileText, Plus, Trash2, Edit2, Upload, Loader2, Save, MoveUp, MoveDown, CheckCircle,
   Bold, Italic, Underline, List, ListOrdered, Heading, Quote, Code, Eye, AlignLeft, Sparkles
@@ -28,6 +28,8 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+
+  const contentRef = useRef<HTMLTextAreaElement | null>(null);
 
   const fetchResources = async () => {
     setLoading(true);
@@ -58,11 +60,37 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
   };
 
   const insertTag = (openTag: string, closeTag: string = '') => {
-    if (!closeTag) {
-      setContent(prev => prev + openTag);
-    } else {
-      setContent(prev => prev + `${openTag}Texto formateado${closeTag}`);
+    const textarea = contentRef.current;
+    if (!textarea) {
+      if (!closeTag) {
+        setContent(prev => prev + openTag);
+      } else {
+        setContent(prev => prev + `${openTag}Texto formateado${closeTag}`);
+      }
+      return;
     }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+
+    let replacement = '';
+    if (selectedText) {
+      replacement = `${openTag}${selectedText}${closeTag}`;
+    } else {
+      replacement = closeTag ? `${openTag}Texto formateado${closeTag}` : openTag;
+    }
+
+    const newContent = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+    setContent(newContent);
+
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = selectedText
+        ? start + replacement.length
+        : start + openTag.length + (closeTag ? 'Texto formateado'.length : 0);
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -331,6 +359,23 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
                       <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
                       <button
                         type="button"
+                        onClick={() => insertTag('<br />')}
+                        title="Salto de línea"
+                        className="px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono text-[11px] font-bold"
+                      >
+                        &lt;br&gt;
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertTag('<p>', '</p>')}
+                        title="Párrafo"
+                        className="px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono text-[11px] font-bold"
+                      >
+                        &lt;p&gt;
+                      </button>
+                      <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+                      <button
+                        type="button"
                         onClick={() => insertTag('<ul className="list-disc pl-5 space-y-1">\n  <li>', '</li>\n</ul>')}
                         title="Lista con viñetas"
                         className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
@@ -366,7 +411,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
 
                   {/* Area de Edición / Vista Previa */}
                   {showPreview ? (
-                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[160px] text-sm text-slate-800 dark:text-slate-200 prose dark:prose-invert max-w-none">
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[160px] text-sm text-slate-800 dark:text-slate-200 prose dark:prose-invert max-w-none whitespace-pre-wrap">
                       {content.trim() ? (
                         <div dangerouslySetInnerHTML={{ __html: content }} />
                       ) : (
@@ -375,6 +420,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
                     </div>
                   ) : (
                     <textarea
+                      ref={contentRef}
                       rows={6}
                       value={content}
                       onChange={(e) => setContent(e.target.value)}

@@ -190,7 +190,7 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({ courseId
                     {course.description || 'Sin descripción ingresada.'}
                   </p>
                   {course.content && (
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs text-slate-700 dark:text-slate-300 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: course.content }} />
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs text-slate-700 dark:text-slate-300 prose dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: course.content }} />
                   )}
                 </div>
 
@@ -305,7 +305,7 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({ courseId
                     {activeSection?.title || 'Sección Seleccionada'}
                   </h3>
                   {(activeSection?.content || activeSection?.description) ? (
-                    <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed prose dark:prose-invert max-w-none pt-1" dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeSection.content || activeSection.description || '') }} />
+                    <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed prose dark:prose-invert max-w-none pt-1 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeSection.content || activeSection.description || '') }} />
                   ) : (
                     <p className="text-xs text-slate-400 italic">Sin notas teóricas para esta sección.</p>
                   )}

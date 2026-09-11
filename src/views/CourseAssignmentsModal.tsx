@@ -58,7 +58,7 @@ export const CourseAssignmentsModal: React.FC<CourseAssignmentsModalProps> = ({ 
     const timer = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const res = await userService.getUsers({ search: userSearch, per_page: 10 });
+        const res = await userService.getUsers({ search: userSearch, per_page: 100 });
         if (res.status === 'success' && res.data) {
           const list = res.data.data || [];
           setAvailableUsers(list);
