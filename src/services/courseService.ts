@@ -64,6 +64,12 @@ export const courseService = {
     return response.data;
   },
 
+  // Admin: Eliminar imagen de certificado del curso
+  deleteCertificateImage: async (courseId: number | string) => {
+    const response = await apiClient.post<{ status: string; message: string; data: any }>('/v1/courses/delete-certificate', { course_id: courseId });
+    return response.data;
+  },
+
   // Admin: Subir recurso de detalle de curso (imagen o video)
   uploadDetailMedia: async (courseId: number | string, data: { media_type: 'image' | 'video'; video_provider?: 'local' | 'youtube' | 'drive'; file?: File | null; external_url?: string }) => {
     const formData = new FormData();
@@ -239,7 +245,7 @@ export const courseService = {
   },
 
   // Admin: Crear sección de curso asociada a un módulo o curso (POST)
-  createSection: async (courseId: number | string, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none'; file?: File; cover_image_file?: File; certificate_image_file?: File }) => {
+  createSection: async (courseId: number | string, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none'; file?: File; cover_image_file?: File }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     if (data.course_module_id) formData.append('course_module_id', data.course_module_id.toString());
@@ -250,7 +256,6 @@ export const courseService = {
     if (data.primary_type) formData.append('primary_type', data.primary_type);
     if (data.file) formData.append('file', data.file);
     if (data.cover_image_file) formData.append('cover_image_file', data.cover_image_file);
-    if (data.certificate_image_file) formData.append('certificate_image_file', data.certificate_image_file);
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/${courseId}/sections`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -260,7 +265,7 @@ export const courseService = {
   },
 
   // Admin: Actualizar sección (POST)
-  updateSection: async (sectionId: number, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none'; file?: File; cover_image_file?: File; certificate_image_file?: File; remove_certificate_image?: boolean }) => {
+  updateSection: async (sectionId: number, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none'; file?: File; cover_image_file?: File }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     if (data.course_module_id !== undefined) formData.append('course_module_id', data.course_module_id ? data.course_module_id.toString() : '');
@@ -271,8 +276,6 @@ export const courseService = {
     if (data.primary_type) formData.append('primary_type', data.primary_type);
     if (data.file) formData.append('file', data.file);
     if (data.cover_image_file) formData.append('cover_image_file', data.cover_image_file);
-    if (data.certificate_image_file) formData.append('certificate_image_file', data.certificate_image_file);
-    if (data.remove_certificate_image) formData.append('remove_certificate_image', '1');
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/${sectionId}/update`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

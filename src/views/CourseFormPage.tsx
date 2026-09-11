@@ -69,6 +69,12 @@ export const CourseFormPage: React.FC = () => {
   const [savingDetailMedia, setSavingDetailMedia] = useState(false);
   const [deletingDetailMedia, setDeletingDetailMedia] = useState(false);
 
+  // Certificado Acreditativo del Curso
+  const [certificateImage, setCertificateImage] = useState<string | null>(null);
+  const [certificateImagePreview, setCertificateImagePreview] = useState<string | null>(null);
+  const [savingCertificate, setSavingCertificate] = useState(false);
+  const [deletingCertificate, setDeletingCertificate] = useState(false);
+
   // Modal de Avance de Alumnos
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
 
@@ -86,8 +92,6 @@ export const CourseFormPage: React.FC = () => {
   const [secPrimaryFile, setSecPrimaryFile] = useState<File | null>(null);
   const [secCoverFile, setSecCoverFile] = useState<File | null>(null);
   const [secCoverPreview, setSecCoverPreview] = useState<string | null>(null);
-  const [secCertificateFile, setSecCertificateFile] = useState<File | null>(null);
-  const [secCertificatePreview, setSecCertificatePreview] = useState<string | null>(null);
   const [showSecPreview, setShowSecPreview] = useState(false);
   const [savingSection, setSavingSection] = useState(false);
   const [deletingSecId, setDeletingSecId] = useState<number | null>(null);
@@ -137,6 +141,10 @@ export const CourseFormPage: React.FC = () => {
         setDetailMediaProvider(c.detail_media_provider || null);
         setDetailMediaUrl(c.detail_media_url || null);
         setDetailMediaPreview(c.detail_media_url ? formatImageUrl(c.detail_media_url) : null);
+        
+        // Certificado acreditativo del curso
+        setCertificateImage(c.certificate_image || null);
+        setCertificateImagePreview(c.certificate_image ? formatImageUrl(c.certificate_image) : null);
         
         // Cargar módulos y secciones
         setModules(c.modules || []);
@@ -328,8 +336,6 @@ export const CourseFormPage: React.FC = () => {
     setSecPrimaryFile(null);
     setSecCoverFile(null);
     setSecCoverPreview(null);
-    setSecCertificateFile(null);
-    setSecCertificatePreview(null);
     setShowSecPreview(false);
   };
 
@@ -355,8 +361,6 @@ export const CourseFormPage: React.FC = () => {
     setSecContent(sec.content || '');
     setSecCoverPreview(formatImageUrl(sec.cover_image));
     setSecCoverFile(null);
-    setSecCertificatePreview(formatImageUrl(sec.certificate_image));
-    setSecCertificateFile(null);
     if (sec.primary_type === 'none') {
       setSecPrimaryType('none');
       setSecVideoProvider('local');
@@ -395,20 +399,6 @@ export const CourseFormPage: React.FC = () => {
       setSecCoverPreview(reader.result as string);
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleSecCertificateChange = (file: File) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setSecCertificateFile(file);
-      setSecCertificatePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const removeSecCertificate = () => {
-    setSecCertificateFile(null);
-    setSecCertificatePreview(null);
   };
 
   const handleSaveDetailMedia = async (mediaType: 'image' | 'video', provider?: 'local' | 'youtube' | 'drive', file?: File | null, externalUrl?: string) => {
@@ -461,6 +451,44 @@ export const CourseFormPage: React.FC = () => {
     }
   };
 
+  const handleUploadCertificateImage = async (file: File) => {
+    if (!courseId) {
+      toast.error('Guarda primero la información básica del curso para subir el certificado.');
+      return;
+    }
+
+    setSavingCertificate(true);
+    try {
+      const res = await courseService.uploadCertificateImage(file, Number(courseId));
+      if (res.url) {
+        setCertificateImage(res.url);
+        setCertificateImagePreview(formatImageUrl(res.url));
+        toast.success('Imagen de certificado del curso subida exitosamente');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al subir la imagen de certificado');
+    } finally {
+      setSavingCertificate(false);
+    }
+  };
+
+  const handleDeleteCertificateImage = async () => {
+    if (!courseId) return;
+    if (!confirm('¿Deseas eliminar el certificado acreditativo de este curso?')) return;
+
+    setDeletingCertificate(true);
+    try {
+      await courseService.deleteCertificateImage(courseId);
+      setCertificateImage(null);
+      setCertificateImagePreview(null);
+      toast.success('Certificado del curso eliminado');
+    } catch (err: any) {
+      toast.error('Error al eliminar el certificado');
+    } finally {
+      setDeletingCertificate(false);
+    }
+  };
+
   const insertFormatTag = (openTag: string, closeTag: string = '') => {
     if (!closeTag) {
       setSecContent(prev => prev + openTag);
@@ -469,8 +497,8 @@ export const CourseFormPage: React.FC = () => {
     }
   };
 
-  const handleSaveSection = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveSection = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!secTitle.trim()) {
       toast.error('El título de la sección es requerido');
       return;
@@ -497,7 +525,6 @@ export const CourseFormPage: React.FC = () => {
         primary_type: secPrimaryType,
         file: secPrimaryFile || undefined,
         cover_image_file: secCoverFile || undefined,
-        certificate_image_file: secCertificateFile || undefined,
       };
 
       let secRes;
@@ -949,6 +976,79 @@ export const CourseFormPage: React.FC = () => {
               )}
             </div>
 
+            {/* SECCIÓN: CERTIFICADO ACREDITATIVO DEL CURSO */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-amber-500" />
+                  <h3 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Certificado Acreditativo del Curso
+                  </h3>
+                </div>
+                {certificateImagePreview && (
+                  <span className="text-[10px] font-extrabold text-amber-500 uppercase">
+                    Cargado
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Subir la plantilla o imagen del certificado oficial que obtendrán los alumnos al completar este curso.
+              </p>
+
+              {certificateImagePreview ? (
+                <div className="space-y-3">
+                  <div className="relative rounded-2xl overflow-hidden group border border-amber-200 dark:border-amber-900/50 max-h-48 bg-slate-950 flex items-center justify-center p-2">
+                    <img
+                      src={certificateImagePreview}
+                      alt="Certificado Acreditativo"
+                      className="max-w-full max-h-44 object-contain rounded-xl"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <label className="flex-1 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                      {savingCertificate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      <span>Reemplazar Certificado</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files?.[0] && handleUploadCertificateImage(e.target.files[0])}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={handleDeleteCertificateImage}
+                      disabled={deletingCertificate}
+                      className="py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs transition-colors flex items-center justify-center gap-2"
+                    >
+                      {deletingCertificate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center h-32 rounded-2xl border-2 border-dashed border-amber-300/60 dark:border-amber-900/40 hover:border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 cursor-pointer transition-all p-4 text-center group">
+                  {savingCertificate ? (
+                    <Loader2 className="w-6 h-6 text-amber-500 animate-spin mb-1" />
+                  ) : (
+                    <Award className="w-6 h-6 text-amber-500 mb-1 group-hover:scale-110 transition-transform" />
+                  )}
+                  <span className="text-xs font-extrabold text-amber-700 dark:text-amber-400">
+                    Subir Imagen del Certificado
+                  </span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP o SVG (Máx. 10MB)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => e.target.files?.[0] && handleUploadCertificateImage(e.target.files[0])}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+
             {/* SECCIÓN: 3 IMÁGENES DE PORTADA DEL CURSO */}
             <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -1195,8 +1295,8 @@ export const CourseFormPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Portada e Imagen de la Sección + Certificado + Duración */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                {/* Portada e Imagen de la Sección + Duración */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Portada de la Sección (Miniatura)
@@ -1214,37 +1314,6 @@ export const CourseFormPage: React.FC = () => {
                         accept="image/*"
                         onChange={(e) => e.target.files?.[0] && handleSecCoverChange(e.target.files[0])}
                         className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Imagen de Certificado (Opcional)
-                    </label>
-                    <div className="flex items-center gap-3">
-                      {secCertificatePreview ? (
-                        <div className="relative group shrink-0">
-                          <img src={secCertificatePreview} alt="Certificado" className="w-12 h-12 rounded-xl object-cover border border-amber-500 shrink-0" />
-                          <button
-                            type="button"
-                            onClick={removeSecCertificate}
-                            className="absolute -top-1 -right-1 p-0.5 rounded-full bg-rose-600 text-white shadow-sm"
-                            title="Eliminar certificado"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
-                          <Award className="w-5 h-5" />
-                        </div>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => e.target.files?.[0] && handleSecCertificateChange(e.target.files[0])}
-                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-amber-100 file:text-amber-700 dark:file:bg-amber-950 dark:file:text-amber-300"
                       />
                     </div>
                   </div>
@@ -1837,8 +1906,8 @@ export const CourseFormPage: React.FC = () => {
                                   </div>
                                 </div>
 
-                                {/* Portada e Imagen de la Sección + Certificado + Duración */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                                {/* Portada e Imagen de la Sección + Duración */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
                                   <div>
                                     <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                                       Portada de la Sección (Miniatura)
@@ -1856,37 +1925,6 @@ export const CourseFormPage: React.FC = () => {
                                         accept="image/*"
                                         onChange={(e) => e.target.files?.[0] && handleSecCoverChange(e.target.files[0])}
                                         className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                      Imagen de Certificado (Opcional)
-                                    </label>
-                                    <div className="flex items-center gap-3">
-                                      {secCertificatePreview ? (
-                                        <div className="relative group shrink-0">
-                                          <img src={secCertificatePreview} alt="Certificado" className="w-12 h-12 rounded-xl object-cover border border-amber-500 shrink-0" />
-                                          <button
-                                            type="button"
-                                            onClick={removeSecCertificate}
-                                            className="absolute -top-1 -right-1 p-0.5 rounded-full bg-rose-600 text-white shadow-sm"
-                                            title="Eliminar certificado"
-                                          >
-                                            <X className="w-3 h-3" />
-                                          </button>
-                                        </div>
-                                      ) : (
-                                        <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
-                                          <Award className="w-5 h-5" />
-                                        </div>
-                                      )}
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => e.target.files?.[0] && handleSecCertificateChange(e.target.files[0])}
-                                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-amber-100 file:text-amber-700 dark:file:bg-amber-950 dark:file:text-amber-300"
                                       />
                                     </div>
                                   </div>
