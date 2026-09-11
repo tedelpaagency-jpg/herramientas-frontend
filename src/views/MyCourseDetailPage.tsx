@@ -225,12 +225,14 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
   // Recurso activo seleccionado dentro de los recursos de la sección
   const activeResource = sectionResources.find(m => m.id === activeMaterialId) || sectionResources[0];
 
-  const getMaterialIcon = (resType: 'video' | 'pdf' | 'file', className = "w-4 h-4") => {
+  const getMaterialIcon = (resType: 'video' | 'pdf' | 'image' | 'file', className = "w-4 h-4") => {
     switch (resType) {
       case 'video':
         return <Video className={className} />;
       case 'pdf':
         return <FileText className={className} />;
+      case 'image':
+        return <Eye className={className} />;
       default:
         return <File className={className} />;
     }
@@ -684,8 +686,8 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
               )}
             </div>
 
-            {/* 1.5 IMAGEN DE CERTIFICADO DE LA SECCIÓN (DEBAJO DEL VIDEO - OCULTO SI ES NULL) */}
-            {activeSection?.certificate_image && (
+            {/* 1.5 IMAGEN DE CERTIFICADO DEL CURSO (DEBAJO DEL VIDEO - OCULTO SI ES NULL) */}
+            {course?.certificate_image && (
               <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-amber-200 dark:border-amber-900/50 shadow-sm space-y-4">
                 <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
@@ -693,17 +695,17 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                   </div>
                   <div>
                     <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                      Certificado / Reconocimiento de la Sección
+                      Certificado Acreditativo del Curso
                     </h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                      Material acreditativo asociado a esta lección
+                      Certificado oficial emitido al completar el programa
                     </p>
                   </div>
                 </div>
                 <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 flex items-center justify-center p-2">
                   <img
-                    src={formatImageUrl(activeSection.certificate_image)!}
-                    alt={`Certificado de ${activeSection.title}`}
+                    src={formatImageUrl(course.certificate_image)!}
+                    alt={`Certificado del Curso ${course.title}`}
                     className="max-w-full h-auto max-h-[500px] object-contain rounded-xl"
                   />
                 </div>
@@ -825,30 +827,51 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                     })}
                   </div>
 
-                  {/* Previsualizador de Recurso Seleccionado */}
-                  {activeResource && activeResource.type === 'pdf' && (
+                  {/* Previsualizador de Recurso Seleccionado (PDF, Imagen o Archivo) */}
+                  {activeResource && (
                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-rose-500" />
-                          <span>Vista Previa del Documento: {activeResource.title}</span>
+                          {activeResource.type === 'image' ? <Eye className="w-4 h-4 text-emerald-500" /> : <FileText className="w-4 h-4 text-rose-500" />}
+                          <span>Vista Previa del Recurso: {activeResource.title}</span>
                         </span>
                         <a
                           href={courseService.getMaterialStreamUrl(activeResource.id, true)}
                           download
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-colors"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          <span>Descargar PDF</span>
+                          <span>Descargar Recurso</span>
                         </a>
                       </div>
-                      <div className="w-full h-[500px] bg-white rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner">
-                        <iframe
-                          src={courseService.getMaterialStreamUrl(activeResource.id)}
-                          className="w-full h-full"
-                          title={activeResource.title}
-                        />
-                      </div>
+
+                      {activeResource.type === 'pdf' ? (
+                        <div className="w-full h-[500px] bg-white rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner">
+                          <iframe
+                            src={courseService.getMaterialStreamUrl(activeResource.id)}
+                            className="w-full h-full"
+                            title={activeResource.title}
+                          />
+                        </div>
+                      ) : activeResource.type === 'image' || (activeResource.file_path && /\.(png|jpe?g|webp|gif|svg)$/i.test(activeResource.file_path)) ? (
+                        <div className="w-full bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex items-center justify-center p-4">
+                          <img
+                            src={courseService.getMaterialStreamUrl(activeResource.id)}
+                            alt={activeResource.title}
+                            className="max-w-full h-auto max-h-[500px] object-contain rounded-xl"
+                          />
+                        </div>
+                      ) : (
+                        <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-2">
+                          <File className="w-8 h-8 text-slate-400 mx-auto" />
+                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            {activeResource.file_name || activeResource.title}
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            Usa el botón de descarga para guardar o abrir este recurso en tu dispositivo.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

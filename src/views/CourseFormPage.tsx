@@ -80,7 +80,7 @@ export const CourseFormPage: React.FC = () => {
   const [secGroupName, setSecGroupName] = useState('');
   const [secDuration, setSecDuration] = useState('');
   const [secContent, setSecContent] = useState('');
-  const [secPrimaryType, setSecPrimaryType] = useState<'video' | 'pdf' | 'file'>('video');
+  const [secPrimaryType, setSecPrimaryType] = useState<'video' | 'pdf' | 'image' | 'file'>('video');
   const [secVideoProvider, setSecVideoProvider] = useState<'local' | 'drive' | 'youtube'>('local');
   const [secExternalUrl, setSecExternalUrl] = useState('');
   const [secPrimaryFile, setSecPrimaryFile] = useState<File | null>(null);
@@ -99,7 +99,7 @@ export const CourseFormPage: React.FC = () => {
   const [activeMaterialSecId, setActiveMaterialSecId] = useState<number | null>(null);
   const [editingMaterial, setEditingMaterial] = useState<CourseSectionMaterial | null>(null);
   const [matTitle, setMatTitle] = useState('');
-  const [matType, setMatType] = useState<'video' | 'pdf' | 'file'>('video');
+  const [matType, setMatType] = useState<'video' | 'pdf' | 'image' | 'file'>('video');
   const [matFile, setMatFile] = useState<File | null>(null);
   const [savingMaterial, setSavingMaterial] = useState(false);
   const [deletingMatId, setDeletingMatId] = useState<number | null>(null);

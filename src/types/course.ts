@@ -2,7 +2,7 @@ export interface CourseSectionMaterial {
   id: number;
   course_section_id: number;
   title: string;
-  type: 'video' | 'pdf' | 'file';
+  type: 'video' | 'pdf' | 'image' | 'file';
   video_provider?: 'local' | 'drive' | 'youtube' | null;
   external_url?: string | null;
   duration?: string | null;
@@ -107,6 +107,7 @@ export interface Course {
   detail_media_type?: 'image' | 'video' | null;
   detail_media_provider?: 'local' | 'youtube' | 'drive' | null;
   detail_media_url?: string | null;
+  certificate_image?: string | null;
   category?: string | null;
   status: 'active' | 'inactive' | 'draft';
   created_by?: number | null;

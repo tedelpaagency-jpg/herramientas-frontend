@@ -84,12 +84,14 @@ export const CoursePreviewModal: React.FC<CoursePreviewModalProps> = ({ courseId
   const sectionResources = sectionMaterials.filter(m => m.id !== sectionVideoMaterial?.id);
   const activeResource = sectionResources.find(m => m.id === activeMaterialId) || sectionResources[0];
 
-  const getMaterialIcon = (resType: 'video' | 'pdf' | 'file', className = "w-4 h-4") => {
+  const getMaterialIcon = (resType: 'video' | 'pdf' | 'image' | 'file', className = "w-4 h-4") => {
     switch (resType) {
       case 'video':
         return <Video className={className} />;
       case 'pdf':
         return <FileText className={className} />;
+      case 'image':
+        return <Eye className={className} />;
       default:
         return <File className={className} />;
     }
