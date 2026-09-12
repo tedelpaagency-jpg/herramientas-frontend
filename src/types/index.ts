@@ -339,21 +339,7 @@ export interface LandingRequest {
   created_at?: string;
 }
 
-export interface LandingTemplate {
-  id: number;
-  agency_id?: number;
-  agency_name?: string;
-  name: string;
-  plantilla: string;
-  files?: any;
-  qr?: string;
-  encoded_id?: string;
-  public_url?: string;
-  status?: number;
-  events?: LandingEvent[];
-  requests_count?: number;
-  created_at?: string;
-}
+
 
 export interface EmailTemplate {
   id: number;
@@ -598,4 +584,4 @@ export interface PaginatedResult<T> {
   data: T[];
   pagination: PaginationMeta;
 }
-
+export * from './landing';

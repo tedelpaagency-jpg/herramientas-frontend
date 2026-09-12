@@ -3,11 +3,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { LandingTemplate, LandingEvent, LandingRequest } from '../types';
 import landingService from '../services/landingService';
+import LandingBuilderModal from '../components/landings/LandingBuilderModal';
 import { 
   Globe, Calendar, QrCode, ExternalLink, Users, Copy, 
   Check, Plus, Clock, FileText, CheckCircle2, ShieldCheck, X,
   Search, Eye, LayoutList, LayoutGrid, AlertTriangle, Power, PowerOff,
-  Loader2
+  Loader2, Edit3, Trash2, Code, Layout, Shield
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -28,6 +29,10 @@ export const LandingsPage: React.FC = () => {
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+
+  // Builder Modal State
+  const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+  const [editingLanding, setEditingLanding] = useState<LandingTemplate | null>(null);
 
   // Detail Modal State
   const [selectedLanding, setSelectedLanding] = useState<LandingTemplate | null>(null);
@@ -74,6 +79,23 @@ export const LandingsPage: React.FC = () => {
     setCopiedId(id);
     toast.success('Enlace copiado al portapapeles');
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleOpenBuilder = (landing?: LandingTemplate) => {
+    setEditingLanding(landing || null);
+    setIsBuilderOpen(true);
+  };
+
+  const handleDeleteLanding = async (id: number) => {
+    if (!confirm('¿Está seguro de eliminar esta Landing Page? Esta acción no se puede deshacer.')) return;
+    try {
+      await landingService.deleteLanding(id);
+      toast.success('Landing Page eliminada con éxito');
+      fetchLandings();
+    } catch (err) {
+      console.error('Error deleting landing:', err);
+      toast.error('No se pudo eliminar la Landing Page');
+    }
   };
 
   const handleToggleStatus = async (landing: LandingTemplate) => {
@@ -169,36 +191,45 @@ export const LandingsPage: React.FC = () => {
       (l) =>
         l.name?.toLowerCase().includes(term) ||
         l.plantilla?.toLowerCase().includes(term) ||
-        l.agency_name?.toLowerCase().includes(term)
+        l.agency_name?.toLowerCase().includes(term) ||
+        (l as any).white_label?.name?.toLowerCase().includes(term)
     );
   }, [landings, search]);
 
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-md shadow-teal-600/20">
               <Globe className="w-5 h-5" />
             </div>
-            Catálogo de Landing Pages & Eventos
+            Catálogo de Landing Pages & Web Builder
           </h2>
-          <p className="text-xs text-slate-500 font-medium mt-1">
-            Visualización, estado y gestión de páginas de captación renderizadas desde Laravel.
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+            Gestión multitenant, constructor visual, HTML personalizado y formularios dinámicos.
           </p>
         </div>
+
+        <button
+          onClick={() => handleOpenBuilder()}
+          className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-md transition"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Nueva Landing Page (Builder)</span>
+        </button>
       </div>
 
       {/* Controls Bar: Search & View Toggle */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre de landing, plantilla o agencia..."
+            placeholder="Buscar por nombre, plantilla, marca blanca o agencia..."
             className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-teal-600"
           />
         </div>
@@ -232,7 +263,7 @@ export const LandingsPage: React.FC = () => {
         <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 space-y-3">
           <Globe className="w-12 h-12 text-slate-300 mx-auto" />
           <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200">No hay Landing Pages registradas</h3>
-          <p className="text-xs text-slate-400">No se encontraron plantillas asociadas a tu búsqueda o cuenta.</p>
+          <p className="text-xs text-slate-400">Crea una nueva landing usando el Web Builder.</p>
         </div>
       ) : viewMode === 'table' ? (
         /* TABLE VIEW FORMAT */
@@ -241,56 +272,68 @@ export const LandingsPage: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-900 text-slate-300 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
                 <tr>
-                  <th className="p-4">ID / Encoded</th>
-                  <th className="p-4">Landing Page & Plantilla</th>
+                  <th className="p-4">ID</th>
+                  <th className="p-4">Landing Page & Modo</th>
+                  <th className="p-4">Marca Blanca / Agencia</th>
                   <th className="p-4">Estado</th>
-                  <th className="p-4">Agencia</th>
                   <th className="p-4 text-center">Prospectos</th>
-                  <th className="p-4">Evento / Promoción Activa</th>
-                  <th className="p-4">Enlace Público de Laravel</th>
+                  <th className="p-4">Enlace Público</th>
                   <th className="p-4 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-800 dark:text-slate-200">
                 {filteredLandings.map((landing) => {
                   const publicUrl = getPublicUrl(landing);
-                  const activeEvent = landing.events?.find((e) => e.status === 1);
                   const isSuspended = landing.status === 0;
+                  const isCustomHtml = landing.mode === 'custom_html';
+                  const whiteLabelName = (landing as any).white_label?.name;
 
                   return (
                     <tr key={landing.id} className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors ${isSuspended ? 'bg-slate-50/50' : ''}`}>
-                      <td className="p-4">
-                        <div className="flex flex-col gap-1">
-                          <span className="font-mono text-xs font-black text-slate-900 dark:text-slate-100">#{landing.id}</span>
-                          <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-teal-50 text-teal-700 border border-teal-200/80 w-max">
-                            {landing.encoded_id || base64Encode(landing.id)}
-                          </span>
-                        </div>
+                      <td className="p-4 font-mono font-black text-xs">
+                        #{landing.id}
                       </td>
                       <td className="p-4">
-                        <div className="space-y-0.5">
+                        <div className="space-y-1">
                           <div className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
                             <Globe className={`w-4 h-4 shrink-0 ${isSuspended ? 'text-amber-500' : 'text-teal-600'}`} />
                             <span className={isSuspended ? 'line-through text-slate-500' : ''}>{landing.name}</span>
                           </div>
-                          <p className="text-[11px] font-mono text-slate-400 pl-5.5">{landing.plantilla}</p>
+                          <div className="flex items-center gap-2">
+                            {isCustomHtml ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                <Code className="w-3 h-3 text-amber-500" /> HTML Ameripass
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                <Layout className="w-3 h-3 text-indigo-500" /> Builder Visual
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="space-y-1">
+                          {whiteLabelName && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 block w-max">
+                              <Shield className="w-3 h-3 text-purple-500" /> {whiteLabelName}
+                            </span>
+                          )}
+                          <span className="font-bold text-slate-700 dark:text-slate-300">
+                            {landing.agency_name || 'Global'}
+                          </span>
                         </div>
                       </td>
                       <td className="p-4">
                         {isSuspended ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200">
-                            <AlertTriangle className="w-3 h-3 text-amber-500" />
-                            Suspendida
+                            <AlertTriangle className="w-3 h-3 text-amber-500" /> Suspendida
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                            Habilitada
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Habilitada
                           </span>
                         )}
-                      </td>
-                      <td className="p-4">
-                        <span className="font-bold text-slate-700">{landing.agency_name || 'Agencia Principal'}</span>
                       </td>
                       <td className="p-4 text-center">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 font-black border border-teal-200">
@@ -299,26 +342,16 @@ export const LandingsPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="p-4">
-                        {activeEvent ? (
-                          <div className="space-y-0.5">
-                            <span className="font-bold text-slate-800 text-xs block">{activeEvent.name}</span>
-                            <span className="text-[10px] text-teal-600 font-mono">Hasta: {activeEvent.date_end}</span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 italic text-[11px]">Sin evento programado</span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-200 max-w-xs">
+                        <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 max-w-xs">
                           <input
                             type="text"
                             readOnly
                             value={publicUrl}
-                            className="flex-1 bg-transparent font-mono text-[10px] text-slate-600 outline-none px-1 truncate"
+                            className="flex-1 bg-transparent font-mono text-[10px] text-slate-600 dark:text-slate-300 outline-none px-1 truncate"
                           />
                           <button
                             onClick={() => handleCopyUrl(publicUrl, landing.id)}
-                            className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-teal-600 transition-colors"
+                            className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 hover:text-teal-600 transition-colors"
                             title="Copiar Enlace"
                           >
                             {copiedId === landing.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -327,16 +360,23 @@ export const LandingsPage: React.FC = () => {
                       </td>
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Toggle Status Button */}
+                          <button
+                            onClick={() => handleOpenBuilder(landing)}
+                            className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-extrabold text-xs rounded-xl border border-indigo-200 dark:border-indigo-800 transition-all flex items-center gap-1"
+                            title="Editar en Web Builder"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Builder</span>
+                          </button>
+
                           <button
                             onClick={() => handleToggleStatus(landing)}
                             disabled={togglingId === landing.id}
-                            className={`px-3 py-1.5 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 ${
+                            className={`px-2.5 py-1.5 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1 ${
                               isSuspended
                                 ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
                                 : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
                             }`}
-                            title={isSuspended ? 'Habilitar Landing' : 'Suspender Landing'}
                           >
                             {togglingId === landing.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -345,23 +385,30 @@ export const LandingsPage: React.FC = () => {
                             ) : (
                               <PowerOff className="w-3.5 h-3.5" />
                             )}
-                            <span>{isSuspended ? 'Habilitar' : 'Suspender'}</span>
                           </button>
 
                           <button
                             onClick={() => handleOpenDetail(landing)}
-                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1"
+                            className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 font-extrabold text-xs rounded-xl transition-all"
+                            title="Detalles"
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            <span>Detalles</span>
                           </button>
+
+                          <button
+                            onClick={() => handleDeleteLanding(landing.id)}
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
+                            title="Eliminar Landing"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+
                           <a
                             href={publicUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs rounded-xl transition-all inline-flex items-center gap-1 shadow-2xs"
+                            className="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs rounded-xl transition-all inline-flex items-center gap-1 shadow-2xs"
                           >
-                            <span>Ver</span>
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
                         </div>
@@ -378,14 +425,14 @@ export const LandingsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredLandings.map((landing) => {
             const publicUrl = getPublicUrl(landing);
-            const activeEvent = landing.events?.find((e) => e.status === 1);
             const isSuspended = landing.status === 0;
+            const isCustomHtml = landing.mode === 'custom_html';
 
             return (
               <div
                 key={landing.id}
-                className={`bg-white rounded-2xl border transition-all shadow-2xs hover:shadow-md flex flex-col overflow-hidden group ${
-                  isSuspended ? 'border-amber-300/80 bg-slate-50/40' : 'border-slate-200/90 hover:border-teal-500'
+                className={`bg-white dark:bg-slate-900 rounded-2xl border transition-all shadow-2xs hover:shadow-md flex flex-col overflow-hidden group ${
+                  isSuspended ? 'border-amber-300/80 bg-slate-50/40' : 'border-slate-200/90 dark:border-slate-800 hover:border-teal-500'
                 }`}
               >
                 {/* Card Header */}
@@ -393,107 +440,62 @@ export const LandingsPage: React.FC = () => {
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                        ID: {landing.id} ({landing.encoded_id || base64Encode(landing.id)})
+                        ID: {landing.id}
                       </span>
-                      {isSuspended && (
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3 text-amber-400" /> Suspendida
+                      {isCustomHtml ? (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          HTML
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                          Builder
                         </span>
                       )}
                     </div>
                     <h3 className={`text-lg font-black mt-2 text-white line-clamp-1 ${isSuspended ? 'line-through opacity-80' : ''}`}>
                       {landing.name}
                     </h3>
-                    <p className="text-xs text-slate-400 font-mono mt-0.5">{landing.plantilla}</p>
                   </div>
-                  <div className="p-2 bg-slate-800 rounded-xl text-teal-400">
-                    <Globe className="w-5 h-5" />
-                  </div>
+                  <button
+                    onClick={() => handleOpenBuilder(landing)}
+                    className="p-2 bg-indigo-600/80 hover:bg-indigo-600 rounded-xl text-white transition"
+                    title="Editar en Builder"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
                 </div>
 
                 {/* Card Content */}
                 <div className="p-5 flex-1 space-y-4 text-xs">
-                  <div className="flex justify-between items-center pt-1 border-b border-slate-100 pb-3">
-                    <span className="text-slate-500 font-medium">Agencia:</span>
-                    <span className="font-extrabold text-slate-800">{landing.agency_name || 'Agencia Principal'}</span>
+                  <div className="flex justify-between items-center pt-1 border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <span className="text-slate-500 font-medium">Agencia / Tenant:</span>
+                    <span className="font-extrabold text-slate-800 dark:text-slate-200">{landing.agency_name || 'Global'}</span>
                   </div>
 
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
                     <span className="text-slate-500 font-medium">Prospectos Capturados:</span>
                     <span className="px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 font-black border border-teal-100 flex items-center gap-1">
                       <Users className="w-3.5 h-3.5" />
                       {landing.requests_count || 0}
                     </span>
                   </div>
-
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Evento / Promoción Activa</span>
-                    {activeEvent ? (
-                      <div className="flex items-center justify-between text-slate-800 font-bold">
-                        <span>{activeEvent.name}</span>
-                        <span className="text-[10px] text-teal-600 font-mono">Hasta: {activeEvent.date_end}</span>
-                      </div>
-                    ) : (
-                      <span className="text-slate-400 italic text-[11px]">Sin evento programado</span>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Enlace Público de Laravel</label>
-                    <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-                      <input
-                        type="text"
-                        readOnly
-                        value={publicUrl}
-                        className="flex-1 bg-transparent font-mono text-[10px] text-slate-600 outline-none px-1"
-                      />
-                      <button
-                        onClick={() => handleCopyUrl(publicUrl, landing.id)}
-                        className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-teal-600 transition-colors"
-                        title="Copiar Enlace"
-                      >
-                        {copiedId === landing.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Card Actions Footer */}
-                <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                   <button
-                    onClick={() => handleToggleStatus(landing)}
-                    disabled={togglingId === landing.id}
-                    className={`px-3 py-2 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 ${
-                      isSuspended
-                        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                        : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
-                    }`}
+                    onClick={() => handleOpenBuilder(landing)}
+                    className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl text-center transition-all flex items-center justify-center gap-1"
                   >
-                    {togglingId === landing.id ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : isSuspended ? (
-                      <Power className="w-3.5 h-3.5" />
-                    ) : (
-                      <PowerOff className="w-3.5 h-3.5" />
-                    )}
-                    <span>{isSuspended ? 'Habilitar' : 'Suspender'}</span>
+                    <Edit3 className="w-3.5 h-3.5" /> Builder
                   </button>
 
                   <button
                     onClick={() => handleOpenDetail(landing)}
-                    className="flex-1 py-2 bg-white text-slate-800 font-extrabold text-xs rounded-xl border border-slate-200 hover:bg-slate-100 text-center transition-all"
+                    className="px-3 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-extrabold text-xs rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100"
                   >
                     Detalles
                   </button>
-
-                  <a
-                    href={publicUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-2 bg-teal-600 text-white font-bold text-xs rounded-xl hover:bg-teal-700 flex items-center gap-1 shadow-2xs"
-                  >
-                    Ver <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
                 </div>
               </div>
             );
@@ -501,10 +503,18 @@ export const LandingsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Web Builder Modal */}
+      <LandingBuilderModal
+        isOpen={isBuilderOpen}
+        onClose={() => setIsBuilderOpen(false)}
+        landing={editingLanding}
+        onSaved={fetchLandings}
+      />
+
       {/* Landing Detail & Events Modal */}
       {selectedLanding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-3xl h-[80vh] shadow-2xl flex flex-col overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl h-[80vh] shadow-2xl flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
               <div>
@@ -523,28 +533,9 @@ export const LandingsPage: React.FC = () => {
                   )}
                 </div>
                 <h3 className="text-xl font-black mt-1 text-white">{selectedLanding.name}</h3>
-                <p className="text-xs text-slate-400 font-mono">Plantilla: {selectedLanding.plantilla}</p>
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleToggleStatus(selectedLanding)}
-                  disabled={togglingId === selectedLanding.id}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 ${
-                    selectedLanding.status === 0
-                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                      : 'bg-rose-600 text-white hover:bg-rose-700'
-                  }`}
-                >
-                  {togglingId === selectedLanding.id ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : selectedLanding.status === 0 ? (
-                    <Power className="w-3.5 h-3.5" />
-                  ) : (
-                    <PowerOff className="w-3.5 h-3.5" />
-                  )}
-                  <span>{selectedLanding.status === 0 ? 'Habilitar Landing' : 'Suspender Landing'}</span>
-                </button>
                 <button
                   onClick={() => setSelectedLanding(null)}
                   className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700"
@@ -555,12 +546,12 @@ export const LandingsPage: React.FC = () => {
             </div>
 
             {/* Modal Navigation Tabs */}
-            <div className="flex border-b border-slate-200 bg-slate-50 px-6 gap-2 pt-2">
+            <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-6 gap-2 pt-2">
               <button
                 onClick={() => setActiveTab('info')}
                 className={`px-4 py-2.5 text-xs font-extrabold rounded-t-xl border-b-2 ${
                   activeTab === 'info'
-                    ? 'bg-white text-teal-600 border-teal-600 shadow-2xs'
+                    ? 'bg-white dark:bg-slate-900 text-teal-600 border-teal-600 shadow-2xs'
                     : 'text-slate-500 border-transparent hover:text-slate-800'
                 }`}
               >
@@ -570,7 +561,7 @@ export const LandingsPage: React.FC = () => {
                 onClick={() => setActiveTab('events')}
                 className={`px-4 py-2.5 text-xs font-extrabold rounded-t-xl border-b-2 flex items-center gap-1.5 ${
                   activeTab === 'events'
-                    ? 'bg-white text-teal-600 border-teal-600 shadow-2xs'
+                    ? 'bg-white dark:bg-slate-900 text-teal-600 border-teal-600 shadow-2xs'
                     : 'text-slate-500 border-transparent hover:text-slate-800'
                 }`}
               >
@@ -581,7 +572,7 @@ export const LandingsPage: React.FC = () => {
                 onClick={() => setActiveTab('requests')}
                 className={`px-4 py-2.5 text-xs font-extrabold rounded-t-xl border-b-2 flex items-center gap-1.5 ${
                   activeTab === 'requests'
-                    ? 'bg-white text-teal-600 border-teal-600 shadow-2xs'
+                    ? 'bg-white dark:bg-slate-900 text-teal-600 border-teal-600 shadow-2xs'
                     : 'text-slate-500 border-transparent hover:text-slate-800'
                 }`}
               >
@@ -591,18 +582,18 @@ export const LandingsPage: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-white">
+            <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900">
               {/* TAB: Info & QR */}
               {activeTab === 'info' && (
                 <div className="space-y-6 text-xs">
-                  <div className="p-4 bg-teal-50 border border-teal-200 rounded-2xl space-y-2">
-                    <span className="font-extrabold text-teal-900 block text-sm">Enlace Directo en Laravel:</span>
-                    <div className="flex items-center gap-2 bg-white p-3 rounded-xl border border-teal-200">
+                  <div className="p-4 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 rounded-2xl space-y-2">
+                    <span className="font-extrabold text-teal-900 dark:text-teal-200 block text-sm">Enlace Directo en Laravel:</span>
+                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-3 rounded-xl border border-teal-200 dark:border-teal-800">
                       <input
                         type="text"
                         readOnly
                         value={getPublicUrl(selectedLanding)}
-                        className="flex-1 bg-transparent font-mono text-xs text-slate-800 outline-none"
+                        className="flex-1 bg-transparent font-mono text-xs text-slate-800 dark:text-slate-200 outline-none"
                       />
                       <button
                         onClick={() => handleCopyUrl(getPublicUrl(selectedLanding), selectedLanding.id)}
@@ -623,9 +614,8 @@ export const LandingsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                    <h4 className="font-extrabold text-slate-800">Código QR Generado</h4>
-                    <p className="text-slate-500">Este QR redirige directamente a la Landing Page desplegada en Laravel.</p>
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                    <h4 className="font-extrabold text-slate-800 dark:text-slate-200">Código QR Generado</h4>
                     <div className="w-36 h-36 bg-white p-3 rounded-2xl border border-slate-300 flex items-center justify-center shadow-xs">
                       <QrCode className="w-28 h-28 text-slate-800" />
                     </div>
@@ -637,7 +627,7 @@ export const LandingsPage: React.FC = () => {
               {activeTab === 'events' && (
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <h4 className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Historial de Eventos</h4>
+                    <h4 className="font-extrabold text-xs text-slate-800 dark:text-slate-200 uppercase tracking-wider">Historial de Eventos</h4>
                     <button
                       onClick={() => setIsEventModalOpen(true)}
                       className="px-3 py-1.5 bg-teal-600 text-white font-bold text-xs rounded-xl flex items-center gap-1 hover:bg-teal-700"
@@ -651,9 +641,9 @@ export const LandingsPage: React.FC = () => {
                       <p className="text-center py-6 text-xs text-slate-400 font-medium">No se han registrado eventos para esta landing</p>
                     ) : (
                       selectedLanding.events?.map((ev) => (
-                        <div key={ev.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs flex justify-between items-center">
+                        <div key={ev.id} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs flex justify-between items-center">
                           <div>
-                            <span className="font-bold text-slate-900 block text-sm">{ev.name}</span>
+                            <span className="font-bold text-slate-900 dark:text-white block text-sm">{ev.name}</span>
                             <span className="text-slate-500 font-mono text-[11px]">
                               Desde: {ev.date_start} — Hasta: {ev.date_end}
                             </span>
@@ -676,9 +666,9 @@ export const LandingsPage: React.FC = () => {
                   {landingRequests.length === 0 ? (
                     <p className="text-center py-8 text-xs text-slate-400 font-medium">Aún no se han capturado prospectos desde esta landing</p>
                   ) : (
-                    <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
                       <table className="w-full text-xs text-left">
-                        <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                           <tr>
                             <th className="p-3">Nombre</th>
                             <th className="p-3">Correo</th>
@@ -687,13 +677,13 @@ export const LandingsPage: React.FC = () => {
                             <th className="p-3">Fecha</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-800 dark:text-slate-200">
                           {landingRequests.map((req) => (
                             <tr key={req.id}>
                               <td className="p-3 font-bold">{req.name} {req.last_name || ''}</td>
-                              <td className="p-3 font-mono text-slate-600">{req.email}</td>
+                              <td className="p-3 font-mono text-slate-600 dark:text-slate-300">{req.email}</td>
                               <td className="p-3">{req.phone || 'N/A'}</td>
-                              <td className="p-3 text-slate-600 max-w-xs truncate">{req.motivo || 'General'}</td>
+                              <td className="p-3 text-slate-600 dark:text-slate-400 max-w-xs truncate">{req.motivo || 'General'}</td>
                               <td className="p-3 text-slate-400 text-[11px]">{req.created_at ? new Date(req.created_at).toLocaleDateString() : ''}</td>
                             </tr>
                           ))}
@@ -711,9 +701,9 @@ export const LandingsPage: React.FC = () => {
       {/* New Event Modal */}
       {isEventModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-md p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-black text-slate-900">Programar Evento / Promoción</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Programar Evento / Promoción</h3>
               <button onClick={() => setIsEventModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
@@ -721,41 +711,41 @@ export const LandingsPage: React.FC = () => {
 
             <form onSubmit={handleCreateEvent} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nombre del Evento</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre del Evento</label>
                 <input
                   type="text"
                   required
                   value={eventName}
                   onChange={(e) => setEventName(e.target.value)}
                   placeholder="Ej: Oferta de Verano 2026"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:bg-white focus:border-teal-600 font-medium"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:bg-white focus:border-teal-600 font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Fecha Inicio</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha Inicio</label>
                   <input
                     type="date"
                     required
                     value={dateStart}
                     onChange={(e) => setDateStart(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 text-xs focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Fecha Límite</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha Límite</label>
                   <input
                     type="date"
                     required
                     value={dateEnd}
                     onChange={(e) => setDateEnd(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 text-xs focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsEventModalOpen(false)}

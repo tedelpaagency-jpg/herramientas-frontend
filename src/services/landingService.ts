@@ -1,5 +1,24 @@
 import apiClient from './apiClient';
-import { LandingTemplate, LandingEvent, LandingRequest } from '../types';
+import { LandingTemplate, LandingAvailableResources } from '../types/landing';
+
+export interface LandingEvent {
+  id: number;
+  landing_id: number;
+  name: string;
+  date_start: string;
+  date_end: string;
+  status: number;
+}
+
+export interface LandingRequestItem {
+  id: number;
+  landing_id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  created_at: string;
+  answers?: Record<string, any>;
+}
 
 export const landingService = {
   getLandings: async (): Promise<LandingTemplate[]> => {
@@ -12,9 +31,29 @@ export const landingService = {
     encoded_id: string;
     public_url: string;
     events: LandingEvent[];
-    requests: LandingRequest[];
+    requests: LandingRequestItem[];
   }> => {
     const response = await apiClient.get(`/v1/landings/${id}`);
+    return response.data?.data || response.data;
+  },
+
+  createLanding: async (data: Partial<LandingTemplate>): Promise<LandingTemplate> => {
+    const response = await apiClient.post('/v1/landings', data);
+    return response.data?.data || response.data;
+  },
+
+  updateLandingBuilder: async (id: number, data: Partial<LandingTemplate>): Promise<LandingTemplate> => {
+    const response = await apiClient.put(`/v1/landings/${id}/builder`, data);
+    return response.data?.data || response.data;
+  },
+
+  uploadCustomHtml: async (id: number, customHtml: string): Promise<LandingTemplate> => {
+    const response = await apiClient.post(`/v1/landings/${id}/upload-html`, { custom_html: customHtml });
+    return response.data?.data || response.data;
+  },
+
+  getAvailableResources: async (): Promise<LandingAvailableResources> => {
+    const response = await apiClient.get('/v1/landings/available-resources');
     return response.data?.data || response.data;
   },
 
@@ -30,7 +69,7 @@ export const landingService = {
     return response.data?.data || response.data;
   },
 
-  getRequests: async (landingId: number): Promise<LandingRequest[]> => {
+  getRequests: async (landingId: number): Promise<LandingRequestItem[]> => {
     const response = await apiClient.get(`/v1/landings/${landingId}/requests`);
     return response.data?.data || response.data || [];
   },
@@ -38,6 +77,10 @@ export const landingService = {
   toggleStatus: async (id: number, status?: number): Promise<{ id: number; status: number }> => {
     const response = await apiClient.post(`/v1/landings/${id}/toggle-status`, { status });
     return response.data?.data || response.data;
+  },
+
+  deleteLanding: async (id: number): Promise<void> => {
+    await apiClient.delete(`/v1/landings/${id}`);
   },
 };
 
