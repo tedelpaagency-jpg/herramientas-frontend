@@ -144,6 +144,15 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 />
                 {field.placeholder || 'Acepto las condiciones'}
               </label>
+            ) : field.type === 'file' ? (
+              <div className="space-y-1">
+                <input
+                  type="file"
+                  onChange={(e) => handleInputChange(field, e.target.files?.[0] || null)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer"
+                />
+                <p className="text-[10px] text-slate-400">Archivos permitidos: imágenes, PDF, comprobantes de pago (Máx. 5MB)</p>
+              </div>
             ) : (
               <input
                 type={field.type}

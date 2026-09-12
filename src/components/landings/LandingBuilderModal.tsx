@@ -182,7 +182,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
                   mode === 'custom_html' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Custom HTML (Ameripass)
+                Custom HTML
               </button>
             </div>
 

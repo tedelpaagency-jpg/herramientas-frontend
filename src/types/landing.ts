@@ -11,9 +11,10 @@ export interface FormFieldSchema {
   id: string;
   name: string;
   label: string;
-  type: 'text' | 'email' | 'phone' | 'textarea' | 'select' | 'checkbox' | 'number';
+  type: 'text' | 'email' | 'phone' | 'textarea' | 'select' | 'checkbox' | 'number' | 'file';
   placeholder?: string;
   required?: boolean;
+  is_system_field?: boolean; // Locked system field for mandatory lead info
   options?: FormFieldOption[];
   step_index?: number; // 0-indexed for multi-step form grouping
 }

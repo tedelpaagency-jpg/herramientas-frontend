@@ -154,66 +154,87 @@ export const FormSchemaEditor: React.FC<Props> = ({
           </div>
 
           <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-            {fields.map((field, idx) => (
-              <div key={field.id} className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg space-y-3 text-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-slate-400 text-[11px]">#{idx + 1} ID: {field.id}</span>
-                  <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-1 cursor-pointer text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={field.required || false}
-                        onChange={(e) => handleUpdateField(idx, { required: e.target.checked })}
-                        className="rounded border-slate-700 bg-slate-900 text-indigo-600"
-                      />
-                      Requerido
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveField(idx)}
-                      className="text-red-400 hover:text-red-300 p-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+            {fields.map((field, idx) => {
+              const isSystemField = field.is_system_field || ['name', 'email'].includes(field.name);
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Nombre / Key</label>
-                    <input
-                      type="text"
-                      value={field.name}
-                      onChange={(e) => handleUpdateField(idx, { name: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white"
-                    />
+              return (
+                <div key={field.id} className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg space-y-3 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-slate-400 text-[11px]">#{idx + 1} ID: {field.id}</span>
+                      {isSystemField && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800/60 flex items-center gap-1">
+                          🔒 Obligatorio del Sistema (Fijo)
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-1 cursor-pointer text-slate-300">
+                        <input
+                          type="checkbox"
+                          checked={field.required || isSystemField}
+                          disabled={isSystemField}
+                          onChange={(e) => handleUpdateField(idx, { required: e.target.checked })}
+                          className="rounded border-slate-700 bg-slate-900 text-indigo-600 disabled:opacity-50"
+                        />
+                        Requerido
+                      </label>
+                      {!isSystemField ? (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveField(idx)}
+                          className="text-red-400 hover:text-red-300 p-1"
+                          title="Eliminar campo"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <span className="text-slate-600 p-1 cursor-not-allowed" title="Campo de sistema no eliminable">
+                          <Trash2 className="w-4 h-4 opacity-30" />
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Etiqueta (Label)</label>
-                    <input
-                      type="text"
-                      value={field.label}
-                      onChange={(e) => handleUpdateField(idx, { label: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white"
-                    />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Nombre / Key</label>
+                      <input
+                        type="text"
+                        value={field.name}
+                        disabled={isSystemField}
+                        onChange={(e) => handleUpdateField(idx, { name: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white disabled:opacity-60"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Etiqueta (Label)</label>
+                      <input
+                        type="text"
+                        value={field.label}
+                        onChange={(e) => handleUpdateField(idx, { label: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Tipo de Campo</label>
+                      <select
+                        value={field.type}
+                        disabled={isSystemField}
+                        onChange={(e) => handleUpdateField(idx, { type: e.target.value as any })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white disabled:opacity-60"
+                      >
+                        <option value="text">Texto</option>
+                        <option value="email">Correo Electrónico</option>
+                        <option value="phone">Teléfono</option>
+                        <option value="textarea">Área de Texto (Textarea)</option>
+                        <option value="select">Lista Desplegable (Select)</option>
+                        <option value="checkbox">Casilla (Checkbox)</option>
+                        <option value="number">Número</option>
+                        <option value="file">📁 Archivo / Comprobante (File Upload)</option>
+                      </select>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Tipo de Campo</label>
-                    <select
-                      value={field.type}
-                      onChange={(e) => handleUpdateField(idx, { type: e.target.value as any })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white"
-                    >
-                      <option value="text">Texto</option>
-                      <option value="email">Correo Electrónico</option>
-                      <option value="phone">Teléfono</option>
-                      <option value="textarea">Área de Texto (Textarea)</option>
-                      <option value="select">Lista Desplegable (Select)</option>
-                      <option value="checkbox">Casilla (Checkbox)</option>
-                      <option value="number">Número</option>
-                    </select>
-                  </div>
-                </div>
 
                 {layout === 'multi_step' && steps.length > 0 && (
                   <div className="pt-1">
@@ -232,7 +253,8 @@ export const FormSchemaEditor: React.FC<Props> = ({
                   </div>
                 )}
               </div>
-            ))}
+            );
+          })}
           </div>
         </div>
       )}

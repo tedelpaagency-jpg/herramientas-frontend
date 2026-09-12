@@ -302,7 +302,7 @@ export const LandingsPage: React.FC = () => {
                           <div className="flex items-center gap-2">
                             {isCustomHtml ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                                <Code className="w-3 h-3 text-amber-500" /> HTML Ameripass
+                                <Code className="w-3 h-3 text-amber-500" /> HTML Personalizado
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">

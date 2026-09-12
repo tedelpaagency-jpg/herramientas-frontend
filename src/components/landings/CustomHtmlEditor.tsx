@@ -45,7 +45,7 @@ export const CustomHtmlEditor: React.FC<Props> = ({ customHtml, onChange }) => {
             <Code className="w-5 h-5 text-amber-400" /> Plantilla HTML Personalizada
           </h3>
           <p className="text-xs text-slate-400">
-            Sube un archivo .html completo (ej. Ameripass) o edita la estructura directamente.
+            Sube un archivo .html completo o edita la estructura directamente.
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export const CustomHtmlEditor: React.FC<Props> = ({ customHtml, onChange }) => {
         <textarea
           value={customHtml}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="<!DOCTYPE html>&#10;<html>&#10;  <body>&#10;    <h1>Mi Landing Ameripass</h1>&#10;    {{DYNAMIC_FORM}}&#10;  </body>&#10;</html>"
+          placeholder="<!DOCTYPE html>&#10;<html>&#10;  <body>&#10;    <h1>Mi Landing Page</h1>&#10;    {{DYNAMIC_FORM}}&#10;  </body>&#10;</html>"
           className="w-full h-96 bg-slate-950 text-slate-200 font-mono text-xs p-3 rounded-lg border border-slate-800 focus:border-amber-500 focus:outline-none resize-y"
           spellCheck={false}
         />
