@@ -6,7 +6,7 @@ import whiteLabelService from '../../services/whiteLabelService';
 import adminService from '../../services/adminService';
 import { 
   Palette, Type, Image as ImageIcon, Globe, Code, Sparkles, Save, RotateCcw, 
-  Check, Eye, Layout, Lock, Building2, ShieldCheck, RefreshCw, Upload, Smartphone, ExternalLink, Sun, Moon, Minimize2, Maximize2, CreditCard, Key, EyeOff
+  Check, Eye, Layout, Lock, Building2, ShieldCheck, RefreshCw, Upload, Smartphone, ExternalLink, Sun, Moon, Minimize2, Maximize2, CreditCard, Key, EyeOff, Loader2, CheckCircle2, AlertCircle
 } from 'lucide-react';
 
 const PRESET_PALETTES = [
@@ -55,6 +55,8 @@ export default function BrandingCustomizationPage({
   const [saving, setSaving] = useState<boolean>(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [testingStripe, setTestingStripe] = useState<boolean>(false);
+  const [stripeTestResult, setStripeTestResult] = useState<{ status: 'success' | 'error'; message: string } | null>(null);
 
   // Preview interactive state controls
   const [previewMode, setPreviewMode] = useState<'dashboard' | 'login'>('dashboard');
@@ -253,6 +255,39 @@ export default function BrandingCustomizationPage({
       button_color: palette.button,
       menu_background: palette.menuBg,
     }));
+  };
+
+  const handleTestStripeConnection = async () => {
+    if (!form.stripe_secret_key) {
+      setStripeTestResult({
+        status: 'error',
+        message: 'Debe ingresar la Clave Secreta (Stripe Secret Key) para verificar la conexión.',
+      });
+      return;
+    }
+    setTestingStripe(true);
+    setStripeTestResult(null);
+    try {
+      const res = await whiteLabelService.testStripeConnection(form.stripe_secret_key);
+      if (res.status === 'success') {
+        setStripeTestResult({
+          status: 'success',
+          message: res.message || '¡Conexión verificada exitosamente!',
+        });
+      } else {
+        setStripeTestResult({
+          status: 'error',
+          message: res.message || 'Error al validar con Stripe.',
+        });
+      }
+    } catch (err: any) {
+      setStripeTestResult({
+        status: 'error',
+        message: err.response?.data?.message || err.message || 'Error de comunicación con el servidor.',
+      });
+    } finally {
+      setTestingStripe(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1131,6 +1166,51 @@ export default function BrandingCustomizationPage({
                   <span className="text-[10px] text-slate-400 block">
                     Comienza con <code className="font-mono text-emerald-500">whsec_</code>. Utilizado para verificar firmas de eventos webhooks devueltos por Stripe.
                   </span>
+                </div>
+
+                {/* Test Connection Button & Status Result */}
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white block">Garantizar y Validar Conexión</span>
+                      <span className="text-[11px] text-slate-500">Pruebe inmediatamente si la clave de Stripe es válida con los servidores de Stripe.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTestStripeConnection}
+                      disabled={testingStripe || !form.stripe_secret_key}
+                      className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 transition-all disabled:opacity-50 shadow-md"
+                    >
+                      {testingStripe ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                      ) : (
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      )}
+                      {testingStripe ? 'Verificando con Stripe...' : 'Verificar Conexión con Stripe'}
+                    </button>
+                  </div>
+
+                  {stripeTestResult && (
+                    <div
+                      className={`p-3.5 rounded-xl border flex items-start gap-3 text-xs transition-all ${
+                        stripeTestResult.status === 'success'
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
+                      }`}
+                    >
+                      {stripeTestResult.status === 'success' ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                      )}
+                      <div>
+                        <span className="font-bold block">
+                          {stripeTestResult.status === 'success' ? '¡Conexión Exitosa con Stripe!' : 'Fallo en la Conexión con Stripe'}
+                        </span>
+                        <span>{stripeTestResult.message}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

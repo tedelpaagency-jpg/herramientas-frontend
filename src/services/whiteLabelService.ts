@@ -76,6 +76,13 @@ export const whiteLabelService = {
     const response = await apiClient.post('/v1/admin/stop-impersonate');
     return response.data;
   },
+
+  testStripeConnection: async (stripeSecretKey: string) => {
+    const response = await apiClient.post('/stripe/test-connection', {
+      stripe_secret_key: stripeSecretKey,
+    });
+    return response.data;
+  },
 };
 
 export default whiteLabelService;
