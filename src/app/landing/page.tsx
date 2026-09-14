@@ -18,6 +18,21 @@ function PublicLandingContent() {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
+    // Isolate public landing from global dashboard theme (strip dark mode class)
+    const htmlEl = document.documentElement;
+    const hadDark = htmlEl.classList.contains('dark');
+    if (hadDark) {
+      htmlEl.classList.remove('dark');
+    }
+
+    return () => {
+      if (hadDark) {
+        htmlEl.classList.add('dark');
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!rawId) {
       setLoading(false);
       setErrorStatus(404);
@@ -73,36 +88,36 @@ function PublicLandingContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4">
-        <Loader2 className="w-10 h-10 animate-spin text-teal-400 mb-4" />
-        <p className="text-sm text-slate-400 font-medium">Cargando Landing Page...</p>
+      <div className="landing-standalone-root light min-h-screen bg-white text-slate-900 flex flex-col items-center justify-center p-4" style={{ colorScheme: 'light' }}>
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mb-4" />
+        <p className="text-sm text-slate-600 font-semibold">Cargando Landing Page...</p>
       </div>
     );
   }
 
   if (errorStatus === 403 || landing?.status === 0) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-amber-950/80 border border-amber-700/60 flex items-center justify-center text-amber-400 mb-6 shadow-xl">
+      <div className="landing-standalone-root light min-h-screen bg-slate-50 text-slate-900 flex flex-col items-center justify-center p-6 text-center" style={{ colorScheme: 'light' }}>
+        <div className="w-16 h-16 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 mb-6 shadow-md">
           <ShieldAlert className="w-8 h-8" />
         </div>
-        <h1 className="text-2xl font-bold text-white mb-2">Landing Page Suspendida</h1>
-        <p className="text-sm text-slate-400 max-w-md mb-6">
+        <h1 className="text-2xl font-extrabold text-slate-900 mb-2">Landing Page Suspendida</h1>
+        <p className="text-sm text-slate-600 max-w-md mb-6">
           {errorMessage || 'Esta página web se encuentra suspendida temporalmente por administración.'}
         </p>
-        <span className="text-xs text-slate-600 font-mono">ID: {rawId}</span>
+        <span className="text-xs text-slate-400 font-mono">ID: {rawId}</span>
       </div>
     );
   }
 
   if (errorStatus === 404 || !landing) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-red-950/80 border border-red-700/60 flex items-center justify-center text-red-400 mb-6 shadow-xl">
+      <div className="landing-standalone-root light min-h-screen bg-slate-50 text-slate-900 flex flex-col items-center justify-center p-6 text-center" style={{ colorScheme: 'light' }}>
+        <div className="w-16 h-16 rounded-2xl bg-red-100 border border-red-300 flex items-center justify-center text-red-600 mb-6 shadow-md">
           <AlertTriangle className="w-8 h-8" />
         </div>
-        <h1 className="text-2xl font-bold text-white mb-2">Landing Page No Encontrada</h1>
-        <p className="text-sm text-slate-400 max-w-md mb-6">
+        <h1 className="text-2xl font-extrabold text-slate-900 mb-2">Landing Page No Encontrada</h1>
+        <p className="text-sm text-slate-600 max-w-md mb-6">
           {errorMessage || 'El enlace al que intentas acceder no existe o fue eliminado.'}
         </p>
       </div>
@@ -118,27 +133,29 @@ function PublicLandingContent() {
     if (hasFormPlaceholder) {
       const parts = landing.custom_html.split('{{DYNAMIC_FORM}}');
       return (
-        <div className="min-h-screen bg-white text-slate-900">
+        <div className="landing-standalone-root light min-h-screen bg-white text-slate-900 font-sans antialiased" style={{ colorScheme: 'light' }}>
           <Toaster position="top-right" />
           <div dangerouslySetInnerHTML={{ __html: parts[0] }} />
-          <div className="max-w-xl mx-auto p-6 bg-white shadow-xl rounded-2xl border border-slate-200 my-8">
-            {submitted ? (
-              <div className="text-center py-8 space-y-3">
-                <CheckCircle2 className="w-12 h-12 text-teal-600 mx-auto" />
-                <h3 className="text-xl font-bold text-slate-900">¡Registro Completado!</h3>
-                <p className="text-sm text-slate-600">Gracias por contactarnos. Tu información ha sido recibida con éxito.</p>
-              </div>
-            ) : (
-              <DynamicFormRenderer formSchema={landing.form_schema} onSubmit={handleSubmitLead} />
-            )}
-          </div>
+          {submitted ? (
+            <div className="text-center py-8 space-y-3 bg-white p-6 rounded-2xl shadow-lg border border-slate-200 my-6 max-w-lg mx-auto">
+              <CheckCircle2 className="w-12 h-12 text-teal-600 mx-auto" />
+              <h3 className="text-xl font-bold text-slate-900">¡Registro Completado!</h3>
+              <p className="text-sm text-slate-600">Gracias por contactarnos. Tu información ha sido recibida con éxito.</p>
+            </div>
+          ) : (
+            <DynamicFormRenderer
+              formSchema={landing.form_schema}
+              onSubmit={handleSubmitLead}
+              className="space-y-5"
+            />
+          )}
           {parts[1] && <div dangerouslySetInnerHTML={{ __html: parts[1] }} />}
         </div>
       );
     }
 
     return (
-      <div className="min-h-screen bg-white text-slate-900">
+      <div className="landing-standalone-root light min-h-screen bg-white text-slate-900 font-sans antialiased" style={{ colorScheme: 'light' }}>
         <Toaster position="top-right" />
         <div dangerouslySetInnerHTML={{ __html: landing.custom_html }} />
       </div>
@@ -156,7 +173,7 @@ function PublicLandingContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between">
+    <div className="landing-standalone-root light min-h-screen bg-slate-950 text-white flex flex-col justify-between font-sans antialiased" style={{ colorScheme: 'dark' }}>
       <Toaster position="top-right" />
 
       {/* Header */}
@@ -189,7 +206,7 @@ function PublicLandingContent() {
               <p className="text-sm text-slate-400">Hemos recibido tus datos con éxito.</p>
             </div>
           ) : (
-            <DynamicFormRenderer formSchema={landing.form_schema} onSubmit={handleSubmitLead} />
+            <DynamicFormRenderer formSchema={landing.form_schema} onSubmit={handleSubmitLead} variant="dark" />
           )}
         </div>
       </main>
@@ -205,7 +222,7 @@ function PublicLandingContent() {
 export default function PublicLandingPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+      <div className="landing-standalone-root light min-h-screen bg-slate-950 text-white flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-teal-400" />
       </div>
     }>

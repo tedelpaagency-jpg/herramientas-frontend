@@ -7,6 +7,8 @@ interface Props {
   onSubmit: (answers: Record<string, any>) => void;
   loading?: boolean;
   submitText?: string;
+  variant?: 'light' | 'dark' | 'standalone' | 'custom';
+  className?: string;
 }
 
 export const DynamicFormRenderer: React.FC<Props> = ({
@@ -14,6 +16,8 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   onSubmit,
   loading = false,
   submitText,
+  variant = 'standalone',
+  className,
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -79,26 +83,42 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const isLastStep = layout !== 'multi_step' || steps.length === 0 || currentStepIndex === steps.length - 1;
   const progressPercent = steps.length > 0 ? Math.round(((currentStepIndex + 1) / steps.length) * 100) : 100;
 
+  const isDark = variant === 'dark';
+
+  const containerClasses = className
+    ? className
+    : (isDark
+        ? 'space-y-6 text-slate-100'
+        : 'space-y-5 text-slate-900');
+
+  const titleClasses = isDark ? 'text-xl font-bold text-white' : 'text-xl font-extrabold text-slate-900';
+  const subtitleClasses = isDark ? 'text-xs text-slate-400' : 'text-xs text-slate-500';
+  const labelClasses = isDark ? 'block text-xs font-medium text-slate-300' : 'block text-xs font-semibold text-slate-700';
+
+  const inputClasses = isDark
+    ? 'w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none transition'
+    : 'w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition';
+
   return (
-    <form onSubmit={handleSubmit} className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6 text-slate-100">
+    <form onSubmit={handleSubmit} className={containerClasses}>
       {/* Title / Subtitle */}
       {(formSchema.title || formSchema.subtitle) && (
         <div className="text-center space-y-1">
-          {formSchema.title && <h3 className="text-xl font-bold text-white">{formSchema.title}</h3>}
-          {formSchema.subtitle && <p className="text-xs text-slate-400">{formSchema.subtitle}</p>}
+          {formSchema.title && <h3 className={titleClasses}>{formSchema.title}</h3>}
+          {formSchema.subtitle && <p className={subtitleClasses}>{formSchema.subtitle}</p>}
         </div>
       )}
 
       {/* Multi-step progress bar */}
       {layout === 'multi_step' && steps.length > 0 && (
         <div className="space-y-2">
-          <div className="flex justify-between items-center text-xs font-semibold text-slate-400">
+          <div className={`flex justify-between items-center text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             <span>Paso {currentStepIndex + 1} de {steps.length}: {steps[currentStepIndex]?.title}</span>
-            <span className="text-indigo-400">{progressPercent}%</span>
+            <span className="text-indigo-600 font-bold">{progressPercent}%</span>
           </div>
-          <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+          <div className={`w-full rounded-full h-2 overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
             <div
-              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full transition-all duration-300 ease-out"
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full transition-all duration-300 ease-out"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -109,8 +129,8 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       <div className="space-y-4">
         {currentStepFields.map((field) => (
           <div key={field.id} className="space-y-1.5 text-left">
-            <label className="block text-xs font-medium text-slate-300">
-              {field.label} {field.required && <span className="text-red-400">*</span>}
+            <label className={labelClasses}>
+              {field.label} {field.required && <span className="text-red-500">*</span>}
             </label>
 
             {field.type === 'textarea' ? (
@@ -119,13 +139,13 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 onChange={(e) => handleInputChange(field, e.target.value)}
                 placeholder={field.placeholder || ''}
                 rows={3}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
+                className={inputClasses}
               />
             ) : field.type === 'select' ? (
               <select
                 value={formData[field.name] || ''}
                 onChange={(e) => handleInputChange(field, e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
+                className={inputClasses}
               >
                 <option value="">-- Seleccionar --</option>
                 {field.options?.map((opt, i) => (
@@ -135,12 +155,12 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 ))}
               </select>
             ) : field.type === 'checkbox' ? (
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+              <label className={`flex items-center gap-2.5 cursor-pointer text-xs ${isDark ? 'text-slate-300' : 'text-slate-700 font-medium'}`}>
                 <input
                   type="checkbox"
                   checked={!!formData[field.name]}
                   onChange={(e) => handleInputChange(field, e.target.checked)}
-                  className="rounded border-slate-800 bg-slate-950 text-indigo-600 w-4 h-4"
+                  className="rounded border-slate-300 bg-white text-indigo-600 w-4 h-4 focus:ring-indigo-500"
                 />
                 {field.placeholder || 'Acepto las condiciones'}
               </label>
@@ -149,9 +169,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 <input
                   type="file"
                   onChange={(e) => handleInputChange(field, e.target.files?.[0] || null)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer"
+                  className={`w-full rounded-xl p-2 text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer ${inputClasses}`}
                 />
-                <p className="text-[10px] text-slate-400">Archivos permitidos: imágenes, PDF, comprobantes de pago (Máx. 5MB)</p>
+                <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Archivos permitidos: imágenes, PDF, comprobantes de pago (Máx. 5MB)</p>
               </div>
             ) : (
               <input
@@ -159,12 +179,12 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 value={formData[field.name] || ''}
                 onChange={(e) => handleInputChange(field, e.target.value)}
                 placeholder={field.placeholder || ''}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
+                className={inputClasses}
               />
             )}
 
             {errors[field.name] && (
-              <p className="text-[11px] text-red-400 font-medium">{errors[field.name]}</p>
+              <p className="text-[11px] text-red-500 font-semibold">{errors[field.name]}</p>
             )}
           </div>
         ))}
@@ -176,7 +196,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           <button
             type="button"
             onClick={handlePrev}
-            className="inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition"
+            className={`inline-flex items-center gap-1 text-xs px-4 py-2 rounded-xl font-medium transition ${
+              isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-200' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+            }`}
           >
             <ChevronLeft className="w-4 h-4" /> Anterior
           </button>
@@ -186,7 +208,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs px-5 py-2.5 rounded-lg font-semibold shadow-lg transition disabled:opacity-50"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-indigo-500/20 transition disabled:opacity-50"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -201,7 +223,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           <button
             type="button"
             onClick={handleNext}
-            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-semibold transition"
+            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-5 py-2.5 rounded-xl font-semibold transition shadow-md"
           >
             Siguiente <ChevronRight className="w-4 h-4" />
           </button>
