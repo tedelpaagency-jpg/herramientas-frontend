@@ -1,6 +1,5 @@
-'use client';
-
 import React, { useEffect, useState, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import landingService from '@/services/landingService';
 import DynamicFormRenderer from '@/components/landings/DynamicFormRenderer';
@@ -16,6 +15,8 @@ function PublicLandingContent() {
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
+  const [formContainer, setFormContainer] = useState<HTMLElement | null>(null);
+  const [parsedBodyHtml, setParsedBodyHtml] = useState<string>('');
 
   useEffect(() => {
     // Isolate public landing from global dashboard theme (strip dark mode class)
@@ -42,6 +43,78 @@ function PublicLandingContent() {
 
     loadLanding();
   }, [rawId]);
+
+  useEffect(() => {
+    if (landing && landing.mode === 'custom_html' && landing.custom_html) {
+      let customFormClass = landing.form_schema?.className || landing.form_schema?.class_name || 'space-y-5';
+      
+      const match = landing.custom_html.match(/\{\{DYNAMIC_FORM(?::|\s+class=["']?)([^}"']+)["']?\}\}/i);
+      if (match && match[1]) {
+        customFormClass = match[1].trim();
+      }
+
+      // Parse HTML with DOMParser to remove wrapper tags (DOCTYPE, html, head, body) that cause React DOM auto-close bugs
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(landing.custom_html, 'text/html');
+
+        // Inject head scripts, styles, and links into document.head
+        const headNodes = doc.head.children;
+        Array.from(headNodes).forEach((node) => {
+          const tagName = node.tagName.toLowerCase();
+          if (tagName === 'script') {
+            const src = node.getAttribute('src');
+            if (src && !document.querySelector(`script[src="${src}"]`)) {
+              const scriptEl = document.createElement('script');
+              Array.from(node.attributes).forEach((attr) => scriptEl.setAttribute(attr.name, attr.value));
+              document.head.appendChild(scriptEl);
+            } else if (!src && node.textContent) {
+              const scriptEl = document.createElement('script');
+              scriptEl.textContent = node.textContent;
+              document.head.appendChild(scriptEl);
+            }
+          } else if (tagName === 'style') {
+            const styleEl = document.createElement('style');
+            styleEl.textContent = node.textContent;
+            document.head.appendChild(styleEl);
+          } else if (tagName === 'link') {
+            const href = node.getAttribute('href');
+            if (href && !document.querySelector(`link[href="${href}"]`)) {
+              const linkEl = node.cloneNode(true) as HTMLElement;
+              document.head.appendChild(linkEl);
+            }
+          }
+        });
+
+        // Extract body inner HTML
+        let bodyContent = doc.body && doc.body.innerHTML.trim() ? doc.body.innerHTML : landing.custom_html;
+        
+        // Replace {{DYNAMIC_FORM}} placeholder inside clean bodyHtml
+        bodyContent = bodyContent.replace(
+          /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
+          `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
+        );
+
+        setParsedBodyHtml(bodyContent);
+      } catch (e) {
+        console.error('Error parsing custom html with DOMParser:', e);
+        const fallback = landing.custom_html.replace(
+          /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
+          `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
+        );
+        setParsedBodyHtml(fallback);
+      }
+
+      const timer = setTimeout(() => {
+        const el = document.getElementById('react-dynamic-form-container');
+        if (el) {
+          setFormContainer(el);
+        }
+      }, 50);
+
+      return () => clearTimeout(timer);
+    }
+  }, [landing]);
 
   const loadLanding = async () => {
     try {
@@ -126,38 +199,42 @@ function PublicLandingContent() {
 
   const isCustomHtml = landing.mode === 'custom_html' && landing.custom_html;
 
-  // Custom HTML Rendering with {{DYNAMIC_FORM}} placeholder substitution
+  // Custom HTML Rendering with {{DYNAMIC_FORM}} placeholder substitution via React Portal
   if (isCustomHtml) {
-    const hasFormPlaceholder = landing.custom_html.includes('{{DYNAMIC_FORM}}');
+    const hasFormPlaceholder = landing.custom_html.includes('{{DYNAMIC_FORM}}') || /\{\{DYNAMIC_FORM[^}]*\}\}/i.test(landing.custom_html);
 
-    if (hasFormPlaceholder) {
-      const parts = landing.custom_html.split('{{DYNAMIC_FORM}}');
-      return (
-        <div className="landing-standalone-root light min-h-screen bg-white text-slate-900 font-sans antialiased" style={{ colorScheme: 'light' }}>
-          <Toaster position="top-right" />
-          <div dangerouslySetInnerHTML={{ __html: parts[0] }} />
-          {submitted ? (
-            <div className="text-center py-8 space-y-3 bg-white p-6 rounded-2xl shadow-lg border border-slate-200 my-6 max-w-lg mx-auto">
-              <CheckCircle2 className="w-12 h-12 text-teal-600 mx-auto" />
-              <h3 className="text-xl font-bold text-slate-900">¡Registro Completado!</h3>
-              <p className="text-sm text-slate-600">Gracias por contactarnos. Tu información ha sido recibida con éxito.</p>
+    let customFormClass = landing.form_schema?.className || landing.form_schema?.class_name || 'space-y-5';
+    const match = landing.custom_html.match(/\{\{DYNAMIC_FORM(?::|\s+class=["']?)([^}"']+)["']?\}\}/i);
+    if (match && match[1]) {
+      customFormClass = match[1].trim();
+    }
+
+    const htmlToRender = parsedBodyHtml || landing.custom_html.replace(
+      /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
+      `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
+    );
+
+    return (
+      <div className="landing-standalone-root light min-h-screen bg-white text-slate-900 font-sans antialiased" style={{ colorScheme: 'light' }}>
+        <Toaster position="top-right" />
+        <div dangerouslySetInnerHTML={{ __html: htmlToRender }} />
+        
+        {hasFormPlaceholder && formContainer && createPortal(
+          submitted ? (
+            <div className="text-center py-6 space-y-2 bg-emerald-50 p-6 rounded-2xl border border-emerald-200">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+              <h3 className="text-lg font-bold text-emerald-950">¡Registro Completado!</h3>
+              <p className="text-xs text-emerald-800">Gracias por contactarnos. Tu información ha sido recibida con éxito.</p>
             </div>
           ) : (
             <DynamicFormRenderer
               formSchema={landing.form_schema}
               onSubmit={handleSubmitLead}
-              className="space-y-5"
+              className={customFormClass}
             />
-          )}
-          {parts[1] && <div dangerouslySetInnerHTML={{ __html: parts[1] }} />}
-        </div>
-      );
-    }
-
-    return (
-      <div className="landing-standalone-root light min-h-screen bg-white text-slate-900 font-sans antialiased" style={{ colorScheme: 'light' }}>
-        <Toaster position="top-right" />
-        <div dangerouslySetInnerHTML={{ __html: landing.custom_html }} />
+          ),
+          formContainer
+        )}
       </div>
     );
   }
