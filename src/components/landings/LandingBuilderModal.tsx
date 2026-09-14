@@ -110,11 +110,20 @@ export const LandingBuilderModal: React.FC<Props> = ({
 
     try {
       setSaving(true);
+      let safeCustomHtml = customHtml;
+      if (customHtml && customHtml.trim()) {
+        try {
+          safeCustomHtml = `base64:${btoa(unescape(encodeURIComponent(customHtml)))}`;
+        } catch {
+          safeCustomHtml = customHtml;
+        }
+      }
+
       const payload: Partial<LandingTemplate> = {
         title: title.trim(),
         name: title.trim(),
         mode,
-        custom_html: customHtml,
+        custom_html: safeCustomHtml,
         action_type: actionType,
         workspace_id: workspaceId,
         stage_id: stageId,
