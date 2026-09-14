@@ -8,6 +8,98 @@ import DynamicFormRenderer from '@/components/landings/DynamicFormRenderer';
 import { Globe, AlertTriangle, ShieldAlert, CheckCircle2, Loader2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
+function CustomHtmlIframeContainer({
+  customHtml,
+  formSchema,
+  onSubmit,
+  submitted,
+}: {
+  customHtml: string;
+  formSchema: any;
+  onSubmit: (answers: Record<string, any>) => void;
+  submitted: boolean;
+}) {
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+  const [mountTarget, setMountTarget] = useState<HTMLElement | null>(null);
+  const [iframeHeight, setIframeHeight] = useState<number>(900);
+
+  let customFormClass = formSchema?.className || formSchema?.class_name || 'space-y-5';
+  const match = customHtml.match(/\{\{DYNAMIC_FORM(?::|\s+class=["']?)([^}"']+)["']?\}\}/i);
+  if (match && match[1]) {
+    customFormClass = match[1].trim();
+  }
+
+  const processedHtml = customHtml.replace(
+    /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
+    `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
+  );
+
+  const setupIframe = () => {
+    const iframeNode = iframeRef.current;
+    if (!iframeNode) return;
+    const doc = iframeNode.contentDocument || iframeNode.contentWindow?.document;
+    if (!doc) return;
+
+    // Ensure Tailwind CSS script is injected in iframe head if not already present
+    if (!doc.querySelector('script[src*="tailwindcss"]') && !doc.querySelector('link[href*="tailwind"]')) {
+      const twScript = doc.createElement('script');
+      twScript.src = 'https://cdn.tailwindcss.com';
+      doc.head.appendChild(twScript);
+    }
+
+    const updateHeight = () => {
+      if (doc.body) {
+        const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, doc.body.offsetHeight, 600);
+        setIframeHeight(height);
+      }
+    };
+
+    updateHeight();
+    setTimeout(updateHeight, 300);
+    setTimeout(updateHeight, 1000);
+
+    const el = doc.getElementById('react-dynamic-form-container');
+    if (el) {
+      setMountTarget(el);
+    }
+
+    if (typeof window !== 'undefined' && window.ResizeObserver && doc.body) {
+      const ro = new ResizeObserver(() => updateHeight());
+      ro.observe(doc.body);
+    }
+  };
+
+  return (
+    <div className="w-full min-h-screen bg-white">
+      <Toaster position="top-right" />
+      <iframe
+        ref={iframeRef}
+        srcDoc={processedHtml}
+        title="Custom Landing Page"
+        onLoad={setupIframe}
+        className="w-full border-0 block overflow-hidden"
+        style={{ height: `${iframeHeight}px`, minHeight: '100vh', width: '100%' }}
+      />
+      {mountTarget && createPortal(
+        submitted ? (
+          <div className="text-center py-6 space-y-2 bg-emerald-50 p-6 rounded-2xl border border-emerald-200">
+            <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+            <h3 className="text-lg font-bold text-emerald-950">¡Registro Completado!</h3>
+            <p className="text-xs text-emerald-800">Gracias por contactarnos. Tu información ha sido recibida con éxito.</p>
+          </div>
+        ) : (
+          <DynamicFormRenderer
+            formSchema={formSchema}
+            onSubmit={onSubmit}
+            className={customFormClass}
+          />
+        ),
+        mountTarget
+      )}
+    </div>
+  );
+}
+
 function PublicLandingContent() {
   const searchParams = useSearchParams();
   const rawId = searchParams.get('id') || searchParams.get('slug') || '';
@@ -17,8 +109,6 @@ function PublicLandingContent() {
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
-  const [formContainer, setFormContainer] = useState<HTMLElement | null>(null);
-  const [parsedBodyHtml, setParsedBodyHtml] = useState<string>('');
 
   useEffect(() => {
     // Isolate public landing from global dashboard theme (strip dark mode class)
@@ -45,78 +135,6 @@ function PublicLandingContent() {
 
     loadLanding();
   }, [rawId]);
-
-  useEffect(() => {
-    if (landing && landing.mode === 'custom_html' && landing.custom_html) {
-      let customFormClass = landing.form_schema?.className || landing.form_schema?.class_name || 'space-y-5';
-      
-      const match = landing.custom_html.match(/\{\{DYNAMIC_FORM(?::|\s+class=["']?)([^}"']+)["']?\}\}/i);
-      if (match && match[1]) {
-        customFormClass = match[1].trim();
-      }
-
-      // Parse HTML with DOMParser to remove wrapper tags (DOCTYPE, html, head, body) that cause React DOM auto-close bugs
-      try {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(landing.custom_html, 'text/html');
-
-        // Inject head scripts, styles, and links into document.head
-        const headNodes = doc.head.children;
-        Array.from(headNodes).forEach((node) => {
-          const tagName = node.tagName.toLowerCase();
-          if (tagName === 'script') {
-            const src = node.getAttribute('src');
-            if (src && !document.querySelector(`script[src="${src}"]`)) {
-              const scriptEl = document.createElement('script');
-              Array.from(node.attributes).forEach((attr) => scriptEl.setAttribute(attr.name, attr.value));
-              document.head.appendChild(scriptEl);
-            } else if (!src && node.textContent) {
-              const scriptEl = document.createElement('script');
-              scriptEl.textContent = node.textContent;
-              document.head.appendChild(scriptEl);
-            }
-          } else if (tagName === 'style') {
-            const styleEl = document.createElement('style');
-            styleEl.textContent = node.textContent;
-            document.head.appendChild(styleEl);
-          } else if (tagName === 'link') {
-            const href = node.getAttribute('href');
-            if (href && !document.querySelector(`link[href="${href}"]`)) {
-              const linkEl = node.cloneNode(true) as HTMLElement;
-              document.head.appendChild(linkEl);
-            }
-          }
-        });
-
-        // Extract body inner HTML
-        let bodyContent = doc.body && doc.body.innerHTML.trim() ? doc.body.innerHTML : landing.custom_html;
-        
-        // Replace {{DYNAMIC_FORM}} placeholder inside clean bodyHtml
-        bodyContent = bodyContent.replace(
-          /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
-          `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
-        );
-
-        setParsedBodyHtml(bodyContent);
-      } catch (e) {
-        console.error('Error parsing custom html with DOMParser:', e);
-        const fallback = landing.custom_html.replace(
-          /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
-          `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
-        );
-        setParsedBodyHtml(fallback);
-      }
-
-      const timer = setTimeout(() => {
-        const el = document.getElementById('react-dynamic-form-container');
-        if (el) {
-          setFormContainer(el);
-        }
-      }, 50);
-
-      return () => clearTimeout(timer);
-    }
-  }, [landing]);
 
   const loadLanding = async () => {
     try {
@@ -201,43 +219,15 @@ function PublicLandingContent() {
 
   const isCustomHtml = landing.mode === 'custom_html' && landing.custom_html;
 
-  // Custom HTML Rendering with {{DYNAMIC_FORM}} placeholder substitution via React Portal
+  // Custom HTML Rendering with full style isolation and native script execution via Iframe + React Portal
   if (isCustomHtml) {
-    const hasFormPlaceholder = landing.custom_html.includes('{{DYNAMIC_FORM}}') || /\{\{DYNAMIC_FORM[^}]*\}\}/i.test(landing.custom_html);
-
-    let customFormClass = landing.form_schema?.className || landing.form_schema?.class_name || 'space-y-5';
-    const match = landing.custom_html.match(/\{\{DYNAMIC_FORM(?::|\s+class=["']?)([^}"']+)["']?\}\}/i);
-    if (match && match[1]) {
-      customFormClass = match[1].trim();
-    }
-
-    const htmlToRender = parsedBodyHtml || landing.custom_html.replace(
-      /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
-      `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
-    );
-
     return (
-      <div className="landing-standalone-root light min-h-screen bg-white text-slate-900 font-sans antialiased" style={{ colorScheme: 'light' }}>
-        <Toaster position="top-right" />
-        <div dangerouslySetInnerHTML={{ __html: htmlToRender }} />
-        
-        {hasFormPlaceholder && formContainer && createPortal(
-          submitted ? (
-            <div className="text-center py-6 space-y-2 bg-emerald-50 p-6 rounded-2xl border border-emerald-200">
-              <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-              <h3 className="text-lg font-bold text-emerald-950">¡Registro Completado!</h3>
-              <p className="text-xs text-emerald-800">Gracias por contactarnos. Tu información ha sido recibida con éxito.</p>
-            </div>
-          ) : (
-            <DynamicFormRenderer
-              formSchema={landing.form_schema}
-              onSubmit={handleSubmitLead}
-              className={customFormClass}
-            />
-          ),
-          formContainer
-        )}
-      </div>
+      <CustomHtmlIframeContainer
+        customHtml={landing.custom_html}
+        formSchema={landing.form_schema}
+        onSubmit={handleSubmitLead}
+        submitted={submitted}
+      />
     );
   }
 
