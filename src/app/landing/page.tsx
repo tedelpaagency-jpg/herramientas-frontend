@@ -11,11 +11,15 @@ import toast, { Toaster } from 'react-hot-toast';
 function CustomHtmlIframeContainer({
   customHtml,
   formSchema,
+  paymentConfig,
+  stripePublishableKey,
   onSubmit,
   submitted,
 }: {
   customHtml: string;
   formSchema: any;
+  paymentConfig?: any;
+  stripePublishableKey?: string | null;
   onSubmit: (answers: Record<string, any>) => void;
   submitted: boolean;
 }) {
@@ -109,6 +113,8 @@ function CustomHtmlIframeContainer({
             formSchema={formSchema}
             onSubmit={onSubmit}
             className={customFormClass}
+            paymentConfig={paymentConfig}
+            stripePublishableKey={stripePublishableKey}
           />
         ),
         mountTarget
@@ -242,6 +248,8 @@ function PublicLandingContent() {
       <CustomHtmlIframeContainer
         customHtml={landing.custom_html}
         formSchema={landing.form_schema}
+        paymentConfig={landing.payment_config}
+        stripePublishableKey={landing.stripe_publishable_key}
         onSubmit={handleSubmitLead}
         submitted={submitted}
       />
@@ -292,7 +300,13 @@ function PublicLandingContent() {
               <p className="text-sm text-slate-400">Hemos recibido tus datos con éxito.</p>
             </div>
           ) : (
-            <DynamicFormRenderer formSchema={landing.form_schema} onSubmit={handleSubmitLead} variant="dark" />
+            <DynamicFormRenderer
+              formSchema={landing.form_schema}
+              onSubmit={handleSubmitLead}
+              variant="dark"
+              paymentConfig={landing.payment_config}
+              stripePublishableKey={landing.stripe_publishable_key}
+            />
           )}
         </div>
       </main>

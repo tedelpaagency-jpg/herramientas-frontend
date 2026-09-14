@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { FormSchema, FormFieldSchema } from '../../types/landing';
-import { ChevronRight, ChevronLeft, Check, Send, Loader2 } from 'lucide-react';
+import { FormSchema, FormFieldSchema, PaymentConfig } from '../../types/landing';
+import { ChevronRight, ChevronLeft, Check, Send, Loader2, CreditCard, Lock, ShieldCheck } from 'lucide-react';
 
 interface Props {
   formSchema: FormSchema;
@@ -9,6 +9,8 @@ interface Props {
   submitText?: string;
   variant?: 'light' | 'dark' | 'standalone' | 'custom';
   className?: string;
+  paymentConfig?: PaymentConfig | null;
+  stripePublishableKey?: string | null;
 }
 
 export const DynamicFormRenderer: React.FC<Props> = ({
@@ -18,14 +20,16 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   submitText,
   variant = 'standalone',
   className,
+  paymentConfig,
+  stripePublishableKey,
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const fields = formSchema.fields || [];
-  const steps = formSchema.steps || [];
-  const layout = formSchema.layout || 'linear';
+  const fields = formSchema?.fields || [];
+  const steps = formSchema?.steps || [];
+  const layout = formSchema?.layout || 'linear';
 
   const handleInputChange = (field: FormFieldSchema, value: any) => {
     setFormData((prev) => ({
@@ -102,7 +106,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   return (
     <form onSubmit={handleSubmit} className={containerClasses}>
       {/* Title / Subtitle */}
-      {(formSchema.title || formSchema.subtitle) && (
+      {(formSchema?.title || formSchema?.subtitle) && (
         <div className="text-center space-y-1">
           {formSchema.title && <h3 className={titleClasses}>{formSchema.title}</h3>}
           {formSchema.subtitle && <p className={subtitleClasses}>{formSchema.subtitle}</p>}
@@ -190,6 +194,41 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         ))}
       </div>
 
+      {/* Stripe Payment Box if enabled */}
+      {paymentConfig?.enabled && isLastStep && (
+        <div className={`p-4 rounded-2xl border text-xs space-y-3 ${
+          isDark
+            ? 'bg-slate-950/90 border-emerald-500/30 text-slate-200'
+            : 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+        }`}>
+          <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2.5">
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-emerald-500" />
+              <span className="font-bold">Pago Seguro por Stripe</span>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+              SSL Encriptado
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-700 dark:text-slate-300">
+              {paymentConfig.product_name || 'Servicio / Registro'}
+            </span>
+            <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+              ${paymentConfig.amount || 0} {paymentConfig.currency || 'USD'}
+            </span>
+          </div>
+
+          <div className="pt-1 flex items-center justify-between text-[10px] text-slate-400">
+            <span className="flex items-center gap-1">
+              <Lock className="w-3 h-3 text-emerald-500" /> Pasarela directa de pago
+            </span>
+            <span>Visa / Mastercard / Amex</span>
+          </div>
+        </div>
+      )}
+
       {/* Navigation & Action Buttons */}
       <div className="flex items-center justify-between gap-3 pt-2">
         {layout === 'multi_step' && currentStepIndex > 0 ? (
@@ -208,14 +247,23 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-indigo-500/20 transition disabled:opacity-50"
+            className={`inline-flex items-center gap-2 text-white text-xs px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-emerald-500/20 transition disabled:opacity-50 ${
+              paymentConfig?.enabled
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
+            }`}
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
+            ) : paymentConfig?.enabled ? (
+              <>
+                <CreditCard className="w-4 h-4 text-white" />
+                {submitText || `Pagar $${paymentConfig.amount || 0} ${paymentConfig.currency || 'USD'}`}
+              </>
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                {submitText || formSchema.submit_button_text || 'Enviar Registro'}
+                {submitText || formSchema?.submit_button_text || 'Enviar Registro'}
               </>
             )}
           </button>

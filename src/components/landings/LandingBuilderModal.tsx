@@ -399,6 +399,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
               </div>
               <DynamicFormRenderer
                 formSchema={formSchema}
+                paymentConfig={paymentConfig}
                 onSubmit={(data) => {
                   alert('Formulario enviado (Vista previa):\n' + JSON.stringify(data, null, 2));
                 }}
