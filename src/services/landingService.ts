@@ -82,6 +82,16 @@ export const landingService = {
   deleteLanding: async (id: number): Promise<void> => {
     await apiClient.delete(`/v1/landings/${id}`);
   },
+
+  getPublicLanding: async (idOrEncodedId: string): Promise<any> => {
+    const response = await apiClient.get(`/v1/public/landings/${idOrEncodedId}`);
+    return response.data?.data || response.data;
+  },
+
+  submitPublicLead: async (payload: any): Promise<any> => {
+    const response = await apiClient.post('/v1/public/landings/lead', payload);
+    return response.data;
+  },
 };
 
 export default landingService;
