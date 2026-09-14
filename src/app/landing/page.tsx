@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
