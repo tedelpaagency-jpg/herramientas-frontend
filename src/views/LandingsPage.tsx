@@ -63,13 +63,9 @@ export const LandingsPage: React.FC = () => {
   }, []);
 
   const getPublicUrl = (landing: LandingTemplate) => {
-    if (landing.public_url) return landing.public_url;
     const enc = landing.encoded_id || base64Encode(landing.id);
     if (typeof window !== 'undefined') {
-      const origin = window.location.origin.includes(':3000')
-        ? window.location.origin.replace(':3000', ':8000')
-        : window.location.origin;
-      return `${origin}/landing?id=${enc}`;
+      return `${window.location.origin}/landing?id=${enc}`;
     }
     return `/landing?id=${enc}`;
   };
