@@ -64,7 +64,7 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 15000,
+  timeout: 60000,
 });
 
 // Interceptor de Petición: Inyectar Bearer token y el Header dinámico X-Domain

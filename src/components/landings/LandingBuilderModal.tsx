@@ -135,8 +135,11 @@ export const LandingBuilderModal: React.FC<Props> = ({
       onClose();
     } catch (err: any) {
       console.error('Error saving landing:', err);
-      const serverMsg = err?.response?.data?.message || err?.message || 'Error al guardar la landing page.';
-      alert(`Error al guardar la landing page: ${serverMsg}`);
+      let serverMsg = err?.response?.data?.message || err?.message;
+      if (err?.message === 'Network Error' || err?.code === 'ERR_NETWORK') {
+        serverMsg = 'Error de conexión con el servidor. Por favor verifica tu conexión a internet o intenta nuevamente.';
+      }
+      alert(`Error al guardar la landing page: ${serverMsg || 'Error de conexión'}`);
     } finally {
       setSaving(false);
     }

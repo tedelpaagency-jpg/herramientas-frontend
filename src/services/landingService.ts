@@ -43,7 +43,7 @@ export const landingService = {
   },
 
   updateLandingBuilder: async (id: number, data: Partial<LandingTemplate>): Promise<LandingTemplate> => {
-    const response = await apiClient.put(`/v1/landings/${id}/builder`, data);
+    const response = await apiClient.post(`/v1/landings/${id}/builder`, data);
     return response.data?.data || response.data;
   },
 
