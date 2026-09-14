@@ -111,7 +111,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
     try {
       setSaving(true);
       const payload: Partial<LandingTemplate> = {
-        title,
+        title: title.trim(),
+        name: title.trim(),
         mode,
         custom_html: customHtml,
         action_type: actionType,
@@ -134,7 +135,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
       onClose();
     } catch (err: any) {
       console.error('Error saving landing:', err);
-      alert('Error al guardar la landing page.');
+      const serverMsg = err?.response?.data?.message || err?.message || 'Error al guardar la landing page.';
+      alert(`Error al guardar la landing page: ${serverMsg}`);
     } finally {
       setSaving(false);
     }
