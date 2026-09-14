@@ -6,7 +6,7 @@ import whiteLabelService from '../../services/whiteLabelService';
 import adminService from '../../services/adminService';
 import { 
   Palette, Type, Image as ImageIcon, Globe, Code, Sparkles, Save, RotateCcw, 
-  Check, Eye, Layout, Lock, Building2, ShieldCheck, RefreshCw, Upload, Smartphone, ExternalLink, Sun, Moon, Minimize2, Maximize2
+  Check, Eye, Layout, Lock, Building2, ShieldCheck, RefreshCw, Upload, Smartphone, ExternalLink, Sun, Moon, Minimize2, Maximize2, CreditCard, Key, EyeOff
 } from 'lucide-react';
 
 const PRESET_PALETTES = [
@@ -50,7 +50,7 @@ export default function BrandingCustomizationPage({
   const [agencies, setAgencies] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(initialTargetType === 'white_label' ? (initialWhiteLabelId || null) : (initialAgencyId || null));
 
-  const [activeTab, setActiveTab] = useState<'colors' | 'typography' | 'logos' | 'info' | 'domain'>('colors');
+  const [activeTab, setActiveTab] = useState<'colors' | 'typography' | 'logos' | 'info' | 'domain' | 'stripe'>('colors');
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -93,6 +93,10 @@ export default function BrandingCustomizationPage({
     custom_domain: '',
     seo_description: '',
     custom_css: '',
+    stripe_publishable_key: '',
+    stripe_secret_key: '',
+    stripe_webhook_secret: '',
+    stripe_mode: 'test',
   });
 
   // Load available entities on mount
@@ -200,6 +204,10 @@ export default function BrandingCustomizationPage({
       custom_domain: entity.custom_domain || entity.domain || '',
       seo_description: entity.seo_description || entity.description || '',
       custom_css: entity.custom_css || '',
+      stripe_publishable_key: entity.stripe_publishable_key || '',
+      stripe_secret_key: entity.stripe_secret_key || '',
+      stripe_webhook_secret: entity.stripe_webhook_secret || '',
+      stripe_mode: entity.stripe_mode || 'test',
     });
 
     setMockCollapsed(navMode === 'compact');
@@ -514,6 +522,16 @@ export default function BrandingCustomizationPage({
               }`}
             >
               <Code className="w-4 h-4" /> Dominio & SEO
+            </button>
+            <button
+              onClick={() => setActiveTab('stripe')}
+              className={`px-4 py-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
+                activeTab === 'stripe'
+                  ? 'border-[#00a884] text-[#00a884] bg-white dark:bg-slate-900'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <CreditCard className="w-4 h-4 text-emerald-500" /> Pasarela Stripe
             </button>
           </div>
 
@@ -1016,6 +1034,103 @@ export default function BrandingCustomizationPage({
                     onChange={(e) => setForm({ ...form, custom_css: e.target.value })}
                     className="w-full px-3 py-2 text-xs font-mono bg-slate-900 text-emerald-400 rounded-lg"
                   />
+                </div>
+              </div>
+            )}
+
+            {/* TAB 6: STRIPE PAYMENT GATEWAY API KEYS */}
+            {activeTab === 'stripe' && (
+              <div className="space-y-5">
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-start gap-3">
+                  <CreditCard className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                  <div className="text-xs space-y-1">
+                    <span className="font-bold text-slate-900 dark:text-white block">Integración de Pagos Directos con Stripe</span>
+                    <p className="text-slate-600 dark:text-slate-300">
+                      Configure sus credenciales API de Stripe para que las landings, suscripciones y solicitudes de pago cobren directamente a su cuenta bancaria.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stripe Environment Selector */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                    Entorno / Modo de Stripe:
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, stripe_mode: 'test' })}
+                      className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                        form.stripe_mode === 'test'
+                          ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-500'
+                      }`}
+                    >
+                      <Key className="w-4 h-4" /> Modo Pruebas (Test / Sandbox)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, stripe_mode: 'live' })}
+                      className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                        form.stripe_mode === 'live'
+                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-500'
+                      }`}
+                    >
+                      <ShieldCheck className="w-4 h-4" /> Modo Producción (Live Real)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Publishable Key */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                    Stripe Publishable Key (Clave Publicable):
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={form.stripe_mode === 'live' ? 'pk_live_...' : 'pk_test_...'}
+                    value={form.stripe_publishable_key}
+                    onChange={(e) => setForm({ ...form, stripe_publishable_key: e.target.value })}
+                    className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                  />
+                  <span className="text-[10px] text-slate-400 block">
+                    Comienza con <code className="font-mono text-emerald-500">pk_test_</code> o <code className="font-mono text-emerald-500">pk_live_</code>. Se utiliza en el frontend para procesar Stripe Checkout.
+                  </span>
+                </div>
+
+                {/* Secret Key */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                    Stripe Secret Key (Clave Secreta):
+                  </label>
+                  <input
+                    type="password"
+                    placeholder={form.stripe_mode === 'live' ? 'sk_live_...' : 'sk_test_...'}
+                    value={form.stripe_secret_key}
+                    onChange={(e) => setForm({ ...form, stripe_secret_key: e.target.value })}
+                    className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                  />
+                  <span className="text-[10px] text-slate-400 block">
+                    Comienza con <code className="font-mono text-emerald-500">sk_test_</code> o <code className="font-mono text-emerald-500">sk_live_</code>. Clave confidencial requerida para crear órdenes y cobros backend.
+                  </span>
+                </div>
+
+                {/* Webhook Secret */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                    Stripe Webhook Signing Secret (Opcional):
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="whsec_..."
+                    value={form.stripe_webhook_secret}
+                    onChange={(e) => setForm({ ...form, stripe_webhook_secret: e.target.value })}
+                    className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                  />
+                  <span className="text-[10px] text-slate-400 block">
+                    Comienza con <code className="font-mono text-emerald-500">whsec_</code>. Utilizado para verificar firmas de eventos webhooks devueltos por Stripe.
+                  </span>
                 </div>
               </div>
             )}

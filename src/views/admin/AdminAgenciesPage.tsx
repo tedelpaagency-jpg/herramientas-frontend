@@ -50,6 +50,10 @@ export const AdminAgenciesPage: React.FC = () => {
     city: '',
     province: '',
     domain: '',
+    stripe_publishable_key: '',
+    stripe_secret_key: '',
+    stripe_webhook_secret: '',
+    stripe_mode: 'test' as 'test' | 'live',
     plan_id: '' as string | number,
     status: 1,
   });
@@ -100,6 +104,10 @@ export const AdminAgenciesPage: React.FC = () => {
       city: '',
       province: '',
       domain: '',
+      stripe_publishable_key: '',
+      stripe_secret_key: '',
+      stripe_webhook_secret: '',
+      stripe_mode: 'test' as 'test' | 'live',
       plan_id: plans[0]?.id || '',
       status: 1,
     });
@@ -118,6 +126,10 @@ export const AdminAgenciesPage: React.FC = () => {
       city: agency.city || '',
       province: agency.province || '',
       domain: agency.domain || '',
+      stripe_publishable_key: agency.stripe_publishable_key || '',
+      stripe_secret_key: agency.stripe_secret_key || '',
+      stripe_webhook_secret: agency.stripe_webhook_secret || '',
+      stripe_mode: (agency.stripe_mode as 'test' | 'live') || 'test',
       plan_id: agency.plan_id || '',
       status: agency.status ?? 1,
     });
@@ -461,6 +473,53 @@ export const AdminAgenciesPage: React.FC = () => {
                   placeholder="Av. Principal 123, Of. 401"
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 />
+              </div>
+
+              {/* Stripe API Keys */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">Credenciales Pasarela Stripe</span>
+                  <select
+                    value={formData.stripe_mode}
+                    onChange={(e) => setFormData({ ...formData, stripe_mode: e.target.value as 'test' | 'live' })}
+                    className="px-2 py-0.5 text-[10px] rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                  >
+                    <option value="test">Test</option>
+                    <option value="live">Live</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-0.5">Publishable Key</label>
+                    <input
+                      type="text"
+                      placeholder="pk_test_..."
+                      value={formData.stripe_publishable_key}
+                      onChange={(e) => setFormData({ ...formData, stripe_publishable_key: e.target.value })}
+                      className="w-full px-2 py-1 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-0.5">Secret Key</label>
+                    <input
+                      type="password"
+                      placeholder="sk_test_..."
+                      value={formData.stripe_secret_key}
+                      onChange={(e) => setFormData({ ...formData, stripe_secret_key: e.target.value })}
+                      className="w-full px-2 py-1 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-0.5">Webhook Secret</label>
+                    <input
+                      type="text"
+                      placeholder="whsec_..."
+                      value={formData.stripe_webhook_secret}
+                      onChange={(e) => setFormData({ ...formData, stripe_webhook_secret: e.target.value })}
+                      className="w-full px-2 py-1 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">

@@ -61,6 +61,10 @@ export const WhiteLabelsPage: React.FC = () => {
     button_color: '#0284c7',
     custom_domain: '',
     seo_description: '',
+    stripe_publishable_key: '',
+    stripe_secret_key: '',
+    stripe_webhook_secret: '',
+    stripe_mode: 'test' as 'test' | 'live',
     status: 'active' as 'active' | 'suspended',
     plan_id: null as number | null,
     admin_name: '',
@@ -204,6 +208,10 @@ export const WhiteLabelsPage: React.FC = () => {
       button_color: '#0284c7',
       custom_domain: '',
       seo_description: '',
+      stripe_publishable_key: '',
+      stripe_secret_key: '',
+      stripe_webhook_secret: '',
+      stripe_mode: 'test' as 'test' | 'live',
       status: 'active' as 'active' | 'suspended',
       plan_id: null,
       admin_name: '',
@@ -232,6 +240,10 @@ export const WhiteLabelsPage: React.FC = () => {
       button_color: wl.button_color || '#0284c7',
       custom_domain: wl.custom_domain || '',
       seo_description: wl.seo_description || '',
+      stripe_publishable_key: wl.stripe_publishable_key || '',
+      stripe_secret_key: wl.stripe_secret_key || '',
+      stripe_webhook_secret: wl.stripe_webhook_secret || '',
+      stripe_mode: (wl.stripe_mode as 'test' | 'live') || 'test',
       status: wl.status,
       plan_id: wl.plan_id || wl.plan?.id || null,
       admin_name: '',
@@ -595,6 +607,53 @@ export const WhiteLabelsPage: React.FC = () => {
                         value={formData.button_color}
                         onChange={(e) => setFormData({ ...formData, button_color: e.target.value })}
                         className="w-full h-8 rounded-lg cursor-pointer bg-transparent border-0"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stripe API Keys Section */}
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-mono font-extrabold text-emerald-600 dark:text-emerald-400">Credenciales API de Stripe (Cobros Directos)</span>
+                    <select
+                      value={formData.stripe_mode}
+                      onChange={(e) => setFormData({ ...formData, stripe_mode: e.target.value as 'test' | 'live' })}
+                      className="px-2 py-1 text-[10px] font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+                    >
+                      <option value="test">Modo Test (Pruebas)</option>
+                      <option value="live">Modo Live (Producción)</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1">Publishable Key</label>
+                      <input
+                        type="text"
+                        placeholder="pk_test_..."
+                        value={formData.stripe_publishable_key}
+                        onChange={(e) => setFormData({ ...formData, stripe_publishable_key: e.target.value })}
+                        className="w-full px-2.5 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1">Secret Key</label>
+                      <input
+                        type="password"
+                        placeholder="sk_test_..."
+                        value={formData.stripe_secret_key}
+                        onChange={(e) => setFormData({ ...formData, stripe_secret_key: e.target.value })}
+                        className="w-full px-2.5 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1">Webhook Secret</label>
+                      <input
+                        type="text"
+                        placeholder="whsec_..."
+                        value={formData.stripe_webhook_secret}
+                        onChange={(e) => setFormData({ ...formData, stripe_webhook_secret: e.target.value })}
+                        className="w-full px-2.5 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl"
                       />
                     </div>
                   </div>

@@ -58,6 +58,10 @@ export interface Agency {
   seo_description?: string | null;
   whatsapp?: string | null;
   custom_css?: string | null;
+  stripe_publishable_key?: string | null;
+  stripe_secret_key?: string | null;
+  stripe_webhook_secret?: string | null;
+  stripe_mode?: 'test' | 'live' | string | null;
   plan_id?: number;
   plan?: Plan;
   gerente_id?: number;

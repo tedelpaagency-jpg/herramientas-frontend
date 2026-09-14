@@ -24,6 +24,10 @@ export interface WhiteLabel {
   instagram?: string | null;
   tiktok?: string | null;
   custom_css?: string | null;
+  stripe_publishable_key?: string | null;
+  stripe_secret_key?: string | null;
+  stripe_webhook_secret?: string | null;
+  stripe_mode?: 'test' | 'live' | string | null;
   border_radius?: string | null;
   status: 'active' | 'suspended';
   plan_id?: number | null;

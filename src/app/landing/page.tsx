@@ -29,12 +29,40 @@ function CustomHtmlIframeContainer({
     customFormClass = match[1].trim();
   }
 
-  const processedHtml = customHtml.replace(
+  const processedHtml = React.useMemo(() => customHtml.replace(
     /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
     `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
-  );
+  ), [customHtml, customFormClass]);
+
+  const checkAndMountTarget = React.useCallback(() => {
+    const iframeNode = iframeRef.current;
+    if (!iframeNode) return;
+    const doc = iframeNode.contentDocument || iframeNode.contentWindow?.document;
+    if (!doc) return;
+
+    const el = doc.getElementById('react-dynamic-form-container');
+    if (el && el !== mountTarget) {
+      setMountTarget(el);
+    }
+
+    if (doc.body) {
+      const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, doc.body.offsetHeight, 600);
+      setIframeHeight(height);
+    }
+  }, [mountTarget]);
+
+  // Immediately poll every 10ms after component mounts to find target before onLoad fires
+  useEffect(() => {
+    checkAndMountTarget();
+    const timer = setInterval(() => {
+      checkAndMountTarget();
+    }, 15);
+
+    return () => clearInterval(timer);
+  }, [checkAndMountTarget]);
 
   const setupIframe = () => {
+    checkAndMountTarget();
     const iframeNode = iframeRef.current;
     if (!iframeNode) return;
     const doc = iframeNode.contentDocument || iframeNode.contentWindow?.document;
@@ -47,24 +75,13 @@ function CustomHtmlIframeContainer({
       doc.head.appendChild(twScript);
     }
 
-    const updateHeight = () => {
-      if (doc.body) {
-        const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, doc.body.offsetHeight, 600);
-        setIframeHeight(height);
-      }
-    };
-
-    updateHeight();
-    setTimeout(updateHeight, 300);
-    setTimeout(updateHeight, 1000);
-
-    const el = doc.getElementById('react-dynamic-form-container');
-    if (el) {
-      setMountTarget(el);
-    }
-
     if (typeof window !== 'undefined' && window.ResizeObserver && doc.body) {
-      const ro = new ResizeObserver(() => updateHeight());
+      const ro = new ResizeObserver(() => {
+        if (doc.body) {
+          const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, doc.body.offsetHeight, 600);
+          setIframeHeight(height);
+        }
+      });
       ro.observe(doc.body);
     }
   };
