@@ -35,6 +35,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { automationService, PipelineAutomation, AutomationMeta } from '../services/automationService';
 import Portal from '../components/Portal';
+import VisualWorkflowBuilder from '../components/automations/VisualWorkflowBuilder';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
@@ -56,6 +57,10 @@ export default function AutomationsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterWorkspaceId, setFilterWorkspaceId] = useState<number | ''>('');
+
+  // Visual Drag & Drop Builder State
+  const [isVisualBuilderOpen, setIsVisualBuilderOpen] = useState<boolean>(false);
+  const [activeAutomation, setActiveAutomation] = useState<PipelineAutomation | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -150,30 +155,24 @@ export default function AutomationsPage() {
   };
 
   const handleOpenCreateModal = () => {
-    setEditingAutomation(null);
-    setName('');
-    setAgencyId('');
-    setWorkspaceId('');
-    setStageId('');
-    setTriggerType('lead_created');
-    setConditionType('always');
-    setConditionValue('');
-    setActionType('send_lead_email');
-    setActionValue('');
-    setNotificationEmail('');
-    
-    // Reset Email Specific
-    setRecipientType('lead');
-    setSelectedUserId('');
-    setCustomRecipientEmail('');
-    setEmailSubject('¡Hola {lead_name}, gracias por contactarnos!');
-    setEmailBody('<div style="font-family: Arial, sans-serif; color: #1e293b; padding: 20px; line-height: 1.6;">\n  <h2 style="color: #2563eb; margin-bottom: 12px;">¡Hola {lead_name}!</h2>\n  <p>Hemos recibido tu solicitud en nuestra plataforma y un asesor te atenderá pronto.</p>\n  <p><strong>Detalles del registro:</strong></p>\n  <ul>\n    <li>Etapa: {stage_name}</li>\n    <li>Asesor Asignado: {agent_name}</li>\n    <li>Agencia: {agency_name}</li>\n  </ul>\n  <p>Saludos cordiales,<br><strong>Equipo de {agency_name}</strong></p>\n</div>');
-    setEmailEditorMode('wysiwyg');
-
-    setIsModalOpen(true);
+    setActiveAutomation(null);
+    setIsVisualBuilderOpen(true);
   };
 
   const handleOpenEditModal = (auto: PipelineAutomation) => {
+    setActiveAutomation(auto);
+    setIsVisualBuilderOpen(true);
+  };
+
+  const handleSaveVisualWorkflow = async (payload: any) => {
+    if (activeAutomation) {
+      await automationService.updateAutomation(activeAutomation.id, payload);
+    } else {
+      await automationService.createAutomation(payload);
+    }
+    await loadData();
+  };
+  const handleOpenLegacyEditModal = (auto: PipelineAutomation) => {
     setEditingAutomation(auto);
     setName(auto.name);
     setAgencyId(auto.agency_id || '');
@@ -458,6 +457,53 @@ export default function AutomationsPage() {
           <span>Reglas Activas: {automations.filter((a) => a.status).length} / {automations.length}</span>
         </div>
       </div>
+
+      {/* WORKSPACE DIRECT SELECTOR TABS BAR */}
+      {meta?.workspaces && meta.workspaces.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <button
+            onClick={() => setFilterWorkspaceId('')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 border ${
+              filterWorkspaceId === ''
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20'
+                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-indigo-500/50'
+            }`}
+          >
+            <Building className="w-4 h-4" />
+            <span>Todos los Workspaces</span>
+            <span className={`ml-1 text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+              filterWorkspaceId === '' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+            }`}>
+              {automations.length}
+            </span>
+          </button>
+
+          {meta.workspaces.map((ws) => {
+            const count = automations.filter((a) => a.workspace_id === ws.id).length;
+            const isSelected = filterWorkspaceId === ws.id;
+
+            return (
+              <button
+                key={ws.id}
+                onClick={() => setFilterWorkspaceId(ws.id)}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 border ${
+                  isSelected
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20'
+                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-indigo-500/50'
+                }`}
+              >
+                <Building className="w-4 h-4 text-indigo-400" />
+                <span>Workspace: {ws.name}</span>
+                <span className={`ml-1 text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                  isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Automations Data Table */}
       {loading ? (
@@ -1250,6 +1296,24 @@ export default function AutomationsPage() {
           </div>
         </Portal>
       )}
+
+      {/* Visual Drag & Drop Builder Component */}
+      <VisualWorkflowBuilder
+        isOpen={isVisualBuilderOpen}
+        onClose={() => setIsVisualBuilderOpen(false)}
+        automation={activeAutomation}
+        workspaces={meta?.workspaces || []}
+        meta={meta}
+        onSave={handleSaveVisualWorkflow}
+        onTestDispatch={async (testData) => {
+          const res = await automationService.sendTestEmail(testData);
+          if (res.status === 'success') {
+            toast.success(res.message);
+          } else {
+            toast.error(res.message);
+          }
+        }}
+      />
     </div>
   );
 }
