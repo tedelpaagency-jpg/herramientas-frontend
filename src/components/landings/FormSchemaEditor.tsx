@@ -440,43 +440,50 @@ export const FormSchemaEditor: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Auto-enrollment LMS Courses if register_agency */}
-          {actionType === 'register_agency' && (
-            <div className="p-3 bg-purple-950/30 border border-purple-800/50 rounded-lg space-y-3">
-              <div className="flex items-center gap-2 text-purple-300 font-semibold">
+          {/* Auto-enrollment LMS Courses if register_agency or courses available */}
+          {(actionType === 'register_agency' || (courseIds && courseIds.length > 0)) && (
+            <div className="p-3.5 bg-purple-950/30 border border-purple-800/50 rounded-xl space-y-3">
+              <div className="flex items-center gap-2 text-purple-300 font-semibold text-xs">
                 <BookOpen className="w-4 h-4 text-purple-400" /> Cursos Automáticos para el Admin Creado
               </div>
               <p className="text-[11px] text-slate-400">
                 Selecciona los cursos que se asignarán automáticamente al usuario administrador de la nueva agencia al completarse el formulario.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                {resources?.courses.map(course => {
-                  const safeCourseIds = courseIds || [];
-                  const isChecked = safeCourseIds.includes(course.id);
-                  return (
-                    <label
-                      key={course.id}
-                      className={`flex items-center gap-2 p-2 rounded border cursor-pointer ${
-                        isChecked ? 'border-purple-500 bg-purple-900/40 text-white' : 'border-slate-800 bg-slate-900 text-slate-300'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            onCourseIdsChange([...safeCourseIds, course.id]);
-                          } else {
-                            onCourseIdsChange(safeCourseIds.filter(id => id !== course.id));
-                          }
-                        }}
-                        className="rounded border-slate-700 text-purple-600"
-                      />
-                      <span className="truncate">{course.title}</span>
-                    </label>
-                  );
-                })}
-              </div>
+              
+              {(!resources?.courses || resources.courses.length === 0) ? (
+                <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-lg text-slate-400 text-xs italic">
+                  No hay cursos activos disponibles en la plataforma. Crea cursos en el módulo LMS para matriculación automática.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {resources.courses.map(course => {
+                    const safeCourseIds = courseIds || [];
+                    const isChecked = safeCourseIds.includes(course.id);
+                    return (
+                      <label
+                        key={course.id}
+                        className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
+                          isChecked ? 'border-purple-500 bg-purple-900/40 text-white font-bold' : 'border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              onCourseIdsChange([...safeCourseIds, course.id]);
+                            } else {
+                              onCourseIdsChange(safeCourseIds.filter(id => id !== course.id));
+                            }
+                          }}
+                          className="rounded border-slate-700 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="truncate">{course.title}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
