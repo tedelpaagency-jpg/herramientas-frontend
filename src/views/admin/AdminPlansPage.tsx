@@ -309,7 +309,18 @@ export const AdminPlansPage: React.FC = () => {
                       )}
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
-                      ${Number(plan.price).toFixed(2)} <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">/mes</span>
+                      ${Number(plan.price).toFixed(2)}{' '}
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                        /{' '}
+                        {plan.duration_value && plan.duration_value > 1
+                          ? `${plan.duration_value} `
+                          : ''}
+                        {plan.duration_unit === 'year'
+                          ? (plan.duration_value && plan.duration_value > 1 ? 'años' : 'año')
+                          : plan.duration_unit === 'day'
+                          ? (plan.duration_value && plan.duration_value > 1 ? 'días' : 'día')
+                          : (plan.duration_value && plan.duration_value > 1 ? 'meses' : 'mes')}
+                      </span>
                     </td>
                     <td className="py-3.5 px-4">
                       {plan.allowed_agency_types && plan.allowed_agency_types.length > 0 ? (
@@ -426,6 +437,18 @@ export const AdminPlansPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo de Plan (Destinatario) *</label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'white_label' | 'agency' })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                  >
+                    <option value="agency">Plan para Agencias</option>
+                    <option value="white_label">Plan para Marcas Blancas (Organizaciones)</option>
+                  </select>
+                </div>
+
+                <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Método de Cobro *</label>
                   {(() => {
                     const isTravelAllowed = formData.allowedAgencyTypesStr.toLowerCase().includes('travel') || 
@@ -435,7 +458,7 @@ export const AdminPlansPage: React.FC = () => {
                         <select
                           value={formData.billing_type}
                           onChange={(e) => setFormData({ ...formData, billing_type: e.target.value as 'fixed' | 'commission' })}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 bg-white font-semibold"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
                         >
                           <option value="fixed">Cargo Fijo</option>
                           <option value="commission" disabled={!isTravelAllowed}>
@@ -451,40 +474,29 @@ export const AdminPlansPage: React.FC = () => {
                     );
                   })()}
                 </div>
-
-                {formData.billing_type === 'commission' ? (
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">% de Comisión *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      required
-                      value={formData.commission_percentage}
-                      onChange={(e) => setFormData({ ...formData, commission_percentage: parseFloat(e.target.value) || 0 })}
-                      placeholder="ej. 5.00"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Estado</label>
-                    <select
-                      value={formData.status ? '1' : '0'}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value === '1' })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 bg-white"
-                    >
-                      <option value="1">Activo</option>
-                      <option value="0">Inactivo</option>
-                    </select>
-                  </div>
-                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {formData.billing_type === 'commission' && (
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Precio Mensual ($) *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">% de Comisión *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    required
+                    value={formData.commission_percentage}
+                    onChange={(e) => setFormData({ ...formData, commission_percentage: parseFloat(e.target.value) || 0 })}
+                    placeholder="ej. 5.00"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              )}
+
+              {/* Precio y Duración de la Suscripción */}
+              <div className="grid grid-cols-3 gap-3 p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl border border-amber-200/60 dark:border-amber-900/40">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Precio ($) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -492,23 +504,48 @@ export const AdminPlansPage: React.FC = () => {
                     required
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                    placeholder="ej. 99.00"
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
-                {formData.billing_type === 'commission' && (
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Estado</label>
-                    <select
-                      value={formData.status ? '1' : '0'}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value === '1' })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 bg-white"
-                    >
-                      <option value="1">Activo</option>
-                      <option value="0">Inactivo</option>
-                    </select>
-                  </div>
-                )}
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tiempo/Duración *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={formData.duration_value}
+                    onChange={(e) => setFormData({ ...formData, duration_value: parseInt(e.target.value) || 1 })}
+                    placeholder="ej. 1"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Unidad de Tiempo *</label>
+                  <select
+                    value={formData.duration_unit}
+                    onChange={(e) => setFormData({ ...formData, duration_unit: e.target.value as 'day' | 'month' | 'year' })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                  >
+                    <option value="month">Mes(es)</option>
+                    <option value="year">Año(s)</option>
+                    <option value="day">Día(s)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Estado</label>
+                <select
+                  value={formData.status ? '1' : '0'}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value === '1' })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                >
+                  <option value="1">Activo</option>
+                  <option value="0">Inactivo</option>
+                </select>
               </div>
 
               <div>

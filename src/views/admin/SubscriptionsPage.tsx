@@ -237,7 +237,21 @@ export const SubscriptionsPage: React.FC = () => {
     return matchesSearch && matchesStatus && matchesPlan;
   });
 
-  const availablePlans = plans.filter(p => activeTab === 'white_label' ? p.type === 'white_label' : p.type === 'agency');
+  const getAvailablePlans = (currentPlanId?: number) => {
+    const matched = plans.filter(p => {
+      if (currentPlanId && p.id === Number(currentPlanId)) return true;
+      if (activeTab === 'white_label') {
+        return p.type === 'white_label' || !p.type;
+      } else {
+        return p.type === 'agency' || !p.type;
+      }
+    });
+
+    if (matched.length === 0) {
+      return plans;
+    }
+    return matched;
+  };
 
   return (
     <div className="space-y-6">
@@ -368,7 +382,7 @@ export const SubscriptionsPage: React.FC = () => {
             className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 max-w-[200px] truncate"
           >
             <option value="">Todos los Planes</option>
-            {availablePlans.map((p) => (
+            {getAvailablePlans().map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
@@ -555,7 +569,7 @@ export const SubscriptionsPage: React.FC = () => {
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold"
                   >
                     <option value="">-- Seleccionar Plan --</option>
-                    {availablePlans.map(p => (
+                    {getAvailablePlans().map(p => (
                       <option key={p.id} value={p.id}>
                         {p.name} (${p.price} / {p.duration_value || 1} {p.duration_unit || 'mes'})
                       </option>
@@ -645,7 +659,7 @@ export const SubscriptionsPage: React.FC = () => {
                     onChange={(e) => setSelectedPlanId(Number(e.target.value))}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold"
                   >
-                    {availablePlans.map(p => (
+                    {getAvailablePlans(selectedSubscription?.plan_id).map(p => (
                       <option key={p.id} value={p.id}>
                         {p.name} (${p.price} / {p.duration_value || 1} {p.duration_unit || 'mes'})
                       </option>
@@ -714,7 +728,7 @@ export const SubscriptionsPage: React.FC = () => {
                     onChange={(e) => setSelectedPlanId(Number(e.target.value))}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold"
                   >
-                    {availablePlans.map(p => (
+                    {getAvailablePlans(selectedSubscription?.plan_id).map(p => (
                       <option key={p.id} value={p.id}>
                         {p.name} (${p.price} / {p.duration_value || 1} {p.duration_unit || 'mes'})
                       </option>
