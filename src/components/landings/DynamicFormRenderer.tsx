@@ -6,6 +6,7 @@ interface Props {
   formSchema: FormSchema;
   onSubmit: (answers: Record<string, any>) => void;
   loading?: boolean;
+  isFormLoading?: boolean;
   submitText?: string;
   variant?: 'light' | 'dark' | 'standalone' | 'custom';
   className?: string;
@@ -17,6 +18,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   formSchema,
   onSubmit,
   loading = false,
+  isFormLoading = false,
   submitText,
   variant = 'standalone',
   className,
@@ -118,6 +120,88 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const inputClasses = isDark
     ? 'w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none transition'
     : 'w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition';
+
+  if (isFormLoading) {
+    const isDarkVariant = variant === 'dark';
+    const bgCol = isDarkVariant ? '#0f172a' : '#ffffff';
+    const cardBorder = isDarkVariant ? '1px solid #1e293b' : '1px solid #e2e8f0';
+    const boxBg = isDarkVariant ? '#1e293b' : '#e2e8f0';
+    const inputBg = isDarkVariant ? '#020617' : '#f8fafc';
+    const inputBorder = isDarkVariant ? '1px solid #1e293b' : '1px solid #cbd5e1';
+
+    return (
+      <div
+        className={`space-y-4 p-5 sm:p-6 rounded-2xl animate-pulse ${className || ''}`}
+        style={{
+          backgroundColor: bgCol,
+          border: cardBorder,
+          boxSizing: 'border-box',
+          width: '100%',
+        }}
+      >
+        {/* Header / Title skeleton */}
+        <div className="space-y-2 text-center py-1">
+          <div
+            style={{
+              height: '22px',
+              width: '60%',
+              margin: '0 auto',
+              backgroundColor: boxBg,
+              borderRadius: '8px',
+            }}
+          />
+          <div
+            style={{
+              height: '14px',
+              width: '40%',
+              margin: '6px auto 0 auto',
+              backgroundColor: boxBg,
+              borderRadius: '6px',
+              opacity: 0.7,
+            }}
+          />
+        </div>
+
+        {/* Input fields skeleton */}
+        <div className="space-y-4 pt-2">
+          {[1, 2, 3].map((idx) => (
+            <div key={idx} className="space-y-2">
+              <div
+                style={{
+                  height: '14px',
+                  width: '30%',
+                  backgroundColor: boxBg,
+                  borderRadius: '4px',
+                }}
+              />
+              <div
+                style={{
+                  height: '44px',
+                  width: '100%',
+                  backgroundColor: inputBg,
+                  border: inputBorder,
+                  borderRadius: '12px',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Submit button skeleton */}
+        <div className="pt-3">
+          <div
+            style={{
+              height: '48px',
+              width: '100%',
+              backgroundColor: isDarkVariant ? '#4f46e5' : '#6366f1',
+              borderRadius: '12px',
+              opacity: 0.8,
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className={containerClasses}>

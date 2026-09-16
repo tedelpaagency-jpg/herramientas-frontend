@@ -26,6 +26,7 @@ function CustomHtmlIframeContainer({
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const [mountTarget, setMountTarget] = useState<HTMLElement | null>(null);
   const [iframeHeight, setIframeHeight] = useState<number>(900);
+  const [isStyleReady, setIsStyleReady] = useState(false);
 
   let customFormClass = formSchema?.className || formSchema?.class_name || 'space-y-5';
   const match = customHtml.match(/\{\{DYNAMIC_FORM(?::|\s+class=["']?)([^}"']+)["']?\}\}/i);
@@ -55,14 +56,22 @@ function CustomHtmlIframeContainer({
     }
   }, [mountTarget]);
 
-  // Immediately poll every 10ms after component mounts to find target before onLoad fires
+  // Immediately poll every 15ms after component mounts to find target before onLoad fires
   useEffect(() => {
     checkAndMountTarget();
     const timer = setInterval(() => {
       checkAndMountTarget();
     }, 15);
 
-    return () => clearInterval(timer);
+    // Fallback: guarantee form styles transition after max 350ms
+    const fallbackTimer = setTimeout(() => {
+      setIsStyleReady(true);
+    }, 350);
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(fallbackTimer);
+    };
   }, [checkAndMountTarget]);
 
   const setupIframe = () => {
@@ -73,10 +82,21 @@ function CustomHtmlIframeContainer({
     if (!doc) return;
 
     // Ensure Tailwind CSS script is injected in iframe head if not already present
-    if (!doc.querySelector('script[src*="tailwindcss"]') && !doc.querySelector('link[href*="tailwind"]')) {
+    const existingScript = doc.querySelector('script[src*="tailwindcss"]');
+    const existingLink = doc.querySelector('link[href*="tailwind"]');
+
+    if (!existingScript && !existingLink) {
       const twScript = doc.createElement('script');
       twScript.src = 'https://cdn.tailwindcss.com';
+      twScript.onload = () => {
+        setTimeout(() => setIsStyleReady(true), 60);
+      };
+      twScript.onerror = () => {
+        setIsStyleReady(true);
+      };
       doc.head.appendChild(twScript);
+    } else {
+      setTimeout(() => setIsStyleReady(true), 60);
     }
 
     if (typeof window !== 'undefined' && window.ResizeObserver && doc.body) {
@@ -115,6 +135,7 @@ function CustomHtmlIframeContainer({
             className={customFormClass}
             paymentConfig={paymentConfig}
             stripePublishableKey={stripePublishableKey}
+            isFormLoading={!isStyleReady}
           />
         ),
         mountTarget
