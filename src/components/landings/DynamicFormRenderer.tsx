@@ -106,32 +106,88 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const progressPercent = steps.length > 0 ? Math.round(((currentStepIndex + 1) / steps.length) * 100) : 100;
 
   const isDark = variant === 'dark';
+  const customStyles = formSchema?.styles || {};
 
-  const containerClasses = className
-    ? className
-    : (isDark
-        ? 'space-y-6 text-slate-100'
-        : 'space-y-5 text-slate-900');
+  // Border Radius Mapping
+  const radiusClassMap: Record<string, string> = {
+    none: 'rounded-none',
+    sm: 'rounded-md',
+    md: 'rounded-lg',
+    lg: 'rounded-xl',
+    xl: 'rounded-2xl',
+    '2xl': 'rounded-3xl',
+    full: 'rounded-full',
+  };
+  const activeRadiusClass = customStyles.border_radius
+    ? (radiusClassMap[customStyles.border_radius] || 'rounded-xl')
+    : 'rounded-xl';
+
+  // Base container class calculation
+  let containerClasses = className;
+  if (!containerClasses) {
+    if (customStyles.card_style === 'minimal') {
+      containerClasses = isDark ? 'space-y-6 text-slate-100' : 'space-y-5 text-slate-900';
+    } else if (customStyles.card_style === 'glass') {
+      containerClasses = `space-y-6 p-6 sm:p-8 shadow-2xl backdrop-blur-md ${activeRadiusClass} ${
+        isDark ? 'bg-slate-900/70 text-slate-100 border border-white/10' : 'bg-white/80 text-slate-900 border border-white/20'
+      }`;
+    } else if (customStyles.card_style === 'bordered') {
+      containerClasses = `space-y-6 p-6 sm:p-8 ${activeRadiusClass} ${
+        isDark ? 'bg-slate-950/60 text-slate-100 border border-slate-800' : 'bg-slate-50/60 text-slate-900 border border-slate-300'
+      }`;
+    } else {
+      // Default Card
+      containerClasses = `space-y-6 p-6 sm:p-8 shadow-xl ${activeRadiusClass} ${
+        isDark ? 'bg-slate-900 text-slate-100 border border-slate-800' : 'bg-white text-slate-900 border border-slate-200'
+      }`;
+    }
+  }
+
+  // Inline CSS Overrides
+  const containerStyle: React.CSSProperties = {
+    ...(customStyles.bg_color ? { backgroundColor: customStyles.bg_color } : {}),
+    ...(customStyles.text_color ? { color: customStyles.text_color } : {}),
+    ...(customStyles.border_radius === 'none' ? { borderRadius: '0px' } : {}),
+  };
+
+  const titleStyle: React.CSSProperties = customStyles.text_color ? { color: customStyles.text_color } : {};
+  const subtitleStyle: React.CSSProperties = customStyles.text_color ? { color: customStyles.text_color, opacity: 0.8 } : {};
+  const labelStyle: React.CSSProperties = customStyles.text_color ? { color: customStyles.text_color } : {};
 
   const titleClasses = isDark ? 'text-xl font-bold text-white' : 'text-xl font-extrabold text-slate-900';
   const subtitleClasses = isDark ? 'text-xs text-slate-400' : 'text-xs text-slate-500';
   const labelClasses = isDark ? 'block text-xs font-medium text-slate-300' : 'block text-xs font-semibold text-slate-700';
 
-  const inputClasses = isDark
-    ? 'w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none transition'
-    : 'w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition';
+  const inputClasses = `w-full p-3 text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${activeRadiusClass} ${
+    isDark
+      ? 'bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:border-indigo-500'
+      : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-indigo-600'
+  }`;
+
+  const inputInlineStyle: React.CSSProperties = {
+    ...(customStyles.input_bg_color ? { backgroundColor: customStyles.input_bg_color } : {}),
+    ...(customStyles.input_text_color ? { color: customStyles.input_text_color } : {}),
+    ...(customStyles.input_border_color ? { borderColor: customStyles.input_border_color } : {}),
+    ...(customStyles.border_radius === 'none' ? { borderRadius: '0px' } : {}),
+  };
+
+  const buttonInlineStyle: React.CSSProperties = {
+    ...(customStyles.button_bg_color ? { background: customStyles.button_bg_color, backgroundColor: customStyles.button_bg_color } : {}),
+    ...(customStyles.button_text_color ? { color: customStyles.button_text_color } : {}),
+    ...(customStyles.border_radius === 'none' ? { borderRadius: '0px' } : {}),
+  };
 
   if (isFormLoading) {
     const isDarkVariant = variant === 'dark';
-    const bgCol = isDarkVariant ? '#0f172a' : '#ffffff';
+    const bgCol = customStyles.bg_color || (isDarkVariant ? '#0f172a' : '#ffffff');
     const cardBorder = isDarkVariant ? '1px solid #1e293b' : '1px solid #e2e8f0';
     const boxBg = isDarkVariant ? '#1e293b' : '#e2e8f0';
-    const inputBg = isDarkVariant ? '#020617' : '#f8fafc';
-    const inputBorder = isDarkVariant ? '1px solid #1e293b' : '1px solid #cbd5e1';
+    const inputBg = customStyles.input_bg_color || (isDarkVariant ? '#020617' : '#f8fafc');
+    const inputBorder = customStyles.input_border_color ? `1px solid ${customStyles.input_border_color}` : (isDarkVariant ? '1px solid #1e293b' : '1px solid #cbd5e1');
 
     return (
       <div
-        className={`space-y-4 p-5 sm:p-6 rounded-2xl animate-pulse ${className || ''}`}
+        className={`space-y-4 p-5 sm:p-6 animate-pulse ${activeRadiusClass} ${className || ''}`}
         style={{
           backgroundColor: bgCol,
           border: cardBorder,
@@ -193,7 +249,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
             style={{
               height: '48px',
               width: '100%',
-              backgroundColor: isDarkVariant ? '#4f46e5' : '#6366f1',
+              backgroundColor: customStyles.button_bg_color || (isDarkVariant ? '#4f46e5' : '#6366f1'),
               borderRadius: '12px',
               opacity: 0.8,
             }}
@@ -204,26 +260,29 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={containerClasses}>
+    <form onSubmit={handleSubmit} className={containerClasses} style={containerStyle}>
       {/* Title / Subtitle */}
       {(formSchema?.title || formSchema?.subtitle) && (
         <div className="text-center space-y-1">
-          {formSchema.title && <h3 className={titleClasses}>{formSchema.title}</h3>}
-          {formSchema.subtitle && <p className={subtitleClasses}>{formSchema.subtitle}</p>}
+          {formSchema.title && <h3 className={titleClasses} style={titleStyle}>{formSchema.title}</h3>}
+          {formSchema.subtitle && <p className={subtitleClasses} style={subtitleStyle}>{formSchema.subtitle}</p>}
         </div>
       )}
 
       {/* Multi-step progress bar */}
       {layout === 'multi_step' && steps.length > 0 && (
         <div className="space-y-2">
-          <div className={`flex justify-between items-center text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          <div className={`flex justify-between items-center text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`} style={subtitleStyle}>
             <span>Paso {currentStepIndex + 1} de {steps.length}: {steps[currentStepIndex]?.title}</span>
-            <span className="text-indigo-600 font-bold">{progressPercent}%</span>
+            <span className="text-indigo-600 dark:text-indigo-400 font-bold" style={titleStyle}>{progressPercent}%</span>
           </div>
           <div className={`w-full rounded-full h-2 overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
             <div
               className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full transition-all duration-300 ease-out"
-              style={{ width: `${progressPercent}%` }}
+              style={{
+                width: `${progressPercent}%`,
+                ...(customStyles.button_bg_color ? { background: customStyles.button_bg_color } : {}),
+              }}
             />
           </div>
         </div>
@@ -233,7 +292,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       <div className="space-y-4">
         {currentStepFields.map((field) => (
           <div key={field.id} className="space-y-1.5 text-left">
-            <label className={labelClasses}>
+            <label className={labelClasses} style={labelStyle}>
               {field.label} {field.required && <span className="text-red-500">*</span>}
             </label>
 
@@ -244,22 +303,24 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 placeholder={field.placeholder || ''}
                 rows={3}
                 className={inputClasses}
+                style={inputInlineStyle}
               />
             ) : field.type === 'select' ? (
               <select
                 value={formData[field.name] || ''}
                 onChange={(e) => handleInputChange(field, e.target.value)}
                 className={inputClasses}
+                style={inputInlineStyle}
               >
-                <option value="">-- Seleccionar --</option>
+                <option value="" style={{ backgroundColor: customStyles.input_bg_color, color: customStyles.input_text_color }}>-- Seleccionar --</option>
                 {field.options?.map((opt, i) => (
-                  <option key={i} value={opt.value}>
+                  <option key={i} value={opt.value} style={{ backgroundColor: customStyles.input_bg_color, color: customStyles.input_text_color }}>
                     {opt.label}
                   </option>
                 ))}
               </select>
             ) : field.type === 'checkbox' ? (
-              <label className={`flex items-center gap-2.5 cursor-pointer text-xs ${isDark ? 'text-slate-300' : 'text-slate-700 font-medium'}`}>
+              <label className={`flex items-center gap-2.5 cursor-pointer text-xs ${isDark ? 'text-slate-300' : 'text-slate-700 font-medium'}`} style={labelStyle}>
                 <input
                   type="checkbox"
                   checked={!!formData[field.name]}
@@ -273,9 +334,10 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 <input
                   type="file"
                   onChange={(e) => handleInputChange(field, e.target.files?.[0] || null)}
-                  className={`w-full rounded-xl p-2 text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer ${inputClasses}`}
+                  className={`w-full text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer ${inputClasses}`}
+                  style={inputInlineStyle}
                 />
-                <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Archivos permitidos: imágenes, PDF, comprobantes de pago (Máx. 5MB)</p>
+                <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`} style={subtitleStyle}>Archivos permitidos: imágenes, PDF, comprobantes de pago (Máx. 5MB)</p>
               </div>
             ) : (
               <input
@@ -284,6 +346,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 onChange={(e) => handleInputChange(field, e.target.value)}
                 placeholder={field.placeholder || ''}
                 className={inputClasses}
+                style={inputInlineStyle}
               />
             )}
 
@@ -296,7 +359,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
 
       {/* Stripe Payment Card Input Box if enabled */}
       {paymentConfig?.enabled && isLastStep && (
-        <div className={`p-4 rounded-2xl border text-xs space-y-4 ${
+        <div className={`p-4 ${activeRadiusClass} border text-xs space-y-4 ${
           isDark
             ? 'bg-slate-950/90 border-emerald-500/40 text-slate-200'
             : 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
@@ -326,20 +389,21 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           <div className="space-y-3">
             {/* Nombre del Titular */}
             <div className="space-y-1 text-left">
-              <label className={labelClasses}>Nombre en la Tarjeta <span className="text-red-500">*</span></label>
+              <label className={labelClasses} style={labelStyle}>Nombre en la Tarjeta <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 placeholder="EJ. JUAN PEREZ"
                 value={formData['card_holder_name'] || ''}
                 onChange={(e) => handleInputChange({ id: 'card_holder_name', name: 'card_holder_name', label: 'Nombre en la Tarjeta', type: 'text' }, e.target.value.toUpperCase())}
                 className={inputClasses}
+                style={inputInlineStyle}
               />
               {errors['card_holder_name'] && <p className="text-[11px] text-red-500 font-semibold">{errors['card_holder_name']}</p>}
             </div>
 
             {/* Número de Tarjeta */}
             <div className="space-y-1 text-left">
-              <label className={labelClasses}>Número de Tarjeta <span className="text-red-500">*</span></label>
+              <label className={labelClasses} style={labelStyle}>Número de Tarjeta <span className="text-red-500">*</span></label>
               <div className="relative">
                 <input
                   type="text"
@@ -352,6 +416,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                     handleInputChange({ id: 'card_number', name: 'card_number', label: 'Número de Tarjeta', type: 'text' }, formatted);
                   }}
                   className={`${inputClasses} font-mono tracking-wider`}
+                  style={inputInlineStyle}
                 />
                 <CreditCard className="w-4 h-4 text-slate-400 absolute right-3 top-3.5 pointer-events-none" />
               </div>
@@ -362,7 +427,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
             <div className="grid grid-cols-2 gap-3">
               {/* Expiración */}
               <div className="space-y-1 text-left">
-                <label className={labelClasses}>Vencimiento (MM/AA) <span className="text-red-500">*</span></label>
+                <label className={labelClasses} style={labelStyle}>Vencimiento (MM/AA) <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   maxLength={5}
@@ -376,13 +441,14 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                     handleInputChange({ id: 'card_expiry', name: 'card_expiry', label: 'Fecha de Vencimiento', type: 'text' }, val);
                   }}
                   className={`${inputClasses} font-mono`}
+                  style={inputInlineStyle}
                 />
                 {errors['card_expiry'] && <p className="text-[11px] text-red-500 font-semibold">{errors['card_expiry']}</p>}
               </div>
 
               {/* CVC / CVV */}
               <div className="space-y-1 text-left">
-                <label className={labelClasses}>CVC / CVV <span className="text-red-500">*</span></label>
+                <label className={labelClasses} style={labelStyle}>CVC / CVV <span className="text-red-500">*</span></label>
                 <input
                   type="password"
                   maxLength={4}
@@ -393,6 +459,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                     handleInputChange({ id: 'card_cvc', name: 'card_cvc', label: 'CVC / CVV', type: 'text' }, raw);
                   }}
                   className={`${inputClasses} font-mono`}
+                  style={inputInlineStyle}
                 />
                 {errors['card_cvc'] && <p className="text-[11px] text-red-500 font-semibold">{errors['card_cvc']}</p>}
               </div>
@@ -414,7 +481,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           <button
             type="button"
             onClick={handlePrev}
-            className={`inline-flex items-center gap-1 text-xs px-4 py-2 rounded-xl font-medium transition ${
+            className={`inline-flex items-center gap-1 text-xs px-4 py-2 ${activeRadiusClass} font-medium transition ${
               isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-200' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
             }`}
           >
@@ -426,11 +493,12 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           <button
             type="submit"
             disabled={loading}
-            className={`inline-flex items-center gap-2 text-white text-xs px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-emerald-500/20 transition disabled:opacity-50 ${
+            className={`inline-flex items-center justify-center gap-2 text-white text-xs px-6 py-3 ${activeRadiusClass} font-bold shadow-md hover:shadow-emerald-500/20 transition disabled:opacity-50 ${
               paymentConfig?.enabled
                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500'
                 : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
             }`}
+            style={buttonInlineStyle}
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -450,7 +518,8 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           <button
             type="button"
             onClick={handleNext}
-            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-5 py-2.5 rounded-xl font-semibold transition shadow-md"
+            className={`inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-5 py-2.5 ${activeRadiusClass} font-semibold transition shadow-md`}
+            style={buttonInlineStyle}
           >
             Siguiente <ChevronRight className="w-4 h-4" />
           </button>

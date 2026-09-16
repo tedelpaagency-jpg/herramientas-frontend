@@ -37,6 +37,36 @@ export const CustomHtmlEditor: React.FC<Props> = ({ customHtml, onChange }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const previewDoc = React.useMemo(() => {
+    let raw = customHtml.replace(
+      '{{DYNAMIC_FORM}}',
+      '<div style="padding:24px;background:#f8fafc;border:2px dashed #6366f1;border-radius:16px;text-align:center;color:#4f46e5;font-family:sans-serif;font-weight:bold;">[FORMULARIO DINÁMICO SE MOSTRARÁ AQUÍ]</div>'
+    );
+
+    const tailwindHeader = `
+      <script>
+        window.tailwind = {
+          darkMode: 'class',
+          theme: { extend: {} }
+        };
+      </script>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+        html { color-scheme: light; }
+      </style>
+    `;
+
+    if (raw.includes('</head>')) {
+      return raw.replace('</head>', `${tailwindHeader}</head>`);
+    } else if (raw.includes('<head>')) {
+      return raw.replace('<head>', `<head>${tailwindHeader}`);
+    } else if (raw.includes('<html>')) {
+      return raw.replace('<html>', `<html><head>${tailwindHeader}</head>`);
+    } else {
+      return `<!DOCTYPE html><html><head>${tailwindHeader}</head><body>${raw}</body></html>`;
+    }
+  }, [customHtml]);
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 text-slate-100">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-3">
@@ -123,9 +153,9 @@ export const CustomHtmlEditor: React.FC<Props> = ({ customHtml, onChange }) => {
       ) : (
         <div className="w-full h-96 bg-white rounded-lg border border-slate-800 overflow-hidden">
           <iframe
-            srcDoc={customHtml.replace('{{DYNAMIC_FORM}}', '<div style="padding:20px;background:#f3f4f6;border:2px dashed #6366f1;text-align:center;color:#4f46e5;font-family:sans-serif;font-weight:bold;">[FORMULARIO DINÁMICO SE MOSTRARÁ AQUÍ]</div>')}
+            srcDoc={previewDoc}
             title="HTML Landing Preview"
-            className="w-full h-full border-0"
+            className="w-full h-full border-0 block"
           />
         </div>
       )}

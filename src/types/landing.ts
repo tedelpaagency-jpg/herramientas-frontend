@@ -25,6 +25,18 @@ export interface FormStepSchema {
   field_ids: string[];
 }
 
+export interface FormStyleConfig {
+  bg_color?: string;
+  text_color?: string;
+  input_bg_color?: string;
+  input_text_color?: string;
+  input_border_color?: string;
+  button_bg_color?: string;
+  button_text_color?: string;
+  border_radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  card_style?: 'card' | 'glass' | 'bordered' | 'minimal';
+}
+
 export interface FormSchema {
   layout: FormLayoutType;
   title?: string;
@@ -32,6 +44,7 @@ export interface FormSchema {
   submit_button_text?: string;
   fields: FormFieldSchema[];
   steps?: FormStepSchema[];
+  styles?: FormStyleConfig;
 }
 
 export interface BuilderSchemaBlock {

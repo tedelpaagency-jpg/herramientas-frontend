@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { FormSchema, FormFieldSchema, FormStepSchema, FormLayoutType, ActionType, LandingAvailableResources } from '../../types/landing';
-import { Plus, Trash2, MoveUp, MoveDown, Layers, CheckSquare, ListOrdered, BookOpen, GitBranch } from 'lucide-react';
+import { FormSchema, FormFieldSchema, FormStepSchema, FormStyleConfig, FormLayoutType, ActionType, LandingAvailableResources } from '../../types/landing';
+import { Plus, Trash2, MoveUp, MoveDown, Layers, CheckSquare, ListOrdered, BookOpen, GitBranch, Palette, Sparkles, Sliders } from 'lucide-react';
 
 interface Props {
   formSchema: FormSchema;
@@ -29,17 +29,105 @@ export const FormSchemaEditor: React.FC<Props> = ({
   onCourseIdsChange,
   resources,
 }) => {
-  const [activeTab, setActiveTab] = useState<'fields' | 'steps' | 'automation'>('fields');
+  const [activeTab, setActiveTab] = useState<'fields' | 'steps' | 'styles' | 'automation'>('fields');
 
   const fields = formSchema.fields || [];
   const steps = formSchema.steps || [];
   const layout = formSchema.layout || 'linear';
+  const currentStyles: FormStyleConfig = formSchema.styles || {};
 
   const updateSchema = (updates: Partial<FormSchema>) => {
     onChange({
       ...formSchema,
       ...updates,
     });
+  };
+
+  const handleUpdateStyles = (updates: Partial<FormStyleConfig>) => {
+    updateSchema({
+      styles: {
+        ...currentStyles,
+        ...updates,
+      },
+    });
+  };
+
+  const applyPreset = (presetKey: string) => {
+    let preset: FormStyleConfig = {};
+    if (presetKey === 'dark_luxe') {
+      preset = {
+        bg_color: '#0f172a',
+        text_color: '#ffffff',
+        input_bg_color: '#020617',
+        input_text_color: '#ffffff',
+        input_border_color: '#1e293b',
+        button_bg_color: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+        button_text_color: '#ffffff',
+        border_radius: 'xl',
+        card_style: 'card',
+      };
+    } else if (presetKey === 'clean_light') {
+      preset = {
+        bg_color: '#ffffff',
+        text_color: '#0f172a',
+        input_bg_color: '#f8fafc',
+        input_text_color: '#0f172a',
+        input_border_color: '#cbd5e1',
+        button_bg_color: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+        button_text_color: '#ffffff',
+        border_radius: 'xl',
+        card_style: 'card',
+      };
+    } else if (presetKey === 'emerald_finance') {
+      preset = {
+        bg_color: '#022c22',
+        text_color: '#f0fdf4',
+        input_bg_color: '#064e3b',
+        input_text_color: '#ffffff',
+        input_border_color: '#047857',
+        button_bg_color: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        button_text_color: '#ffffff',
+        border_radius: 'xl',
+        card_style: 'card',
+      };
+    } else if (presetKey === 'neon_cyber') {
+      preset = {
+        bg_color: '#18181b',
+        text_color: '#38bdf8',
+        input_bg_color: '#09090b',
+        input_text_color: '#f0f9ff',
+        input_border_color: '#0284c7',
+        button_bg_color: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+        button_text_color: '#ffffff',
+        border_radius: 'xl',
+        card_style: 'card',
+      };
+    } else if (presetKey === 'glassmorphic') {
+      preset = {
+        bg_color: 'rgba(15, 23, 42, 0.75)',
+        text_color: '#ffffff',
+        input_bg_color: 'rgba(2, 6, 23, 0.6)',
+        input_text_color: '#ffffff',
+        input_border_color: 'rgba(255, 255, 255, 0.15)',
+        button_bg_color: 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)',
+        button_text_color: '#ffffff',
+        border_radius: '2xl',
+        card_style: 'glass',
+      };
+    } else if (presetKey === 'minimal') {
+      preset = {
+        bg_color: 'transparent',
+        text_color: '#0f172a',
+        input_bg_color: '#ffffff',
+        input_text_color: '#0f172a',
+        input_border_color: '#e2e8f0',
+        button_bg_color: '#4f46e5',
+        button_text_color: '#ffffff',
+        border_radius: 'lg',
+        card_style: 'minimal',
+      };
+    }
+    updateSchema({ styles: preset });
   };
 
   const handleAddField = () => {
@@ -125,7 +213,16 @@ export const FormSchemaEditor: React.FC<Props> = ({
               activeTab === 'steps' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Diseño ({layout === 'multi_step' ? 'Multi-Step / Wizard' : 'Lineal'})
+            Estructura ({layout === 'multi_step' ? 'Multi-Step' : 'Lineal'})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('styles')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition ${
+              activeTab === 'styles' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Palette className="w-3.5 h-3.5 text-pink-400" /> Estilos & Colores
           </button>
           <button
             type="button"
@@ -357,6 +454,294 @@ export const FormSchemaEditor: React.FC<Props> = ({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* STYLES & COLORS TAB */}
+      {activeTab === 'styles' && (
+        <div className="space-y-6 text-xs">
+          {/* Preset Palettes */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-white text-sm flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-400" /> Paletas de Estilo Prediseñadas
+              </span>
+              <span className="text-[11px] text-slate-400">Haz clic en un tema para aplicarlo al instante</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {/* Preset 1: Dark Luxe */}
+              <button
+                type="button"
+                onClick={() => applyPreset('dark_luxe')}
+                className="p-3 rounded-xl border border-slate-800 bg-slate-950 hover:border-indigo-500 text-left transition space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white group-hover:text-indigo-400">Dark Luxe</span>
+                  <div className="flex -space-x-1">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#0f172a] border border-white/20" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#6366f1] border border-white/20" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#a855f7] border border-white/20" />
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400">Oscuro sofisticado con acentos índigo y púrpura</p>
+              </button>
+
+              {/* Preset 2: Clean Light */}
+              <button
+                type="button"
+                onClick={() => applyPreset('clean_light')}
+                className="p-3 rounded-xl border border-slate-800 bg-white text-slate-900 hover:border-indigo-500 text-left transition space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 group-hover:text-indigo-600">Clean Light</span>
+                  <div className="flex -space-x-1">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#ffffff] border border-slate-300" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#4f46e5] border border-slate-300" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#f8fafc] border border-slate-300" />
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-600">Fondo blanco puro, claro y corporativo</p>
+              </button>
+
+              {/* Preset 3: Emerald Finance */}
+              <button
+                type="button"
+                onClick={() => applyPreset('emerald_finance')}
+                className="p-3 rounded-xl border border-emerald-900 bg-[#022c22] text-emerald-100 hover:border-emerald-500 text-left transition space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-emerald-300 group-hover:text-emerald-400">Emerald Finance</span>
+                  <div className="flex -space-x-1">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#022c22] border border-white/20" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#10b981] border border-white/20" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#059669] border border-white/20" />
+                  </div>
+                </div>
+                <p className="text-[10px] text-emerald-300/80">Tono verde esmeralda para finanzas y conversión</p>
+              </button>
+
+              {/* Preset 4: Neon Cyber */}
+              <button
+                type="button"
+                onClick={() => applyPreset('neon_cyber')}
+                className="p-3 rounded-xl border border-slate-800 bg-[#18181b] text-cyan-300 hover:border-cyan-500 text-left transition space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-cyan-300 group-hover:text-cyan-400">Neon Cyber</span>
+                  <div className="flex -space-x-1">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#18181b] border border-white/20" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#06b6d4] border border-white/20" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#38bdf8] border border-white/20" />
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400">Fondo oscuro tecnológico con luces neón cían</p>
+              </button>
+
+              {/* Preset 5: Glassmorphic */}
+              <button
+                type="button"
+                onClick={() => applyPreset('glassmorphic')}
+                className="p-3 rounded-xl border border-white/20 bg-slate-900/80 backdrop-blur-md text-white hover:border-pink-500 text-left transition space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white group-hover:text-pink-400">Glassmorphic</span>
+                  <div className="flex -space-x-1">
+                    <span className="w-3.5 h-3.5 rounded-full bg-slate-900/60 border border-white/30" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#ec4899] border border-white/30" />
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-300">Cristal translúcido brillante moderno</p>
+              </button>
+
+              {/* Preset 6: Minimalist */}
+              <button
+                type="button"
+                onClick={() => applyPreset('minimal')}
+                className="p-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-500 text-left transition space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-200 group-hover:text-white">Plano Minimal</span>
+                  <div className="flex -space-x-1">
+                    <span className="w-3.5 h-3.5 rounded-full bg-transparent border border-slate-400" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#4f46e5] border border-slate-400" />
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400">Sin caja de tarjeta ni fondo rígido</p>
+              </button>
+            </div>
+          </div>
+
+          {/* Container & Border Radius */}
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-4">
+            <span className="font-bold text-white text-xs flex items-center gap-1.5">
+              <Sliders className="w-4 h-4 text-indigo-400" /> Estilo de Tarjeta & Redondeado de Bordes
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Card Style */}
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Estilo de Contenedor (Card)</label>
+                <select
+                  value={currentStyles.card_style || 'card'}
+                  onChange={(e) => handleUpdateStyles({ card_style: e.target.value as any })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"
+                >
+                  <option value="card">Tarjeta Sólida (Sombra & Borde)</option>
+                  <option value="glass">Efecto Cristal (Glassmorphic Blur)</option>
+                  <option value="bordered">Borde Fino (Sin Elevación)</option>
+                  <option value="minimal">Plano (Sin Contenedor)</option>
+                </select>
+              </div>
+
+              {/* Border Radius */}
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Redondeado de Esquinas (Border Radius)</label>
+                <select
+                  value={currentStyles.border_radius || 'xl'}
+                  onChange={(e) => handleUpdateStyles({ border_radius: e.target.value as any })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"
+                >
+                  <option value="none">Recto / Cuadrado (0px)</option>
+                  <option value="sm">Suave (6px)</option>
+                  <option value="md">Estándar (8px)</option>
+                  <option value="lg">Redondeado (12px)</option>
+                  <option value="xl">Extra Redondeado (16px)</option>
+                  <option value="2xl">Ultra Redondeado (24px)</option>
+                  <option value="full">Cápsula / Redondo (Full)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Color Customizers */}
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-4">
+            <span className="font-bold text-white text-xs flex items-center gap-1.5">
+              <Palette className="w-4 h-4 text-pink-400" /> Colores Personalizados (HEX / RGBA)
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* Contenedor BG */}
+              <div className="space-y-1">
+                <label className="block text-[11px] text-slate-400">Fondo del Formulario</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentStyles.bg_color && currentStyles.bg_color.startsWith('#') ? currentStyles.bg_color : '#0f172a'}
+                    onChange={(e) => handleUpdateStyles({ bg_color: e.target.value })}
+                    className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="#0f172a / transparent"
+                    value={currentStyles.bg_color || ''}
+                    onChange={(e) => handleUpdateStyles({ bg_color: e.target.value })}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Texto & Titulo */}
+              <div className="space-y-1">
+                <label className="block text-[11px] text-slate-400">Color de Títulos & Etiquetas</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentStyles.text_color && currentStyles.text_color.startsWith('#') ? currentStyles.text_color : '#ffffff'}
+                    onChange={(e) => handleUpdateStyles({ text_color: e.target.value })}
+                    className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="#ffffff"
+                    value={currentStyles.text_color || ''}
+                    onChange={(e) => handleUpdateStyles({ text_color: e.target.value })}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Inputs BG */}
+              <div className="space-y-1">
+                <label className="block text-[11px] text-slate-400">Fondo de Inputs</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentStyles.input_bg_color && currentStyles.input_bg_color.startsWith('#') ? currentStyles.input_bg_color : '#020617'}
+                    onChange={(e) => handleUpdateStyles({ input_bg_color: e.target.value })}
+                    className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="#020617"
+                    value={currentStyles.input_bg_color || ''}
+                    onChange={(e) => handleUpdateStyles({ input_bg_color: e.target.value })}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Inputs Text */}
+              <div className="space-y-1">
+                <label className="block text-[11px] text-slate-400">Texto dentro de Inputs</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentStyles.input_text_color && currentStyles.input_text_color.startsWith('#') ? currentStyles.input_text_color : '#ffffff'}
+                    onChange={(e) => handleUpdateStyles({ input_text_color: e.target.value })}
+                    className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="#ffffff"
+                    value={currentStyles.input_text_color || ''}
+                    onChange={(e) => handleUpdateStyles({ input_text_color: e.target.value })}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Inputs Border */}
+              <div className="space-y-1">
+                <label className="block text-[11px] text-slate-400">Borde de Inputs</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentStyles.input_border_color && currentStyles.input_border_color.startsWith('#') ? currentStyles.input_border_color : '#1e293b'}
+                    onChange={(e) => handleUpdateStyles({ input_border_color: e.target.value })}
+                    className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="#1e293b"
+                    value={currentStyles.input_border_color || ''}
+                    onChange={(e) => handleUpdateStyles({ input_border_color: e.target.value })}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Botón Principal BG */}
+              <div className="space-y-1">
+                <label className="block text-[11px] text-slate-400">Fondo / Gradiente de Botón</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={currentStyles.button_bg_color && currentStyles.button_bg_color.startsWith('#') ? currentStyles.button_bg_color : '#4f46e5'}
+                    onChange={(e) => handleUpdateStyles({ button_bg_color: e.target.value })}
+                    className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="#4f46e5 / linear-gradient(...)"
+                    value={currentStyles.button_bg_color || ''}
+                    onChange={(e) => handleUpdateStyles({ button_bg_color: e.target.value })}
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

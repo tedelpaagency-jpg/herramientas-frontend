@@ -77,7 +77,17 @@ export const LandingBuilderModal: React.FC<Props> = ({
       if (landing) {
         setTitle(landing.title || '');
         setMode(landing.mode || 'visual');
-        setCustomHtml(landing.custom_html || '');
+
+        let rawHtml = landing.custom_html || '';
+        if (typeof rawHtml === 'string' && rawHtml.startsWith('base64:')) {
+          try {
+            rawHtml = decodeURIComponent(escape(atob(rawHtml.replace(/^base64:/, ''))));
+          } catch (e) {
+            console.error('Error decoding custom_html base64 in builder:', e);
+            rawHtml = landing.custom_html || '';
+          }
+        }
+        setCustomHtml(rawHtml);
         setActionType(landing.action_type || 'lead');
         setWorkspaceId(landing.workspace_id || null);
         setStageId(landing.stage_id || null);
@@ -391,19 +401,55 @@ export const LandingBuilderModal: React.FC<Props> = ({
 
           {/* TAB: PREVIEW */}
           {activeTab === 'preview' && (
-            <div className="space-y-6 max-w-xl mx-auto py-4">
+            <div className="space-y-6 max-w-4xl mx-auto py-4">
               <div className="text-center space-y-2">
                 <span className="bg-emerald-950 text-emerald-300 text-xs px-3 py-1 rounded-full border border-emerald-800 font-semibold">
-                  Vista Previa Interactiva del Formulario
+                  {mode === 'custom_html' ? 'Vista Previa Interactiva de Landing HTML Custom' : 'Vista Previa Interactiva del Formulario'}
                 </span>
               </div>
-              <DynamicFormRenderer
-                formSchema={formSchema}
-                paymentConfig={paymentConfig}
-                onSubmit={(data) => {
-                  alert('Formulario enviado (Vista previa):\n' + JSON.stringify(data, null, 2));
-                }}
-              />
+
+              {mode === 'custom_html' && customHtml ? (
+                <div className="w-full h-[600px] bg-white rounded-xl overflow-hidden border border-slate-800 shadow-2xl">
+                  <iframe
+                    srcDoc={`
+                      <!DOCTYPE html>
+                      <html>
+                        <head>
+                          <meta charset="utf-8">
+                          <script>
+                            window.tailwind = {
+                              darkMode: 'class',
+                              theme: { extend: {} }
+                            };
+                          </script>
+                          <script src="https://cdn.tailwindcss.com"></script>
+                          <style>
+                            html { color-scheme: light; }
+                          </style>
+                        </head>
+                        <body>
+                          ${customHtml.replace(
+                            /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
+                            '<div style="padding:24px;background:#f8fafc;border:2px dashed #6366f1;border-radius:16px;text-align:center;color:#4f46e5;font-family:sans-serif;font-weight:bold;">[FORMULARIO DINÁMICO SE MOSTRARÁ AQUÍ]</div>'
+                          )}
+                        </body>
+                      </html>
+                    `}
+                    title="Custom HTML Landing Preview"
+                    className="w-full h-full border-0 block"
+                  />
+                </div>
+              ) : (
+                <div className="max-w-xl mx-auto">
+                  <DynamicFormRenderer
+                    formSchema={formSchema}
+                    paymentConfig={paymentConfig}
+                    onSubmit={(data) => {
+                      alert('Formulario enviado (Vista previa):\n' + JSON.stringify(data, null, 2));
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

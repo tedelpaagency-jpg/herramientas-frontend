@@ -34,10 +34,34 @@ function CustomHtmlIframeContainer({
     customFormClass = match[1].trim();
   }
 
-  const processedHtml = React.useMemo(() => customHtml.replace(
-    /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
-    `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
-  ), [customHtml, customFormClass]);
+  const processedHtml = React.useMemo(() => {
+    let raw = customHtml.replace(
+      /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
+      `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
+    );
+
+    const tailwindConfigHeader = `
+      <script>
+        window.tailwind = {
+          darkMode: 'class',
+          theme: { extend: {} }
+        };
+      </script>
+      <style>
+        html { color-scheme: light; }
+      </style>
+    `;
+
+    if (raw.includes('</head>')) {
+      return raw.replace('</head>', `${tailwindConfigHeader}</head>`);
+    } else if (raw.includes('<head>')) {
+      return raw.replace('<head>', `<head>${tailwindConfigHeader}`);
+    } else if (raw.includes('<html>')) {
+      return raw.replace('<html>', `<html><head>${tailwindConfigHeader}</head>`);
+    } else {
+      return `<!DOCTYPE html><html><head>${tailwindConfigHeader}</head><body>${raw}</body></html>`;
+    }
+  }, [customHtml, customFormClass]);
 
   const checkAndMountTarget = React.useCallback(() => {
     const iframeNode = iframeRef.current;
@@ -80,6 +104,19 @@ function CustomHtmlIframeContainer({
     if (!iframeNode) return;
     const doc = iframeNode.contentDocument || iframeNode.contentWindow?.document;
     if (!doc) return;
+
+    // Inject tailwind config script if not present
+    if (!doc.head.querySelector('script[id="tailwind-config-script"]')) {
+      const configScript = doc.createElement('script');
+      configScript.id = 'tailwind-config-script';
+      configScript.textContent = `
+        window.tailwind = {
+          darkMode: 'class',
+          theme: { extend: {} }
+        };
+      `;
+      doc.head.insertBefore(configScript, doc.head.firstChild);
+    }
 
     // Ensure Tailwind CSS script is injected in iframe head if not already present
     const existingScript = doc.querySelector('script[src*="tailwindcss"]');
@@ -265,9 +302,19 @@ function PublicLandingContent() {
 
   // Custom HTML Rendering with full style isolation and native script execution via Iframe + React Portal
   if (isCustomHtml) {
+    let decodedHtml = landing.custom_html || '';
+    if (typeof decodedHtml === 'string' && decodedHtml.startsWith('base64:')) {
+      try {
+        decodedHtml = decodeURIComponent(escape(atob(decodedHtml.replace(/^base64:/, ''))));
+      } catch (e) {
+        console.error('Error decoding custom_html base64:', e);
+        decodedHtml = landing.custom_html || '';
+      }
+    }
+
     return (
       <CustomHtmlIframeContainer
-        customHtml={landing.custom_html}
+        customHtml={decodedHtml}
         formSchema={landing.form_schema}
         paymentConfig={landing.payment_config}
         stripePublishableKey={landing.stripe_publishable_key}
