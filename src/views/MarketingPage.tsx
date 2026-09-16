@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { EmailTemplate, EmailCampaign, WorkspaceStage, Workspace } from '../types';
+import { EmailTemplate, EmailCampaign, WorkspaceStage, Workspace, CredentialTemplate } from '../types';
 import marketingService from '../services/marketingService';
 import crmService from '../services/crmService';
 import { workspaceMetaService } from '../services/workspaceMetaService';
@@ -10,7 +10,7 @@ import Portal from '../components/Portal';
 import { 
   Mail, Send, Plus, FileText, CheckCircle2, Clock, 
   Users, Trash2, Edit3, Eye, Sparkles, Filter, Code, 
-  AlertCircle, ChevronRight, X, Layers, Smartphone, Monitor, RefreshCw, User, Building2
+  AlertCircle, ChevronRight, X, Layers, Smartphone, Monitor, RefreshCw, User, Building2, Key, Copy, Lock, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -19,11 +19,12 @@ import 'react-quill/dist/quill.snow.css';
 
 export const MarketingPage: React.FC = () => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [credentialTemplates, setCredentialTemplates] = useState<CredentialTemplate[]>([]);
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
   const [stages, setStages] = useState<WorkspaceStage[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'templates' | 'launcher' | 'campaigns'>('templates');
+  const [activeTab, setActiveTab] = useState<'templates' | 'credential_templates' | 'launcher' | 'campaigns'>('templates');
 
   // Editor Modes State
   const [templateEditMode, setTemplateEditMode] = useState<'wysiwyg' | 'html'>('wysiwyg');
@@ -49,6 +50,15 @@ export const MarketingPage: React.FC = () => {
   const [templateBody, setTemplateBody] = useState('');
   const [previewHtmlModal, setPreviewHtmlModal] = useState<string | null>(null);
 
+  // Credential Template Modal State
+  const [isCredentialModalOpen, setIsCredentialModalOpen] = useState(false);
+  const [editingCredentialId, setEditingCredentialId] = useState<number | null>(null);
+  const [credentialName, setCredentialName] = useState('');
+  const [credentialSubject, setCredentialSubject] = useState('');
+  const [credentialBody, setCredentialBody] = useState('');
+  const [credentialStatus, setCredentialStatus] = useState<number>(1);
+  const [credentialEditMode, setCredentialEditMode] = useState<'wysiwyg' | 'html'>('wysiwyg');
+
   // Campaign Launcher State
   const [campaignName, setCampaignName] = useState('');
   const [campaignSubject, setCampaignSubject] = useState('');
@@ -61,16 +71,31 @@ export const MarketingPage: React.FC = () => {
   // Campaign Detail Drawer
   const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
 
+  const CREDENTIAL_SHORTCUTS = [
+    { tag: '{nombre}', label: 'Nombre' },
+    { tag: '{apellido}', label: 'Apellido' },
+    { tag: '{nombre_completo}', label: 'Nombre Completo' },
+    { tag: '{correo}', label: 'Correo' },
+    { tag: '{usuario}', label: 'Usuario' },
+    { tag: '{contraseña}', label: 'Contraseña' },
+    { tag: '{telefono}', label: 'Teléfono' },
+    { tag: '{empresa}', label: 'Empresa / Agencia' },
+    { tag: '{rol}', label: 'Rol' },
+    { tag: '{url_login}', label: 'URL Login' },
+  ];
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [tplData, cmpData, pipelineData, wsData] = await Promise.all([
+      const [tplData, credTplData, cmpData, pipelineData, wsData] = await Promise.all([
         marketingService.getTemplates(),
+        marketingService.getCredentialTemplates().catch(() => []),
         marketingService.getCampaigns(),
         crmService.getPipelines(),
         workspaceMetaService.getWorkspaces().catch(() => []),
       ]);
       setTemplates(tplData);
+      setCredentialTemplates(Array.isArray(credTplData) ? credTplData : []);
       setCampaigns(cmpData);
       setStages(pipelineData.stages || []);
       setWorkspaces(Array.isArray(wsData) ? wsData : []);
@@ -85,6 +110,89 @@ export const MarketingPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleOpenCredentialModal = (credTpl?: CredentialTemplate) => {
+    if (credTpl) {
+      setEditingCredentialId(credTpl.id);
+      setCredentialName(credTpl.name);
+      setCredentialSubject(credTpl.subject || '');
+      setCredentialBody(credTpl.body_html);
+      setCredentialStatus(credTpl.status ?? 1);
+    } else {
+      setEditingCredentialId(null);
+      setCredentialName('');
+      setCredentialSubject('Tus credenciales de acceso a la plataforma');
+      setCredentialBody('<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">\n  <h2>Hola {nombre_completo},</h2>\n  <p>Tu cuenta ha sido creada exitosamente. A continuación tus credenciales:</p>\n  <p><strong>Correo / Usuario:</strong> {correo}<br><strong>Contraseña Temporal:</strong> {contraseña}</p>\n  <p>Puedes ingresar haciendo clic aquí:<br><a href="{url_login}" style="display:inline-block; padding: 10px 16px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 8px;">Acceder a la Plataforma</a></p>\n  <p>Saludos,<br>El equipo de {empresa}</p>\n</div>');
+      setCredentialStatus(1);
+    }
+    setIsCredentialModalOpen(true);
+  };
+
+  const handleSaveCredentialTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!credentialName.trim() || !credentialBody.trim()) {
+      toast.error('Complete el nombre y contenido de la plantilla');
+      return;
+    }
+
+    try {
+      if (editingCredentialId) {
+        const updated = await marketingService.updateCredentialTemplate(editingCredentialId, {
+          name: credentialName,
+          subject: credentialSubject,
+          body_html: credentialBody,
+          status: credentialStatus,
+        });
+        setCredentialTemplates(prev => prev.map(t => t.id === editingCredentialId ? updated : t));
+        toast.success('Plantilla de credenciales actualizada');
+      } else {
+        const created = await marketingService.createCredentialTemplate({
+          name: credentialName,
+          subject: credentialSubject,
+          body_html: credentialBody,
+          status: credentialStatus,
+        });
+        setCredentialTemplates(prev => [created, ...prev]);
+        toast.success('Plantilla de credenciales creada');
+      }
+      setIsCredentialModalOpen(false);
+    } catch (err) {
+      console.error('Error saving credential template:', err);
+      toast.error('Error al guardar plantilla de credenciales');
+    }
+  };
+
+  const handleToggleCredentialStatus = async (credTpl: CredentialTemplate) => {
+    try {
+      const updated = await marketingService.toggleCredentialTemplateStatus(credTpl.id);
+      setCredentialTemplates(prev => prev.map(t => t.id === credTpl.id ? updated : t));
+      toast.success(updated.status === 1 ? 'Plantilla activada' : 'Plantilla desactivada');
+    } catch (err) {
+      console.error('Error toggling credential template status:', err);
+      toast.error('Error al cambiar estado de plantilla');
+    }
+  };
+
+  const handleDeleteCredentialTemplate = async (id: number) => {
+    if (!confirm('¿Estás seguro de eliminar esta plantilla de credenciales?')) return;
+    try {
+      await marketingService.deleteCredentialTemplate(id);
+      setCredentialTemplates(prev => prev.filter(t => t.id !== id));
+      toast.success('Plantilla de credenciales eliminada');
+    } catch (err) {
+      console.error('Error deleting credential template:', err);
+      toast.error('Error al eliminar plantilla');
+    }
+  };
+
+  const insertShortcut = (tag: string, targetField: 'subject' | 'body' = 'body') => {
+    if (targetField === 'subject') {
+      setCredentialSubject(prev => prev + ` ${tag}`);
+    } else {
+      setCredentialBody(prev => prev + ` ${tag} `);
+    }
+    toast.success(`Shortcut ${tag} insertado`);
+  };
 
   const handleOpenPreviewModal = (subject: string, bodyHtml: string) => {
     setPreviewSubject(subject || 'Asunto del correo electrónico');
@@ -248,10 +356,10 @@ export const MarketingPage: React.FC = () => {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-extrabold">
+      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-extrabold overflow-x-auto">
         <button
           onClick={() => setActiveTab('templates')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-3 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'templates' 
               ? 'border-purple-600 text-purple-600 dark:text-purple-400' 
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -262,8 +370,20 @@ export const MarketingPage: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('credential_templates')}
+          className={`pb-3 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === 'credential_templates' 
+              ? 'border-purple-600 text-purple-600 dark:text-purple-400' 
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Key className="w-4 h-4" />
+          <span>Plantillas de Credenciales ({credentialTemplates.length})</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('launcher')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-3 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'launcher' 
               ? 'border-purple-600 text-purple-600 dark:text-purple-400' 
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -275,7 +395,7 @@ export const MarketingPage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('campaigns')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-3 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
             activeTab === 'campaigns' 
               ? 'border-purple-600 text-purple-600 dark:text-purple-400' 
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -368,7 +488,111 @@ export const MarketingPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 2: Lanzador de Campaña */}
+      {/* Tab 2: Plantillas de Credenciales */}
+      {activeTab === 'credential_templates' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Key className="w-4 h-4 text-amber-500" /> Plantillas para Envío de Credenciales de Acceso
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Crea y administra plantillas reutilizables para el reenvío seguro de credenciales a tus usuarios.
+              </p>
+            </div>
+            <button
+              onClick={() => handleOpenCredentialModal()}
+              className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-md shadow-amber-600/20 flex items-center gap-1.5 shrink-0"
+            >
+              <Plus className="w-4 h-4" /> Nueva Plantilla de Credenciales
+            </button>
+          </div>
+
+          {isLoading ? (
+            <div className="p-12 text-center text-slate-400 font-medium">Cargando plantillas de credenciales...</div>
+          ) : credentialTemplates.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center space-y-3">
+              <Key className="w-10 h-10 text-amber-400 mx-auto" />
+              <h3 className="text-base font-black text-slate-900 dark:text-white">No tienes plantillas de credenciales creadas</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Crea una plantilla con los marcadores dinámicos ({'{nombre_completo}'}, {'{correo}'}, {'{contraseña}'}, etc.) para enviar los accesos a tus usuarios.
+              </p>
+              <button
+                onClick={() => handleOpenCredentialModal()}
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 text-white font-extrabold text-xs shadow-md"
+              >
+                <Plus className="w-4 h-4" /> Crear Plantilla de Credenciales
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {credentialTemplates.map((credTpl) => {
+                const isActive = credTpl.status === 1;
+                return (
+                  <div key={credTpl.id} className={`bg-white dark:bg-slate-900 rounded-2xl border transition-all p-5 space-y-4 shadow-2xs hover:shadow-md flex flex-col justify-between ${isActive ? 'border-amber-300 dark:border-amber-500/40 ring-1 ring-amber-500/10' : 'border-slate-200 dark:border-slate-800 opacity-75'}`}>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-extrabold text-slate-900 dark:text-white text-base line-clamp-1">{credTpl.name}</h4>
+                        <button
+                          onClick={() => handleToggleCredentialStatus(credTpl)}
+                          title={isActive ? 'Desactivar plantilla' : 'Activar plantilla'}
+                          className="shrink-0 cursor-pointer"
+                        >
+                          {isActive ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Activa
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-slate-100 text-slate-500 border border-slate-200 flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-slate-400" /> Inactiva
+                            </span>
+                          )}
+                        </button>
+                      </div>
+
+                      <p className="text-xs text-slate-500 font-semibold line-clamp-1">
+                        <span className="text-slate-400">Asunto:</span> {credTpl.subject || 'Sin asunto predeterminado'}
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800 max-h-24 overflow-hidden text-[11px] text-slate-600 dark:text-slate-400 font-mono italic">
+                      {credTpl.body_html.replace(/<[^>]*>?/gm, '').substring(0, 120)}...
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => handleOpenPreviewModal(credTpl.subject || '', credTpl.body_html)}
+                        className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-lg hover:bg-slate-200 flex items-center gap-1"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Previsualizar
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleOpenCredentialModal(credTpl)}
+                          className="p-1.5 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                          title="Editar Plantilla"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCredentialTemplate(credTpl.id)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg"
+                          title="Eliminar Plantilla"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 3: Lanzador de Campaña */}
       {activeTab === 'launcher' && (
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-6">
           <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -770,6 +994,183 @@ export const MarketingPage: React.FC = () => {
                     <button
                       type="submit"
                       className="px-5 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold shadow-md hover:bg-purple-700 active:scale-95"
+                    >
+                      Guardar Plantilla
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Credential Template Create / Edit Modal */}
+      {isCredentialModalOpen && (
+        <Portal>
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl p-4 sm:p-6 shadow-2xl space-y-4 text-slate-900 dark:text-white">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Key className="w-5 h-5 text-amber-500" />
+                  <h3 className="text-lg font-black">
+                    {editingCredentialId ? 'Editar Plantilla de Credenciales' : 'Nueva Plantilla de Credenciales'}
+                  </h3>
+                </div>
+                <button onClick={() => setIsCredentialModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveCredentialTemplate} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Plantilla *</label>
+                    <input
+                      type="text"
+                      required
+                      value={credentialName}
+                      onChange={(e) => setCredentialName(e.target.value)}
+                      placeholder="Ej: Credenciales de Bienvenida para Agentes"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Estado de la Plantilla</label>
+                    <select
+                      value={credentialStatus}
+                      onChange={(e) => setCredentialStatus(Number(e.target.value))}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold outline-none"
+                    >
+                      <option value={1}>✅ Activa</option>
+                      <option value={0}>⏸️ Inactiva</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Asunto del Correo Electrónico</label>
+                  <input
+                    type="text"
+                    value={credentialSubject}
+                    onChange={(e) => setCredentialSubject(e.target.value)}
+                    placeholder="Ej: Tus credenciales de acceso a {empresa}"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium outline-none"
+                  />
+                </div>
+
+                {/* Dynamic Shortcuts Selector Bar */}
+                <div className="p-3 bg-amber-50/80 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800/50 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-extrabold text-amber-950 dark:text-amber-200">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      <span>Shortcuts Dinámicos (Haz clic para insertar):</span>
+                    </span>
+                    <span className="text-[10px] text-amber-700 dark:text-amber-400 font-normal">
+                      Se sustituirán automáticamente por los datos del usuario.
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {CREDENTIAL_SHORTCUTS.map((s) => (
+                      <button
+                        key={s.tag}
+                        type="button"
+                        onClick={() => insertShortcut(s.tag, 'body')}
+                        className="px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-200 text-xs font-mono font-bold rounded-lg border border-amber-200 dark:border-amber-800/80 shadow-2xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                        title={`Insertar ${s.label}`}
+                      >
+                        <span>{s.tag}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Dual Editor Component (Visual WYSIWYG vs HTML Directo) */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap justify-between items-center gap-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Contenido del Correo de Credenciales</label>
+                    
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setCredentialEditMode('wysiwyg')}
+                        className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 ${
+                          credentialEditMode === 'wysiwyg'
+                            ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-2xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Editor Visual</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCredentialEditMode('html')}
+                        className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 ${
+                          credentialEditMode === 'html'
+                            ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-2xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <Code className="w-3.5 h-3.5" />
+                        <span>Código HTML</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {credentialEditMode === 'wysiwyg' ? (
+                    <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden text-slate-900 dark:text-white">
+                      <ReactQuill
+                        theme="snow"
+                        value={credentialBody}
+                        onChange={setCredentialBody}
+                        modules={{
+                          toolbar: [
+                            [{ header: [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ color: [] }, { background: [] }],
+                            [{ list: 'ordered' }, { list: 'bullet' }],
+                            [{ align: [] }],
+                            ['link', 'clean'],
+                          ],
+                        }}
+                        className="h-56 mb-12"
+                      />
+                    </div>
+                  ) : (
+                    <textarea
+                      required
+                      rows={10}
+                      value={credentialBody}
+                      onChange={(e) => setCredentialBody(e.target.value)}
+                      className="w-full p-4 bg-slate-950 text-amber-400 font-mono text-xs border border-slate-800 rounded-xl focus:outline-none"
+                    />
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPreviewModal(credentialSubject, credentialBody)}
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all active:scale-95"
+                  >
+                    <Eye className="w-4 h-4 text-amber-600" />
+                    <span>Previsualizar</span>
+                  </button>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsCredentialModalOpen(false)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-amber-600 text-white text-xs font-extrabold shadow-md hover:bg-amber-700 active:scale-95"
                     >
                       Guardar Plantilla
                     </button>

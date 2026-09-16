@@ -9,11 +9,14 @@ export interface Plan {
   id: number;
   white_label_id?: number | null;
   white_label?: any;
+  type?: 'white_label' | 'agency';
   name: string;
   description?: string;
   price: number;
   billing_type?: 'fixed' | 'commission';
   commission_percentage?: number | null;
+  duration_value?: number;
+  duration_unit?: 'day' | 'month' | 'year';
   features?: string[];
   allowed_agency_types?: string[];
   status?: boolean;
@@ -24,13 +27,25 @@ export interface Plan {
 
 export interface Subscription {
   id: number;
-  agency_id: number;
+  subscribable_type?: string;
+  subscribable_id?: number;
+  subscribable?: any;
+  agency_id?: number;
   agency?: Agency;
   plan_id: number;
   plan?: Plan;
-  started_at: string;
+  start_date: string;
+  end_date?: string | null;
+  started_at?: string;
   expires_at?: string | null;
   status?: string;
+  renewed_at?: string | null;
+  previous_subscription_id?: number | null;
+  previous_subscription?: Subscription | null;
+  notes?: string | null;
+  created_by?: number | null;
+  creator?: User | null;
+  days_remaining?: number;
   created_at?: string;
 }
 
@@ -99,8 +114,19 @@ export interface User {
   agency?: Agency;
   white_label_id?: number;
   white_label?: any;
+  white_labels?: any[];
   roles?: Role[];
   permissions?: Permission[];
+  effective_permissions?: string[];
+  dashboard_type?: 'super_admin' | 'white_label_admin' | 'agency_admin' | 'agent';
+  subscription?: {
+    is_expired: boolean;
+    expired_scope: 'white_label' | 'agency' | null;
+    status: string;
+    start_date?: string | null;
+    end_date?: string | null;
+    days_left: number;
+  };
   phone?: string;
   photo?: string | null;
   status?: number;
@@ -355,6 +381,33 @@ export interface EmailTemplate {
   status?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface CredentialTemplate {
+  id: number;
+  agency_id?: number;
+  name: string;
+  subject?: string;
+  body_html: string;
+  status?: number;
+  agency?: Agency;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CredentialLog {
+  id: number;
+  sender_id?: number;
+  recipient_id?: number;
+  credential_template_id?: number;
+  send_type?: 'individual' | 'batch' | 'all' | string;
+  status?: 'sent' | 'failed' | string;
+  error_message?: string;
+  sent_at?: string;
+  sender?: User;
+  recipient?: User;
+  template?: CredentialTemplate;
+  created_at?: string;
 }
 
 export interface EmailCampaignLog {

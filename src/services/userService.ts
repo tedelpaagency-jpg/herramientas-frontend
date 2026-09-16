@@ -130,6 +130,28 @@ export const userService = {
     const res = await apiClient.put('/v1/profile/password', data);
     return res.data;
   },
+
+  // Credential Resend API
+  sendCredentials: async (userId: number, templateId: number) => {
+    const res = await apiClient.post(`/v1/users/${userId}/send-credentials`, { credential_template_id: templateId });
+    return res.data;
+  },
+
+  batchSendCredentials: async (userIds: number[], templateId: number) => {
+    const res = await apiClient.post('/v1/users/batch-send-credentials', {
+      credential_template_id: templateId,
+      user_ids: userIds,
+    });
+    return res.data;
+  },
+
+  sendCredentialsToAll: async (templateId: number, params?: { role?: string; agency_id?: number; white_label_id?: number }) => {
+    const res = await apiClient.post('/v1/users/send-credentials-all', {
+      credential_template_id: templateId,
+      ...params,
+    });
+    return res.data;
+  },
 };
 
 export default userService;

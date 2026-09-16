@@ -49,6 +49,30 @@ function CustomHtmlIframeContainer({
       </script>
       <style>
         html { color-scheme: light; }
+        #react-dynamic-form-container form {
+          display: flex !important;
+          flex-direction: column !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        #react-dynamic-form-container label {
+          display: block !important;
+          width: 100% !important;
+          text-align: left !important;
+          float: none !important;
+          margin-bottom: 4px !important;
+        }
+        #react-dynamic-form-container input,
+        #react-dynamic-form-container select,
+        #react-dynamic-form-container textarea {
+          display: block !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          max-width: 100% !important;
+        }
+        #react-dynamic-form-container button {
+          box-sizing: border-box !important;
+        }
       </style>
     `;
 

@@ -324,6 +324,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: 'Gestión de Agencias', path: '/agencies', icon: Building2, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
         { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
+        { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_agencies', 'manage_users'] },
       ],
     },
     ...((isWhiteLabelAdmin || isSuperAdmin)
@@ -336,6 +337,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               { label: 'Configuración del Login', path: '/admin/login-settings', icon: Film },
               { label: 'Importar Estudiantes', path: '/white-label/import-students', icon: FileSpreadsheet },
               { label: 'Planes de mi Marca', path: '/admin/plans', icon: Layers },
+              { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key },
             ],
           },
         ]

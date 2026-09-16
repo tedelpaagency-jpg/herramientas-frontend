@@ -26,10 +26,13 @@ import {
   ChevronRight,
   UserCheck,
   Key,
+  Mail,
+  Send,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
-
-import { confirmDialog } from '../utils/alerts';
+import SendCredentialsModal from '../components/SendCredentialsModal';
+import { confirmDialog, showSuccessAlert } from '../utils/alerts';
 
 export const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -167,6 +170,79 @@ export const UsersPage: React.FC = () => {
   // Modal de Permisos CRUD Granulares
   const [permissionsUser, setPermissionsUser] = useState<User | null>(null);
 
+  // Selección múltiple y Modal de Envío de Credenciales
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
+  const [credentialsMode, setCredentialsMode] = useState<'single' | 'batch' | 'all'>('single');
+  const [targetUserForCredentials, setTargetUserForCredentials] = useState<User | null>(null);
+
+  const handleOpenSingleCredentials = (u: User) => {
+    setTargetUserForCredentials(u);
+    setCredentialsMode('single');
+    setIsCredentialsModalOpen(true);
+  };
+
+  const handleOpenBatchCredentials = () => {
+    if (selectedUserIds.length === 0) return;
+    setTargetUserForCredentials(null);
+    setCredentialsMode('batch');
+    setIsCredentialsModalOpen(true);
+  };
+
+  const handleOpenAllCredentials = () => {
+    setTargetUserForCredentials(null);
+    setCredentialsMode('all');
+    setIsCredentialsModalOpen(true);
+  };
+
+  const handleConfirmSendCredentials = async (templateId: number) => {
+    try {
+      if (credentialsMode === 'single' && targetUserForCredentials) {
+        await userService.sendCredentials(targetUserForCredentials.id, templateId);
+        showSuccessAlert('Credenciales enviadas', `Se ha enviado el correo con credenciales a ${targetUserForCredentials.email}.`);
+      } else if (credentialsMode === 'batch') {
+        const res = await userService.batchSendCredentials(selectedUserIds, templateId);
+        if (res.job_dispatched) {
+          toast.success(`El envío para los ${selectedUserIds.length} usuarios se ejecutará en segundo plano.`, { duration: 5000 });
+        } else {
+          showSuccessAlert('Credenciales enviadas', `Se enviaron credenciales a ${res.sent_count || selectedUserIds.length} usuarios exitosamente.`);
+        }
+        setSelectedUserIds([]);
+      } else if (credentialsMode === 'all') {
+        const res = await userService.sendCredentialsToAll(templateId, {
+          role: roleFilter || undefined,
+          agency_id: agencyFilter ? Number(agencyFilter) : undefined,
+          white_label_id: whiteLabelFilter ? Number(whiteLabelFilter) : undefined,
+        });
+        toast.success(res.message || 'Se ha iniciado el proceso de envío a todos los usuarios.', { duration: 5000 });
+      }
+      setIsCredentialsModalOpen(false);
+    } catch (err: any) {
+      console.error('Error enviando credenciales:', err);
+      toast.error(err.response?.data?.message || err.message || 'Error al enviar credenciales');
+    }
+  };
+
+  const handleSelectAllOnPage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      const pageUserIds = users.map(u => u.id);
+      setSelectedUserIds(Array.from(new Set([...selectedUserIds, ...pageUserIds])));
+    } else {
+      const pageUserIds = new Set(users.map(u => u.id));
+      setSelectedUserIds(selectedUserIds.filter(id => !pageUserIds.has(id)));
+    }
+  };
+
+  const handleToggleSelectRow = (userId: number) => {
+    if (selectedUserIds.includes(userId)) {
+      setSelectedUserIds(selectedUserIds.filter(id => id !== userId));
+    } else {
+      setSelectedUserIds([...selectedUserIds, userId]);
+    }
+  };
+
+  const isAllPageSelected = users.length > 0 && users.every(u => selectedUserIds.includes(u.id));
+
   const getRoleBadge = (roleName?: string) => {
     switch (roleName) {
       case 'super_admin':
@@ -203,13 +279,33 @@ export const UsersPage: React.FC = () => {
           </div>
         </div>
 
-        <button
-          onClick={handleCreate}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-colors shadow-md shadow-blue-600/20"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Crear Usuario</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {selectedUserIds.length > 0 && (
+            <button
+              onClick={handleOpenBatchCredentials}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20"
+            >
+              <Send className="w-4 h-4" />
+              <span>Reenviar credenciales ({selectedUserIds.length})</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleOpenAllCredentials}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
+          >
+            <Mail className="w-4 h-4 text-indigo-600" />
+            <span>Enviar credenciales a todos</span>
+          </button>
+
+          <button
+            onClick={handleCreate}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-colors shadow-md shadow-blue-600/20"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Crear Usuario</span>
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -312,6 +408,14 @@ export const UsersPage: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/50 text-[11px] font-extrabold uppercase text-slate-400 dark:text-slate-500 tracking-wider">
+                  <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 w-10">
+                    <input
+                      type="checkbox"
+                      checked={isAllPageSelected}
+                      onChange={handleSelectAllOnPage}
+                      className="w-4 h-4 text-blue-600 rounded-xs focus:ring-blue-500 cursor-pointer"
+                    />
+                  </th>
                   <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Usuario</th>
                   <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Rol</th>
                   <th className="py-3 sm:py-3.5 px-3 sm:px-4 md:px-6 whitespace-nowrap">Agencia</th>
@@ -327,6 +431,14 @@ export const UsersPage: React.FC = () => {
 
                   return (
                     <tr key={u.id} className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors ${isDeleted ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''}`}>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6 w-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.includes(u.id)}
+                          onChange={() => handleToggleSelectRow(u.id)}
+                          className="w-4 h-4 text-blue-600 rounded-xs focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
                       <td className="py-3 sm:py-4 px-3 sm:px-4 md:px-6">
                         <div className="flex items-center gap-3">
                           {u.photo ? (
@@ -390,6 +502,13 @@ export const UsersPage: React.FC = () => {
                             </button>
                           ) : (
                             <>
+                              <button
+                                onClick={() => handleOpenSingleCredentials(u)}
+                                title="Reenviar Credenciales de Acceso"
+                                className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                              >
+                                <Mail className="w-4 h-4" />
+                              </button>
                               <Link
                                 href={`/users/${u.id}/permissions`}
                                 title="Gestionar Permisos Granulares"
@@ -466,6 +585,17 @@ export const UsersPage: React.FC = () => {
           onSuccess={fetchUsers}
         />
       )}
+
+      {/* Modal de Envío / Reenvío de Credenciales */}
+      <SendCredentialsModal
+        isOpen={isCredentialsModalOpen}
+        onClose={() => setIsCredentialsModalOpen(false)}
+        targetMode={credentialsMode}
+        targetUser={targetUserForCredentials}
+        selectedCount={selectedUserIds.length}
+        totalCount={pagination.total}
+        onConfirm={handleConfirmSendCredentials}
+      />
     </div>
   );
 };

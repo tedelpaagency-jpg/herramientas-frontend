@@ -8,6 +8,7 @@ import RightSidebar from './RightSidebar';
 import PageTransition from './PageTransition';
 
 import ImpersonationBanner from './ImpersonationBanner';
+import SubscriptionLockoutModal from './SubscriptionLockoutModal';
 import { useTheme } from '../context/ThemeContext';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -131,6 +132,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         rightSidebarOpen={rightSidebarOpen}
         setRightSidebarOpen={setRightSidebarOpen}
       />
+
+      {/* Subscription Expiration Global Lockout Modal */}
+      <SubscriptionLockoutModal />
     </div>
   );
 };

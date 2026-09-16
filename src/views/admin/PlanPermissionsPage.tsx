@@ -135,19 +135,20 @@ export const PlanPermissionsPage: React.FC = () => {
 
   const userWL = (user as any)?.white_labels?.[0] || (user as any)?.whiteLabels?.[0] || (user as any)?.white_label;
   const whiteLabelPlan = userWL?.plan;
-  const hasWhiteLabelPlan = Boolean(whiteLabelPlan || userWL?.plan_id);
 
   const whiteLabelPlanPermissions: string[] = (
     (whiteLabelPlan?.plan_permissions || whiteLabelPlan?.planPermissions || whiteLabelPlan?.permissions || [])
   ).map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim()).filter(Boolean);
 
+  const isRestrictionActive = isWhiteLabelAdmin && Boolean(whiteLabelPlan) && whiteLabelPlanPermissions.length > 0;
+
   const isModuleAllowedForWhiteLabel = (mod: ModuleDefinition): boolean => {
-    if (!isWhiteLabelAdmin || !hasWhiteLabelPlan) return true;
+    if (!isRestrictionActive) return true;
     return mod.permissions.some((p) => whiteLabelPlanPermissions.includes(p.toLowerCase()));
   };
 
   const isSinglePermAllowedForWhiteLabel = (permName: string): boolean => {
-    if (!isWhiteLabelAdmin || !hasWhiteLabelPlan) return true;
+    if (!isRestrictionActive) return true;
     return whiteLabelPlanPermissions.includes(permName.toLowerCase());
   };
 
@@ -202,7 +203,7 @@ export const PlanPermissionsPage: React.FC = () => {
   const handleToggleModule = async (mod: ModuleDefinition) => {
     if (!planId || !plan) return;
 
-    if (isWhiteLabelAdmin && hasWhiteLabelPlan && !isModuleAllowedForWhiteLabel(mod)) {
+    if (isRestrictionActive && !isModuleAllowedForWhiteLabel(mod)) {
       toast.error(`Este módulo no está contratado en el plan de su Marca Blanca ("${whiteLabelPlan?.name || 'Plan Matriz'}").`);
       return;
     }
@@ -250,7 +251,7 @@ export const PlanPermissionsPage: React.FC = () => {
   const handleToggleSinglePermission = async (sysPerm: Permission, assigned?: PlanPermission) => {
     if (!planId || !plan) return;
 
-    if (!assigned && isWhiteLabelAdmin && hasWhiteLabelPlan && !isSinglePermAllowedForWhiteLabel(sysPerm.name)) {
+    if (!assigned && isRestrictionActive && !isSinglePermAllowedForWhiteLabel(sysPerm.name)) {
       toast.error(`El permiso "${sysPerm.name}" no está contratado en el plan de su Marca Blanca.`);
       return;
     }
@@ -413,7 +414,7 @@ export const PlanPermissionsPage: React.FC = () => {
       </div>
 
       {/* White Label Plan Restrictive Notice */}
-      {isWhiteLabelAdmin && hasWhiteLabelPlan && (
+      {isRestrictionActive && (
         <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-2xl flex items-center gap-3 text-xs text-indigo-900 font-medium shadow-xs">
           <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-600/20">
             <Shield className="w-4 h-4" />

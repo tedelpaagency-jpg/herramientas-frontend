@@ -33,9 +33,12 @@ export const AdminPlansPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    type: 'agency' as 'white_label' | 'agency',
     price: 0,
     billing_type: 'fixed' as 'fixed' | 'commission',
     commission_percentage: 0,
+    duration_value: 1,
+    duration_unit: 'month' as 'day' | 'month' | 'year',
     featuresStr: '',
     allowedAgencyTypesStr: '',
     status: true,
@@ -71,9 +74,12 @@ export const AdminPlansPage: React.FC = () => {
     setFormData({
       name: '',
       description: '',
+      type: 'agency',
       price: 0,
       billing_type: 'fixed',
       commission_percentage: 0,
+      duration_value: 1,
+      duration_unit: 'month',
       featuresStr: '',
       allowedAgencyTypesStr: 'real_estate, travel',
       status: true,
@@ -86,9 +92,12 @@ export const AdminPlansPage: React.FC = () => {
     setFormData({
       name: plan.name,
       description: plan.description || '',
+      type: plan.type || 'agency',
       price: plan.price,
       billing_type: plan.billing_type || 'fixed',
       commission_percentage: plan.commission_percentage || 0,
+      duration_value: plan.duration_value || 1,
+      duration_unit: plan.duration_unit || 'month',
       featuresStr: Array.isArray(plan.features) ? plan.features.join(', ') : '',
       allowedAgencyTypesStr: Array.isArray(plan.allowed_agency_types)
         ? plan.allowed_agency_types.join(', ')
@@ -106,9 +115,12 @@ export const AdminPlansPage: React.FC = () => {
     const payload = {
       name: formData.name,
       description: formData.description,
+      type: formData.type,
       price: Number(formData.price),
       billing_type: formData.billing_type,
       commission_percentage: formData.billing_type === 'commission' ? Number(formData.commission_percentage) : null,
+      duration_value: Number(formData.duration_value),
+      duration_unit: formData.duration_unit,
       features: formData.featuresStr
         ? formData.featuresStr.split(',').map((s) => s.trim()).filter(Boolean)
         : [],
