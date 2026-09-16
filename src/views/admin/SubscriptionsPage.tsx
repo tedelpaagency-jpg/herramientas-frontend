@@ -215,6 +215,32 @@ export const SubscriptionsPage: React.FC = () => {
     }
   };
 
+  const formatPlanPrice = (plan?: Plan | null): string => {
+    if (!plan) return 'Sin Plan';
+
+    const numPrice = Number(plan.price || 0);
+    const priceFormatted = `$${numPrice.toFixed(2)}`;
+
+    const val = plan.duration_value && plan.duration_value > 1 ? `${plan.duration_value} ` : '';
+    let unit = 'mes';
+    if (plan.duration_unit === 'year') {
+      unit = plan.duration_value && plan.duration_value > 1 ? 'años' : 'año';
+    } else if (plan.duration_unit === 'day') {
+      unit = plan.duration_value && plan.duration_value > 1 ? 'días' : 'día';
+    } else {
+      unit = plan.duration_value && plan.duration_value > 1 ? 'meses' : 'mes';
+    }
+
+    if (plan.billing_type === 'commission') {
+      const comm = plan.commission_percentage !== null && plan.commission_percentage !== undefined
+        ? `${plan.commission_percentage}% Comisión`
+        : 'Comisión';
+      return numPrice > 0 ? `${priceFormatted} + ${comm} / ${val}${unit}` : `${comm} / ${val}${unit}`;
+    }
+
+    return `${priceFormatted} / ${val}${unit}`;
+  };
+
   const getDaysRemaining = (sub: Subscription): number => {
     if (sub.days_remaining !== undefined && sub.days_remaining !== null) {
       return sub.days_remaining;
@@ -449,7 +475,7 @@ export const SubscriptionsPage: React.FC = () => {
                         <div className="space-y-0.5">
                           <span className="font-bold text-slate-900 dark:text-slate-100 block">{sub.plan?.name || 'Sin Plan'}</span>
                           <span className="text-[10px] text-amber-600 font-semibold uppercase block">
-                            ${sub.plan?.price || 0} / {sub.plan?.duration_value || 1} {sub.plan?.duration_unit || 'mes'}
+                            {formatPlanPrice(sub.plan)}
                           </span>
                         </div>
                       </td>
@@ -583,7 +609,7 @@ export const SubscriptionsPage: React.FC = () => {
                     <option value="">-- Seleccionar Plan --</option>
                     {getAvailablePlans().map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.name} (${p.price} / {p.duration_value || 1} {p.duration_unit || 'mes'})
+                        {p.name} ({formatPlanPrice(p)})
                       </option>
                     ))}
                   </select>
@@ -673,11 +699,29 @@ export const SubscriptionsPage: React.FC = () => {
                   >
                     {getAvailablePlans(selectedSubscription?.plan_id).map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.name} (${p.price} / {p.duration_value || 1} {p.duration_unit || 'mes'})
+                        {p.name} ({formatPlanPrice(p)})
                       </option>
                     ))}
                   </select>
                 </div>
+
+                {selectedPlanId && (() => {
+                  const chosenPlan = plans.find(p => p.id === Number(selectedPlanId));
+                  if (!chosenPlan) return null;
+                  return (
+                    <div className="p-3 bg-amber-50/70 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs space-y-1">
+                      <p className="font-extrabold text-amber-900 dark:text-amber-200 flex items-center justify-between">
+                        <span>{chosenPlan.name}</span>
+                        <span className="px-2 py-0.5 rounded-md bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 text-[10px] font-bold uppercase">
+                          {chosenPlan.type === 'white_label' ? 'Marca Blanca' : 'Agencia'}
+                        </span>
+                      </p>
+                      <p className="text-amber-800 dark:text-amber-300 font-bold text-[11px]">
+                        Tarifa de Renovación: <span className="font-black text-slate-900 dark:text-white">{formatPlanPrice(chosenPlan)}</span>
+                      </p>
+                    </div>
+                  );
+                })()}
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -742,11 +786,29 @@ export const SubscriptionsPage: React.FC = () => {
                   >
                     {getAvailablePlans(selectedSubscription?.plan_id).map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.name} (${p.price} / {p.duration_value || 1} {p.duration_unit || 'mes'})
+                        {p.name} ({formatPlanPrice(p)})
                       </option>
                     ))}
                   </select>
                 </div>
+
+                {selectedPlanId && (() => {
+                  const chosenPlan = plans.find(p => p.id === Number(selectedPlanId));
+                  if (!chosenPlan) return null;
+                  return (
+                    <div className="p-3 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800 text-xs space-y-1">
+                      <p className="font-extrabold text-indigo-900 dark:text-indigo-200 flex items-center justify-between">
+                        <span>{chosenPlan.name}</span>
+                        <span className="px-2 py-0.5 rounded-md bg-indigo-200 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-100 text-[10px] font-bold uppercase">
+                          {chosenPlan.type === 'white_label' ? 'Marca Blanca' : 'Agencia'}
+                        </span>
+                      </p>
+                      <p className="text-indigo-800 dark:text-indigo-300 font-bold text-[11px]">
+                        Nueva Tarifa del Plan: <span className="font-black text-slate-900 dark:text-white">{formatPlanPrice(chosenPlan)}</span>
+                      </p>
+                    </div>
+                  );
+                })()}
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
