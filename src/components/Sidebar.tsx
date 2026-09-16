@@ -275,7 +275,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'PRINCIPAL & CRM',
       items: [
         { label: 'Inicio', path: '/', icon: Home },
-        { label: 'CRM Kanban', path: '/crm', icon: LayoutDashboard, permission: ['view_crm', 'manage_crm'] },
         { label: 'Workspaces', path: '/workspaces', icon: Briefcase, permission: ['view_crm', 'manage_crm'] },
         { label: 'Directorio de Clientes', path: '/clients', icon: Users, permission: ['view_clients', 'view_crm'] },
         { label: 'Gestión de Tareas', path: '/tasks', icon: CheckSquare, permission: ['tasks.view', 'view_tasks'] },

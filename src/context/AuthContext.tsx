@@ -261,6 +261,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
+  const isWhiteLabelAdmin = !isSuperAdmin && (user?.role === 'white_label_admin' || (user as any)?.dashboard_type === 'white_label_admin' || user?.roles?.some((r: any) => r.name === 'white_label_admin'));
 
   const dashboardType: 'super_admin' | 'white_label_admin' | 'agency_admin' | 'agent' = (() => {
     if (isSuperAdmin) return 'super_admin';
@@ -272,23 +273,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const effectivePermissions: string[] = (() => {
     if (isSuperAdmin) return ['*'];
+
+    let basePerms: string[] = [];
     if (Array.isArray((user as any)?.effective_permissions) && (user as any).effective_permissions.length > 0) {
-      return (user as any).effective_permissions;
+      basePerms = (user as any).effective_permissions;
+    } else {
+      // Fallback extraction from agency plan or direct permissions
+      const agency = (user as any)?.agency || currentAgency;
+      const plan = agency?.current_subscription?.plan || agency?.currentSubscription?.plan || agency?.plan;
+      const planPerms = Array.isArray(plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
+        ? (plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
+        : [];
+      const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase());
+      const extracted = planPerms.map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase()).filter(Boolean);
+      basePerms = Array.from(new Set([...extracted, ...directPerms]));
     }
-    // Fallback extraction from agency plan or direct permissions
-    const agency = (user as any)?.agency || currentAgency;
-    const plan = agency?.current_subscription?.plan || agency?.currentSubscription?.plan || agency?.plan;
-    const planPerms = Array.isArray(plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
-      ? (plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
-      : [];
-    const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase());
-    const extracted = planPerms.map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase()).filter(Boolean);
-    return Array.from(new Set([...extracted, ...directPerms]));
+
+    if (isWhiteLabelAdmin) {
+      const wlAdminDefaults = [
+        'manage_plans',
+        'manage_agencies',
+        'manage_users',
+        'custom_agency_branding',
+        'manage_subscriptions',
+        'plans.view',
+        'plans.create',
+        'plans.edit',
+      ];
+      basePerms = Array.from(new Set([...basePerms, ...wlAdminDefaults]));
+    }
+
+    return basePerms;
   })();
 
   const hasPermission = (permission?: string | string[]): boolean => {
     if (!permission) return true;
     if (isSuperAdmin || effectivePermissions.includes('*')) return true;
+
+    if (isWhiteLabelAdmin) {
+      const wlAdminPerms = [
+        'manage_plans',
+        'manage_agencies',
+        'manage_users',
+        'custom_agency_branding',
+        'manage_subscriptions',
+        'plans.view',
+        'plans.create',
+        'plans.edit',
+      ];
+      const reqList = (Array.isArray(permission) ? permission : [permission]).map((p) => p.toLowerCase().trim());
+      if (reqList.some((r) => wlAdminPerms.includes(r))) {
+        return true;
+      }
+    }
 
     const required = (Array.isArray(permission) ? permission : [permission]).map((p) => p.toLowerCase().trim());
     return required.some((req) => effectivePermissions.map((ep) => ep.toLowerCase().trim()).includes(req));

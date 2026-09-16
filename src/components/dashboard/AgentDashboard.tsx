@@ -8,6 +8,7 @@ import {
   GraduationCap, 
   ShieldCheck, 
   Kanban, 
+  Briefcase,
   Calendar,
   Layers,
   ArrowRight
@@ -74,11 +75,11 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ data, isLoading 
         <div className="mt-6 flex flex-wrap gap-3">
           <PermissionGate permission={['view_crm', 'manage_crm']}>
             <Link
-              href="/crm"
+              href="/workspaces"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-600/20 hover:bg-emerald-700 transition-colors"
             >
-              <Kanban className="w-4 h-4" />
-              <span>Mi CRM Kanban</span>
+              <Briefcase className="w-4 h-4" />
+              <span>Workspaces</span>
             </Link>
           </PermissionGate>
 
