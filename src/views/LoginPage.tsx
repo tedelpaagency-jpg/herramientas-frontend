@@ -124,8 +124,8 @@ const rewardsData = [
 ];
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('admin@tedelpa.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -389,7 +389,7 @@ export const LoginPage: React.FC = () => {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="admin@tedelpa.com"
+                      placeholder="correo@ejemplo.com"
                       className="w-full h-11 bg-slate-50/50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-[14px] focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-[2px] focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
                     />
                   </div>

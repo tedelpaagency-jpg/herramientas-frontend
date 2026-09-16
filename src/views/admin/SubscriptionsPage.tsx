@@ -6,10 +6,12 @@ import { WhiteLabel } from '../../types/whiteLabel';
 import subscriptionService from '../../services/subscriptionService';
 import adminService from '../../services/adminService';
 import whiteLabelService from '../../services/whiteLabelService';
+import userService from '../../services/userService';
 import { useAuth } from '../../context/AuthContext';
 import { 
   Key, Calendar, Clock, AlertTriangle, CheckCircle2, ShieldAlert, Plus, Search, 
-  RotateCcw, Layers, XCircle, History, ArrowRight, Building, Globe, Loader2, Filter, Eye
+  RotateCcw, Layers, XCircle, History, ArrowRight, Building, Globe, Loader2, Filter, Eye,
+  UserCheck, User as UserIcon
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
 import toast from 'react-hot-toast';
@@ -50,6 +52,12 @@ export const SubscriptionsPage: React.FC = () => {
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // User Search State inside Create Subscription Modal
+  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
+  const [searchedUsers, setSearchedUsers] = useState<any[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState<boolean>(false);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
@@ -83,11 +91,60 @@ export const SubscriptionsPage: React.FC = () => {
     fetchInitialData();
   }, [activeTab]);
 
+  const handleUserSearchChange = async (query: string) => {
+    setUserSearchQuery(query);
+    if (!query.trim() || query.trim().length < 2) {
+      setSearchedUsers([]);
+      setIsSearchingUsers(false);
+      return;
+    }
+
+    setIsSearchingUsers(true);
+    try {
+      const res = await userService.getUsers({ search: query.trim() });
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setSearchedUsers(list);
+    } catch (err) {
+      console.error('Error buscando usuarios:', err);
+    } finally {
+      setIsSearchingUsers(false);
+    }
+  };
+
+  const handleSelectUserResult = (u: any) => {
+    setSelectedUser(u);
+    setSearchedUsers([]);
+    setUserSearchQuery('');
+
+    if (activeTab === 'agency') {
+      const agId = u.agency_id || u.agency?.id;
+      if (agId) {
+        setTargetEntityId(Number(agId));
+        const matchedAg = agencies.find(a => a.id === Number(agId)) || u.agency;
+        toast.success(`Agencia "${matchedAg?.name || 'asociada'}" seleccionada para ${u.name}`);
+      } else {
+        toast.error(`El usuario ${u.name} no tiene una agencia asignada.`);
+      }
+    } else {
+      const wlId = u.white_label_id || u.white_labels?.[0]?.id || u.agency?.white_label_id;
+      if (wlId) {
+        setTargetEntityId(Number(wlId));
+        const matchedWl = whiteLabels.find(w => w.id === Number(wlId)) || u.white_label;
+        toast.success(`Marca Blanca "${matchedWl?.name || 'asociada'}" seleccionada para ${u.name}`);
+      } else {
+        toast.error(`El usuario ${u.name} no tiene una Marca Blanca asignada.`);
+      }
+    }
+  };
+
   const handleOpenCreateModal = () => {
     setTargetEntityId('');
     setSelectedPlanId('');
     setStartDate(new Date().toISOString().split('T')[0]);
     setNotes('');
+    setUserSearchQuery('');
+    setSearchedUsers([]);
+    setSelectedUser(null);
     setIsCreateModalOpen(true);
   };
 
@@ -261,8 +318,10 @@ export const SubscriptionsPage: React.FC = () => {
   // Filtered List
   const filteredSubscriptions = subscriptions.filter(s => {
     const entityName = s.subscribable?.name || s.agency?.name || '';
+    const entityEmail = s.subscribable?.email || s.agency?.email || s.creator?.email || '';
     const planName = s.plan?.name || '';
-    const matchesSearch = entityName.toLowerCase().includes(search.toLowerCase()) || planName.toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase();
+    const matchesSearch = entityName.toLowerCase().includes(q) || entityEmail.toLowerCase().includes(q) || planName.toLowerCase().includes(q);
     
     let matchesStatus = true;
     const daysLeft = getDaysRemaining(s);
@@ -466,9 +525,14 @@ export const SubscriptionsPage: React.FC = () => {
                           <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 font-bold flex items-center justify-center text-xs shrink-0 border border-amber-500/20">
                             {activeTab === 'white_label' ? <Globe className="w-4 h-4" /> : <Building className="w-4 h-4" />}
                           </div>
-                          <div>
-                            <p className="font-extrabold text-slate-900 dark:text-white text-xs">{entityName}</p>
-                            <span className="text-[10px] text-slate-400 font-mono">ID: #{sub.subscribable_id || sub.agency_id}</span>
+                          <div className="min-w-0">
+                            <p className="font-extrabold text-slate-900 dark:text-white text-xs truncate">{entityName}</p>
+                            {(sub.subscribable?.email || sub.agency?.email || sub.creator?.email) && (
+                              <p className="text-[11px] font-mono text-amber-700 dark:text-amber-400 font-semibold truncate">
+                                {sub.subscribable?.email || sub.agency?.email || sub.creator?.email}
+                              </p>
+                            )}
+                            <span className="text-[10px] text-slate-400 font-mono block">ID: #{sub.subscribable_id || sub.agency_id}</span>
                           </div>
                         </div>
                       </td>
@@ -584,6 +648,88 @@ export const SubscriptionsPage: React.FC = () => {
               </div>
 
               <form onSubmit={handleCreateSubscription} className="space-y-4">
+                {/* User Search Bar */}
+                <div className="space-y-1.5 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-200/70 dark:border-amber-900/50">
+                  <label className="block text-xs font-extrabold text-amber-950 dark:text-amber-200 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Search className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Buscar Usuario o Correo</span>
+                    </span>
+                    <span className="text-[10px] text-amber-700/80 dark:text-amber-400 font-normal">
+                      (Selecciona para auto-completar su {activeTab === 'white_label' ? 'Marca Blanca' : 'Agencia'})
+                    </span>
+                  </label>
+
+                  {selectedUser ? (
+                    <div className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-amber-300 dark:border-amber-700 shadow-xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 font-bold border border-emerald-500/20">
+                          <UserCheck className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-extrabold text-slate-900 dark:text-white truncate">{selectedUser.name}</p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">{selectedUser.email}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUser(null)}
+                        className="text-xs font-bold text-rose-600 hover:text-rose-700 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 shrink-0"
+                      >
+                        Cambiar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Escribe correo o nombre de usuario (ej. emporio.ecu@gmail.com)..."
+                        value={userSearchQuery}
+                        onChange={(e) => handleUserSearchChange(e.target.value)}
+                        className="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-amber-300/80 dark:border-amber-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-amber-500/40"
+                      />
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      {isSearchingUsers && (
+                        <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+                      )}
+
+                      {/* Dropdown Results */}
+                      {searchedUsers.length > 0 && (
+                        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-h-48 overflow-y-auto z-50 divide-y divide-slate-100 dark:divide-slate-800">
+                          {searchedUsers.map((u) => {
+                            const agencyName = u.agency?.name || (agencies.find(a => a.id === u.agency_id)?.name);
+                            const wlName = u.white_label?.name || u.white_labels?.[0]?.name || (whiteLabels.find(w => w.id === u.white_label_id)?.name);
+                            const orgText = activeTab === 'white_label' ? (wlName || agencyName || 'Sin Marca Blanca') : (agencyName || 'Sin Agencia');
+
+                            return (
+                              <button
+                                key={u.id}
+                                type="button"
+                                onClick={() => handleSelectUserResult(u)}
+                                className="w-full text-left p-2.5 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center justify-between gap-2 group"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-amber-600">{u.name}</p>
+                                  <p className="text-[10px] text-slate-500 font-mono truncate">{u.email}</p>
+                                </div>
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-amber-700 dark:text-amber-400 border border-slate-200 dark:border-slate-700 shrink-0 truncate max-w-[130px]">
+                                  {orgText}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {userSearchQuery.trim().length >= 2 && !isSearchingUsers && searchedUsers.length === 0 && (
+                        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xl z-50 text-center text-xs text-slate-400">
+                          No se encontraron usuarios coincidentes.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Seleccionar {activeTab === 'white_label' ? 'Marca Blanca' : 'Agencia'} *
@@ -596,8 +742,16 @@ export const SubscriptionsPage: React.FC = () => {
                   >
                     <option value="">-- Seleccionar Organización --</option>
                     {activeTab === 'white_label'
-                      ? whiteLabels.map(wl => <option key={wl.id} value={wl.id}>{wl.name}</option>)
-                      : agencies.map(ag => <option key={ag.id} value={ag.id}>{ag.name}</option>)
+                      ? whiteLabels.map(wl => (
+                          <option key={wl.id} value={wl.id}>
+                            {wl.name} {wl.email ? `(${wl.email})` : ''}
+                          </option>
+                        ))
+                      : agencies.map(ag => (
+                          <option key={ag.id} value={ag.id}>
+                            {ag.name} {ag.email ? `(${ag.email})` : ''}
+                          </option>
+                        ))
                     }
                   </select>
                 </div>
