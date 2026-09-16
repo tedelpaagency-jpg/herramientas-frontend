@@ -215,11 +215,22 @@ export const SubscriptionsPage: React.FC = () => {
     }
   };
 
+  const getDaysRemaining = (sub: Subscription): number => {
+    if (sub.days_remaining !== undefined && sub.days_remaining !== null) {
+      return sub.days_remaining;
+    }
+    if (!sub.end_date) return 0;
+    const end = new Date(sub.end_date).getTime();
+    const now = new Date().getTime();
+    if (isNaN(end) || end <= now) return 0;
+    return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+  };
+
   // Metrics
   const totalCount = subscriptions.length;
-  const activeCount = subscriptions.filter(s => s.status === 'active' && (s.days_remaining === undefined || s.days_remaining > 0)).length;
-  const expiringSoonCount = subscriptions.filter(s => s.status === 'active' && s.days_remaining !== undefined && s.days_remaining <= 7 && s.days_remaining > 0).length;
-  const expiredCount = subscriptions.filter(s => s.status === 'expired' || s.status === 'cancelled' || (s.days_remaining !== undefined && s.days_remaining <= 0)).length;
+  const activeCount = subscriptions.filter(s => s.status === 'active' && getDaysRemaining(s) > 0).length;
+  const expiringSoonCount = subscriptions.filter(s => s.status === 'active' && getDaysRemaining(s) <= 7 && getDaysRemaining(s) > 0).length;
+  const expiredCount = subscriptions.filter(s => s.status === 'expired' || s.status === 'cancelled' || getDaysRemaining(s) <= 0).length;
 
   // Filtered List
   const filteredSubscriptions = subscriptions.filter(s => {
@@ -228,9 +239,10 @@ export const SubscriptionsPage: React.FC = () => {
     const matchesSearch = entityName.toLowerCase().includes(search.toLowerCase()) || planName.toLowerCase().includes(search.toLowerCase());
     
     let matchesStatus = true;
-    if (statusFilter === 'active') matchesStatus = s.status === 'active' && (s.days_remaining === undefined || s.days_remaining > 0);
-    if (statusFilter === 'expiring') matchesStatus = s.status === 'active' && s.days_remaining !== undefined && s.days_remaining <= 7 && s.days_remaining > 0;
-    if (statusFilter === 'expired') matchesStatus = s.status === 'expired' || s.status === 'cancelled' || (s.days_remaining !== undefined && s.days_remaining <= 0);
+    const daysLeft = getDaysRemaining(s);
+    if (statusFilter === 'active') matchesStatus = s.status === 'active' && daysLeft > 0;
+    if (statusFilter === 'expiring') matchesStatus = s.status === 'active' && daysLeft <= 7 && daysLeft > 0;
+    if (statusFilter === 'expired') matchesStatus = s.status === 'expired' || s.status === 'cancelled' || daysLeft <= 0;
 
     const matchesPlan = !planFilter || s.plan_id === Number(planFilter);
 
@@ -416,8 +428,8 @@ export const SubscriptionsPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {filteredSubscriptions.map((sub) => {
                   const entityName = sub.subscribable?.name || sub.agency?.name || 'Organización';
-                  const isExpired = sub.status === 'expired' || sub.status === 'cancelled' || (sub.days_remaining !== undefined && sub.days_remaining <= 0);
-                  const daysLeft = sub.days_remaining ?? 0;
+                  const daysLeft = getDaysRemaining(sub);
+                  const isExpired = sub.status === 'expired' || sub.status === 'cancelled' || daysLeft <= 0;
 
                   return (
                     <tr key={sub.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
