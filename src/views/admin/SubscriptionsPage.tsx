@@ -73,12 +73,20 @@ export const SubscriptionsPage: React.FC = () => {
       setPlans(plansData);
 
       if (isSuperAdmin) {
-        const wlRes: any = await whiteLabelService.getWhiteLabels();
-        setWhiteLabels(Array.isArray(wlRes) ? wlRes : wlRes?.data || []);
+        try {
+          const wlRes: any = await whiteLabelService.getWhiteLabels();
+          setWhiteLabels(Array.isArray(wlRes) ? wlRes : wlRes?.data || []);
+        } catch (wlErr) {
+          console.error('Error al cargar marcas blancas:', wlErr);
+        }
       }
 
-      const agRes: any = await adminService.getAgencies();
-      setAgencies(Array.isArray(agRes) ? agRes : agRes?.data || []);
+      try {
+        const agRes: any = await adminService.getAgencies();
+        setAgencies(Array.isArray(agRes) ? agRes : agRes?.data || []);
+      } catch (agErr) {
+        console.error('Error al cargar agencias:', agErr);
+      }
     } catch (err) {
       console.error('Error al cargar suscripciones:', err);
       toast.error('Error al obtener la lista de suscripciones');
