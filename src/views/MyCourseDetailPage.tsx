@@ -153,24 +153,6 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
     }
   };
 
-  const handleContinueCourse = () => {
-    const secs = course?.sections || [];
-    for (const sec of secs) {
-      const uncompleted = (sec.materials || []).find(m => !completedMaterialIds.has(m.id));
-      if (uncompleted) {
-        setActiveSectionId(sec.id);
-        setActiveMaterialId(uncompleted.id);
-        setViewMode('player');
-        return;
-      }
-    }
-    if (secs.length > 0) {
-      setActiveSectionId(secs[0].id);
-      if (secs[0].materials?.[0]) setActiveMaterialId(secs[0].materials[0].id);
-      setViewMode('player');
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
@@ -194,6 +176,61 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
 
   const sections = course.sections || [];
   const isCompleted = assignment?.status === 'completed';
+
+  const allFlatSections: CourseSection[] = course.modules && course.modules.length > 0
+    ? course.modules.flatMap(m => m.sections || [])
+    : sections;
+
+  const isSectionCompleted = (sec: CourseSection) => {
+    const mats = sec.materials || [];
+    return mats.length > 0 ? mats.every(m => completedMaterialIds.has(m.id)) : false;
+  };
+
+  const getSectionIndex = (secId: number) => {
+    return allFlatSections.findIndex(s => s.id === secId);
+  };
+
+  const isSectionLocked = (secId: number) => {
+    if (isPreview) return false;
+    const idx = getSectionIndex(secId);
+    if (idx <= 0) return false;
+    for (let i = 0; i < idx; i++) {
+      const prevSec = allFlatSections[i];
+      if (prevSec && !isSectionCompleted(prevSec)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const handleSectionClick = (sec: CourseSection, changeViewMode = true) => {
+    if (isSectionLocked(sec.id)) {
+      toast.error('Debes completar las secciones anteriores para acceder a esta sección 🔒');
+      return;
+    }
+    setActiveSectionId(sec.id);
+    const mats = sec.materials || [];
+    if (mats.length > 0) setActiveMaterialId(mats[0].id);
+    if (changeViewMode) setViewMode('player');
+  };
+
+  const handleContinueCourse = () => {
+    for (const sec of allFlatSections) {
+      if (isSectionLocked(sec.id)) break;
+      const uncompleted = (sec.materials || []).find(m => !completedMaterialIds.has(m.id));
+      if (uncompleted) {
+        setActiveSectionId(sec.id);
+        setActiveMaterialId(uncompleted.id);
+        setViewMode('player');
+        return;
+      }
+    }
+    if (allFlatSections.length > 0) {
+      setActiveSectionId(allFlatSections[0].id);
+      if (allFlatSections[0].materials?.[0]) setActiveMaterialId(allFlatSections[0].materials[0].id);
+      setViewMode('player');
+    }
+  };
 
   const activeSection = sections.find(s => s.id === activeSectionId) || sections[0];
   const sectionMaterials = activeSection?.materials || [];
@@ -427,24 +464,27 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                                 const currentSecNumber = globalSectionCounter;
                                 const mats = sec.materials || [];
                                 const isSecCompleted = mats.length > 0 && mats.every(m => completedMaterialIds.has(m.id));
+                                const locked = isSectionLocked(sec.id);
 
                                 return (
                                   <div 
                                     key={sec.id}
-                                    onClick={() => {
-                                      setActiveSectionId(sec.id);
-                                      if (mats.length > 0) setActiveMaterialId(mats[0].id);
-                                      setViewMode('player');
-                                    }}
-                                    className="relative flex items-center justify-between gap-3 py-1.5 pl-9 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs"
+                                    onClick={() => handleSectionClick(sec, true)}
+                                    className={`relative flex items-center justify-between gap-3 py-1.5 pl-9 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec ${
+                                      locked
+                                        ? 'opacity-60 cursor-not-allowed hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                                        : 'hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs'
+                                    }`}
                                   >
                                     {/* Número Correlativo en la Línea del Timeline */}
                                     <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square text-xs font-black flex items-center justify-center shrink-0 z-10 shadow-xs transition-all duration-200 ${
-                                      isSecCompleted
-                                        ? 'bg-emerald-500 text-white border-2 border-emerald-400'
-                                        : 'bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] group-hover/sec:bg-emerald-500 group-hover/sec:text-white'
+                                      locked
+                                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 border-2 border-slate-300 dark:border-slate-700'
+                                        : isSecCompleted
+                                          ? 'bg-emerald-500 text-white border-2 border-emerald-400'
+                                          : 'bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] group-hover/sec:bg-emerald-500 group-hover/sec:text-white'
                                     }`}>
-                                      {isSecCompleted ? '✓' : currentSecNumber}
+                                      {locked ? <Lock className="w-3 h-3 text-slate-400" /> : isSecCompleted ? '✓' : currentSecNumber}
                                     </div>
 
                                     <div className="flex items-center gap-3 min-w-0">
@@ -461,8 +501,9 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                                       )}
 
                                       <div className="space-y-0.5 min-w-0">
-                                        <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200 group-hover/sec:text-emerald-600 dark:group-hover/sec:text-[#00e699] transition-colors truncate">
-                                          {sec.title}
+                                        <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200 group-hover/sec:text-emerald-600 dark:group-hover/sec:text-[#00e699] transition-colors truncate flex items-center gap-1.5">
+                                          <span>{sec.title}</span>
+                                          {locked && <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
                                         </h4>
                                         {(sec.duration || mats[0]?.duration) && (
                                           <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -492,15 +533,16 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                 <div className="relative pl-6 space-y-3 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 ml-3">
                   {sections.map((sec, secIdx) => {
                     const mats = sec.materials || [];
+                    const locked = isSectionLocked(sec.id);
                     return (
                       <div 
                         key={sec.id}
-                        onClick={() => {
-                          setActiveSectionId(sec.id);
-                          if (mats.length > 0) setActiveMaterialId(mats[0].id);
-                          setViewMode('player');
-                        }}
-                        className="flex items-center justify-between gap-4 py-2 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 rounded-xl px-2 transition-all cursor-pointer group/sec"
+                        onClick={() => handleSectionClick(sec, true)}
+                        className={`flex items-center justify-between gap-4 py-2 rounded-xl px-2 transition-all cursor-pointer group/sec ${
+                          locked
+                            ? 'opacity-60 cursor-not-allowed hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                            : 'hover:bg-slate-100/60 dark:hover:bg-slate-800/40'
+                        }`}
                       >
                         <div className="flex items-center gap-3.5 min-w-0">
                           {sec.cover_image ? (
@@ -515,9 +557,10 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                             </div>
                           )}
                           <div className="space-y-0.5 min-w-0">
-                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
-                              <span className="font-extrabold text-emerald-600 dark:text-[#00e699] mr-1.5">{secIdx + 1}.</span>
-                              {sec.title}
+                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+                              <span className="font-extrabold text-emerald-600 dark:text-[#00e699]">{secIdx + 1}.</span>
+                              <span>{sec.title}</span>
+                              {locked && <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
                             </h3>
                             {(sec.duration || mats[0]?.duration) && (
                               <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -640,10 +683,8 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                   </span>
                 </button>
               </div>
-
             </div>
           </div>
-
         </div>
       ) : (
         /* MODO 2: REPRODUCTOR PRINCIPAL DE LA SECCIÓN + CONTENEDOR ESTILO CARPETA DE RECURSOS */
@@ -651,211 +692,227 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
           {/* Visualizador Principal de la Sección Activa */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* 1. VIDEO O DOCUMENTO PRINCIPAL DE LA SECCIÓN (CONTENIDO DIRECTO) */}
-            {sectionVideoMaterial && (
-              <div className="bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex flex-col">
-                {sectionVideoMaterial.type === 'video' ? (
-                  <div className="relative flex-1 flex flex-col">
-                    <SectionVideo
-                      material={sectionVideoMaterial}
-                      onEnded={() => handleCompleteMaterial(sectionVideoMaterial.id)}
-                      isCompleted={completedMaterialIds.has(sectionVideoMaterial.id)}
-                    />
-                    <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
-                      <span className="font-bold flex items-center gap-2">
-                        <Video className="w-4 h-4 text-emerald-400" />
-                        <span>Video de la Sección: {sectionVideoMaterial.title}</span>
-                      </span>
-                      {completedMaterialIds.has(sectionVideoMaterial.id) ? (
-                        <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[11px]">
-                          ✓ Completado
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleCompleteMaterial(sectionVideoMaterial.id)}
-                          className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors"
-                        >
-                          Marcar como completado
-                        </button>
-                      )}
-                    </div>
+            {activeSection && isSectionLocked(activeSection.id) ? (
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-12 text-center space-y-4 shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto border border-amber-500/20">
+                  <Lock className="w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Sección Bloqueada 🔒</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold max-w-md mx-auto">
+                    Para visualizar y acceder al contenido de "{activeSection.title}", primero debes completar todas las secciones anteriores del curso.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* 1. VIDEO O DOCUMENTO PRINCIPAL DE LA SECCIÓN (CONTENIDO DIRECTO) */}
+                {sectionVideoMaterial && (
+                  <div className="bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 flex flex-col">
+                    {sectionVideoMaterial.type === 'video' ? (
+                      <div className="relative flex-1 flex flex-col">
+                        <SectionVideo
+                          material={sectionVideoMaterial}
+                          onEnded={() => handleCompleteMaterial(sectionVideoMaterial.id)}
+                          isCompleted={completedMaterialIds.has(sectionVideoMaterial.id)}
+                        />
+                        <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
+                          <span className="font-bold flex items-center gap-2">
+                            <Video className="w-4 h-4 text-emerald-400" />
+                            <span>Video de la Sección: {sectionVideoMaterial.title}</span>
+                          </span>
+                          {completedMaterialIds.has(sectionVideoMaterial.id) ? (
+                            <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[11px]">
+                              ✓ Completado
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleCompleteMaterial(sectionVideoMaterial.id)}
+                              className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors"
+                            >
+                              Marcar como completado
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative flex-1 flex flex-col">
+                        <div className="w-full h-[550px] bg-white rounded-3xl overflow-hidden shadow-inner">
+                          <iframe
+                            src={courseService.getMaterialStreamUrl(sectionVideoMaterial.id)}
+                            className="w-full h-full"
+                            title={sectionVideoMaterial.title}
+                          />
+                        </div>
+                        <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
+                          <span className="font-bold flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-rose-400" />
+                            <span>Documento de la Sección: {sectionVideoMaterial.title}</span>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={courseService.getMaterialStreamUrl(sectionVideoMaterial.id, true)}
+                              download
+                              className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors inline-flex items-center gap-1"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Descargar Documento</span>
+                            </a>
+                            {completedMaterialIds.has(sectionVideoMaterial.id) ? (
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[11px]">
+                                ✓ Completado
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleCompleteMaterial(sectionVideoMaterial.id)}
+                                className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors"
+                              >
+                                Marcar como completado
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="relative flex-1 flex flex-col">
-                    <div className="w-full h-[550px] bg-white rounded-3xl overflow-hidden shadow-inner">
-                      <iframe
-                        src={courseService.getMaterialStreamUrl(sectionVideoMaterial.id)}
-                        className="w-full h-full"
-                        title={sectionVideoMaterial.title}
+                )}
+
+                {/* 1.5 IMAGEN DE CERTIFICADO DEL CURSO (DEBAJO DEL VIDEO - OCULTO SI ES NULL) */}
+                {course?.certificate_image && (
+                  <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-amber-200 dark:border-amber-900/50 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <Award className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                          Certificado Acreditativo del Curso
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                          Certificado oficial emitido al completar el programa
+                        </p>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 flex items-center justify-center p-2">
+                      <img
+                        src={formatImageUrl(course.certificate_image)!}
+                        alt={`Certificado del Curso ${course.title}`}
+                        className="max-w-full h-auto max-h-[500px] object-contain rounded-xl"
                       />
                     </div>
-                    <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
-                      <span className="font-bold flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-rose-400" />
-                        <span>Documento de la Sección: {sectionVideoMaterial.title}</span>
+                  </div>
+                )}
+
+                {/* 2. CONTENIDO TEÓRICO / EXPLICACIÓN DE LA SECCIÓN */}
+                <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div>
+                      <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-[#00e699] tracking-widest">
+                        Contenido Teórico / Explicación de la Sección
                       </span>
-                      <div className="flex items-center gap-2">
-                        <a
-                          href={courseService.getMaterialStreamUrl(sectionVideoMaterial.id, true)}
-                          download
-                          className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors inline-flex items-center gap-1"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Descargar Documento</span>
-                        </a>
-                        {completedMaterialIds.has(sectionVideoMaterial.id) ? (
-                          <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[11px]">
-                            ✓ Completado
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleCompleteMaterial(sectionVideoMaterial.id)}
-                            className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors"
-                          >
-                            Marcar como completado
-                          </button>
-                        )}
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                        {activeSection?.title || course.title}
+                      </h3>
+                    </div>
+
+                    {isActiveSectionCompleted ? (
+                      <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs border border-emerald-200 dark:border-emerald-500/30 shrink-0">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        <span>Sección Completada</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleCompleteSection(activeSection)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition-all shadow-md shadow-emerald-600/20 active:scale-95 shrink-0"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Marcar Sección como Completada</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {(activeSection?.content || activeSection?.description) ? (
+                    <div 
+                      className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed font-medium prose dark:prose-invert max-w-none pt-1 whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeSection.content || activeSection.description || '') }}
+                    />
+                  ) : (
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-medium italic">
+                      Sin notas teóricas ni descripción adicional para esta sección.
+                    </p>
+                  )}
+                </div>
+
+                {/* 3. CARPETA DE RECURSOS DE LA SECCIÓN (ARCHIVOS ADICIONALES EXCLUYENDO EL VIDEO PROPIO) */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 relative shadow-sm">
+                  {/* Tab/Solapa de la Carpeta */}
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] flex items-center justify-center border border-emerald-500/20 shadow-xs">
+                        <Folder className="w-5 h-5 fill-current" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                          <span>Recursos de la Sección: {activeSection?.title}</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {sectionResources.length} recurso(s) adicional(es) en esta sección
+                        </p>
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
 
-            {/* 1.5 IMAGEN DE CERTIFICADO DEL CURSO (DEBAJO DEL VIDEO - OCULTO SI ES NULL) */}
-            {course?.certificate_image && (
-              <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-amber-200 dark:border-amber-900/50 shadow-sm space-y-4">
-                <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                    <Award className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                      Certificado Acreditativo del Curso
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                      Certificado oficial emitido al completar el programa
-                    </p>
-                  </div>
-                </div>
-                <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 flex items-center justify-center p-2">
-                  <img
-                    src={formatImageUrl(course.certificate_image)!}
-                    alt={`Certificado del Curso ${course.title}`}
-                    className="max-w-full h-auto max-h-[500px] object-contain rounded-xl"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* 2. CONTENIDO TEÓRICO / EXPLICACIÓN DE LA SECCIÓN */}
-            <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-[#00e699] tracking-widest">
-                    Contenido Teórico / Explicación de la Sección
-                  </span>
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                    {activeSection?.title || course.title}
-                  </h3>
-                </div>
-
-                {isActiveSectionCompleted ? (
-                  <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs border border-emerald-200 dark:border-emerald-500/30 shrink-0">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span>Sección Completada</span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleCompleteSection(activeSection)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition-all shadow-md shadow-emerald-600/20 active:scale-95 shrink-0"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Marcar Sección como Completada</span>
-                  </button>
-                )}
-              </div>
-
-              {(activeSection?.content || activeSection?.description) ? (
-                <div 
-                  className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed font-medium prose dark:prose-invert max-w-none pt-1 whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeSection.content || activeSection.description || '') }}
-                />
-              ) : (
-                <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-medium italic">
-                  Sin notas teóricas ni descripción adicional para esta sección.
-                </p>
-              )}
-            </div>
-
-            {/* 3. CARPETA DE RECURSOS DE LA SECCIÓN (ARCHIVOS ADICIONALES EXCLUYENDO EL VIDEO PROPIO) */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 relative shadow-sm">
-              {/* Tab/Solapa de la Carpeta */}
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] flex items-center justify-center border border-emerald-500/20 shadow-xs">
-                    <Folder className="w-5 h-5 fill-current" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                      <span>Recursos de la Sección: {activeSection?.title}</span>
-                    </h4>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {sectionResources.length} recurso(s) adicional(es) en esta sección
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Grilla de Recursos (Sin previsualizadores desplegables abajo) */}
-              {sectionResources.length === 0 ? (
-                <div className="text-center py-6 text-xs text-slate-400 font-medium italic">
-                  Esta sección no posee recursos ni documentos adicionales en su carpeta.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  {sectionResources.map((mat) => (
-                    <div
-                      key={mat.id}
-                      className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex items-center justify-between gap-3"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-                          mat.type === 'pdf' ? 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400' :
-                          mat.type === 'image' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400' :
-                          'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
-                        }`}>
-                          {getMaterialIcon(mat.type, "w-5 h-5")}
-                        </div>
-
-                        <div className="min-w-0">
-                          <p className="text-xs font-black truncate text-slate-900 dark:text-white">
-                            {mat.title}
-                          </p>
-                          <p className="text-[10px] text-slate-400 uppercase tracking-wider truncate">
-                            {mat.file_name || mat.type}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 flex items-center gap-1.5">
-                        <a
-                          href={courseService.getMaterialStreamUrl(mat.id, true)}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] font-bold text-xs transition-colors inline-flex items-center gap-1.5"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span>Descargar</span>
-                        </a>
-                      </div>
+                  {/* Grilla de Recursos (Sin previsualizadores desplegables abajo) */}
+                  {sectionResources.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-slate-400 font-medium italic">
+                      Esta sección no posee recursos ni documentos adicionales en su carpeta.
                     </div>
-                  ))}
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      {sectionResources.map((mat) => (
+                        <div
+                          key={mat.id}
+                          className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+                              mat.type === 'pdf' ? 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400' :
+                              mat.type === 'image' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400' :
+                              'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+                            }`}>
+                              {getMaterialIcon(mat.type, "w-5 h-5")}
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-xs font-black truncate text-slate-900 dark:text-white">
+                                {mat.title}
+                              </p>
+                              <p className="text-[10px] text-slate-400 uppercase tracking-wider truncate">
+                                {mat.file_name || mat.type}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-1.5">
+                            <a
+                              href={courseService.getMaterialStreamUrl(mat.id, true)}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-[#00e699] font-bold text-xs transition-colors inline-flex items-center gap-1.5"
+                            >
+                              <Download className="w-4 h-4" />
+                              <span>Descargar</span>
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
 
           {/* Timeline Lateral de Secciones (Compacto, Armónico y Centrado) */}
@@ -888,26 +945,29 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                                 const currentSecNumber = globalSectionCounter;
                                 const isSecActive = activeSection?.id === sec.id;
                                 const mats = sec.materials || [];
+                                const locked = isSectionLocked(sec.id);
+
                                 return (
                                   <div 
                                     key={sec.id}
-                                    onClick={() => {
-                                      setActiveSectionId(sec.id);
-                                      if (mats.length > 0) setActiveMaterialId(mats[0].id);
-                                    }}
+                                    onClick={() => handleSectionClick(sec, false)}
                                     className={`relative flex items-center justify-between gap-3 py-1.5 pl-9 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec ${
-                                      isSecActive
-                                        ? 'bg-emerald-500/15 dark:bg-emerald-500/20 shadow-2xs font-bold'
-                                        : 'hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5'
+                                      locked
+                                        ? 'opacity-60 cursor-not-allowed hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                                        : isSecActive
+                                          ? 'bg-emerald-500/15 dark:bg-emerald-500/20 shadow-2xs font-bold'
+                                          : 'hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5'
                                     }`}
                                   >
-                                    {/* Número Correlativo en la Línea del Timeline (Centrado exacto en x = 24px, 12px de padding izquierdo) */}
+                                    {/* Número Correlativo en la Línea del Timeline */}
                                     <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square font-black text-xs flex items-center justify-center shrink-0 z-10 transition-all duration-200 ${
-                                      isSecActive
-                                        ? 'bg-emerald-500 text-white border-2 border-emerald-400 scale-110 shadow-md shadow-emerald-500/40'
-                                        : 'bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] shadow-xs group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110'
+                                      locked
+                                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 border-2 border-slate-300 dark:border-slate-700'
+                                        : isSecActive
+                                          ? 'bg-emerald-500 text-white border-2 border-emerald-400 scale-110 shadow-md shadow-emerald-500/40'
+                                          : 'bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] shadow-xs group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110'
                                     }`}>
-                                      {currentSecNumber}
+                                      {locked ? <Lock className="w-3 h-3 text-slate-400" /> : currentSecNumber}
                                     </div>
 
                                     <div className="flex items-center gap-3 min-w-0">
@@ -924,12 +984,13 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                                       )}
 
                                       <div className="space-y-0.5 min-w-0">
-                                        <h4 className={`text-xs font-black truncate transition-colors ${
+                                        <h4 className={`text-xs font-black truncate transition-colors flex items-center gap-1.5 ${
                                           isSecActive
                                             ? 'text-emerald-600 dark:text-[#00e699]'
                                             : 'text-slate-800 dark:text-slate-200 group-hover/sec:text-emerald-600 dark:group-hover/sec:text-[#00e699]'
                                         }`}>
-                                          {sec.title}
+                                          <span>{sec.title}</span>
+                                          {locked && <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
                                         </h4>
                                         {(sec.duration || mats[0]?.duration) && (
                                           <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -957,26 +1018,28 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                   {sections.map((sec, secIdx) => {
                     const isSecActive = activeSection?.id === sec.id;
                     const mats = sec.materials || [];
+                    const locked = isSectionLocked(sec.id);
 
                     return (
                       <div 
                         key={sec.id}
-                        onClick={() => {
-                          setActiveSectionId(sec.id);
-                          if (mats.length > 0) setActiveMaterialId(mats[0].id);
-                        }}
+                        onClick={() => handleSectionClick(sec, false)}
                         className={`relative flex items-center justify-between gap-3 py-1.5 px-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec ${
-                          isSecActive
-                            ? 'bg-emerald-500/15 dark:bg-emerald-500/20 shadow-2xs font-bold'
-                            : 'hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5'
+                          locked
+                            ? 'opacity-60 cursor-not-allowed hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                            : isSecActive
+                              ? 'bg-emerald-500/15 dark:bg-emerald-500/20 shadow-2xs font-bold'
+                              : 'hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5'
                         }`}
                       >
                         <div className={`absolute -left-[34px] top-3.5 w-5 h-5 rounded-full border text-[10px] font-black flex items-center justify-center shadow-xs z-10 transition-all duration-200 ${
-                          isSecActive
-                            ? 'bg-emerald-500 text-white border-emerald-400 scale-110 shadow-md shadow-emerald-500/30'
-                            : 'bg-white dark:bg-slate-950 border-emerald-500 text-emerald-600 dark:text-[#00e699] group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:scale-115'
+                          locked
+                            ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 border-slate-300 dark:border-slate-700'
+                            : isSecActive
+                              ? 'bg-emerald-500 text-white border-emerald-400 scale-110 shadow-md shadow-emerald-500/30'
+                              : 'bg-white dark:bg-slate-950 border-emerald-500 text-emerald-600 dark:text-[#00e699] group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:scale-115'
                         }`}>
-                          {secIdx + 1}
+                          {locked ? <Lock className="w-3 h-3 text-slate-400" /> : secIdx + 1}
                         </div>
 
                         <div className="flex items-center gap-3 min-w-0">
@@ -992,10 +1055,11 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                             </div>
                           )}
                           <div className="space-y-0.5 min-w-0">
-                            <h4 className={`text-xs font-black truncate ${
+                            <h4 className={`text-xs font-black truncate flex items-center gap-1.5 ${
                               isSecActive ? 'text-emerald-600 dark:text-[#00e699]' : 'text-slate-800 dark:text-slate-200'
                             }`}>
-                              {sec.title}
+                              <span>{sec.title}</span>
+                              {locked && <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
                             </h4>
                             {(sec.duration || mats[0]?.duration) && (
                               <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -1010,9 +1074,9 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                   })}
                 </div>
               )}
-            </div>
           </div>
-        )}
+        </div>
+      )}
 
     </div>
   );

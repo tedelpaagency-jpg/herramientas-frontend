@@ -6,7 +6,15 @@ import { CourseSectionMaterial, CourseResource } from '../types/course';
 import courseService from '../services/courseService';
 
 export interface SectionVideoProps {
-  material: CourseSectionMaterial | CourseResource;
+  material: (CourseSectionMaterial | CourseResource) | {
+    id: number;
+    title: string;
+    type?: string;
+    video_provider?: 'local' | 'youtube' | 'drive' | null;
+    external_url?: string | null;
+    file_path?: string | null;
+    sort_order?: number;
+  };
   autoPlay?: boolean;
   onEnded?: () => void;
   isCompleted?: boolean;

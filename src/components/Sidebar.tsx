@@ -315,6 +315,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap, permission: 'courses.view' },
         { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: 'courses.view' },
+        { label: 'Grupos de Actividades', path: '/activities', icon: CheckSquare, permission: ['activities.view', 'activities.create', 'activities.update', 'courses.view'] },
+        { label: 'Mis Actividades', path: '/my-activities', icon: FileText, permission: ['activities.view', 'courses.view'] },
         { label: 'Gamificación & Puntos', path: '/gamification', icon: Trophy, permission: ['view_spin_wheel', 'view_gamification'] },
       ],
     },
