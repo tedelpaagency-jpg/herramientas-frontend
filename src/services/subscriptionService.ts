@@ -2,7 +2,15 @@ import apiClient from './apiClient';
 import { Subscription } from '../types';
 
 export const subscriptionService = {
-  getSubscriptions: async (params?: { type?: string; status?: string; plan_id?: number; white_label_id?: number }) => {
+  getSubscriptions: async (params?: {
+    type?: string;
+    status?: string;
+    plan_id?: number;
+    white_label_id?: number;
+    search?: string;
+    page?: number;
+    per_page?: number;
+  }) => {
     const res = await apiClient.get('/v1/subscriptions', { params });
     return res.data;
   },

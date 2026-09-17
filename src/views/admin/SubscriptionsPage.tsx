@@ -11,7 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { 
   Key, Calendar, Clock, AlertTriangle, CheckCircle2, ShieldAlert, Plus, Search, 
   RotateCcw, Layers, XCircle, History, ArrowRight, Building, Globe, Loader2, Filter, Eye,
-  UserCheck, User as UserIcon
+  UserCheck, User as UserIcon, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
 import toast from 'react-hot-toast';
@@ -58,19 +58,27 @@ export const SubscriptionsPage: React.FC = () => {
   const [isSearchingUsers, setIsSearchingUsers] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
-  const fetchInitialData = async () => {
-    setIsLoading(true);
+  // Pagination & Metrics State
+  const [page, setPage] = useState<number>(1);
+  const [perPage, setPerPage] = useState<number>(15);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    total: 0,
+    from: 0,
+    to: 0,
+  });
+  const [metrics, setMetrics] = useState({
+    total: 0,
+    active: 0,
+    expiring: 0,
+    expired: 0,
+  });
+
+  const fetchAuxiliaryData = async () => {
     try {
-      const [subsRes, plansRes]: [any, any] = await Promise.all([
-        subscriptionService.getSubscriptions({ type: activeTab }),
-        adminService.getPlans(),
-      ]);
-
-      const subsData = Array.isArray(subsRes) ? subsRes : subsRes?.data || [];
-      const plansData = Array.isArray(plansRes) ? plansRes : plansRes?.data || [];
-
-      setSubscriptions(subsData);
-      setPlans(plansData);
+      const plansRes: any = await adminService.getPlans();
+      setPlans(Array.isArray(plansRes) ? plansRes : plansRes?.data || []);
 
       if (isSuperAdmin) {
         try {
@@ -88,6 +96,48 @@ export const SubscriptionsPage: React.FC = () => {
         console.error('Error al cargar agencias:', agErr);
       }
     } catch (err) {
+      console.error('Error al cargar datos auxiliares:', err);
+    }
+  };
+
+  const fetchSubscriptions = async () => {
+    setIsLoading(true);
+    try {
+      const subsRes: any = await subscriptionService.getSubscriptions({
+        type: activeTab,
+        status: statusFilter || undefined,
+        plan_id: planFilter ? Number(planFilter) : undefined,
+        search: search || undefined,
+        page,
+        per_page: perPage,
+      });
+
+      const paginatedObj = subsRes?.data;
+      if (paginatedObj && Array.isArray(paginatedObj.data)) {
+        setSubscriptions(paginatedObj.data);
+        setPagination({
+          current_page: paginatedObj.current_page || 1,
+          last_page: paginatedObj.last_page || 1,
+          total: paginatedObj.total || 0,
+          from: paginatedObj.from || 0,
+          to: paginatedObj.to || 0,
+        });
+      } else {
+        const subsData = Array.isArray(subsRes) ? subsRes : subsRes?.data || [];
+        setSubscriptions(subsData);
+        setPagination({
+          current_page: 1,
+          last_page: 1,
+          total: subsData.length,
+          from: subsData.length > 0 ? 1 : 0,
+          to: subsData.length,
+        });
+      }
+
+      if (subsRes?.metrics) {
+        setMetrics(subsRes.metrics);
+      }
+    } catch (err) {
       console.error('Error al cargar suscripciones:', err);
       toast.error('Error al obtener la lista de suscripciones');
     } finally {
@@ -96,8 +146,16 @@ export const SubscriptionsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchInitialData();
-  }, [activeTab]);
+    fetchAuxiliaryData();
+  }, [isSuperAdmin]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, statusFilter, planFilter, search]);
+
+  useEffect(() => {
+    fetchSubscriptions();
+  }, [activeTab, statusFilter, planFilter, search, page, perPage]);
 
   const handleUserSearchChange = async (query: string) => {
     setUserSearchQuery(query);
@@ -208,7 +266,7 @@ export const SubscriptionsPage: React.FC = () => {
 
       showSuccessAlert('Suscripción Asignada', 'La suscripción fue registrada exitosamente.');
       setIsCreateModalOpen(false);
-      fetchInitialData();
+      fetchSubscriptions();
     } catch (err: any) {
       console.error('Error al crear suscripción:', err);
       toast.error(err.response?.data?.message || err.message || 'Error al asignar suscripción');
@@ -230,7 +288,7 @@ export const SubscriptionsPage: React.FC = () => {
 
       showSuccessAlert('Suscripción Renovada', 'Se ha renovado el período de acceso exitosamente.');
       setIsRenewModalOpen(false);
-      fetchInitialData();
+      fetchSubscriptions();
     } catch (err: any) {
       console.error('Error al renovar suscripción:', err);
       toast.error(err.response?.data?.message || err.message || 'Error al renovar suscripción');
@@ -252,7 +310,7 @@ export const SubscriptionsPage: React.FC = () => {
 
       showSuccessAlert('Plan Modificado', 'El plan de suscripción fue actualizado correctamente.');
       setIsChangePlanModalOpen(false);
-      fetchInitialData();
+      fetchSubscriptions();
     } catch (err: any) {
       console.error('Error al cambiar plan:', err);
       toast.error(err.response?.data?.message || err.message || 'Error al cambiar de plan');
@@ -273,7 +331,7 @@ export const SubscriptionsPage: React.FC = () => {
     try {
       await subscriptionService.cancelSubscription(sub.id);
       showSuccessAlert('Suscripción Cancelada', 'La suscripción ha sido suspendida.');
-      fetchInitialData();
+      fetchSubscriptions();
     } catch (err: any) {
       console.error('Error al cancelar suscripción:', err);
       toast.error('Error al cancelar la suscripción');
@@ -317,30 +375,13 @@ export const SubscriptionsPage: React.FC = () => {
     return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
   };
 
-  // Metrics
-  const totalCount = subscriptions.length;
-  const activeCount = subscriptions.filter(s => s.status === 'active' && getDaysRemaining(s) > 0).length;
-  const expiringSoonCount = subscriptions.filter(s => s.status === 'active' && getDaysRemaining(s) <= 7 && getDaysRemaining(s) > 0).length;
-  const expiredCount = subscriptions.filter(s => s.status === 'expired' || s.status === 'cancelled' || getDaysRemaining(s) <= 0).length;
+  // Metrics from server
+  const totalCount = metrics.total || pagination.total || subscriptions.length;
+  const activeCount = metrics.active;
+  const expiringSoonCount = metrics.expiring;
+  const expiredCount = metrics.expired;
 
-  // Filtered List
-  const filteredSubscriptions = subscriptions.filter(s => {
-    const entityName = s.subscribable?.name || s.agency?.name || '';
-    const entityEmail = s.subscribable?.email || s.agency?.email || s.creator?.email || '';
-    const planName = s.plan?.name || '';
-    const q = search.toLowerCase();
-    const matchesSearch = entityName.toLowerCase().includes(q) || entityEmail.toLowerCase().includes(q) || planName.toLowerCase().includes(q);
-    
-    let matchesStatus = true;
-    const daysLeft = getDaysRemaining(s);
-    if (statusFilter === 'active') matchesStatus = s.status === 'active' && daysLeft > 0;
-    if (statusFilter === 'expiring') matchesStatus = s.status === 'active' && daysLeft <= 7 && daysLeft > 0;
-    if (statusFilter === 'expired') matchesStatus = s.status === 'expired' || s.status === 'cancelled' || daysLeft <= 0;
-
-    const matchesPlan = !planFilter || s.plan_id === Number(planFilter);
-
-    return matchesSearch && matchesStatus && matchesPlan;
-  });
+  const filteredSubscriptions = subscriptions;
 
   const getAvailablePlans = (currentPlanId?: number) => {
     const matched = plans.filter(p => {
@@ -637,6 +678,60 @@ export const SubscriptionsPage: React.FC = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {pagination.total > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-xs font-semibold text-slate-500">
+            <div className="flex items-center gap-4">
+              <span>
+                Mostrando <strong className="text-slate-800 dark:text-slate-200">{pagination.from || 0}</strong> a{' '}
+                <strong className="text-slate-800 dark:text-slate-200">{pagination.to || 0}</strong> de{' '}
+                <strong className="text-slate-800 dark:text-slate-200">{pagination.total}</strong> suscripciones
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-400 font-normal">Por página:</span>
+                <select
+                  value={perPage}
+                  onChange={(e) => {
+                    setPerPage(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200"
+                >
+                  <option value={10}>10</option>
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                disabled={page <= 1}
+                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                title="Página anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <span className="px-3 py-1 font-bold text-slate-700 dark:text-slate-300">
+                Página {pagination.current_page} de {pagination.last_page}
+              </span>
+
+              <button
+                onClick={() => setPage((p) => Math.min(p + 1, pagination.last_page))}
+                disabled={page >= pagination.last_page}
+                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                title="Página siguiente"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
