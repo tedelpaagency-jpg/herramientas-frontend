@@ -299,13 +299,15 @@ export const courseService = {
   },
 
   // Admin: Subir material a una sección (video / pdf / image / file)
-  uploadMaterial: async (sectionId: number, data: { title: string; type: 'video' | 'pdf' | 'image' | 'file'; video_provider?: 'local' | 'drive' | 'youtube'; external_url?: string; file?: File | null; sort_order?: number }) => {
+  uploadMaterial: async (sectionId: number, data: { title: string; type: 'video' | 'pdf' | 'image' | 'file'; video_provider?: 'local' | 'drive' | 'youtube'; external_url?: string; file?: File | null; file_url?: string; media_id?: number; sort_order?: number }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('type', data.type);
     if (data.video_provider) formData.append('video_provider', data.video_provider);
     if (data.external_url) formData.append('external_url', data.external_url);
     if (data.file) formData.append('file', data.file);
+    if (data.file_url) formData.append('file_url', data.file_url);
+    if (data.media_id) formData.append('media_id', data.media_id.toString());
     if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/${sectionId}/materials`, formData, {
@@ -316,13 +318,15 @@ export const courseService = {
   },
 
   // Admin: Actualizar material de sección (POST)
-  updateMaterial: async (materialId: number, data: { title: string; type: 'video' | 'pdf' | 'image' | 'file'; video_provider?: 'local' | 'drive' | 'youtube'; external_url?: string; file?: File | null; sort_order?: number }) => {
+  updateMaterial: async (materialId: number, data: { title: string; type: 'video' | 'pdf' | 'image' | 'file'; video_provider?: 'local' | 'drive' | 'youtube'; external_url?: string; file?: File | null; file_url?: string; media_id?: number; sort_order?: number }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('type', data.type);
     if (data.video_provider) formData.append('video_provider', data.video_provider);
     if (data.external_url) formData.append('external_url', data.external_url);
     if (data.file) formData.append('file', data.file);
+    if (data.file_url) formData.append('file_url', data.file_url);
+    if (data.media_id) formData.append('media_id', data.media_id.toString());
     if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/materials/${materialId}/update`, formData, {

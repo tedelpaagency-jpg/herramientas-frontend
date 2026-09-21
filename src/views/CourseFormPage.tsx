@@ -113,6 +113,8 @@ export const CourseFormPage: React.FC = () => {
   const [matVideoProvider, setMatVideoProvider] = useState<'local' | 'drive' | 'youtube'>('local');
   const [matExternalUrl, setMatExternalUrl] = useState('');
   const [matFile, setMatFile] = useState<File | null>(null);
+  const [matFileUrl, setMatFileUrl] = useState<string | null>(null);
+  const [matMediaId, setMatMediaId] = useState<number | null>(null);
   const [savingMaterial, setSavingMaterial] = useState(false);
   const [deletingMatId, setDeletingMatId] = useState<number | null>(null);
 
@@ -781,6 +783,8 @@ export const CourseFormPage: React.FC = () => {
     setMatVideoProvider('local');
     setMatExternalUrl('');
     setMatFile(null);
+    setMatFileUrl(null);
+    setMatMediaId(null);
   };
 
   const startEditMaterial = (secId: number, mat: CourseSectionMaterial) => {
@@ -791,6 +795,8 @@ export const CourseFormPage: React.FC = () => {
     setMatVideoProvider(mat.video_provider || 'local');
     setMatExternalUrl(mat.external_url || '');
     setMatFile(null);
+    setMatFileUrl(mat.file_path || null);
+    setMatMediaId(null);
   };
 
   const handleSaveMaterial = async (e?: React.FormEvent) => {
@@ -800,8 +806,13 @@ export const CourseFormPage: React.FC = () => {
       return;
     }
 
-    if (!editingMaterial && matType !== 'video' && !matFile) {
+    if (!editingMaterial && matType !== 'video' && !matFile && !matFileUrl) {
       toast.error('Debes seleccionar un archivo para el recurso');
+      return;
+    }
+
+    if (!editingMaterial && matType === 'video' && matVideoProvider === 'local' && !matFile && !matFileUrl) {
+      toast.error('Debes seleccionar un video para el recurso');
       return;
     }
 
@@ -819,6 +830,8 @@ export const CourseFormPage: React.FC = () => {
           video_provider: matType === 'video' ? matVideoProvider : undefined,
           external_url: matType === 'video' && matVideoProvider !== 'local' ? matExternalUrl.trim() : undefined,
           file: matFile || undefined,
+          file_url: matFileUrl || undefined,
+          media_id: matMediaId || undefined,
         });
         toast.success('Recurso actualizado');
       } else {
@@ -828,6 +841,8 @@ export const CourseFormPage: React.FC = () => {
           video_provider: matType === 'video' ? matVideoProvider : undefined,
           external_url: matType === 'video' && matVideoProvider !== 'local' ? matExternalUrl.trim() : undefined,
           file: matFile || null,
+          file_url: matFileUrl || undefined,
+          media_id: matMediaId || undefined,
         });
         toast.success('Recurso adjuntado a la sección');
       }
@@ -1649,11 +1664,15 @@ export const CourseFormPage: React.FC = () => {
                                                 className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white outline-none"
                                               />
                                             ) : (
-                                              <input
-                                                type="file"
-                                                accept="video/*"
-                                                onChange={(e) => setMatFile(e.target.files?.[0] || null)}
-                                                className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
+                                              <MediaPicker
+                                                type="video"
+                                                buttonLabel="Seleccionar Video del Recurso"
+                                                value={matFileUrl}
+                                                onChange={({ url, file, id }) => {
+                                                  setMatFile(file || null);
+                                                  setMatFileUrl(url || null);
+                                                  setMatMediaId(id || null);
+                                                }}
                                               />
                                             )}
                                           </div>
@@ -1664,11 +1683,15 @@ export const CourseFormPage: React.FC = () => {
                                             <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                                               {editingMaterial ? 'Reemplazar Archivo del Recurso (Opcional)' : 'Seleccionar Archivo del Recurso *'}
                                             </label>
-                                            <input
-                                              type="file"
-                                              accept={matType === 'image' ? 'image/*' : matType === 'pdf' ? '.pdf,application/pdf' : '*/*'}
-                                              onChange={(e) => setMatFile(e.target.files?.[0] || null)}
-                                              className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
+                                            <MediaPicker
+                                              type={matType === 'image' ? 'image' : matType === 'pdf' ? 'pdf' : 'all'}
+                                              buttonLabel="Seleccionar / Subir Archivo"
+                                              value={matFileUrl}
+                                              onChange={({ url, file, id }) => {
+                                                setMatFile(file || null);
+                                                setMatFileUrl(url || null);
+                                                setMatMediaId(id || null);
+                                              }}
                                             />
                                           </div>
                                         )}
@@ -1808,21 +1831,16 @@ export const CourseFormPage: React.FC = () => {
                                     <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                                       Portada de la Sección (Miniatura)
                                     </label>
-                                    <div className="flex items-center gap-3">
-                                      {secCoverPreview ? (
-                                        <img src={secCoverPreview} alt="Portada" className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0" />
-                                      ) : (
-                                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 shrink-0">
-                                          <ImagePlus className="w-5 h-5" />
-                                        </div>
-                                      )}
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => e.target.files?.[0] && handleSecCoverChange(e.target.files[0])}
-                                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700"
-                                      />
-                                    </div>
+                                    <MediaPicker
+                                      type="image"
+                                      buttonLabel="Portada Sección"
+                                      value={secCoverPreview}
+                                      compact
+                                      onChange={({ url, file }) => {
+                                        if (file) setSecCoverFile(file);
+                                        if (url) setSecCoverPreview(url);
+                                      }}
+                                    />
                                   </div>
 
                                   <div>
@@ -1937,17 +1955,16 @@ export const CourseFormPage: React.FC = () => {
                                         <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
                                           Selecciona tu archivo {secPrimaryType === 'video' ? 'video local (MP4, WebM, MOV)' : 'documento'} para esta lección.
                                         </p>
-                                        <input
-                                          type="file"
-                                          accept={secPrimaryType === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : secPrimaryType === 'pdf' ? 'application/pdf,.pdf' : '*/*'}
-                                          onChange={(e) => setSecPrimaryFile(e.target.files?.[0] || null)}
-                                          className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 dark:file:bg-emerald-950 dark:file:text-emerald-300"
+                                        <MediaPicker
+                                          type={secPrimaryType === 'video' ? 'video' : secPrimaryType === 'pdf' ? 'pdf' : 'all'}
+                                          buttonLabel="Seleccionar / Subir Archivo Principal"
+                                          onChange={({ url, file }) => {
+                                            if (file) setSecPrimaryFile(file);
+                                            if (url) {
+                                              setSecExternalUrl(url);
+                                            }
+                                          }}
                                         />
-                                        {secPrimaryFile && (
-                                          <p className="text-xs font-bold text-emerald-600 dark:text-[#00e699] mt-1">
-                                            ✓ Archivo seleccionado: {secPrimaryFile.name} ({(secPrimaryFile.size / (1024 * 1024)).toFixed(2)} MB)
-                                          </p>
-                                        )}
                                       </div>
                                     )}
                                   </div>
