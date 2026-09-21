@@ -1,7 +1,16 @@
 'use client';
 
-import { MediaLibraryPage } from '../../views/MediaLibraryPage';
+import React from 'react';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Layout from '@/components/Layout';
+import MediaLibraryPage from '@/views/MediaLibraryPage';
 
 export default function Page() {
-  return <MediaLibraryPage />;
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <MediaLibraryPage />
+      </Layout>
+    </ProtectedRoute>
+  );
 }

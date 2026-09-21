@@ -11,10 +11,11 @@ import toast from 'react-hot-toast';
 
 export interface MediaLibraryModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose?: () => void;
   onSelect?: (media: Media) => void;
   filterType?: 'image' | 'video' | 'document' | 'other' | 'all' | 'pdf';
   title?: string;
+  embedded?: boolean;
 }
 
 
@@ -24,6 +25,7 @@ export const MediaLibraryModal: React.FC<MediaLibraryModalProps> = ({
   onSelect,
   filterType = 'all',
   title = 'Biblioteca de Medios',
+  embedded = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'library' | 'upload'>('library');
   const [mediaList, setMediaList] = useState<Media[]>([]);
@@ -160,7 +162,7 @@ export const MediaLibraryModal: React.FC<MediaLibraryModalProps> = ({
   const handleConfirmSelect = () => {
     if (selectedMedia && onSelect) {
       onSelect(selectedMedia);
-      onClose();
+      if (onClose) onClose();
     }
   };
 
@@ -172,54 +174,54 @@ export const MediaLibraryModal: React.FC<MediaLibraryModalProps> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  if (!isOpen) return null;
+  if (!isOpen && !embedded) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-6xl h-[90vh] bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
-        {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-blue-600/10 text-blue-600 dark:text-blue-400">
-              <ImageIcon className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
-                {title}
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Selecciona, sube y administra recursos multimedia multi-tenant.
-              </p>
-            </div>
+  const contentMarkup = (
+    <div className={`relative w-full ${embedded ? 'min-h-[75vh] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm' : 'max-w-6xl h-[90vh] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl'} bg-white dark:bg-slate-900 flex flex-col overflow-hidden`}>
+      {/* Header Bar */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-blue-600/10 text-blue-600 dark:text-blue-400">
+            <ImageIcon className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
+              {title}
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Selecciona, sube y administra recursos multimedia multi-tenant.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Tabs */}
+          <div className="flex items-center p-1 rounded-2xl bg-slate-200/60 dark:bg-slate-800 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setActiveTab('library')}
+              className={`px-4 py-2 rounded-xl transition-all ${
+                activeTab === 'library'
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Biblioteca
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('upload')}
+              className={`px-4 py-2 rounded-xl transition-all ${
+                activeTab === 'upload'
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Subir Archivo
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Tabs */}
-            <div className="flex items-center p-1 rounded-2xl bg-slate-200/60 dark:bg-slate-800 text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setActiveTab('library')}
-                className={`px-4 py-2 rounded-xl transition-all ${
-                  activeTab === 'library'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Biblioteca
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('upload')}
-                className={`px-4 py-2 rounded-xl transition-all ${
-                  activeTab === 'upload'
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Subir Archivo
-              </button>
-            </div>
-
+          {!embedded && onClose && (
             <button
               type="button"
               onClick={onClose}
@@ -227,8 +229,9 @@ export const MediaLibraryModal: React.FC<MediaLibraryModalProps> = ({
             >
               <X className="w-5 h-5" />
             </button>
-          </div>
+          )}
         </div>
+      </div>
 
         {/* Content Body */}
         {activeTab === 'upload' ? (
@@ -530,7 +533,16 @@ export const MediaLibraryModal: React.FC<MediaLibraryModalProps> = ({
             )}
           </div>
         )}
-      </div>
+    </div>
+  );
+
+  if (embedded) {
+    return contentMarkup;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
+      {contentMarkup}
     </div>
   );
 };
