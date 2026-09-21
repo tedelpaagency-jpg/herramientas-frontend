@@ -13,6 +13,7 @@ import courseService from '../services/courseService';
 import { Course, CourseModule, CourseSection, CourseSectionMaterial } from '../types/course';
 import CourseStudentProgressModal from './CourseStudentProgressModal';
 import MediaPicker from '../components/media/MediaPicker';
+import SectionVideo from '../components/SectionVideo';
 
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
@@ -383,7 +384,7 @@ export const CourseFormPage: React.FC = () => {
       const firstMat = sec.materials?.[0];
       if (firstMat) {
         setSecVideoProvider(firstMat.video_provider || 'local');
-        setSecExternalUrl(firstMat.external_url || '');
+        setSecExternalUrl(firstMat.external_url || firstMat.file_path || '');
       } else {
         setSecVideoProvider('local');
         setSecExternalUrl('');
@@ -391,9 +392,9 @@ export const CourseFormPage: React.FC = () => {
     } else {
       const firstMat = sec.materials?.[0];
       if (firstMat) {
-        setSecPrimaryType(firstMat.type);
+        setSecPrimaryType(firstMat.type || 'video');
         setSecVideoProvider(firstMat.video_provider || 'local');
-        setSecExternalUrl(firstMat.external_url || '');
+        setSecExternalUrl(firstMat.external_url || firstMat.file_path || '');
       } else {
         setSecPrimaryType('none');
         setSecVideoProvider('local');
@@ -565,6 +566,7 @@ export const CourseFormPage: React.FC = () => {
         content: secContent.trim(),
         primary_type: secPrimaryType,
         file: secPrimaryFile || undefined,
+        cover_image: secCoverPreview || undefined,
         cover_image_file: secCoverFile || undefined,
       };
 
@@ -578,7 +580,7 @@ export const CourseFormPage: React.FC = () => {
       }
 
       const savedSecId = editingSection?.id || secRes?.data?.id;
-      if (savedSecId && secPrimaryType === 'video' && secVideoProvider !== 'local' && secExternalUrl.trim()) {
+      if (savedSecId && secPrimaryType === 'video' && secExternalUrl.trim() && !secPrimaryFile) {
         const firstMat = editingSection?.materials?.[0];
         if (firstMat) {
           await courseService.updateMaterial(firstMat.id, {
@@ -586,6 +588,7 @@ export const CourseFormPage: React.FC = () => {
             type: 'video',
             video_provider: secVideoProvider,
             external_url: secExternalUrl.trim(),
+            file_url: secExternalUrl.trim(),
           });
         } else {
           await courseService.uploadMaterial(savedSecId, {
@@ -593,6 +596,7 @@ export const CourseFormPage: React.FC = () => {
             type: 'video',
             video_provider: secVideoProvider,
             external_url: secExternalUrl.trim(),
+            file_url: secExternalUrl.trim(),
           });
         }
       }
@@ -1965,6 +1969,33 @@ export const CourseFormPage: React.FC = () => {
                                             }
                                           }}
                                         />
+                                      </div>
+                                    )}
+
+                                    {/* Vista previa del Video Seleccionado */}
+                                    {secPrimaryType === 'video' && (secExternalUrl || secPrimaryFile) && (
+                                      <div className="mt-3 p-3 bg-slate-900 rounded-2xl border border-slate-800 space-y-2">
+                                        <div className="flex items-center justify-between text-xs text-slate-300 font-bold px-1">
+                                          <span className="flex items-center gap-1.5 text-emerald-400">
+                                            <Video className="w-4 h-4" />
+                                            Vista previa del video de la sección
+                                          </span>
+                                          <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                                            {secVideoProvider === 'youtube' ? 'YouTube' : secVideoProvider === 'drive' ? 'Google Drive' : 'Video Local / Biblioteca'}
+                                          </span>
+                                        </div>
+                                        <div className="rounded-xl overflow-hidden max-h-64 flex justify-center bg-black">
+                                          <SectionVideo
+                                            autoPlay={false}
+                                            material={{
+                                              id: editingSection?.materials?.[0]?.id || 0,
+                                              title: secTitle || 'Vista Previa de Sección',
+                                              video_provider: secVideoProvider,
+                                              external_url: secExternalUrl,
+                                              file_path: secPrimaryFile ? URL.createObjectURL(secPrimaryFile) : secExternalUrl,
+                                            }}
+                                          />
+                                        </div>
                                       </div>
                                     )}
                                   </div>

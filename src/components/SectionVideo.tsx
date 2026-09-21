@@ -186,6 +186,17 @@ export const SectionVideo: React.FC<SectionVideoProps> = ({ material, autoPlay =
   }
 
   // 3. REPRODUCTOR VIDEO LOCAL (HTML5)
+  const rawSrc = material.external_url || material.file_path || '';
+  const formatSrc = (path?: string | null) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:') || path.startsWith('data:')) return path;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    return `${baseUrl}/${path.replace(/^\//, '')}`;
+  };
+  const videoSrc = ('id' in material && material.id && !rawSrc.startsWith('blob:'))
+    ? courseService.getMaterialStreamUrl(material.id)
+    : formatSrc(rawSrc);
+
   return (
     <div className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
       <video
@@ -196,7 +207,7 @@ export const SectionVideo: React.FC<SectionVideoProps> = ({ material, autoPlay =
         onEnded={onEnded}
         onContextMenu={(e) => e.preventDefault()}
         className="w-full h-full object-contain select-none"
-        src={courseService.getMaterialStreamUrl(material.id)}
+        src={videoSrc}
       >
         Tu navegador no soporta el reproductor de video HTML5.
       </video>

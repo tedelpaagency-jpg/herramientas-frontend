@@ -247,7 +247,7 @@ export const courseService = {
   },
 
   // Admin: Crear sección de curso asociada a un módulo o curso (POST)
-  createSection: async (courseId: number | string, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none'; file?: File; cover_image_file?: File }) => {
+  createSection: async (courseId: number | string, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none'; file?: File; cover_image_file?: File; cover_image?: string }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     if (data.course_module_id) formData.append('course_module_id', data.course_module_id.toString());
@@ -258,6 +258,7 @@ export const courseService = {
     if (data.primary_type) formData.append('primary_type', data.primary_type);
     if (data.file) formData.append('file', data.file);
     if (data.cover_image_file) formData.append('cover_image_file', data.cover_image_file);
+    if (data.cover_image) formData.append('cover_image', data.cover_image);
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/${courseId}/sections`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -267,7 +268,7 @@ export const courseService = {
   },
 
   // Admin: Actualizar sección (POST)
-  updateSection: async (sectionId: number, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none'; file?: File; cover_image_file?: File }) => {
+  updateSection: async (sectionId: number, data: { title: string; course_module_id?: number; group_name?: string; duration?: string; content?: string; sort_order?: number; primary_type?: 'video' | 'pdf' | 'image' | 'file' | 'none'; file?: File; cover_image_file?: File; cover_image?: string }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     if (data.course_module_id !== undefined) formData.append('course_module_id', data.course_module_id ? data.course_module_id.toString() : '');
@@ -278,6 +279,7 @@ export const courseService = {
     if (data.primary_type) formData.append('primary_type', data.primary_type);
     if (data.file) formData.append('file', data.file);
     if (data.cover_image_file) formData.append('cover_image_file', data.cover_image_file);
+    if (data.cover_image !== undefined) formData.append('cover_image', data.cover_image || '');
 
     const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/courses/sections/${sectionId}/update`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
