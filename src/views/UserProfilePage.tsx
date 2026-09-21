@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import userService from '../services/userService';
+import MediaPicker from '../components/media/MediaPicker';
 import {
   User as UserIcon,
   Mail,
@@ -179,28 +180,16 @@ export const UserProfilePage: React.FC = () => {
           <div className="flex items-center gap-5">
             {/* Avatar Badge with Upload */}
             <div className="relative group">
-              <label className="cursor-pointer block relative">
-                {photoPreview ? (
-                  <img
-                    src={photoPreview}
-                    alt={user.name}
-                    className="w-20 h-20 rounded-3xl object-cover border-2 border-white dark:border-slate-800 shadow-xl shadow-blue-600/10 flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-black flex items-center justify-center text-3xl shadow-xl shadow-blue-600/20 border-2 border-white dark:border-slate-800 flex-shrink-0">
-                    {getInitials(user.name)}
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                  <Camera className="w-6 h-6" />
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoSelect}
-                  className="hidden"
-                />
-              </label>
+              <MediaPicker
+                value={photoPreview}
+                allowedTypes={['image']}
+                buttonLabel="Cambiar foto de perfil"
+                compact
+                onChange={({ url, file }) => {
+                  if (file) setPhotoFile(file);
+                  if (url) setPhotoPreview(url);
+                }}
+              />
               <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full border-2 border-white dark:border-slate-900 shadow-xs" title="Cuenta Activa">
                 <CheckCircle2 className="w-4 h-4" />
               </div>

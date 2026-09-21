@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import courseService from '../services/courseService';
 import { Course, CourseResource } from '../types/course';
+import MediaPicker from '../components/media/MediaPicker';
 import toast from 'react-hot-toast';
 
 interface CourseResourcesModalProps {
@@ -25,6 +26,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
   const [type, setType] = useState<'video' | 'pdf' | 'text'>('video');
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -56,6 +58,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
     setType('video');
     setContent('');
     setFile(null);
+    setFileUrl(null);
     setShowPreview(false);
   };
 
@@ -100,7 +103,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
       return;
     }
 
-    if (type !== 'text' && !editingResource && !file) {
+    if (type !== 'text' && !editingResource && !file && !fileUrl) {
       toast.error('Debes seleccionar un archivo para el recurso de video/PDF');
       return;
     }
@@ -119,6 +122,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
           type,
           content: content.trim(),
           file: file || undefined,
+          file_url: fileUrl || undefined,
         });
         toast.success('Recurso actualizado exitosamente');
       } else {
@@ -128,6 +132,7 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
           type,
           content: content.trim(),
           file: file || undefined,
+          file_url: fileUrl || undefined,
         });
         toast.success('Recurso guardado exitosamente');
       }
@@ -280,11 +285,14 @@ export const CourseResourcesModal: React.FC<CourseResourcesModalProps> = ({ cour
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                         {editingResource ? 'Reemplazar Archivo (Opcional)' : 'Seleccionar Archivo *'}
                       </label>
-                      <input
-                        type="file"
-                        accept={type === 'video' ? 'video/*,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.avi,.mkv,.m4v' : 'application/pdf,.pdf'}
-                        onChange={(e) => setFile(e.target.files?.[0] || null)}
-                        className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-950 dark:file:text-blue-400 hover:file:bg-blue-100"
+                      <MediaPicker
+                        allowedTypes={type === 'video' ? ['video'] : ['document', 'other']}
+                        buttonLabel="Seleccionar / Subir Archivo"
+                        value={fileUrl}
+                        onChange={({ url, file }) => {
+                          setFile(file || null);
+                          setFileUrl(url || null);
+                        }}
                       />
                     </div>
                   )}

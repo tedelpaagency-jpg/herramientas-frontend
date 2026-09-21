@@ -9,8 +9,9 @@ import {
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
   Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
-  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator, Palette, X, Film
+  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator, Palette, X, Film, Image as ImageIcon
 } from 'lucide-react';
+
 
 interface SidebarProps {
   isSidebarCollapsed: boolean;
@@ -315,7 +316,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap, permission: 'courses.view' },
         { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: 'courses.view' },
+        { label: 'Biblioteca de Medios', path: '/media', icon: ImageIcon, permission: ['courses.view', 'activities.view', 'agencies.view'] },
         { label: 'Grupos de Actividades', path: '/activities', icon: CheckSquare, permission: ['activities.view', 'activities.create', 'activities.update', 'courses.view'] },
+
         { label: 'Mis Actividades', path: '/my-activities', icon: FileText, permission: ['activities.view', 'courses.view'] },
         { label: 'Gamificación & Puntos', path: '/gamification', icon: Trophy, permission: ['view_spin_wheel', 'view_gamification'] },
       ],

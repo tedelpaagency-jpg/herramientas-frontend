@@ -93,12 +93,13 @@ export const courseService = {
   },
 
   // Admin: Subir recurso de curso (video / pdf / text)
-  uploadResource: async (courseId: number | string, data: { title: string; type: 'video' | 'pdf' | 'text'; content?: string; file?: File | null; sort_order?: number }) => {
+  uploadResource: async (courseId: number | string, data: { title: string; type: 'video' | 'pdf' | 'text'; content?: string; file?: File | null; file_url?: string; sort_order?: number }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('type', data.type);
     if (data.content !== undefined) formData.append('content', data.content);
     if (data.file) formData.append('file', data.file);
+    if (data.file_url) formData.append('file_url', data.file_url);
     if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
 
     const response = await apiClient.post<{ status: string; message: string; data: CourseResource }>(`/v1/courses/${courseId}/resources`, formData, {
@@ -109,12 +110,13 @@ export const courseService = {
   },
 
   // Admin: Actualizar recurso (POST)
-  updateResource: async (resourceId: number, data: { title: string; type: 'video' | 'pdf' | 'text'; content?: string; file?: File | null; sort_order?: number }) => {
+  updateResource: async (resourceId: number, data: { title: string; type: 'video' | 'pdf' | 'text'; content?: string; file?: File | null; file_url?: string; sort_order?: number }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('type', data.type);
     if (data.content !== undefined) formData.append('content', data.content);
     if (data.file) formData.append('file', data.file);
+    if (data.file_url) formData.append('file_url', data.file_url);
     if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
 
     const response = await apiClient.post<{ status: string; message: string; data: CourseResource }>(`/v1/courses/resources/${resourceId}/update`, formData, {

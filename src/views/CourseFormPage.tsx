@@ -12,6 +12,8 @@ import {
 import courseService from '../services/courseService';
 import { Course, CourseModule, CourseSection, CourseSectionMaterial } from '../types/course';
 import CourseStudentProgressModal from './CourseStudentProgressModal';
+import MediaPicker from '../components/media/MediaPicker';
+
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
@@ -56,9 +58,13 @@ export const CourseFormPage: React.FC = () => {
   const [savingModule, setSavingModule] = useState(false);
   const [deletingModId, setDeletingModId] = useState<number | null>(null);
 
+  // Drag & Drop State para Módulos
+  const [draggedModIndex, setDraggedModIndex] = useState<number | null>(null);
+  const [dragOverModIndex, setDragOverModIndex] = useState<number | null>(null);
+
   // Drag & Drop State para Secciones
-  const [draggedSecIndex, setDraggedSecIndex] = useState<number | null>(null);
-  const [dragOverSecIndex, setDragOverSecIndex] = useState<number | null>(null);
+  const [draggedSecId, setDraggedSecId] = useState<number | null>(null);
+  const [dragOverSecId, setDragOverSecId] = useState<number | null>(null);
 
   // Media de Detalle del Curso (Video o Imagen)
   const [detailMediaType, setDetailMediaType] = useState<'image' | 'video' | null>(null);
@@ -611,55 +617,160 @@ export const CourseFormPage: React.FC = () => {
     }
   };
 
-  // Drag & Drop Handlers para Secciones
-  const handleDragStartSec = (e: React.DragEvent, index: number) => {
-    e.dataTransfer.setData('text/plain', index.toString());
-    e.dataTransfer.effectAllowed = 'move';
-    setDraggedSecIndex(index);
-  };
-
-  const handleDragOverSec = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (dragOverSecIndex !== index) {
-      setDragOverSecIndex(index);
+  // --- REORDENAMIENTO DE MÓDULOS (Manual & Drag and Drop) ---
+  const persistModuleOrder = async (updatedModules: CourseModule[]) => {
+    setModules(updatedModules);
+    if (courseId) {
+      const reorderedPayload = updatedModules.map((item, idx) => ({
+        id: item.id,
+        sort_order: idx + 1,
+      }));
+      try {
+        await courseService.reorderModules(courseId, reorderedPayload);
+        toast.success('Orden de módulos actualizado');
+      } catch (err) {
+        toast.error('Error al actualizar orden de módulos');
+        await refreshSectionsOnly();
+      }
     }
   };
 
-  const handleDropSec = async (e: React.DragEvent, dropIndex: number) => {
+  const moveModuleUp = (modIndex: number) => {
+    if (modIndex <= 0) return;
+    const updated = [...modules];
+    const [removed] = updated.splice(modIndex, 1);
+    updated.splice(modIndex - 1, 0, removed);
+    persistModuleOrder(updated);
+  };
+
+  const moveModuleDown = (modIndex: number) => {
+    if (modIndex >= modules.length - 1) return;
+    const updated = [...modules];
+    const [removed] = updated.splice(modIndex, 1);
+    updated.splice(modIndex + 1, 0, removed);
+    persistModuleOrder(updated);
+  };
+
+  const handleDragStartMod = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedModIndex(index);
+  };
+
+  const handleDragOverMod = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverModIndex !== index) {
+      setDragOverModIndex(index);
+    }
+  };
+
+  const handleDropMod = async (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     const dragIndexStr = e.dataTransfer.getData('text/plain');
-    const dragIndex = dragIndexStr ? parseInt(dragIndexStr, 10) : draggedSecIndex;
+    const dragIndex = dragIndexStr !== '' ? parseInt(dragIndexStr, 10) : draggedModIndex;
 
-    if (dragIndex === null || dragIndex === undefined || dragIndex === dropIndex) {
-      setDraggedSecIndex(null);
-      setDragOverSecIndex(null);
+    if (dragIndex === null || dragIndex === undefined || isNaN(dragIndex) || dragIndex === dropIndex) {
+      setDraggedModIndex(null);
+      setDragOverModIndex(null);
+      return;
+    }
+
+    const updated = [...modules];
+    const [removed] = updated.splice(dragIndex, 1);
+    updated.splice(dropIndex, 0, removed);
+
+    setDraggedModIndex(null);
+    setDragOverModIndex(null);
+    await persistModuleOrder(updated);
+  };
+
+  // --- REORDENAMIENTO DE SECCIONES (Manual & Drag and Drop) ---
+  const persistSectionOrder = async (updatedSections: CourseSection[]) => {
+    setSections(updatedSections);
+    if (courseId) {
+      const reorderedPayload = updatedSections.map((item, idx) => ({
+        id: item.id,
+        sort_order: idx + 1,
+      }));
+      try {
+        await courseService.reorderSections(courseId, reorderedPayload);
+        toast.success('Orden de secciones actualizado');
+      } catch (err) {
+        toast.error('Error al actualizar orden de secciones');
+        await refreshSectionsOnly();
+      }
+    }
+  };
+
+  const moveSectionUp = (secId: number) => {
+    const index = sections.findIndex(s => s.id === secId);
+    if (index <= 0) return;
+    const updated = [...sections];
+    const [removed] = updated.splice(index, 1);
+    updated.splice(index - 1, 0, removed);
+    persistSectionOrder(updated);
+  };
+
+  const moveSectionDown = (secId: number) => {
+    const index = sections.findIndex(s => s.id === secId);
+    if (index < 0 || index >= sections.length - 1) return;
+    const updated = [...sections];
+    const [removed] = updated.splice(index, 1);
+    updated.splice(index + 1, 0, removed);
+    persistSectionOrder(updated);
+  };
+
+  const handleDragStartSec = (e: React.DragEvent, secId: number) => {
+    e.dataTransfer.setData('text/plain', secId.toString());
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedSecId(secId);
+  };
+
+  const handleDragOverSec = (e: React.DragEvent, secId: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverSecId !== secId) {
+      setDragOverSecId(secId);
+    }
+  };
+
+  const handleDropSec = async (e: React.DragEvent, dropSecId: number) => {
+    e.preventDefault();
+    const dragSecIdStr = e.dataTransfer.getData('text/plain');
+    const dragId = dragSecIdStr !== '' ? parseInt(dragSecIdStr, 10) : draggedSecId;
+
+    if (!dragId || dragId === dropSecId) {
+      setDraggedSecId(null);
+      setDragOverSecId(null);
+      return;
+    }
+
+    const dragIndex = sections.findIndex(s => s.id === dragId);
+    const dropIndex = sections.findIndex(s => s.id === dropSecId);
+
+    if (dragIndex < 0 || dropIndex < 0) {
+      setDraggedSecId(null);
+      setDragOverSecId(null);
       return;
     }
 
     const updated = [...sections];
     const [removed] = updated.splice(dragIndex, 1);
+    
+    // Si la sección de destino pertenece a un módulo, asociar con dicho módulo
+    const dropSec = sections[dropIndex];
+    if (dropSec && dropSec.course_module_id !== removed.course_module_id) {
+      removed.course_module_id = dropSec.course_module_id;
+    }
+
     updated.splice(dropIndex, 0, removed);
 
-    const reorderedPayload = updated.map((item, idx) => ({
-      id: item.id,
-      sort_order: idx + 1,
-    }));
-
-    setSections(updated);
-    setDraggedSecIndex(null);
-    setDragOverSecIndex(null);
-
-    if (courseId) {
-      try {
-        await courseService.reorderSections(courseId, reorderedPayload);
-        toast.success('Orden de secciones actualizado');
-      } catch (err) {
-        toast.error('Error al reordenar');
-        await refreshSectionsOnly();
-      }
-    }
+    setDraggedSecId(null);
+    setDragOverSecId(null);
+    await persistSectionOrder(updated);
   };
+
 
   // --- MATERIALES / RECURSOS DE SECCIÓN ---
   const resetMaterialForm = () => {
@@ -945,14 +1056,13 @@ export const CourseFormPage: React.FC = () => {
 
                   {detailMediaType === 'image' && (
                     <div className="space-y-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
+                      <MediaPicker
+                        allowedTypes={['image']}
+                        buttonLabel="Seleccionar / Subir Imagen de Detalle"
+                        onChange={({ url, file }) => {
                           if (file) handleSaveDetailMedia('image', undefined, file);
+                          else if (url) handleSaveDetailMedia('image', undefined, null, url);
                         }}
-                        className="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700"
                       />
                     </div>
                   )}
@@ -977,14 +1087,13 @@ export const CourseFormPage: React.FC = () => {
                       </div>
 
                       {detailMediaProvider === 'local' ? (
-                        <input
-                          type="file"
-                          accept="video/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
+                        <MediaPicker
+                          allowedTypes={['video']}
+                          buttonLabel="Seleccionar / Subir Video Local"
+                          onChange={({ url, file }) => {
                             if (file) handleSaveDetailMedia('video', 'local', file);
+                            else if (url) handleSaveDetailMedia('video', 'local', null, url);
                           }}
-                          className="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700"
                         />
                       ) : detailMediaProvider ? (
                         <div className="space-y-2">
@@ -1029,57 +1138,22 @@ export const CourseFormPage: React.FC = () => {
                 Subir la plantilla o imagen del certificado oficial que obtendrán los alumnos al completar este curso.
               </p>
 
-              {certificateImagePreview ? (
-                <div className="space-y-3">
-                  <div className="relative rounded-2xl overflow-hidden group border border-amber-200 dark:border-amber-900/50 max-h-48 bg-slate-950 flex items-center justify-center p-2">
-                    <img
-                      src={certificateImagePreview}
-                      alt="Certificado Acreditativo"
-                      className="max-w-full max-h-44 object-contain rounded-xl"
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <label className="flex-1 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer">
-                      {savingCertificate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                      <span>Reemplazar Certificado</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => e.target.files?.[0] && handleUploadCertificateImage(e.target.files[0])}
-                        className="hidden"
-                      />
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={handleDeleteCertificateImage}
-                      disabled={deletingCertificate}
-                      className="py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs transition-colors flex items-center justify-center gap-2"
-                    >
-                      {deletingCertificate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center h-32 rounded-2xl border-2 border-dashed border-amber-300/60 dark:border-amber-900/40 hover:border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 cursor-pointer transition-all p-4 text-center group">
-                  {savingCertificate ? (
-                    <Loader2 className="w-6 h-6 text-amber-500 animate-spin mb-1" />
-                  ) : (
-                    <Award className="w-6 h-6 text-amber-500 mb-1 group-hover:scale-110 transition-transform" />
-                  )}
-                  <span className="text-xs font-extrabold text-amber-700 dark:text-amber-400">
-                    Subir Imagen del Certificado
-                  </span>
-                  <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP o SVG (Máx. 10MB)</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && handleUploadCertificateImage(e.target.files[0])}
-                    className="hidden"
-                  />
-                </label>
-              )}
+              <MediaPicker
+                value={certificateImagePreview}
+                allowedTypes={['image']}
+                buttonLabel="Seleccionar / Subir Imagen del Certificado"
+                previewHeight="h-44"
+                onChange={({ url, file }) => {
+                  if (file) {
+                    handleUploadCertificateImage(file);
+                  } else if (url) {
+                    setCertificateImage(url);
+                    setCertificateImagePreview(url);
+                  } else {
+                    handleDeleteCertificateImage();
+                  }
+                }}
+              />
             </div>
 
             {/* SECCIÓN: 3 IMÁGENES DE PORTADA DEL CURSO */}
@@ -1100,26 +1174,21 @@ export const CourseFormPage: React.FC = () => {
                   <span>1. Portada Principal (Hero 16:9) *</span>
                   {imagePreview1 && <span className="text-emerald-500 font-extrabold text-[10px]">Cargada</span>}
                 </span>
-                {imagePreview1 ? (
-                  <div className="relative rounded-2xl overflow-hidden group border border-slate-200 dark:border-slate-800 h-36 bg-slate-100 dark:bg-slate-950">
-                    <img src={imagePreview1} alt="Portada Principal" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <label className="p-2 rounded-xl bg-white/20 hover:bg-white/40 text-white cursor-pointer transition-colors backdrop-blur-xs">
-                        <Upload className="w-4 h-4" />
-                        <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageChange(1, e.target.files[0])} className="hidden" />
-                      </label>
-                      <button type="button" onClick={() => removeImage(1)} className="p-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white backdrop-blur-xs">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center h-28 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-blue-500 bg-slate-50 dark:bg-slate-950 cursor-pointer transition-all p-3 text-center group">
-                    <ImagePlus className="w-5 h-5 text-blue-600 mb-1 group-hover:scale-110 transition-transform" />
-                    <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300">Portada Principal (16:9)</span>
-                    <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageChange(1, e.target.files[0])} className="hidden" />
-                  </label>
-                )}
+                <MediaPicker
+                  value={imagePreview1}
+                  allowedTypes={['image']}
+                  buttonLabel="Seleccionar Portada Principal (16:9)"
+                  previewHeight="h-36"
+                  onChange={({ url }) => {
+                    if (url) {
+                      setImagePreview1(url);
+                      setMainImage(url);
+                      setImageFile1(null);
+                    } else {
+                      removeImage(1);
+                    }
+                  }}
+                />
               </div>
 
               {/* Slot 2: Banner Horizontal */}
@@ -1128,26 +1197,21 @@ export const CourseFormPage: React.FC = () => {
                   <span>2. Banner Horizontal (Wide / Promo)</span>
                   {imagePreview2 && <span className="text-emerald-500 font-extrabold text-[10px]">Cargado</span>}
                 </span>
-                {imagePreview2 ? (
-                  <div className="relative rounded-2xl overflow-hidden group border border-slate-200 dark:border-slate-800 h-28 bg-slate-100 dark:bg-slate-950">
-                    <img src={imagePreview2} alt="Banner Horizontal" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <label className="p-2 rounded-xl bg-white/20 hover:bg-white/40 text-white cursor-pointer backdrop-blur-xs">
-                        <Upload className="w-4 h-4" />
-                        <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageChange(2, e.target.files[0])} className="hidden" />
-                      </label>
-                      <button type="button" onClick={() => removeImage(2)} className="p-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white backdrop-blur-xs">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center h-24 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-blue-500 bg-slate-50 dark:bg-slate-950 cursor-pointer transition-all p-3 text-center group">
-                    <ImagePlus className="w-5 h-5 text-indigo-600 mb-1 group-hover:scale-110 transition-transform" />
-                    <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300">Banner Horizontal</span>
-                    <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageChange(2, e.target.files[0])} className="hidden" />
-                  </label>
-                )}
+                <MediaPicker
+                  value={imagePreview2}
+                  allowedTypes={['image']}
+                  buttonLabel="Seleccionar Banner Horizontal"
+                  previewHeight="h-28"
+                  onChange={({ url }) => {
+                    if (url) {
+                      setImagePreview2(url);
+                      setBannerImage(url);
+                      setImageFile2(null);
+                    } else {
+                      removeImage(2);
+                    }
+                  }}
+                />
               </div>
 
               {/* Slot 3: Miniatura / Móvil */}
@@ -1156,26 +1220,21 @@ export const CourseFormPage: React.FC = () => {
                   <span>3. Miniatura Promocional (Square/Mobile)</span>
                   {imagePreview3 && <span className="text-emerald-500 font-extrabold text-[10px]">Cargada</span>}
                 </span>
-                {imagePreview3 ? (
-                  <div className="relative rounded-2xl overflow-hidden group border border-slate-200 dark:border-slate-800 h-28 bg-slate-100 dark:bg-slate-950">
-                    <img src={imagePreview3} alt="Miniatura" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <label className="p-2 rounded-xl bg-white/20 hover:bg-white/40 text-white cursor-pointer backdrop-blur-xs">
-                        <Upload className="w-4 h-4" />
-                        <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageChange(3, e.target.files[0])} className="hidden" />
-                      </label>
-                      <button type="button" onClick={() => removeImage(3)} className="p-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white backdrop-blur-xs">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center h-24 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-blue-500 bg-slate-50 dark:bg-slate-950 cursor-pointer transition-all p-3 text-center group">
-                    <ImagePlus className="w-5 h-5 text-cyan-600 mb-1 group-hover:scale-110 transition-transform" />
-                    <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300">Miniatura Móvil (Card)</span>
-                    <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageChange(3, e.target.files[0])} className="hidden" />
-                  </label>
-                )}
+                <MediaPicker
+                  value={imagePreview3}
+                  allowedTypes={['image']}
+                  buttonLabel="Seleccionar Miniatura Móvil"
+                  previewHeight="h-28"
+                  onChange={({ url }) => {
+                    if (url) {
+                      setImagePreview3(url);
+                      setThumbImage(url);
+                      setImageFile3(null);
+                    } else {
+                      removeImage(3);
+                    }
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -1293,18 +1352,35 @@ export const CourseFormPage: React.FC = () => {
                   {/* Línea Vertical Continua (Pasando por el CENTRO EXACTO de las insignias en x = 20px) */}
                   <div className="absolute left-[20px] top-3 bottom-3 w-0.5 bg-emerald-500/30 dark:bg-emerald-500/20 z-0 pointer-events-none" />
 
-                  {modules.map((mod) => {
+                  {modules.map((mod, modIdx) => {
                     const modSections = sections.filter(s => s.course_module_id === mod.id);
                     const isFormForThisModule = isAddingSection && targetModuleId === mod.id;
+                    const isDraggingThisMod = draggedModIndex === modIdx;
+                    const isDragOverThisMod = dragOverModIndex === modIdx;
 
                     return (
-                      <div key={mod.id} className="space-y-4 relative">
+                      <div
+                        key={mod.id}
+                        draggable
+                        onDragStart={(e) => handleDragStartMod(e, modIdx)}
+                        onDragOver={(e) => handleDragOverMod(e, modIdx)}
+                        onDrop={(e) => handleDropMod(e, modIdx)}
+                        onDragEnd={() => { setDraggedModIndex(null); setDragOverModIndex(null); }}
+                        className={`space-y-4 relative transition-all duration-200 rounded-3xl p-2 ${
+                          isDraggingThisMod ? 'opacity-40 border-2 border-dashed border-indigo-400 bg-indigo-50/10' : ''
+                        } ${
+                          isDragOverThisMod ? 'ring-2 ring-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/30' : ''
+                        }`}
+                      >
                         {/* Header del Módulo Principal en la Línea de Tiempo */}
                         <div className="flex items-center justify-between gap-4 relative pl-11">
                           <div className="absolute left-[12px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950 shrink-0 z-10 shadow-xs" />
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-indigo-600 cursor-grab active:cursor-grabbing shrink-0" title="Arrastrar para mover módulo">
+                              <GripVertical className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-base font-black text-slate-900 dark:text-white truncate">
                                 {mod.title}
                               </h3>
                               <p className="text-[11px] text-slate-400 font-semibold">
@@ -1313,7 +1389,27 @@ export const CourseFormPage: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                            {/* Botones Manuales Mover Módulo */}
+                            <button
+                              type="button"
+                              onClick={() => moveModuleUp(modIdx)}
+                              disabled={modIdx === 0}
+                              className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                              title="Subir módulo"
+                            >
+                              <MoveUp className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveModuleDown(modIdx)}
+                              disabled={modIdx === modules.length - 1}
+                              className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                              title="Bajar módulo"
+                            >
+                              <MoveDown className="w-4 h-4" />
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => startAddSectionToModule(mod.id)}
@@ -1326,6 +1422,7 @@ export const CourseFormPage: React.FC = () => {
                               type="button"
                               onClick={() => startEditModule(mod)}
                               className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                              title="Editar módulo"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
@@ -1334,6 +1431,7 @@ export const CourseFormPage: React.FC = () => {
                               onClick={() => handleDeleteModule(mod.id)}
                               disabled={deletingModId === mod.id}
                               className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                              title="Eliminar módulo"
                             >
                               {deletingModId === mod.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                             </button>
@@ -1348,15 +1446,31 @@ export const CourseFormPage: React.FC = () => {
                             </div>
                           )
                         ) : (
-                          <div className="space-y-0.5 pt-0.5">
+                          <div className="space-y-1.5 pt-0.5">
                              {modSections.map((section) => {
                               globalSectionCounter++;
                               const currentSecNumber = globalSectionCounter;
                               const materials = section.materials || [];
                               const primaryMaterial = materials.find(m => m.title.includes('(Principal)')) || materials.find(m => m.type === 'video');
                               const additionalResources = materials.filter(m => m.id !== primaryMaterial?.id);
+                              const globalSecIndex = sections.findIndex(s => s.id === section.id);
+                              const isDraggingSec = draggedSecId === section.id;
+                              const isDragOverSec = dragOverSecId === section.id;
+
                               return (
-                                <div key={section.id} className="space-y-2">
+                                <div
+                                  key={section.id}
+                                  draggable
+                                  onDragStart={(e) => handleDragStartSec(e, section.id)}
+                                  onDragOver={(e) => handleDragOverSec(e, section.id)}
+                                  onDrop={(e) => handleDropSec(e, section.id)}
+                                  onDragEnd={() => { setDraggedSecId(null); setDragOverSecId(null); }}
+                                  className={`space-y-2 transition-all duration-200 rounded-2xl p-1 ${
+                                    isDraggingSec ? 'opacity-40 border border-dashed border-emerald-400 bg-emerald-50/10' : ''
+                                  } ${
+                                    isDragOverSec ? 'ring-2 ring-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/30' : ''
+                                  }`}
+                                >
                                   <div className="relative flex items-center justify-between gap-3 py-1.5 pl-11 pr-2.5 rounded-xl transition-all duration-200 cursor-pointer group/sec hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:translate-x-1.5 hover:shadow-2xs">
                                     {/* Número Correlativo en la Línea del Timeline (Centrado exacto sobre la línea vertical) */}
                                     <div className="absolute left-[8px] top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] font-black text-xs flex items-center justify-center shrink-0 z-10 shadow-xs transition-all duration-200 group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110">
@@ -1364,6 +1478,10 @@ export const CourseFormPage: React.FC = () => {
                                     </div>
 
                                     <div className="flex items-center gap-3 min-w-0">
+                                      <div className="p-1 rounded-lg text-slate-300 group-hover/sec:text-slate-500 hover:text-emerald-600 cursor-grab active:cursor-grabbing shrink-0" title="Arrastrar sección">
+                                        <GripVertical className="w-3.5 h-3.5" />
+                                      </div>
+
                                       {section.cover_image ? (
                                         <img
                                           src={formatImageUrl(section.cover_image)!}
@@ -1396,6 +1514,26 @@ export const CourseFormPage: React.FC = () => {
                                     </div>
 
                                     <div className="flex items-center gap-1 shrink-0">
+                                      {/* Botones de Reordenamiento Manual para Secciones */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); moveSectionUp(section.id); }}
+                                        disabled={globalSecIndex === 0}
+                                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                                        title="Subir sección"
+                                      >
+                                        <MoveUp className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); moveSectionDown(section.id); }}
+                                        disabled={globalSecIndex === sections.length - 1}
+                                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                                        title="Bajar sección"
+                                      >
+                                        <MoveDown className="w-3.5 h-3.5" />
+                                      </button>
+
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -1416,6 +1554,7 @@ export const CourseFormPage: React.FC = () => {
                                         type="button"
                                         onClick={() => startEditSection(section)}
                                         className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                                        title="Editar sección"
                                       >
                                         <Edit2 className="w-3.5 h-3.5" />
                                       </button>
@@ -1424,6 +1563,7 @@ export const CourseFormPage: React.FC = () => {
                                         onClick={() => handleDeleteSection(section.id)}
                                         disabled={deletingSecId === section.id}
                                         className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                                        title="Eliminar sección"
                                       >
                                         {deletingSecId === section.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                       </button>

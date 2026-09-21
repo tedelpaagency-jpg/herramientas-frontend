@@ -8,6 +8,7 @@ import {
   Palette, Type, Image as ImageIcon, Globe, Code, Sparkles, Save, RotateCcw, 
   Check, Eye, Layout, Lock, Building2, ShieldCheck, RefreshCw, Upload, Smartphone, ExternalLink, Sun, Moon, Minimize2, Maximize2, CreditCard, Key, EyeOff, Loader2, CheckCircle2, AlertCircle
 } from 'lucide-react';
+import MediaPicker from '../../components/media/MediaPicker';
 
 const PRESET_PALETTES = [
   { name: 'Esmeralda Santun', primary: '#00a884', secondary: '#161a1b', button: '#00a884', menuBg: '#161a1b' },
@@ -779,17 +780,17 @@ export default function BrandingCustomizationPage({
                     </div>
                     <span className="text-[10px] text-slate-400 font-mono">PNG / SVG</span>
                   </div>
-                  <div className="flex items-center gap-4 bg-white p-3 rounded-lg border border-slate-200">
-                    {form.logo ? (
-                      <img src={form.logo} alt="Logo Modo Claro" className="h-10 max-w-[140px] object-contain border p-1 rounded bg-white" />
-                    ) : (
-                      <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-bold">Sin logo</div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange('logo', e.target.files?.[0] || null)}
-                      className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#00a884]/10 file:text-[#00a884]"
+                  <div className="bg-white p-3 rounded-lg border border-slate-200">
+                    <MediaPicker
+                      value={form.logo}
+                      type="image"
+                      buttonLabel="Seleccionar Logo Claro"
+                      onChange={({ url }) => {
+                        setForm((prev: any) => ({
+                          ...prev,
+                          logo: url || prev.logo,
+                        }));
+                      }}
                     />
                   </div>
                 </div>
@@ -805,17 +806,17 @@ export default function BrandingCustomizationPage({
                     </div>
                     <span className="text-[10px] text-slate-400 font-mono">PNG / SVG</span>
                   </div>
-                  <div className="flex items-center gap-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
-                    {form.logo_2 ? (
-                      <img src={form.logo_2} alt="Logo Modo Oscuro" className="h-10 max-w-[140px] object-contain border border-slate-800 p-1 rounded bg-slate-900" />
-                    ) : (
-                      <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center text-slate-500 text-xs font-bold">Sin logo</div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange('logo_2', e.target.files?.[0] || null)}
-                      className="text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-500/20 file:text-indigo-400"
+                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <MediaPicker
+                      value={form.logo_2}
+                      type="image"
+                      buttonLabel="Seleccionar Logo Oscuro"
+                      onChange={({ url }) => {
+                        setForm((prev: any) => ({
+                          ...prev,
+                          logo_2: url || prev.logo_2,
+                        }));
+                      }}
                     />
                   </div>
                 </div>
@@ -831,17 +832,17 @@ export default function BrandingCustomizationPage({
                     </div>
                     <span className="text-[10px] text-slate-400 font-mono">1:1 Cuadrado</span>
                   </div>
-                  <div className="flex items-center gap-4 bg-white p-3 rounded-lg border border-slate-200">
-                    {form.logo_icon ? (
-                      <img src={form.logo_icon} alt="Logo Isotipo" className="w-10 h-10 object-contain border p-1 rounded bg-slate-900" />
-                    ) : (
-                      <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-bold">Icon</div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange('logo_icon', e.target.files?.[0] || null)}
-                      className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#00a884]/10 file:text-[#00a884]"
+                  <div className="bg-white p-3 rounded-lg border border-slate-200">
+                    <MediaPicker
+                      value={form.logo_icon}
+                      type="image"
+                      buttonLabel="Seleccionar Isotipo"
+                      onChange={({ url }) => {
+                        setForm((prev: any) => ({
+                          ...prev,
+                          logo_icon: url || prev.logo_icon,
+                        }));
+                      }}
                     />
                   </div>
                 </div>
@@ -851,41 +852,35 @@ export default function BrandingCustomizationPage({
                   {/* Favicon */}
                   <div className="border border-slate-200 rounded-xl p-4 space-y-2">
                     <label className="text-xs font-bold text-slate-700 uppercase block">Favicon (Pestaña Navegador):</label>
-                    <div className="flex items-center gap-3">
-                      {form.favicon ? (
-                        <img src={form.favicon} alt="Favicon" className="w-8 h-8 object-contain border p-1 rounded bg-white" />
-                      ) : (
-                        <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-bold">Fav</div>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileChange('favicon', e.target.files?.[0] || null)}
-                        className="text-xs text-slate-600 file:py-1 file:px-2 file:rounded file:border-0 file:text-[11px] file:font-bold file:bg-slate-100"
-                      />
-                    </div>
+                    <MediaPicker
+                      value={form.favicon}
+                      type="image"
+                      buttonLabel="Favicon"
+                      compact
+                      onChange={({ url }) => {
+                        setForm((prev: any) => ({
+                          ...prev,
+                          favicon: url || prev.favicon,
+                        }));
+                      }}
+                    />
                   </div>
 
                   {/* Login Background */}
                   <div className="border border-slate-200 rounded-xl p-4 space-y-2">
                     <label className="text-xs font-bold text-slate-700 uppercase block">Fondo Inicio de Sesión (Imagen o Video MP4):</label>
-                    <div className="flex items-center gap-3">
-                      {form.login_background ? (
-                        (form.login_background.toLowerCase().includes('.mp4') || form.login_background.startsWith('data:video/')) ? (
-                          <video src={form.login_background} autoPlay loop muted playsInline className="w-16 h-9 object-cover border rounded bg-black" />
-                        ) : (
-                          <img src={form.login_background} alt="Login bg" className="w-16 h-9 object-cover border rounded" />
-                        )
-                      ) : (
-                        <div className="w-16 h-9 rounded bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-bold">Bg/MP4</div>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*,video/mp4,video/*"
-                        onChange={(e) => handleFileChange('login_background', e.target.files?.[0] || null)}
-                        className="text-xs text-slate-600 file:py-1 file:px-2 file:rounded file:border-0 file:text-[11px] file:font-bold file:bg-slate-100"
-                      />
-                    </div>
+                    <MediaPicker
+                      value={form.login_background}
+                      type="all"
+                      buttonLabel="Fondo Login"
+                      compact
+                      onChange={({ url }) => {
+                        setForm((prev: any) => ({
+                          ...prev,
+                          login_background: url || prev.login_background,
+                        }));
+                      }}
+                    />
                   </div>
                 </div>
 
