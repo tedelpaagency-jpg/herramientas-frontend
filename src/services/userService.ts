@@ -12,6 +12,18 @@ export interface UserFilterParams {
   per_page?: number;
 }
 
+export interface PasswordOptions {
+  password_type: 'manual' | 'random';
+  manual_password?: string;
+  random_config?: {
+    length: number;
+    include_uppercase: boolean;
+    include_lowercase: boolean;
+    include_numbers: boolean;
+    include_symbols: boolean;
+  };
+}
+
 export const userService = {
   getUsers: async (params?: UserFilterParams) => {
     try {
@@ -132,23 +144,32 @@ export const userService = {
   },
 
   // Credential Resend API
-  sendCredentials: async (userId: number, templateId: number) => {
-    const res = await apiClient.post(`/v1/users/${userId}/send-credentials`, { credential_template_id: templateId });
-    return res.data;
-  },
-
-  batchSendCredentials: async (userIds: number[], templateId: number) => {
-    const res = await apiClient.post('/v1/users/batch-send-credentials', {
+  sendCredentials: async (userId: number, templateId: number, options?: PasswordOptions) => {
+    const res = await apiClient.post(`/v1/users/${userId}/send-credentials`, {
       credential_template_id: templateId,
-      user_ids: userIds,
+      ...options,
     });
     return res.data;
   },
 
-  sendCredentialsToAll: async (templateId: number, params?: { role?: string; agency_id?: number; white_label_id?: number }) => {
+  batchSendCredentials: async (userIds: number[], templateId: number, options?: PasswordOptions) => {
+    const res = await apiClient.post('/v1/users/batch-send-credentials', {
+      credential_template_id: templateId,
+      user_ids: userIds,
+      ...options,
+    });
+    return res.data;
+  },
+
+  sendCredentialsToAll: async (
+    templateId: number, 
+    params?: { role?: string; agency_id?: number; white_label_id?: number },
+    options?: PasswordOptions
+  ) => {
     const res = await apiClient.post('/v1/users/send-credentials-all', {
       credential_template_id: templateId,
       ...params,
+      ...options,
     });
     return res.data;
   },

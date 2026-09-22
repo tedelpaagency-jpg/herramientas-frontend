@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { User, Agency } from '../types';
 import { WhiteLabel } from '../types/whiteLabel';
-import userService from '../services/userService';
+import userService, { PasswordOptions } from '../services/userService';
 import adminService from '../services/adminService';
 import whiteLabelService from '../services/whiteLabelService';
 import { useAuth } from '../context/AuthContext';
@@ -195,17 +195,50 @@ export const UsersPage: React.FC = () => {
     setIsCredentialsModalOpen(true);
   };
 
-  const handleConfirmSendCredentials = async (templateId: number) => {
+  const handleConfirmSendCredentials = async (templateId: number, passwordOptions: PasswordOptions) => {
     try {
       if (credentialsMode === 'single' && targetUserForCredentials) {
-        await userService.sendCredentials(targetUserForCredentials.id, templateId);
+        await userService.sendCredentials(targetUserForCredentials.id, templateId, passwordOptions);
         showSuccessAlert('Credenciales enviadas', `Se ha enviado el correo con credenciales a ${targetUserForCredentials.email}.`);
       } else if (credentialsMode === 'batch') {
-        const res = await userService.batchSendCredentials(selectedUserIds, templateId);
-        if (res.job_dispatched) {
+        const res = await userService.batchSendCredentials(selectedUserIds, templateId, passwordOptions);
+        const data = res?.data || res;
+
+        if (data.job_dispatched) {
           toast.success(`El envío para los ${selectedUserIds.length} usuarios se ejecutará en segundo plano.`, { duration: 5000 });
         } else {
-          showSuccessAlert('Credenciales enviadas', `Se enviaron credenciales a ${res.sent_count || selectedUserIds.length} usuarios exitosamente.`);
+          const total = data.total ?? selectedUserIds.length;
+          const updated = data.updated ?? total;
+          const sent = data.sent ?? total;
+          const failed = data.failed ?? 0;
+          const failedUsers = data.failed_users || [];
+
+          let messageHtml = `Total seleccionados: ${total}\nCredenciales actualizadas: ${updated}\nCorreos enviados: ${sent}\nCorreos con error: ${failed}`;
+          if (failedUsers.length > 0) {
+            messageHtml += '\n\nUsuarios con error:\n' + failedUsers.map((f: any) => `- ${f.email || f.name}: ${f.reason}`).join('\n');
+          }
+
+          if (failed > 0) {
+            toast((t) => (
+              <div className="text-xs space-y-1">
+                <p className="font-bold">Resumen del Envío Masivo</p>
+                <p>Total seleccionados: {total}</p>
+                <p>Credenciales actualizadas: {updated}</p>
+                <p>Correos enviados: {sent}</p>
+                <p className="text-rose-600 font-semibold">Correos con error: {failed}</p>
+                {failedUsers.length > 0 && (
+                  <div className="mt-2 border-t pt-1 text-[11px] text-rose-700">
+                    <p className="font-bold">Detalle de errores:</p>
+                    {failedUsers.map((fu: any) => (
+                      <p key={fu.id || fu.email}>• {fu.email || fu.name}: {fu.reason}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ), { duration: 8000 });
+          } else {
+            showSuccessAlert('Credenciales enviadas', `Resumen:\nTotal seleccionados: ${total}\nCredenciales actualizadas: ${updated}\nCorreos enviados: ${sent}`);
+          }
         }
         setSelectedUserIds([]);
       } else if (credentialsMode === 'all') {
@@ -213,7 +246,7 @@ export const UsersPage: React.FC = () => {
           role: roleFilter || undefined,
           agency_id: agencyFilter ? Number(agencyFilter) : undefined,
           white_label_id: whiteLabelFilter ? Number(whiteLabelFilter) : undefined,
-        });
+        }, passwordOptions);
         toast.success(res.message || 'Se ha iniciado el proceso de envío a todos los usuarios.', { duration: 5000 });
       }
       setIsCredentialsModalOpen(false);
