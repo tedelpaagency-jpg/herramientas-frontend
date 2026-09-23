@@ -7,13 +7,20 @@ services:
         NEXT_PUBLIC_API_BASE_URL: "https://santun.tedelpa.com/api"
 
     container_name: herramientas_frontend
-    restart: always
+    restart: unless-stopped
 
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.herramientas.rule=Host(`portal.yes360.academy`) || Host(`portal.trivali.pro`) || Host(`hermes.tedelpa.com`)"
+      - "traefik.http.routers.herramientas.entrypoints=websecure"
+      - "traefik.http.routers.herramientas.tls.certresolver=letsencrypt"
+      - "traefik.http.services.herramientas.loadbalancer.server.port=3000"
 
     environment:
-      NODE_ENV: production
-      PORT: 3000
-      HOSTNAME: 0.0.0.0
-      NEXT_PUBLIC_API_BASE_URL: "https://santun.tedelpa.com/api"
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_API_BASE_URL=https://santun.tedelpa.com/api
