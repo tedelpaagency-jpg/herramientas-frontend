@@ -5,12 +5,15 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: "https://santun.tedelpa.com/api"
+
     container_name: herramientas_frontend
     restart: always
+
     ports:
       - "127.0.0.1:3000:3000"
+
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - HOSTNAME=0.0.0.0
-      - NEXT_PUBLIC_API_BASE_URL="https://santun.tedelpa.com/api"
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_API_BASE_URL: "https://santun.tedelpa.com/api"
