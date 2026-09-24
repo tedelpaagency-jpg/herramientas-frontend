@@ -5,7 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
 import { AdminAgenciesPage } from '@/views/admin/AdminAgenciesPage';
 
-export default function AdminAgenciesRoute() {
+export default function AgenciesRoute() {
   return (
     <ProtectedRoute>
       <Layout>
