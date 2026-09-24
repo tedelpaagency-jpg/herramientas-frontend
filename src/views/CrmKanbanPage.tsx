@@ -444,6 +444,29 @@ export const CrmKanbanPage: React.FC = () => {
     }
   };
 
+  const handleDeleteLead = async (pipelineCard?: CrmPipelineItem) => {
+    const itemToDelete = pipelineCard || selectedItem;
+    if (!itemToDelete) return;
+
+    const leadName = itemToDelete.title || itemToDelete.client?.name || 'este prospecto';
+    const confirmed = window.confirm(
+      `¿Estás seguro de que deseas eliminar el lead "${leadName}"?\n\nEsta acción no se puede deshacer.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await crmService.deleteLead(itemToDelete.id);
+      setPipelines(prev => prev.filter(p => p.id !== itemToDelete.id));
+      if (selectedItem?.id === itemToDelete.id) {
+        setSelectedItem(null);
+      }
+      toast.success(`Prospecto "${leadName}" eliminado exitosamente`);
+    } catch (err: any) {
+      console.error('Error deleting lead:', err);
+      toast.error(err.response?.data?.message || 'Error al eliminar el prospecto');
+    }
+  };
+
   const handleMoveStageHorizontal = async (stageIndex: number, direction: 'left' | 'right') => {
     if (direction === 'left' && stageIndex === 0) return;
     if (direction === 'right' && stageIndex === stages.length - 1) return;
@@ -1492,12 +1515,25 @@ export const CrmKanbanPage: React.FC = () => {
                     Cliente: {selectedItem.client?.name || 'N/A'} • {selectedItem.client?.email || 'Sin email'}
                   </p>
                 </div>
-                <button
-                  onClick={() => setSelectedItem(null)}
-                  className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {canDeleteLeads && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteLead(selectedItem)}
+                      className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                      title="Eliminar este Lead"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Eliminar Lead</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedItem(null)}
+                    className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Navigation Tabs */}
@@ -1811,11 +1847,21 @@ export const CrmKanbanPage: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800">
+                      {canDeleteLeads && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteLead(selectedItem)}
+                          className="px-4 py-2.5 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-600 hover:text-white text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/80 rounded-xl font-bold text-xs transition-all flex items-center gap-2 active:scale-95"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Eliminar Lead</span>
+                        </button>
+                      )}
                       <button
                         type="submit"
                         disabled={isSavingClientInfo}
-                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 active:scale-95"
+                        className="ml-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 active:scale-95"
                       >
                         <Edit3 className="w-4 h-4" />
                         <span>{isSavingClientInfo ? 'Guardando Cambios...' : 'Guardar Cambios del Cliente'}</span>
@@ -2217,6 +2263,19 @@ export const CrmKanbanPage: React.FC = () => {
         client={selectedClientForDetails}
         isOpen={isLeadCampaignModalOpen}
         onClose={() => setIsLeadCampaignModalOpen(false)}
+        onDelete={canDeleteLeads ? async (clientToDelete) => {
+          if (!clientToDelete) return;
+          try {
+            await crmService.deleteLead(clientToDelete.id);
+            setPipelines(prev => prev.filter(p => p.client_id !== clientToDelete.id));
+            setIsLeadCampaignModalOpen(false);
+            setSelectedClientForDetails(null);
+            toast.success(`Prospecto "${clientToDelete.name || clientToDelete.first_name || ''}" eliminado exitosamente`);
+          } catch (err: any) {
+            console.error('Error deleting lead:', err);
+            toast.error(err.response?.data?.message || 'Error al eliminar el prospecto');
+          }
+        } : undefined}
       />
 
       {/* MODAL ASIGNAR LEADS DE LA ETAPA A AGENTE */}

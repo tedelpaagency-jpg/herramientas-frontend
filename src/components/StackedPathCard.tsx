@@ -38,9 +38,9 @@ export const StackedPathCard: React.FC<StackedPathCardProps> = ({
       {/* SECCIÓN SUPERIOR: BARAJA SOBRESALIENDO DEL CUADRO PADRE */}
       <div className="relative w-full h-48 flex items-center justify-center pt-2 px-2 overflow-visible">
 
-        {/* 1. PRIMERA IMAGEN -> DERECHA (Sobresale hacia arriba -top-6 y hacia la derecha translate-x-7) */}
+        {/* 1. PRIMERA IMAGEN -> DERECHA (Ligera rotación y offset controlado para evitar traslape entre tarjetas) */}
         <div 
-          className="absolute right-0 -top-6 w-[74%] h-44 scale-90 translate-x-7 rotate-6 rounded-2xl overflow-hidden shadow-md border border-slate-200 dark:border-slate-700/60 transform transition-all duration-300 ease-out group-hover:-translate-y-4 group-hover:translate-x-11 group-hover:rotate-12 group-hover:scale-95 group-hover:shadow-xl z-0 bg-slate-100 dark:bg-slate-800"
+          className="absolute right-2 -top-3 w-[72%] h-44 scale-90 translate-x-3 rotate-3 rounded-2xl overflow-hidden shadow-md border border-slate-200 dark:border-slate-700/60 transform transition-all duration-300 ease-out group-hover:-translate-y-3 group-hover:translate-x-5 group-hover:rotate-6 group-hover:scale-95 group-hover:shadow-xl z-0 bg-slate-100 dark:bg-slate-800"
         >
           <img 
             src={imgRight} 
@@ -49,9 +49,9 @@ export const StackedPathCard: React.FC<StackedPathCardProps> = ({
           />
         </div>
 
-        {/* 2. SEGUNDA IMAGEN -> IZQUIERDA (Sobresale hacia arriba -top-4 y hacia la izquierda -translate-x-7) */}
+        {/* 2. SEGUNDA IMAGEN -> IZQUIERDA (Ligera rotación y offset controlado) */}
         <div 
-          className="absolute left-0 -top-4 w-[76%] h-44 scale-95 -translate-x-7 -rotate-6 rounded-2xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-700/80 transform transition-all duration-300 ease-out group-hover:-translate-y-2 group-hover:-translate-x-11 group-hover:-rotate-12 group-hover:scale-[0.98] group-hover:shadow-xl z-10 bg-slate-100 dark:bg-slate-800"
+          className="absolute left-2 -top-2 w-[74%] h-44 scale-95 -translate-x-3 -rotate-3 rounded-2xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-700/80 transform transition-all duration-300 ease-out group-hover:-translate-y-2 group-hover:-translate-x-5 group-hover:-rotate-6 group-hover:scale-[0.98] group-hover:shadow-xl z-10 bg-slate-100 dark:bg-slate-800"
         >
           <img 
             src={imgLeft} 
@@ -60,9 +60,9 @@ export const StackedPathCard: React.FC<StackedPathCardProps> = ({
           />
         </div>
 
-        {/* 3. TERCERA IMAGEN -> CENTRO / FRENTE (Sobresale hacia arriba -top-2) */}
+        {/* 3. TERCERA IMAGEN -> CENTRO / FRENTE */}
         <div 
-          className="relative -top-2 z-20 mx-auto w-[84%] h-44 scale-100 rotate-0 rounded-2xl overflow-hidden shadow-xl border border-indigo-200 dark:border-indigo-500/40 transform transition-all duration-300 ease-out group-hover:-translate-y-1 bg-slate-100 dark:bg-slate-800"
+          className="relative top-0 z-20 mx-auto w-[82%] h-44 scale-100 rotate-0 rounded-2xl overflow-hidden shadow-xl border border-indigo-200 dark:border-indigo-500/40 transform transition-all duration-300 ease-out group-hover:-translate-y-1 bg-slate-100 dark:bg-slate-800"
         >
           <img 
             src={imgCenter} 

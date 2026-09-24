@@ -1,18 +1,20 @@
 import React from 'react';
 import { Client } from '../types';
-import { User, Mail, Phone, MapPin, Tag, CheckCircle2, AlertCircle, HelpCircle, X, Share2, Layers } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Tag, CheckCircle2, AlertCircle, HelpCircle, X, Share2, Layers, Trash2 } from 'lucide-react';
 import Portal from './Portal';
 
 interface LeadCampaignDetailsModalProps {
   client: Client | null;
   isOpen: boolean;
   onClose: () => void;
+  onDelete?: (client: Client) => void | Promise<void>;
 }
 
 export const LeadCampaignDetailsModal: React.FC<LeadCampaignDetailsModalProps> = ({
   client,
   isOpen,
   onClose,
+  onDelete,
 }) => {
   if (!isOpen || !client) return null;
 
@@ -200,7 +202,25 @@ export const LeadCampaignDetailsModal: React.FC<LeadCampaignDetailsModalProps> =
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end pt-5 border-t border-slate-200 dark:border-slate-800 mt-6">
+        <div className="flex justify-between items-center pt-5 border-t border-slate-200 dark:border-slate-800 mt-6">
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={() => {
+                const clientName = client.name || `${client.first_name || ''} ${client.last_name || ''}` || 'este prospecto';
+                if (window.confirm(`¿Estás seguro de que deseas eliminar el lead "${clientName.trim()}"?`)) {
+                  onDelete(client);
+                }
+              }}
+              className="px-4 py-2.5 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-600 hover:text-white text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/80 rounded-xl font-bold text-xs transition-all flex items-center gap-2 active:scale-95"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Eliminar Lead</span>
+            </button>
+          ) : (
+            <div />
+          )}
+
           <button
             type="button"
             onClick={onClose}

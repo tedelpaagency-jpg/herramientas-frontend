@@ -287,9 +287,7 @@ export const LoginPage: React.FC = () => {
             {/* CARRUSEL DE TARJETAS CON REPRODUCCIÓN DE VIDEO MP4 INTEGRADO */}
             <div className="relative w-full max-w-[260px] sm:max-w-[300px] h-[380px] sm:h-[440px] flex items-center justify-center mx-auto lg:mx-0 lg:ml-16">
               {effectiveVideos.map((reward, i) => {
-                const videoSrc = (customLoginBg && isMp4Video(customLoginBg)) 
-                  ? customLoginBg 
-                  : reward.videoUrl;
+                const videoSrc = reward.videoUrl || ((customLoginBg && isMp4Video(customLoginBg)) ? customLoginBg : '');
 
                 return (
                   <div 

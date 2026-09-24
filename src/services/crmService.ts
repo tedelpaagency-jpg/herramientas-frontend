@@ -186,6 +186,19 @@ export const crmService = {
     return response.data?.data || response.data;
   },
 
+  // Delete Lead / Pipeline Card
+  deleteLead: async (pipelineId: number): Promise<void> => {
+    try {
+      await apiClient.delete(`/v1/crm/leads/${pipelineId}`);
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        await apiClient.delete(`/v1/clients/${pipelineId}`);
+      } else {
+        throw err;
+      }
+    }
+  },
+
   // Update Client Classification
   updateClientClassification: async (clientId: number, classification?: string | null): Promise<Client> => {
     const response = await apiClient.post(`/v1/crm/clients/${clientId}/classification`, {
