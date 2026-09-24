@@ -64,14 +64,14 @@ export const LoginSettingsPage: React.FC = () => {
 
   // === ESTADOS DE TEXTOS DEL LOGIN ===
   const [loginTexts, setLoginTexts] = useState<LoginTexts>({
-    portal_badge: 'Provider Portal',
-    main_title: 'Plataforma de gestión empresarial conectada a Laravel.',
-    main_subtitle: 'Accede a tu panel centralizado para inmuebles, CRM, POS y documentos legales.',
-    form_title: 'Bienvenido',
-    form_subtitle: 'Ingresa tus credenciales para acceder al panel de control.',
-    footer_text: 'Con el respaldo de la arquitectura Laravel 12 & Next.js',
-    card_badge: 'Premium',
-    card_button_text: 'Explorar módulo',
+    portal_badge: '',
+    main_title: '',
+    main_subtitle: '',
+    form_title: '',
+    form_subtitle: '',
+    footer_text: '',
+    card_badge: '',
+    card_button_text: '',
   });
   const [isLoadingTexts, setIsLoadingTexts] = useState(true);
   const [isSavingTexts, setIsSavingTexts] = useState(false);

@@ -21,10 +21,12 @@ import {
   Calendar,
   ExternalLink,
   Info,
+  Plus,
 } from 'lucide-react';
 import { WhiteLabel } from '../../types/whiteLabel';
 import whiteLabelService from '../../services/whiteLabelService';
 import { useAuth } from '../../context/AuthContext';
+import Portal from '../../components/Portal';
 import toast from 'react-hot-toast';
 
 export const WhiteLabelDetailPage: React.FC = () => {
@@ -36,6 +38,27 @@ export const WhiteLabelDetailPage: React.FC = () => {
   const [whiteLabel, setWhiteLabel] = useState<WhiteLabel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'agencies' | 'admins' | 'plan'>('overview');
+
+  // Modals state
+  const [isAgencyModalOpen, setIsAgencyModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+
+  // Forms state
+  const [agencyFormData, setAgencyFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    city: '',
+    admin_name: '',
+    admin_email: '',
+    admin_password: '',
+  });
+
+  const [adminFormData, setAdminFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
 
   const fetchWhiteLabel = async () => {
     if (!id) return;
@@ -68,6 +91,42 @@ export const WhiteLabelDetailPage: React.FC = () => {
       }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Error al iniciar impersonación');
+    }
+  };
+
+  const handleAddAgency = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!whiteLabel) return;
+    try {
+      await whiteLabelService.createAgency(whiteLabel.id, agencyFormData);
+      toast.success(`Agencia agregada exitosamente a ${whiteLabel.name}`);
+      setIsAgencyModalOpen(false);
+      setAgencyFormData({
+        name: '',
+        email: '',
+        phone: '',
+        city: '',
+        admin_name: '',
+        admin_email: '',
+        admin_password: '',
+      });
+      fetchWhiteLabel();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al agregar agencia');
+    }
+  };
+
+  const handleAddAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!whiteLabel) return;
+    try {
+      await whiteLabelService.addAdmin(whiteLabel.id, adminFormData);
+      toast.success(`Administrador asignado exitosamente a ${whiteLabel.name}`);
+      setIsAdminModalOpen(false);
+      setAdminFormData({ name: '', email: '', password: '' });
+      fetchWhiteLabel();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al asignar administrador');
     }
   };
 
@@ -162,7 +221,7 @@ export const WhiteLabelDetailPage: React.FC = () => {
               onClick={() => router.push('/admin/white-labels')}
               className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs hover:bg-slate-200"
             >
-              Editar Configuración
+              Volver al Listado
             </button>
           </div>
         </div>
@@ -223,25 +282,25 @@ export const WhiteLabelDetailPage: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 flex gap-2">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${activeTab === 'overview' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${activeTab === 'overview' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
         >
           Visión General & Branding
         </button>
         <button
           onClick={() => setActiveTab('agencies')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${activeTab === 'agencies' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${activeTab === 'agencies' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
         >
           Agencias Subordinadas ({whiteLabel.agencies?.length || 0})
         </button>
         <button
           onClick={() => setActiveTab('admins')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${activeTab === 'admins' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${activeTab === 'admins' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
         >
           Administradores ({whiteLabel.users?.length || 0})
         </button>
         <button
           onClick={() => setActiveTab('plan')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${activeTab === 'plan' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${activeTab === 'plan' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
         >
           Plan Maestro & Módulos
         </button>
@@ -310,10 +369,19 @@ export const WhiteLabelDetailPage: React.FC = () => {
 
       {activeTab === 'agencies' && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-          <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-purple-600" />
-            <span>Agencias Registradas en esta Marca Blanca</span>
-          </h3>
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-purple-600" />
+              <span>Agencias Registradas en esta Marca Blanca</span>
+            </h3>
+            <button
+              onClick={() => setIsAgencyModalOpen(true)}
+              className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Agregar Agencia</span>
+            </button>
+          </div>
 
           {!whiteLabel.agencies || whiteLabel.agencies.length === 0 ? (
             <div className="p-8 text-center text-slate-400 text-xs font-semibold">
@@ -348,10 +416,19 @@ export const WhiteLabelDetailPage: React.FC = () => {
 
       {activeTab === 'admins' && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-          <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-            <Users className="w-4 h-4 text-blue-600" />
-            <span>Usuarios Administradores de la Marca Blanca</span>
-          </h3>
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <Users className="w-4 h-4 text-blue-600" />
+              <span>Usuarios Administradores de la Marca Blanca</span>
+            </h3>
+            <button
+              onClick={() => setIsAdminModalOpen(true)}
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Agregar Administrador</span>
+            </button>
+          </div>
 
           {!whiteLabel.users || whiteLabel.users.length === 0 ? (
             <div className="p-8 text-center text-slate-400 text-xs font-semibold">
@@ -416,8 +493,154 @@ export const WhiteLabelDetailPage: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* MODAL AGREGAR AGENCIA */}
+      {isAgencyModalOpen && (
+        <Portal>
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4">
+              <h3 className="font-extrabold text-base text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-purple-600" />
+                Agregar Agencia a {whiteLabel.name}
+              </h3>
+
+              <form onSubmit={handleAddAgency} className="space-y-3 text-xs font-bold">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Nombre de la Agencia *</label>
+                  <input
+                    type="text"
+                    required
+                    value={agencyFormData.name}
+                    onChange={(e) => setAgencyFormData({ ...agencyFormData, name: e.target.value })}
+                    placeholder="Ej. Agencia Guatemala"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Correo de la Agencia *</label>
+                  <input
+                    type="email"
+                    required
+                    value={agencyFormData.email}
+                    onChange={(e) => setAgencyFormData({ ...agencyFormData, email: e.target.value })}
+                    placeholder="contacto@agenciaguatemala.com"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Teléfono</label>
+                  <input
+                    type="text"
+                    value={agencyFormData.phone}
+                    onChange={(e) => setAgencyFormData({ ...agencyFormData, phone: e.target.value })}
+                    placeholder="+502 1234 5678"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Ciudad / Región</label>
+                  <input
+                    type="text"
+                    value={agencyFormData.city}
+                    onChange={(e) => setAgencyFormData({ ...agencyFormData, city: e.target.value })}
+                    placeholder="Ciudad de Guatemala"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsAgencyModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-extrabold rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    Crear Agencia
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* MODAL ASIGNAR ADMINISTRADOR */}
+      {isAdminModalOpen && (
+        <Portal>
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4">
+              <h3 className="font-extrabold text-base text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-blue-600" />
+                Asignar Administrador a {whiteLabel.name}
+              </h3>
+
+              <form onSubmit={handleAddAdmin} className="space-y-3 text-xs font-bold">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Nombre Completo *</label>
+                  <input
+                    type="text"
+                    required
+                    value={adminFormData.name}
+                    onChange={(e) => setAdminFormData({ ...adminFormData, name: e.target.value })}
+                    placeholder="Ej. Carlos Mendoza"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Correo Electrónico (Login) *</label>
+                  <input
+                    type="email"
+                    required
+                    value={adminFormData.email}
+                    onChange={(e) => setAdminFormData({ ...adminFormData, email: e.target.value })}
+                    placeholder="carlos@empresaxyz.com"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Contraseña de Acceso</label>
+                  <input
+                    type="password"
+                    value={adminFormData.password}
+                    onChange={(e) => setAdminFormData({ ...adminFormData, password: e.target.value })}
+                    placeholder="Dejar en blanco para clave por defecto"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsAdminModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    Asignar Admin WL
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </Portal>
+      )}
     </div>
   );
 };
 
 export default WhiteLabelDetailPage;
+

@@ -422,13 +422,6 @@ export const WhiteLabelsPage: React.FC = () => {
                           <UserPlus className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => setAddingAgencyWL(wl)}
-                          className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 text-purple-700 dark:text-purple-300 font-bold"
-                          title="Agregar Agencia"
-                        >
-                          <Building2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
                           onClick={() => handleDeleteWL(wl.id)}
                           className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-400 font-bold"
                           title="Eliminar Marca Blanca"

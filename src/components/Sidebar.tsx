@@ -332,7 +332,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_agencies', 'manage_users'] },
       ],
     },
-    ...((isWhiteLabelAdmin || isSuperAdmin)
+    ...((isWhiteLabelAdmin && !isSuperAdmin)
       ? [
           {
             title: 'ADMINISTRACIÓN MARCA BLANCA',

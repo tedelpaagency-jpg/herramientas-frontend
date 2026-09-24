@@ -175,7 +175,10 @@ export const LoginPage: React.FC = () => {
     return () => { isMounted = false; };
   }, []);
 
-  // Lista efectiva de videos dinámicos si existen, de lo contrario fallback a rewardsData
+  // Lista efectiva de videos dinámicos si existen.
+  // En el contexto de una Marca Blanca sin videos personalizados creados aún,
+  // la lista se mantiene vacía para no mostrar los videos de demostración globales.
+  const isWhiteLabelContext = !!(activeWl || dynamicWhiteLabel);
   const effectiveVideos = (dynamicVideos.length > 0)
     ? dynamicVideos.map((dv, idx) => ({
         id: dv.id,
@@ -184,7 +187,7 @@ export const LoginPage: React.FC = () => {
         emoji: rewardsData[idx % rewardsData.length]?.emoji || '🏢',
         videoUrl: normalizeFileUrl(dv.url),
       }))
-    : rewardsData;
+    : (isWhiteLabelContext ? [] : rewardsData);
 
   useEffect(() => {
     if (effectiveVideos.length <= 1) return;
@@ -286,58 +289,87 @@ export const LoginPage: React.FC = () => {
 
             {/* CARRUSEL DE TARJETAS CON REPRODUCCIÓN DE VIDEO MP4 INTEGRADO */}
             <div className="relative w-full max-w-[260px] sm:max-w-[300px] h-[380px] sm:h-[440px] flex items-center justify-center mx-auto lg:mx-0 lg:ml-16">
-              {effectiveVideos.map((reward, i) => {
-                const videoSrc = reward.videoUrl || ((customLoginBg && isMp4Video(customLoginBg)) ? customLoginBg : '');
+              {effectiveVideos.length === 0 ? (
+                <div className="w-[230px] sm:w-[270px] h-[360px] sm:h-[420px] rounded-[24px] z-40 scale-100 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)]">
+                  <div className="w-full h-full rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden border border-white/20 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white shadow-2xl">
+                    {customLoginBg && isMp4Video(customLoginBg) && (
+                      <CardVideoPlayer src={customLoginBg} />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-slate-950/20 z-10 pointer-events-none" />
 
-                return (
-                  <div 
-                    key={reward.id} 
-                    className={`absolute w-[230px] sm:w-[270px] h-[360px] sm:h-[420px] rounded-[24px] ${getCardStyle(i)}`}
-                  >
-                    <div className="w-full h-full rounded-[24px] p-5 flex flex-col justify-between relative overflow-hidden border border-white/20 bg-slate-900 text-white shadow-2xl">
-                      
-                      {/* Video MP4 reproducido mediante el componente dedicado CardVideoPlayer */}
-                      {videoSrc && <CardVideoPlayer src={videoSrc} />}
+                    <div className="flex justify-between items-center z-20">
+                      <span className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-white/90 text-[11px] font-bold border border-white/20">
+                        {dynamicTexts?.card_badge || brandName}
+                      </span>
+                    </div>
 
-                      {/* Capa de degradado dentro de la tarjeta optimizada para claridad y vibrancia de video */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-slate-950/30 z-10 pointer-events-none" />
-
-                      {/* Encabezado de la Tarjeta */}
-                      <div className="flex justify-between items-center z-20">
-                        <div className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-white/90 text-[11px] font-semibold flex items-center gap-1.5 border border-white/20 shadow-sm">
-                          <Star className="w-3 h-3 fill-current text-amber-400" /> {dynamicTexts?.card_badge || `${brandName} Premium`}
-                        </div>
-                        <div className="bg-black/30 backdrop-blur-md p-1 rounded-full border border-white/10 flex items-center gap-1 px-2 text-[10px] text-blue-300 font-bold">
-                          <Video className="w-3 h-3 text-blue-400 animate-pulse" /> MP4
-                        </div>
-                      </div>
-
-                      {/* Pie de la Tarjeta */}
-                      <div className="z-20 flex flex-col gap-3">
-                        <div>
-                          <h3 className="text-white font-bold text-xl tracking-tight mb-1 flex items-center gap-2 drop-shadow-md">
-                            {reward.title} {reward.emoji}
-                          </h3>
-                          <p className="text-white/90 text-[13px] font-medium drop-shadow-xs">
-                            {reward.subtitle}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <div className="flex-grow h-10 rounded-full border border-white/30 bg-black/40 backdrop-blur-md flex items-center px-4 shadow-sm hover:bg-black/60 transition-colors">
-                            <span className="text-white text-[12px] font-semibold flex items-center gap-1.5">
-                              <Play className="w-3 h-3 text-blue-400 fill-blue-400" /> {dynamicTexts?.card_button_text || 'Explorar módulo'}
-                            </span>
-                          </div>
-                          <Heart className="w-6 h-6 text-white hover:text-pink-400 transition-colors cursor-pointer" />
-                          <Send className="w-6 h-6 text-white hover:text-blue-400 transition-colors cursor-pointer" />
-                        </div>
-                      </div>
-
+                    <div className="z-20 flex flex-col gap-2">
+                      {brandLogo && (
+                        <img src={brandLogo} alt={brandName} className="h-10 max-w-[140px] object-contain mb-1" />
+                      )}
+                      <h3 className="text-white font-black text-xl tracking-tight leading-snug">
+                        {brandName}
+                      </h3>
+                      <p className="text-white/80 text-xs font-medium leading-relaxed">
+                        {dynamicTexts?.main_subtitle || 'Portal empresarial y servicios digitales de alta seguridad.'}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ) : (
+                effectiveVideos.map((reward, i) => {
+                  const videoSrc = reward.videoUrl || ((customLoginBg && isMp4Video(customLoginBg)) ? customLoginBg : '');
+
+                  return (
+                    <div 
+                      key={reward.id} 
+                      className={`absolute w-[230px] sm:w-[270px] h-[360px] sm:h-[420px] rounded-[24px] ${getCardStyle(i)}`}
+                    >
+                      <div className="w-full h-full rounded-[24px] p-5 flex flex-col justify-between relative overflow-hidden border border-white/20 bg-slate-900 text-white shadow-2xl">
+                        
+                        {/* Video MP4 reproducido mediante el componente dedicado CardVideoPlayer */}
+                        {videoSrc && <CardVideoPlayer src={videoSrc} />}
+
+                        {/* Capa de degradado dentro de la tarjeta optimizada para claridad y vibrancia de video */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-slate-950/30 z-10 pointer-events-none" />
+
+                        {/* Encabezado de la Tarjeta */}
+                        <div className="flex justify-between items-center z-20">
+                          <div className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-white/90 text-[11px] font-semibold flex items-center gap-1.5 border border-white/20 shadow-sm">
+                            <Star className="w-3 h-3 fill-current text-amber-400" /> {dynamicTexts?.card_badge || `${brandName} Premium`}
+                          </div>
+                          <div className="bg-black/30 backdrop-blur-md p-1 rounded-full border border-white/10 flex items-center gap-1 px-2 text-[10px] text-blue-300 font-bold">
+                            <Video className="w-3 h-3 text-blue-400 animate-pulse" /> MP4
+                          </div>
+                        </div>
+
+                        {/* Pie de la Tarjeta */}
+                        <div className="z-20 flex flex-col gap-3">
+                          <div>
+                            <h3 className="text-white font-bold text-xl tracking-tight mb-1 flex items-center gap-2 drop-shadow-md">
+                              {reward.title} {reward.emoji}
+                            </h3>
+                            <p className="text-white/90 text-[13px] font-medium drop-shadow-xs">
+                              {reward.subtitle}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="flex-grow h-10 rounded-full border border-white/30 bg-black/40 backdrop-blur-md flex items-center px-4 shadow-sm hover:bg-black/60 transition-colors">
+                              <span className="text-white text-[12px] font-semibold flex items-center gap-1.5">
+                                <Play className="w-3 h-3 text-blue-400 fill-blue-400" /> {dynamicTexts?.card_button_text || 'Explorar módulo'}
+                              </span>
+                            </div>
+                            <Heart className="w-6 h-6 text-white hover:text-pink-400 transition-colors cursor-pointer" />
+                            <Send className="w-6 h-6 text-white hover:text-blue-400 transition-colors cursor-pointer" />
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
 
           </div>
