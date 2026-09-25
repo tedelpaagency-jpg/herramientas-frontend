@@ -641,4 +641,26 @@ export interface PaginatedResult<T> {
   data: T[];
   pagination: PaginationMeta;
 }
+
+export interface Shortcut {
+  id: number;
+  white_label_id: number;
+  nombre: string;
+  tipo: 'modulo' | 'enlace_externo';
+  destino: string;
+  icono: string;
+  orden: number;
+  activo: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ShortcutModuleDefinition {
+  key: string;
+  name: string;
+  path: string;
+  permission?: string | null;
+  category?: string;
+}
+
 export * from './landing';

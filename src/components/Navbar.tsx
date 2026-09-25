@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { HeaderShortcuts } from './HeaderShortcuts';
 
 interface NavbarProps {
   leftSidebarOpen: boolean;
@@ -86,6 +87,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       
       {/* Right Header Actions */}
       <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
+        {/* Accesos Directos Configurados por Marca Blanca */}
+        <HeaderShortcuts />
+
         {/* Dark / Light Mode Toggle Button */}
         <button 
           onClick={toggleTheme}
