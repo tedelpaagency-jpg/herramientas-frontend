@@ -98,6 +98,7 @@ export interface LandingTemplate {
   payment_config?: PaymentConfig | null;
   builder_schema?: BuilderSchema | null;
   form_schema?: FormSchema | null;
+  terms_and_conditions?: string | null;
   encoded_id?: string;
   public_url?: string;
   events?: any[];

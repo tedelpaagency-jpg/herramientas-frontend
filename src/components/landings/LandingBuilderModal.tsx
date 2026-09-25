@@ -34,6 +34,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
   const [stageId, setStageId] = useState<number | null>(null);
   const [workflowId, setWorkflowId] = useState<number | null>(null);
   const [courseIds, setCourseIds] = useState<number[]>([]);
+  const [termsAndConditions, setTermsAndConditions] = useState<string>('');
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({
     enabled: false,
     currency: 'USD',
@@ -93,6 +94,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
         setStageId(landing.stage_id || null);
         setWorkflowId(landing.workflow_id || null);
         setCourseIds(landing.course_ids || []);
+        setTermsAndConditions(landing.terms_and_conditions || '');
         setPaymentConfig(landing.payment_config || { enabled: false, currency: 'USD', amount: 0, product_name: '' });
         if (landing.builder_schema) setBuilderSchema(landing.builder_schema);
         if (landing.form_schema) setFormSchema(landing.form_schema);
@@ -139,6 +141,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
         stage_id: stageId,
         workflow_id: workflowId,
         course_ids: courseIds,
+        terms_and_conditions: termsAndConditions,
         payment_config: paymentConfig,
         builder_schema: builderSchema,
         form_schema: formSchema,
@@ -385,6 +388,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
               courseIds={courseIds}
               onCourseIdsChange={setCourseIds}
               resources={resources}
+              termsAndConditions={termsAndConditions}
+              onTermsAndConditionsChange={setTermsAndConditions}
             />
           )}
 
@@ -444,6 +449,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
                   <DynamicFormRenderer
                     formSchema={formSchema}
                     paymentConfig={paymentConfig}
+                    termsAndConditions={termsAndConditions}
                     onSubmit={(data) => {
                       alert('Formulario enviado (Vista previa):\n' + JSON.stringify(data, null, 2));
                     }}

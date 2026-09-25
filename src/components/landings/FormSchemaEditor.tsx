@@ -14,6 +14,8 @@ interface Props {
   courseIds?: number[] | null;
   onCourseIdsChange: (ids: number[]) => void;
   resources?: LandingAvailableResources;
+  termsAndConditions?: string;
+  onTermsAndConditionsChange?: (text: string) => void;
 }
 
 export const FormSchemaEditor: React.FC<Props> = ({
@@ -28,6 +30,8 @@ export const FormSchemaEditor: React.FC<Props> = ({
   courseIds = [],
   onCourseIdsChange,
   resources,
+  termsAndConditions,
+  onTermsAndConditionsChange,
 }) => {
   const [activeTab, setActiveTab] = useState<'fields' | 'steps' | 'styles' | 'automation'>('fields');
 
@@ -873,6 +877,34 @@ export const FormSchemaEditor: React.FC<Props> = ({
           )}
         </div>
       )}
+
+      {/* Términos y Condiciones Editor Box */}
+      <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl space-y-2.5 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label className="font-bold text-slate-200 flex items-center gap-2">
+            📜 Términos y Condiciones de la Landing (Opcional)
+          </label>
+          {termsAndConditions && termsAndConditions.trim() !== '' ? (
+            <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/90 px-2.5 py-0.5 rounded-full border border-emerald-800 flex items-center gap-1">
+              ✓ Checkbox & Modal Activo
+            </span>
+          ) : (
+            <span className="text-[10px] text-slate-500 font-medium bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
+              No mostrado (vacío)
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-slate-400 leading-relaxed">
+          Si ingresas texto en este campo, se mostrará automáticamente un checkbox obligatorio de aceptación con un enlace que abre un modal con estos Términos y Condiciones justo arriba del botón de envío. Si lo dejas vacío, no se mostrará ningún checkbox.
+        </p>
+        <textarea
+          rows={4}
+          value={termsAndConditions || ''}
+          onChange={(e) => onTermsAndConditionsChange && onTermsAndConditionsChange(e.target.value)}
+          placeholder="Escribe o pega aquí el texto completo de los Términos y Condiciones..."
+          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+        />
+      </div>
     </div>
   );
 };

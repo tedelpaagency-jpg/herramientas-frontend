@@ -12,6 +12,7 @@ interface Props {
   className?: string;
   paymentConfig?: PaymentConfig | null;
   stripePublishableKey?: string | null;
+  termsAndConditions?: string | null;
 }
 
 export const DynamicFormRenderer: React.FC<Props> = ({
@@ -24,10 +25,13 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   className,
   paymentConfig,
   stripePublishableKey,
+  termsAndConditions,
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const fields = formSchema?.fields || [];
   const steps = formSchema?.steps || [];
@@ -77,6 +81,12 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       }
       if (!formData['card_cvc'] || formData['card_cvc'].length < 3) {
         newErrors['card_cvc'] = 'Código CVC / CVV obligatorio';
+      }
+    }
+
+    if (termsAndConditions && termsAndConditions.trim() && isLastStep) {
+      if (!termsAccepted) {
+        newErrors['termsCheck'] = 'Debes aceptar los Términos y Condiciones para continuar';
       }
     }
 
@@ -548,6 +558,84 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Transacción directa verificada por Stripe
             </span>
             <span>Visa · Mastercard · Amex · Discover</span>
+          </div>
+        </div>
+      )}
+
+      {/* Terms & Conditions Checkbox & Modal Link */}
+      {termsAndConditions && termsAndConditions.trim() !== '' && isLastStep && (
+        <div className="form-check mt-3 mb-3" style={{ marginTop: '0.75rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id="termsCheck"
+              required
+              checked={termsAccepted}
+              onChange={(e) => {
+                setTermsAccepted(e.target.checked);
+                if (errors['termsCheck']) {
+                  setErrors((prev) => {
+                    const u = { ...prev };
+                    delete u['termsCheck'];
+                    return u;
+                  });
+                }
+              }}
+              style={{ backgroundColor: 'transparent', borderColor: 'var(--yes-green, #10b981)', width: '16px', height: '16px', cursor: 'pointer', flexShrink: 0 }}
+            />
+            <label className="form-check-label stripe-label" htmlFor="termsCheck" style={{ textTransform: 'none', color: customStyles.text_color || (isDark ? '#ffffff' : '#1e293b'), fontSize: '0.8rem', marginTop: '2px', cursor: 'pointer' }}>
+              He leído y acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} style={{ color: 'var(--yes-green, #10b981)', textDecoration: 'underline' }}>Términos y Condiciones</a>
+            </label>
+          </div>
+          {errors['termsCheck'] && (
+            <p className="text-[11px] text-red-500 font-semibold" style={{ marginTop: '4px', textAlign: 'left' }}>
+              {errors['termsCheck']}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Terms Modal Popup */}
+      {showTermsModal && termsAndConditions && (
+        <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 text-left font-sans" style={{ position: 'fixed', inset: 0, zIndex: 99999, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-100" style={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '1rem', maxWidth: '36rem', width: '100%', padding: '1.5rem', maxHeight: '85vh', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1e293b', paddingBottom: '0.75rem' }}>
+              <h4 className="text-base font-bold text-white flex items-center gap-2" style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffffff', margin: 0 }}>
+                📋 Términos y Condiciones
+              </h4>
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                style={{ color: '#94a3b8', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.25rem', padding: '0.25rem' }}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto whitespace-pre-wrap text-xs text-slate-300 leading-relaxed pr-2" style={{ flex: 1, overflowY: 'auto', whiteSpace: 'pre-wrap', fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.6, textAlign: 'left' }}>
+              {termsAndConditions}
+            </div>
+            <div className="border-t border-slate-800 pt-3 flex justify-end" style={{ borderTop: '1px solid #1e293b', paddingTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setTermsAccepted(true);
+                  setShowTermsModal(false);
+                  if (errors['termsCheck']) {
+                    setErrors((prev) => {
+                      const u = { ...prev };
+                      delete u['termsCheck'];
+                      return u;
+                    });
+                  }
+                }}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-xl font-bold transition cursor-pointer"
+                style={{ backgroundColor: '#10b981', color: '#ffffff', fontSize: '0.75rem', padding: '0.5rem 1rem', borderRadius: '0.75rem', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
+              >
+                Aceptar Términos
+              </button>
+            </div>
           </div>
         </div>
       )}
