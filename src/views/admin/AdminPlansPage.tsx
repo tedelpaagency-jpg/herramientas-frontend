@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import adminService from '../../services/adminService';
-import { Plan, PlanPermission, Permission } from '../../types';
+import whiteLabelService from '../../services/whiteLabelService';
+import { Plan, Permission } from '../../types';
+import { WhiteLabel } from '../../types/whiteLabel';
 import { 
   Layers, 
   Plus, 
@@ -14,18 +16,25 @@ import {
   Shield, 
   Search, 
   X,
-  AlertCircle
+  AlertCircle,
+  Globe,
+  Building2,
+  Filter
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
-import { getPermissionLabel, getPermissionDescription } from '../../utils/permissionLabels';
 
 export const AdminPlansPage: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [whiteLabels, setWhiteLabels] = useState<WhiteLabel[]>([]);
   const [systemPermissions, setSystemPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
+
+  // Filter & Tab state
+  const [activeTab, setActiveTab] = useState<'all' | 'global' | 'white_label'>('all');
+  const [selectedWlId, setSelectedWlId] = useState<string | number>('all');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -34,6 +43,7 @@ export const AdminPlansPage: React.FC = () => {
     name: '',
     description: '',
     type: 'agency' as 'white_label' | 'agency',
+    white_label_id: '' as string | number,
     price: 0,
     billing_type: 'fixed' as 'fixed' | 'commission',
     commission_percentage: 0,
@@ -52,12 +62,16 @@ export const AdminPlansPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [plansData, permsData] = await Promise.all([
+      const [plansData, permsData, wlData] = await Promise.all([
         adminService.getPlans(),
         adminService.getPermissions(),
+        whiteLabelService.getWhiteLabels().catch(() => []),
       ]);
-      setPlans(plansData);
-      setSystemPermissions(permsData);
+      setPlans(plansData || []);
+      setSystemPermissions(permsData || []);
+
+      const wlList = Array.isArray(wlData) ? wlData : (wlData?.data || []);
+      setWhiteLabels(wlList);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cargar los planes.');
     } finally {
@@ -75,6 +89,7 @@ export const AdminPlansPage: React.FC = () => {
       name: '',
       description: '',
       type: 'agency',
+      white_label_id: '',
       price: 0,
       billing_type: 'fixed',
       commission_percentage: 0,
@@ -93,6 +108,7 @@ export const AdminPlansPage: React.FC = () => {
       name: plan.name,
       description: plan.description || '',
       type: plan.type || 'agency',
+      white_label_id: plan.white_label_id || '',
       price: plan.price,
       billing_type: plan.billing_type || 'fixed',
       commission_percentage: plan.commission_percentage || 0,
@@ -116,6 +132,7 @@ export const AdminPlansPage: React.FC = () => {
       name: formData.name,
       description: formData.description,
       type: formData.type,
+      white_label_id: formData.white_label_id ? Number(formData.white_label_id) : null,
       price: Number(formData.price),
       billing_type: formData.billing_type,
       commission_percentage: formData.billing_type === 'commission' ? Number(formData.commission_percentage) : null,
@@ -165,43 +182,34 @@ export const AdminPlansPage: React.FC = () => {
     }
   };
 
-  const handleAddPlanPermission = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!permissionModalPlan || !newPermission.trim()) return;
-    try {
-      await adminService.addPlanPermission(permissionModalPlan.id, newPermission.trim());
-      setNewPermission('');
-      const updatedPermissions = await adminService.getPlanPermissions(permissionModalPlan.id);
-      setPermissionModalPlan({
-        ...permissionModalPlan,
-        plan_permissions: updatedPermissions,
-      });
-      loadPlans();
-    } catch (err: any) {
-      setError('Error al agregar permiso al plan.');
-    }
-  };
+  // Helper to check if a plan is Global (created for system / without specific WL)
+  const isGlobalPlan = (p: Plan) => !p.white_label_id && (p.type === 'white_label' || !p.white_label);
 
-  const handleDeletePlanPermission = async (planId: number, permissionId: number) => {
-    try {
-      await adminService.deletePlanPermission(planId, permissionId);
-      if (permissionModalPlan) {
-        const updatedPermissions = await adminService.getPlanPermissions(planId);
-        setPermissionModalPlan({
-          ...permissionModalPlan,
-          plan_permissions: updatedPermissions,
-        });
+  const globalPlansCount = plans.filter(isGlobalPlan).length;
+  const whiteLabelPlansCount = plans.filter((p) => !isGlobalPlan(p)).length;
+
+  const filteredPlans = plans.filter((p) => {
+    const matchesSearch =
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (p.white_label?.name && p.white_label.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    // Filter by tab selection
+    if (activeTab === 'global' && !isGlobalPlan(p)) return false;
+    if (activeTab === 'white_label' && isGlobalPlan(p)) return false;
+
+    // Filter by selected Marca Blanca dropdown
+    if (selectedWlId !== 'all') {
+      const targetId = Number(selectedWlId);
+      if (p.white_label_id !== targetId && p.white_label?.id !== targetId) {
+        return false;
       }
-      loadPlans();
-    } catch (err: any) {
-      setError('Error al eliminar permiso del plan.');
     }
-  };
 
-  const filteredPlans = plans.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+    return true;
+  });
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -217,7 +225,7 @@ export const AdminPlansPage: React.FC = () => {
                 Gestión de Planes
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                Administra los planes de suscripción globales del sistema
+                Administra los planes de suscripción globales del sistema y de Marcas Blancas
               </p>
             </div>
           </div>
@@ -246,25 +254,130 @@ export const AdminPlansPage: React.FC = () => {
         </div>
       )}
 
-      {/* Search & Filter */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 max-w-md">
-        <Search className="w-4 h-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Buscar planes por nombre..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-transparent text-xs font-medium outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
-        />
+      {/* Main Tabs Navigation */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <button
+          onClick={() => { setActiveTab('all'); setSelectedWlId('all'); }}
+          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all ${
+            activeTab === 'all'
+              ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+          }`}
+        >
+          <span>Todos los Planes</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
+            {plans.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => { setActiveTab('global'); setSelectedWlId('all'); }}
+          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all ${
+            activeTab === 'global'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>Planes Globales (Sistema)</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'global' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
+            {globalPlansCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('white_label')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all ${
+            activeTab === 'white_label'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          <span>Planes de Marcas Blancas</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'white_label' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
+            {whiteLabelPlansCount}
+          </span>
+        </button>
       </div>
+
+      {/* Filter Controls: Search & Marca Blanca Select Dropdown */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between">
+        {/* Search */}
+        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 flex-1 max-w-md">
+          <Search className="w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre de plan o marca blanca..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-transparent text-xs font-medium outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
+          />
+        </div>
+
+        {/* Marca Blanca Selector Dropdown */}
+        {(activeTab === 'white_label' || activeTab === 'all') && whiteLabels.length > 0 && (
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800">
+            <Filter className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              Marca Blanca:
+            </span>
+            <select
+              value={selectedWlId}
+              onChange={(e) => setSelectedWlId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+              className="bg-transparent text-xs font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer"
+            >
+              <option value="all">Todas las Marcas Blancas ({whiteLabels.length})</option>
+              {whiteLabels.map((wl) => (
+                <option key={wl.id} value={wl.id}>
+                  🏢 {wl.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Marca Blanca Filter Chips (when Marcas Blancas exist and tab is white_label or all) */}
+      {(activeTab === 'white_label' || activeTab === 'all') && whiteLabels.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+          <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">
+            Filtrar Marca:
+          </span>
+          <button
+            onClick={() => setSelectedWlId('all')}
+            className={`px-3 py-1 rounded-full text-xs font-bold transition-colors shrink-0 ${
+              selectedWlId === 'all'
+                ? 'bg-purple-600 text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            Todas
+          </button>
+          {whiteLabels.map((wl) => (
+            <button
+              key={wl.id}
+              onClick={() => setSelectedWlId(wl.id)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-colors shrink-0 flex items-center gap-1.5 ${
+                selectedWlId === wl.id
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 hover:bg-purple-100 dark:hover:bg-purple-900/40'
+              }`}
+            >
+              <Building2 className="w-3 h-3" />
+              <span>{wl.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
         {loading ? (
           <TableSkeleton rows={5} />
         ) : filteredPlans.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-xs">
-            No se encontraron planes configurados.
+          <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-xs">
+            No se encontraron planes que coincidan con la búsqueda o filtro seleccionado.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -272,123 +385,135 @@ export const AdminPlansPage: React.FC = () => {
               <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="py-3.5 px-4">Plan</th>
+                  <th className="py-3.5 px-4">Origen / Marca Blanca</th>
                   <th className="py-3.5 px-4">Método de Cobro</th>
                   <th className="py-3.5 px-4">Precio</th>
                   <th className="py-3.5 px-4">Tipos de Agencia</th>
-                  <th className="py-3.5 px-4">Permisos Asignados</th>
+                  <th className="py-3.5 px-4">Permisos</th>
                   <th className="py-3.5 px-4">Estado</th>
                   <th className="py-3.5 px-4 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {filteredPlans.map((plan) => (
-                  <tr key={plan.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2">
+                {filteredPlans.map((plan) => {
+                  const isGlobal = isGlobalPlan(plan);
+                  return (
+                    <tr key={plan.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="py-3.5 px-4">
                         <p className="font-bold text-slate-900 dark:text-slate-100">{plan.name}</p>
-                        <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold text-[10px] shrink-0">
-                          {plan.white_label?.name || 'Marca Blanca'}
-                        </span>
-                      </div>
-                      {plan.description && (
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">{plan.description}</p>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 font-semibold">
-                      {plan.billing_type === 'commission' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                          <span>Comisión</span>
-                          {plan.commission_percentage !== null && plan.commission_percentage !== undefined && (
-                            <span className="font-extrabold">({plan.commission_percentage}%)</span>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                          Cargo Fijo
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
-                      ${Number(plan.price).toFixed(2)}{' '}
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
-                        /{' '}
-                        {plan.duration_value && plan.duration_value > 1
-                          ? `${plan.duration_value} `
-                          : ''}
-                        {plan.duration_unit === 'year'
-                          ? (plan.duration_value && plan.duration_value > 1 ? 'años' : 'año')
-                          : plan.duration_unit === 'day'
-                          ? (plan.duration_value && plan.duration_value > 1 ? 'días' : 'día')
-                          : (plan.duration_value && plan.duration_value > 1 ? 'meses' : 'mes')}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {plan.allowed_agency_types && plan.allowed_agency_types.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {plan.allowed_agency_types.map((type, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                            >
-                              {type}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 italic text-[10px]">Todos</span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <Link
-                        href={`/admin/plans/${plan.id}/permissions`}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold text-[11px] transition-colors"
-                      >
-                        <Shield className="w-3.5 h-3.5" />
-                        <span>{plan.plan_permissions?.length || 0} permisos</span>
-                      </Link>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <button
-                        onClick={() => handleToggleStatus(plan)}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors ${
-                          plan.status ?? true
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                            : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
-                        }`}
-                      >
-                        {plan.status ?? true ? (
-                          <>
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            <span>Activo</span>
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="w-3 h-3 text-slate-400" />
-                            <span>Inactivo</span>
-                          </>
+                        {plan.description && (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">{plan.description}</p>
                         )}
-                      </button>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openEditModal(plan)}
-                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                          title="Editar"
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {isGlobal ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800 font-bold text-[10px]">
+                            <Globe className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                            <span>Global (Sistema)</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800 font-bold text-[10px]">
+                            <Building2 className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                            <span>{plan.white_label?.name || `Marca Blanca #${plan.white_label_id}`}</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold">
+                        {plan.billing_type === 'commission' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span>Comisión</span>
+                            {plan.commission_percentage !== null && plan.commission_percentage !== undefined && (
+                              <span className="font-extrabold">({plan.commission_percentage}%)</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                            Cargo Fijo
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
+                        ${Number(plan.price).toFixed(2)}{' '}
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                          /{' '}
+                          {plan.duration_value && plan.duration_value > 1
+                            ? `${plan.duration_value} `
+                            : ''}
+                          {plan.duration_unit === 'year'
+                            ? (plan.duration_value && plan.duration_value > 1 ? 'años' : 'año')
+                            : plan.duration_unit === 'day'
+                            ? (plan.duration_value && plan.duration_value > 1 ? 'días' : 'día')
+                            : (plan.duration_value && plan.duration_value > 1 ? 'meses' : 'mes')}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {plan.allowed_agency_types && plan.allowed_agency_types.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {plan.allowed_agency_types.map((type, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                              >
+                                {type}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-[10px]">Todos</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <Link
+                          href={`/admin/plans/${plan.id}/permissions`}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold text-[11px] transition-colors"
                         >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
+                          <Shield className="w-3.5 h-3.5" />
+                          <span>{plan.plan_permissions?.length || 0} permisos</span>
+                        </Link>
+                      </td>
+                      <td className="py-3.5 px-4">
                         <button
-                          onClick={() => handleDelete(plan.id)}
-                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors"
-                          title="Eliminar"
+                          onClick={() => handleToggleStatus(plan)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors ${
+                            plan.status ?? true
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                              : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                          }`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {plan.status ?? true ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>Activo</span>
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-3 h-3 text-slate-400" />
+                              <span>Inactivo</span>
+                            </>
+                          )}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEditModal(plan)}
+                            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                            title="Editar"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(plan.id)}
+                            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -434,6 +559,25 @@ export const AdminPlansPage: React.FC = () => {
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 />
               </div>
+
+              {/* Asignación Marca Blanca vs Global */}
+              {whiteLabels.length > 0 && (
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Marca Blanca Asociada</label>
+                  <select
+                    value={formData.white_label_id}
+                    onChange={(e) => setFormData({ ...formData, white_label_id: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                  >
+                    <option value="">🌐 Plan Global (Sistema / Sin Marca Blanca)</option>
+                    {whiteLabels.map((wl) => (
+                      <option key={wl.id} value={wl.id}>
+                        🏢 {wl.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

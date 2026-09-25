@@ -97,7 +97,19 @@ apiClient.interceptors.response.use(
         if (typeof window !== 'undefined') {
           localStorage.removeItem('santun_auth_token');
           localStorage.removeItem('santun_user');
-          if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/contract/show')) {
+          const isPublicRoute = (pathname: string): boolean => {
+            return (
+              pathname === '/login' ||
+              pathname.startsWith('/visa/show') ||
+              pathname.startsWith('/contract/show') ||
+              pathname.startsWith('/hunter/store') ||
+              pathname.startsWith('/form') ||
+              pathname.startsWith('/provider/approve') ||
+              pathname.startsWith('/landings')
+            );
+          };
+
+          if (!isPublicRoute(window.location.pathname)) {
             window.location.href = '/login?expired=1';
           }
         }

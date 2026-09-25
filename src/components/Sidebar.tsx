@@ -329,6 +329,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Marcas Blancas', path: '/admin/white-labels', icon: Globe, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
         { label: 'Gestión de Agencias', path: '/agencies', icon: Building2, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
         { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
+        { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_agencies', 'manage_users'] },
         { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_agencies', 'manage_users'] },
       ],
     },

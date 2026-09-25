@@ -271,13 +271,22 @@ export const WhiteLabelDashboardPage: React.FC = () => {
             <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
               Agencias de {selectedWL.name}
             </h3>
-            <Link
-              href="/white-label/import-students"
-              className="px-4 py-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-blue-200 dark:border-blue-800/60 shadow-xs"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>Importar Estudiantes (Moodle)</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/agencies"
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nueva Agencia</span>
+              </Link>
+              <Link
+                href="/white-label/import-students"
+                className="px-4 py-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-blue-200 dark:border-blue-800/60 shadow-xs"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>Importar Estudiantes (Moodle)</span>
+              </Link>
+            </div>
           </div>
 
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
