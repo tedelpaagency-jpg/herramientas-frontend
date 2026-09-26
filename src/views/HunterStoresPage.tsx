@@ -12,7 +12,11 @@ import toast from 'react-hot-toast';
 
 export const HunterStoresPage: React.FC = () => {
   const { user } = useAuth();
-  const isHunter = user?.role === 'hunter' || user?.roles?.some((r: any) => r.name === 'hunter');
+  const isHunter =
+    user?.role === 'hunter' ||
+    user?.role === 'comercio' ||
+    user?.role === 'store' ||
+    user?.roles?.some((r: any) => ['hunter', 'comercio', 'store'].includes(r.name));
 
   const [stores, setStores] = useState<HunterStore[]>([]);
   const [loading, setLoading] = useState(true);

@@ -54,7 +54,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isHunter =
     user?.role === 'hunter' ||
-    user?.roles?.some((r) => r.name === 'hunter');
+    user?.role === 'comercio' ||
+    user?.role === 'store' ||
+    user?.roles?.some((r) => ['hunter', 'comercio', 'store'].includes(r.name));
 
   const agency = user?.agency || (user as any)?.agency_data || currentAgency;
   const hasAgency = Boolean(user?.agency_id || agency?.id || user?.agency);
@@ -404,9 +406,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <nav className="flex-1 px-3 py-2 space-y-3 overflow-y-auto overflow-x-hidden custom-scrollbar">
-          {(isAgencyUser
-            ? categories.filter(c => c.title !== 'ADMINISTRACIÓN MARCA BLANCA')
-            : categories
+          {(isHunter
+            ? [
+                {
+                  title: 'MIS FORMULARIOS & LEADS',
+                  items: [
+                    { label: 'Inicio', path: '/', icon: Home },
+                    { label: 'Mis Formularios & Leads', path: '/hunter', icon: Store },
+                  ],
+                },
+              ]
+            : (isAgencyUser
+                ? categories.filter(c => c.title !== 'ADMINISTRACIÓN MARCA BLANCA')
+                : categories)
           ).map((category) => {
             const visibleCategoryItems = category.items.filter(isItemVisible);
             if (visibleCategoryItems.length === 0) return null;

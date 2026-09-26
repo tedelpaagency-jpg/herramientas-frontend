@@ -621,10 +621,49 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Terms Modal Popup (Single Modal matching system design) */}
+      {/* Terms Modal Popup (Perfectly Centered Viewport Overlay) */}
       {showTermsModal && termsAndConditions && (
-        <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 text-left font-sans" style={{ position: 'fixed', inset: 0, zIndex: 99999, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="modal-content bg-dark text-white rounded-2xl max-w-2xl w-full shadow-2xl flex flex-col" style={{ backgroundColor: '#0d0d0f', border: '1px solid var(--yes-green, #10b981)', borderRadius: '1rem', maxWidth: '40rem', width: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)' }}>
+        <div
+          className="fixed inset-0 z-[999999] bg-black/80 backdrop-blur-sm font-sans"
+          onClick={() => setShowTermsModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 999999,
+            backgroundColor: 'rgba(0, 0, 0, 0.82)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            boxSizing: 'border-box'
+          }}
+        >
+          <div
+            className="modal-content bg-dark text-white rounded-2xl max-w-2xl w-full shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: '#0d0d0f',
+              border: '1px solid var(--yes-green, #10b981)',
+              borderRadius: '1rem',
+              maxWidth: '42rem',
+              width: '92%',
+              maxHeight: '82vh',
+              margin: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 20px rgba(16, 185, 129, 0.15)',
+              zIndex: 1000000
+            }}
+          >
             <div className="modal-header flex items-center justify-between p-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
               <h5 className="modal-title font-bold text-base m-0" style={{ color: 'var(--yes-green, #10b981)', fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>
                 Términos y Condiciones
