@@ -33,6 +33,18 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
+  const getFormattedTermsHtml = (raw: string | null | undefined): string => {
+    if (!raw || !raw.trim()) return '';
+    const hasHtmlTags = /<[a-z][\s\S]*>/i.test(raw);
+    if (hasHtmlTags) {
+      return raw;
+    }
+    return raw
+      .split(/\n{2,}/)
+      .map((p) => `<p style="margin-bottom:0.75rem;">${p.replace(/\n/g, '<br />')}</p>`)
+      .join('');
+  };
+
   const fields = formSchema?.fields || [];
   const steps = formSchema?.steps || [];
   const layout = formSchema?.layout || 'linear';
@@ -564,10 +576,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
 
       {/* Terms & Conditions Checkbox & Modal Link */}
       {termsAndConditions && termsAndConditions.trim() !== '' && isLastStep && (
-        <div className="form-check mt-3 mb-3" style={{ marginTop: '0.75rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', boxSizing: 'border-box' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
+        <div className="form-check mt-3 mb-3 text-left w-full" style={{ marginTop: '0.75rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', boxSizing: 'border-box' }}>
             <input
-              className="form-check-input"
               type="checkbox"
               id="termsCheck"
               required
@@ -582,10 +593,24 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                   });
                 }
               }}
-              style={{ backgroundColor: 'transparent', borderColor: 'var(--yes-green, #10b981)', width: '16px', height: '16px', cursor: 'pointer', flexShrink: 0 }}
+              style={{
+                display: 'inline-block',
+                width: '18px',
+                height: '18px',
+                minWidth: '18px',
+                minHeight: '18px',
+                maxWidth: '18px',
+                maxHeight: '18px',
+                margin: '0 6px 0 0',
+                padding: 0,
+                accentColor: 'var(--yes-green, #10b981)',
+                cursor: 'pointer',
+                flexShrink: 0,
+                boxSizing: 'border-box',
+              }}
             />
-            <label className="form-check-label stripe-label" htmlFor="termsCheck" style={{ textTransform: 'none', color: customStyles.text_color || (isDark ? '#ffffff' : '#1e293b'), fontSize: '0.8rem', marginTop: '2px', cursor: 'pointer' }}>
-              He leído y acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} style={{ color: 'var(--yes-green, #10b981)', textDecoration: 'underline' }}>Términos y Condiciones</a>
+            <label htmlFor="termsCheck" style={{ display: 'inline-block', textTransform: 'none', color: customStyles.text_color || (isDark ? '#ffffff' : '#1e293b'), fontSize: '0.8rem', margin: 0, cursor: 'pointer', lineHeight: 1.3 }}>
+              He leído y acepto los <a href="#" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} style={{ color: 'var(--yes-green, #10b981)', textDecoration: 'underline', fontWeight: 600 }}>Términos y Condiciones</a>
             </label>
           </div>
           {errors['termsCheck'] && (
@@ -596,27 +621,37 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Terms Modal Popup */}
+      {/* Terms Modal Popup (Single Modal matching system design) */}
       {showTermsModal && termsAndConditions && (
         <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 text-left font-sans" style={{ position: 'fixed', inset: 0, zIndex: 99999, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-slate-100" style={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '1rem', maxWidth: '36rem', width: '100%', padding: '1.5rem', maxHeight: '85vh', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1e293b', paddingBottom: '0.75rem' }}>
-              <h4 className="text-base font-bold text-white flex items-center gap-2" style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffffff', margin: 0 }}>
-                📋 Términos y Condiciones
-              </h4>
+          <div className="modal-content bg-dark text-white rounded-2xl max-w-2xl w-full shadow-2xl flex flex-col" style={{ backgroundColor: '#0d0d0f', border: '1px solid var(--yes-green, #10b981)', borderRadius: '1rem', maxWidth: '40rem', width: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)' }}>
+            <div className="modal-header flex items-center justify-between p-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <h5 className="modal-title font-bold text-base m-0" style={{ color: 'var(--yes-green, #10b981)', fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>
+                Términos y Condiciones
+              </h5>
               <button
                 type="button"
                 onClick={() => setShowTermsModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
-                style={{ color: '#94a3b8', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.25rem', padding: '0.25rem' }}
+                className="btn-close btn-close-white text-slate-400 hover:text-white p-1"
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer', padding: '0.25rem', lineHeight: 1 }}
               >
                 ✕
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto whitespace-pre-wrap text-xs text-slate-300 leading-relaxed pr-2" style={{ flex: 1, overflowY: 'auto', whiteSpace: 'pre-wrap', fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.6, textAlign: 'left' }}>
-              {termsAndConditions}
-            </div>
-            <div className="border-t border-slate-800 pt-3 flex justify-end" style={{ borderTop: '1px solid #1e293b', paddingTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <div
+              className="modal-body p-5 overflow-y-auto text-left terms-rich-html-content"
+              style={{ padding: '1.25rem', fontSize: '0.85rem', lineHeight: '1.6', color: '#cbd5e1', maxHeight: '60vh', overflowY: 'auto', wordBreak: 'break-word' }}
+              dangerouslySetInnerHTML={{ __html: getFormattedTermsHtml(termsAndConditions) }}
+            />
+            <div className="modal-footer flex items-center justify-end gap-2 p-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', padding: '1rem 1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(false)}
+                className="btn btn-secondary px-4 py-2 text-xs font-semibold rounded-lg"
+                style={{ backgroundColor: '#334155', color: '#ffffff', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cerrar y Entendido
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -630,8 +665,8 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                     });
                   }
                 }}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-xl font-bold transition cursor-pointer"
-                style={{ backgroundColor: '#10b981', color: '#ffffff', fontSize: '0.75rem', padding: '0.5rem 1rem', borderRadius: '0.75rem', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
+                className="btn text-xs font-bold rounded-lg"
+                style={{ backgroundColor: 'var(--yes-green, #10b981)', color: '#000000', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
               >
                 Aceptar Términos
               </button>

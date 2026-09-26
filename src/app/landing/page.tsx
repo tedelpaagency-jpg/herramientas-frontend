@@ -57,20 +57,31 @@ function CustomHtmlIframeContainer({
           width: 100% !important;
           box-sizing: border-box !important;
         }
-        #react-dynamic-form-container label {
+        #react-dynamic-form-container label:not([for="termsCheck"]) {
           display: block !important;
           width: 100% !important;
           text-align: left !important;
           float: none !important;
           margin-bottom: 4px !important;
         }
-        #react-dynamic-form-container input,
+        #react-dynamic-form-container input:not([type="checkbox"]):not([type="radio"]),
         #react-dynamic-form-container select,
         #react-dynamic-form-container textarea {
           display: block !important;
           width: 100% !important;
           box-sizing: border-box !important;
           max-width: 100% !important;
+        }
+        #react-dynamic-form-container input[type="checkbox"] {
+          display: inline-block !important;
+          width: 18px !important;
+          min-width: 18px !important;
+          max-width: 18px !important;
+          height: 18px !important;
+          min-height: 18px !important;
+          max-height: 18px !important;
+          margin: 0 6px 0 0 !important;
+          flex-shrink: 0 !important;
         }
         #react-dynamic-form-container button {
           box-sizing: border-box !important;

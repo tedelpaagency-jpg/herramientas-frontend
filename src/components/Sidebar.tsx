@@ -290,11 +290,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
+      title: 'MÓDULO DE VISADOS',
+      items: [
+        { label: 'Gestión de Visados', path: '/visas', icon: ShieldCheck, permission: ['view_visas', 'manage_visas'] },
+      ],
+    },
+    {
       title: 'MODULO VIAJES & PAQUETES',
       items: [
         { label: 'Paquetes Turísticos', path: '/travel-packages', icon: Plane, permission: 'packages.view' },
         { label: 'Reportes de Viaje', path: '/travel-reports', icon: FileText, permission: ['view_travel_reports', 'travel_reports.view'] },
-        { label: 'Gestión de Visados', path: '/visas', icon: ShieldCheck, permission: ['view_visas', 'manage_visas'] },
         { label: 'Punto de Venta POS', path: '/pos', icon: ShoppingCart, permission: ['view_pos', 'manage_pos'] },
         { label: 'Gestión de Comisiones', path: '/commissions', icon: CreditCard, permission: 'commissions.view' },
         { label: 'Directorio de Proveedores', path: '/supplier', icon: Store, permission: ['view_products', 'packages.view'] },

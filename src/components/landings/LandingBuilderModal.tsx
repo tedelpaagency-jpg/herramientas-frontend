@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { LandingTemplate, BuilderSchema, FormSchema, ActionType, PaymentConfig, LandingAvailableResources } from '../../types/landing';
 import landingService from '../../services/landingService';
