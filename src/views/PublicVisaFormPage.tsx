@@ -49,7 +49,11 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
 
     setAutoSaveStatus('saving');
     try {
-      await visaService.saveVisaField(visaData?.id || 0, fieldName, value);
+      if (encodedId) {
+        await visaService.saveVisaFieldPublic(encodedId, fieldName, value);
+      } else {
+        await visaService.saveVisaField(visaData?.id || 0, fieldName, value);
+      }
       setAutoSaveStatus('saved');
       toast.success('Guardado', { duration: 1500, id: 'autosave-toast' });
       setTimeout(() => setAutoSaveStatus('idle'), 2000);

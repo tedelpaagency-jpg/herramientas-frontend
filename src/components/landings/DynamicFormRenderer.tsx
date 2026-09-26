@@ -621,7 +621,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Terms Modal Popup (Perfectly Centered Viewport Overlay) */}
+      {/* Terms Modal Popup (Positioned High Up near Top of Viewport) */}
       {showTermsModal && termsAndConditions && (
         <div
           className="fixed inset-0 z-[999999] bg-black/80 backdrop-blur-sm font-sans"
@@ -637,10 +637,11 @@ export const DynamicFormRenderer: React.FC<Props> = ({
             zIndex: 999999,
             backgroundColor: 'rgba(0, 0, 0, 0.82)',
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'center',
-            padding: '1rem',
-            boxSizing: 'border-box'
+            paddingTop: '20px',
+            boxSizing: 'border-box',
+            overflowY: 'auto'
           }}
         >
           <div
@@ -648,19 +649,19 @@ export const DynamicFormRenderer: React.FC<Props> = ({
             onClick={(e) => e.stopPropagation()}
             style={{
               position: 'fixed',
-              top: '50%',
+              top: '20px',
               left: '50%',
-              transform: 'translate(-50%, -50%)',
+              transform: 'translateX(-50%)',
               backgroundColor: '#0d0d0f',
               border: '1px solid var(--yes-green, #10b981)',
               borderRadius: '1rem',
               maxWidth: '42rem',
               width: '92%',
-              maxHeight: '82vh',
+              maxHeight: '88vh',
               margin: 0,
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 20px rgba(16, 185, 129, 0.15)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 25px rgba(16, 185, 129, 0.25)',
               zIndex: 1000000
             }}
           >
@@ -679,7 +680,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
             </div>
             <div
               className="modal-body p-5 overflow-y-auto text-left terms-rich-html-content"
-              style={{ padding: '1.25rem', fontSize: '0.85rem', lineHeight: '1.6', color: '#cbd5e1', maxHeight: '60vh', overflowY: 'auto', wordBreak: 'break-word' }}
+              style={{ padding: '1.25rem', fontSize: '0.85rem', lineHeight: '1.6', color: '#cbd5e1', maxHeight: '68vh', overflowY: 'auto', wordBreak: 'break-word' }}
               dangerouslySetInnerHTML={{ __html: getFormattedTermsHtml(termsAndConditions) }}
             />
             <div className="modal-footer flex items-center justify-end gap-2 p-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', padding: '1rem 1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
