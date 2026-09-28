@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { FormSchema, FormFieldSchema, FormStepSchema, FormStyleConfig, FormLayoutType, ActionType, LandingAvailableResources } from '../../types/landing';
-import { Plus, Trash2, MoveUp, MoveDown, Layers, CheckSquare, ListOrdered, BookOpen, GitBranch, Palette, Sparkles, Sliders, Code, FileText } from 'lucide-react';
+import { Plus, Trash2, MoveUp, MoveDown, Layers, CheckSquare, ListOrdered, BookOpen, GitBranch, Palette, Sparkles, Sliders, Code, FileText, CreditCard } from 'lucide-react';
 import 'react-quill/dist/quill.snow.css';
+import { StripeAppearanceEditor } from './StripeAppearanceEditor';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
@@ -39,7 +40,7 @@ export const FormSchemaEditor: React.FC<Props> = ({
   termsAndConditions,
   onTermsAndConditionsChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<'fields' | 'steps' | 'styles' | 'automation'>('fields');
+  const [activeTab, setActiveTab] = useState<'fields' | 'steps' | 'styles' | 'stripe' | 'automation'>('fields');
   const [termsEditorMode, setTermsEditorMode] = useState<'rich' | 'code'>('rich');
 
   const fields = formSchema.fields || [];
@@ -234,6 +235,15 @@ export const FormSchemaEditor: React.FC<Props> = ({
             }`}
           >
             <Palette className="w-3.5 h-3.5 text-pink-400" /> Estilos & Colores
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('stripe')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition ${
+              activeTab === 'stripe' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <CreditCard className="w-3.5 h-3.5 text-emerald-400" /> Apariencia Stripe
           </button>
           <button
             type="button"
@@ -882,6 +892,16 @@ export const FormSchemaEditor: React.FC<Props> = ({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* STRIPE APPEARANCE TAB */}
+      {activeTab === 'stripe' && (
+        <div className="space-y-4">
+          <StripeAppearanceEditor
+            config={formSchema.stripe_appearance}
+            onChange={(cfg) => updateSchema({ stripe_appearance: cfg })}
+          />
         </div>
       )}
 

@@ -37,6 +37,49 @@ export interface FormStyleConfig {
   card_style?: 'card' | 'glass' | 'bordered' | 'minimal';
 }
 
+export interface StripeAppearanceConfig {
+  theme?: 'stripe' | 'night' | 'flat';
+  // Fondo
+  bg_color?: string;
+  bg_transparent?: boolean;
+  container_border_color?: string;
+  container_border_width?: string;
+  container_border_radius?: string;
+  container_shadow?: string;
+  spacing_unit?: string;
+
+  // Tipografía
+  text_color?: string;
+  title_color?: string;
+  label_color?: string;
+  font_size?: string;
+  font_weight?: string;
+  font_family?: string;
+
+  // Inputs
+  input_bg_color?: string;
+  input_text_color?: string;
+  input_placeholder_color?: string;
+  input_border_color?: string;
+  input_focus_border_color?: string;
+  input_border_width?: string;
+  input_border_radius?: string;
+  input_padding?: string;
+
+  // Botones
+  button_bg_color?: string;
+  button_text_color?: string;
+  button_hover_bg_color?: string;
+  button_border_radius?: string;
+  button_padding?: string;
+  button_text?: string;
+
+  // Otros elementos
+  error_color?: string;
+  success_color?: string;
+  link_color?: string;
+}
+
 export interface FormSchema {
   layout: FormLayoutType;
   title?: string;
@@ -45,6 +88,7 @@ export interface FormSchema {
   fields: FormFieldSchema[];
   steps?: FormStepSchema[];
   styles?: FormStyleConfig;
+  stripe_appearance?: StripeAppearanceConfig;
 }
 
 export interface BuilderSchemaBlock {
@@ -74,6 +118,7 @@ export interface PaymentConfig {
   currency: string;
   amount: number;
   product_name: string;
+  stripe_appearance?: StripeAppearanceConfig;
 }
 
 export interface LandingTemplate {
@@ -96,6 +141,7 @@ export interface LandingTemplate {
   plan_id?: number | null;
   course_ids?: number[] | null;
   payment_config?: PaymentConfig | null;
+  stripe_appearance?: StripeAppearanceConfig | null;
   builder_schema?: BuilderSchema | null;
   form_schema?: FormSchema | null;
   terms_and_conditions?: string | null;

@@ -28,8 +28,12 @@ export const mediaService = {
     return response.data;
   },
 
-  // Subir un nuevo archivo a la Media Library
-  uploadMedia: async (file: File, extraData?: { title?: string; alt_text?: string; description?: string; white_label_id?: number; agency_id?: number }) => {
+  // Subir un nuevo archivo a la Media Library con progreso real de subida HTTP
+  uploadMedia: async (
+    file: File,
+    extraData?: { title?: string; alt_text?: string; description?: string; white_label_id?: number; agency_id?: number },
+    onProgress?: (progress: { loaded: number; total: number; percentage: number }) => void
+  ) => {
     const formData = new FormData();
     formData.append('file', file);
     if (extraData?.title) formData.append('title', extraData.title);
@@ -40,7 +44,14 @@ export const mediaService = {
 
     const response = await apiClient.post<{ status: string; message: string; data: Media }>('/v1/media', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 300000, // 5 minutos para archivos grandes
+      timeout: 600000, // 10 minutos para archivos grandes
+      onUploadProgress: (progressEvent) => {
+        const total = progressEvent.total || (file.size > 0 ? file.size : undefined);
+        if (total && total > 0 && onProgress) {
+          const percentage = Math.min(100, Math.max(0, Math.round((progressEvent.loaded * 100) / total)));
+          onProgress({ loaded: progressEvent.loaded, total, percentage });
+        }
+      },
     });
     return response.data;
   },

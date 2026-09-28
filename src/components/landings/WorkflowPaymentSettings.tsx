@@ -1,6 +1,7 @@
 import React from 'react';
 import { PaymentConfig, LandingAvailableResources } from '../../types/landing';
 import { CreditCard, Zap, DollarSign, Package } from 'lucide-react';
+import { StripeAppearanceEditor } from './StripeAppearanceEditor';
 
 interface Props {
   workflowId?: number | null;
@@ -78,47 +79,57 @@ export const WorkflowPaymentSettings: React.FC<Props> = ({
         </div>
 
         {config.enabled && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
-            <div>
-              <label className="block text-[11px] text-slate-400 mb-1 flex items-center gap-1">
-                <Package className="w-3.5 h-3.5" /> Nombre del Producto / Servicio
-              </label>
-              <input
-                type="text"
-                value={config.product_name || ''}
-                onChange={(e) => updateConfig({ product_name: e.target.value })}
-                placeholder="Ej. Plan Suscripción Pro"
-                className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white"
-              />
+          <div className="space-y-4 pt-2 border-t border-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1 flex items-center gap-1">
+                  <Package className="w-3.5 h-3.5" /> Nombre del Producto / Servicio
+                </label>
+                <input
+                  type="text"
+                  value={config.product_name || ''}
+                  onChange={(e) => updateConfig({ product_name: e.target.value })}
+                  placeholder="Ej. Plan Suscripción Pro"
+                  className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1 flex items-center gap-1">
+                  <DollarSign className="w-3.5 h-3.5" /> Monto (Precio)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={config.amount || 0}
+                  onChange={(e) => updateConfig({ amount: Number(e.target.value) })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Moneda</label>
+                <select
+                  value={config.currency || 'USD'}
+                  onChange={(e) => updateConfig({ currency: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white"
+                >
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="MXN">MXN ($)</option>
+                  <option value="PEN">PEN (S/)</option>
+                  <option value="COP">COP ($)</option>
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] text-slate-400 mb-1 flex items-center gap-1">
-                <DollarSign className="w-3.5 h-3.5" /> Monto (Precio)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={config.amount || 0}
-                onChange={(e) => updateConfig({ amount: Number(e.target.value) })}
-                className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white"
+            {/* Visual Customization of Stripe Form */}
+            <div className="pt-2">
+              <StripeAppearanceEditor
+                config={config.stripe_appearance}
+                onChange={(appearance) => updateConfig({ stripe_appearance: appearance })}
               />
-            </div>
-
-            <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Moneda</label>
-              <select
-                value={config.currency || 'USD'}
-                onChange={(e) => updateConfig({ currency: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white"
-              >
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="MXN">MXN ($)</option>
-                <option value="PEN">PEN (S/)</option>
-                <option value="COP">COP ($)</option>
-              </select>
             </div>
           </div>
         )}

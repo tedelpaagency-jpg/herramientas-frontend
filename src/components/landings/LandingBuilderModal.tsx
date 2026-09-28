@@ -97,12 +97,43 @@ export const LandingBuilderModal: React.FC<Props> = ({
         setWorkflowId(landing.workflow_id || null);
         setCourseIds(landing.course_ids || []);
         setTermsAndConditions(landing.terms_and_conditions || '');
-        setPaymentConfig(landing.payment_config || { enabled: false, currency: 'USD', amount: 0, product_name: '' });
+
+        const initialPayment = landing.payment_config || { enabled: false, currency: 'USD', amount: 0, product_name: '' };
+        const initialFormSchema = landing.form_schema || {
+          layout: 'linear',
+          fields: [
+            { id: 'f_name', name: 'name', label: 'Nombre Completo', type: 'text', required: true },
+            { id: 'f_email', name: 'email', label: 'Correo Electrónico', type: 'email', required: true },
+            { id: 'f_phone', name: 'phone', label: 'Teléfono', type: 'phone', required: false },
+          ],
+        };
+        const initialStripeAppearance = landing.stripe_appearance || initialPayment.stripe_appearance || initialFormSchema.stripe_appearance;
+
+        if (initialStripeAppearance) {
+          initialPayment.stripe_appearance = initialStripeAppearance;
+          initialFormSchema.stripe_appearance = initialStripeAppearance;
+        }
+
+        setPaymentConfig(initialPayment);
+        setFormSchema(initialFormSchema);
         if (landing.builder_schema) setBuilderSchema(landing.builder_schema);
-        if (landing.form_schema) setFormSchema(landing.form_schema);
       }
     }
   }, [isOpen, landing]);
+
+  const handleFormSchemaChange = (newSchema: FormSchema) => {
+    setFormSchema(newSchema);
+    if (newSchema.stripe_appearance) {
+      setPaymentConfig((prev) => ({ ...prev, stripe_appearance: newSchema.stripe_appearance }));
+    }
+  };
+
+  const handlePaymentConfigChange = (newConfig: PaymentConfig) => {
+    setPaymentConfig(newConfig);
+    if (newConfig.stripe_appearance) {
+      setFormSchema((prev) => ({ ...prev, stripe_appearance: newConfig.stripe_appearance }));
+    }
+  };
 
   const loadResources = async () => {
     try {
@@ -133,6 +164,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
         }
       }
 
+      const activeStripeAppearance = formSchema?.stripe_appearance || paymentConfig?.stripe_appearance;
+
       const payload: Partial<LandingTemplate> = {
         title: title.trim(),
         name: title.trim(),
@@ -147,6 +180,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
         payment_config: paymentConfig,
         builder_schema: builderSchema,
         form_schema: formSchema,
+        stripe_appearance: activeStripeAppearance,
       };
 
       if (landing && landing.id) {
@@ -380,7 +414,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
           {activeTab === 'form' && (
             <FormSchemaEditor
               formSchema={formSchema}
-              onChange={setFormSchema}
+              onChange={handleFormSchemaChange}
               actionType={actionType}
               onActionTypeChange={setActionType}
               workspaceId={workspaceId}
@@ -401,7 +435,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
               workflowId={workflowId}
               onWorkflowChange={setWorkflowId}
               paymentConfig={paymentConfig}
-              onPaymentConfigChange={setPaymentConfig}
+              onPaymentConfigChange={handlePaymentConfigChange}
               resources={resources}
             />
           )}
@@ -452,6 +486,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
                     formSchema={formSchema}
                     paymentConfig={paymentConfig}
                     termsAndConditions={termsAndConditions}
+                    stripeAppearance={formSchema?.stripe_appearance || paymentConfig?.stripe_appearance}
                     onSubmit={(data) => {
                       alert('Formulario enviado (Vista previa):\n' + JSON.stringify(data, null, 2));
                     }}

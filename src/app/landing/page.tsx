@@ -14,6 +14,7 @@ function CustomHtmlIframeContainer({
   paymentConfig,
   stripePublishableKey,
   termsAndConditions,
+  stripeAppearance,
   onSubmit,
   submitted,
 }: {
@@ -22,6 +23,7 @@ function CustomHtmlIframeContainer({
   paymentConfig?: any;
   stripePublishableKey?: string | null;
   termsAndConditions?: string | null;
+  stripeAppearance?: any;
   onSubmit: (answers: Record<string, any>) => void;
   submitted: boolean;
 }) {
@@ -210,6 +212,7 @@ function CustomHtmlIframeContainer({
             paymentConfig={paymentConfig}
             stripePublishableKey={stripePublishableKey}
             termsAndConditions={termsAndConditions}
+            stripeAppearance={stripeAppearance || paymentConfig?.stripe_appearance || formSchema?.stripe_appearance}
             isFormLoading={!isStyleReady}
           />
         ),
@@ -357,6 +360,7 @@ function PublicLandingContent() {
         paymentConfig={landing.payment_config}
         stripePublishableKey={landing.stripe_publishable_key}
         termsAndConditions={landing.terms_and_conditions}
+        stripeAppearance={landing.stripe_appearance || landing.payment_config?.stripe_appearance || landing.form_schema?.stripe_appearance}
         onSubmit={handleSubmitLead}
         submitted={submitted}
       />
@@ -414,6 +418,7 @@ function PublicLandingContent() {
               paymentConfig={landing.payment_config}
               stripePublishableKey={landing.stripe_publishable_key}
               termsAndConditions={landing.terms_and_conditions}
+              stripeAppearance={landing.stripe_appearance || landing.payment_config?.stripe_appearance || landing.form_schema?.stripe_appearance}
             />
           )}
         </div>

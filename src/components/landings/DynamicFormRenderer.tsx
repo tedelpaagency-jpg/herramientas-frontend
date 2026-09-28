@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FormSchema, FormFieldSchema, PaymentConfig } from '../../types/landing';
+import { FormSchema, FormFieldSchema, PaymentConfig, StripeAppearanceConfig } from '../../types/landing';
 import { ChevronRight, ChevronLeft, Check, Send, Loader2, CreditCard, Lock, ShieldCheck } from 'lucide-react';
 
 interface Props {
@@ -13,6 +13,7 @@ interface Props {
   paymentConfig?: PaymentConfig | null;
   stripePublishableKey?: string | null;
   termsAndConditions?: string | null;
+  stripeAppearance?: StripeAppearanceConfig | null;
 }
 
 export const DynamicFormRenderer: React.FC<Props> = ({
@@ -26,12 +27,14 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   paymentConfig,
   stripePublishableKey,
   termsAndConditions,
+  stripeAppearance,
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [isBtnHovered, setIsBtnHovered] = useState(false);
 
   const getFormattedTermsHtml = (raw: string | null | undefined): string => {
     if (!raw || !raw.trim()) return '';
@@ -198,6 +201,81 @@ export const DynamicFormRenderer: React.FC<Props> = ({
     ...(customStyles.button_text_color ? { color: customStyles.button_text_color } : {}),
     ...(customStyles.border_radius === 'none' ? { borderRadius: '0px' } : {}),
   };
+
+  // Stripe Appearance Integration
+  const effectiveStripeAppearance: StripeAppearanceConfig | undefined =
+    stripeAppearance ||
+    paymentConfig?.stripe_appearance ||
+    formSchema?.stripe_appearance;
+
+  const stripeBoxStyle: React.CSSProperties = effectiveStripeAppearance
+    ? {
+        backgroundColor: effectiveStripeAppearance.bg_transparent
+          ? 'transparent'
+          : (effectiveStripeAppearance.bg_color || (isDark ? '#090d16' : '#f0fdf4')),
+        borderColor: effectiveStripeAppearance.container_border_color || (isDark ? '#1e293b' : '#a7f3d0'),
+        borderWidth: effectiveStripeAppearance.container_border_width || '1px',
+        borderStyle: 'solid',
+        borderRadius: effectiveStripeAppearance.container_border_radius || '16px',
+        padding: effectiveStripeAppearance.spacing_unit || '16px',
+        color: effectiveStripeAppearance.text_color || (isDark ? '#f8fafc' : '#064e3b'),
+        fontFamily: effectiveStripeAppearance.font_family || undefined,
+        boxShadow: effectiveStripeAppearance.container_shadow === 'none' ? 'none' : undefined,
+      }
+    : {};
+
+  const stripeInputStyle: React.CSSProperties = effectiveStripeAppearance
+    ? {
+        backgroundColor: effectiveStripeAppearance.input_bg_color || inputInlineStyle.backgroundColor,
+        color: effectiveStripeAppearance.input_text_color || inputInlineStyle.color,
+        borderColor: effectiveStripeAppearance.input_border_color || inputInlineStyle.borderColor,
+        borderWidth: effectiveStripeAppearance.input_border_width || '1px',
+        borderRadius: effectiveStripeAppearance.input_border_radius || '12px',
+        padding: effectiveStripeAppearance.input_padding || '12px 14px',
+        fontSize: effectiveStripeAppearance.font_size || '13px',
+        fontFamily: effectiveStripeAppearance.font_family || undefined,
+      }
+    : inputInlineStyle;
+
+  const stripeLabelStyle: React.CSSProperties = effectiveStripeAppearance
+    ? {
+        color: effectiveStripeAppearance.label_color || effectiveStripeAppearance.text_color || labelStyle.color,
+        fontWeight: (effectiveStripeAppearance.font_weight as any) || '600',
+        fontSize: '11px',
+        fontFamily: effectiveStripeAppearance.font_family || undefined,
+      }
+    : labelStyle;
+
+  const stripeTitleStyle: React.CSSProperties = effectiveStripeAppearance
+    ? {
+        color: effectiveStripeAppearance.title_color || effectiveStripeAppearance.text_color,
+        fontFamily: effectiveStripeAppearance.font_family || undefined,
+      }
+    : {};
+
+  const stripeButtonStyle: React.CSSProperties = effectiveStripeAppearance
+    ? {
+        background: effectiveStripeAppearance.button_bg_color || buttonInlineStyle.background,
+        backgroundColor: !effectiveStripeAppearance.button_bg_color?.includes('gradient')
+          ? effectiveStripeAppearance.button_bg_color
+          : undefined,
+        color: effectiveStripeAppearance.button_text_color || '#ffffff',
+        borderRadius: effectiveStripeAppearance.button_border_radius || activeRadiusClass,
+        padding: effectiveStripeAppearance.button_padding || '14px 24px',
+      }
+    : buttonInlineStyle;
+
+  const stripeErrorStyle: React.CSSProperties = effectiveStripeAppearance?.error_color
+    ? {
+        color: effectiveStripeAppearance.error_color,
+      }
+    : {};
+
+  const stripeLinkStyle: React.CSSProperties = effectiveStripeAppearance?.link_color
+    ? {
+        color: effectiveStripeAppearance.link_color,
+      }
+    : {};
 
   if (isFormLoading) {
     const isDarkVariant = variant === 'dark';
@@ -406,38 +484,73 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       {paymentConfig?.enabled && isLastStep && (
         <div
           className={`p-4 ${activeRadiusClass} border text-xs flex flex-col space-y-4 w-full ${
-            isDark
-              ? 'bg-slate-950/90 border-emerald-500/40 text-slate-200'
-              : 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+            effectiveStripeAppearance
+              ? ''
+              : isDark
+                ? 'bg-slate-950/90 border-emerald-500/40 text-slate-200'
+                : 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
           }`}
-          style={{ display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box', gap: '1rem' }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            boxSizing: 'border-box',
+            gap: '1rem',
+            ...stripeBoxStyle,
+          }}
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between border-b border-emerald-500/20 pb-2.5 w-full"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
+            className="flex items-center justify-between border-b pb-2.5 w-full"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              borderColor: effectiveStripeAppearance?.container_border_color || 'rgba(16, 185, 129, 0.2)',
+            }}
           >
             <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <CreditCard className="w-4.5 h-4.5 text-emerald-500 shrink-0" />
-              <span className="font-bold text-xs">Datos de Tarjeta de Crédito / Débito (Stripe)</span>
+              <CreditCard className="w-4.5 h-4.5 shrink-0" style={{ color: effectiveStripeAppearance?.button_bg_color || '#10b981' }} />
+              <span className="font-bold text-xs" style={stripeTitleStyle}>
+                Datos de Tarjeta de Crédito / Débito (Stripe)
+              </span>
             </div>
             <span
-              className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center gap-1 shrink-0"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+              className="text-[10px] font-mono font-bold px-2 py-0.5 rounded flex items-center gap-1 shrink-0"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                backgroundColor: effectiveStripeAppearance?.theme === 'night' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 185, 129, 0.15)',
+                color: effectiveStripeAppearance?.text_color || '#10b981',
+              }}
             >
-              <Lock className="w-3 h-3 text-emerald-500" /> SSL 256-Bit
+              <Lock className="w-3 h-3" /> SSL 256-Bit
             </span>
           </div>
 
           {/* Product & Price Summary */}
           <div
-            className="flex items-center justify-between text-xs p-3 bg-white/80 dark:bg-slate-900/80 rounded-xl border border-emerald-500/30 w-full shadow-xs"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', boxSizing: 'border-box' }}
+            className="flex items-center justify-between text-xs p-3 rounded-xl border w-full shadow-xs"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              boxSizing: 'border-box',
+              backgroundColor: effectiveStripeAppearance?.input_bg_color || (isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)'),
+              borderColor: effectiveStripeAppearance?.input_border_color || 'rgba(16, 185, 129, 0.3)',
+              color: effectiveStripeAppearance?.text_color || undefined,
+            }}
           >
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
+            <span className="font-semibold">
               {paymentConfig.product_name || 'Servicio / Registro'}
             </span>
-            <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+            <span
+              className="font-extrabold text-sm"
+              style={{ color: effectiveStripeAppearance?.button_bg_color || '#10b981' }}
+            >
               ${paymentConfig.amount || 0} {paymentConfig.currency || 'USD'}
             </span>
           </div>
@@ -454,7 +567,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
             >
               <label
                 className={`${labelClasses} block w-full text-left mb-1`}
-                style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...labelStyle }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
               >
                 Nombre en la Tarjeta <span className="text-red-500">*</span>
               </label>
@@ -464,9 +577,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 value={formData['card_holder_name'] || ''}
                 onChange={(e) => handleInputChange({ id: 'card_holder_name', name: 'card_holder_name', label: 'Nombre en la Tarjeta', type: 'text' }, e.target.value.toUpperCase())}
                 className={`${inputClasses} block w-full`}
-                style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...inputInlineStyle }}
+                style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...stripeInputStyle }}
               />
-              {errors['card_holder_name'] && <p className="text-[11px] text-red-500 font-semibold">{errors['card_holder_name']}</p>}
+              {errors['card_holder_name'] && <p className="text-[11px] font-semibold" style={stripeErrorStyle}>{errors['card_holder_name']}</p>}
             </div>
 
             {/* Número de Tarjeta */}
@@ -476,7 +589,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
             >
               <label
                 className={`${labelClasses} block w-full text-left mb-1`}
-                style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...labelStyle }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
               >
                 Número de Tarjeta <span className="text-red-500">*</span>
               </label>
@@ -492,11 +605,11 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                     handleInputChange({ id: 'card_number', name: 'card_number', label: 'Número de Tarjeta', type: 'text' }, formatted);
                   }}
                   className={`${inputClasses} font-mono tracking-wider block w-full`}
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...inputInlineStyle }}
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...stripeInputStyle }}
                 />
                 <CreditCard className="w-4 h-4 text-slate-400 absolute right-3 top-3.5 pointer-events-none" style={{ position: 'absolute', right: '12px', top: '14px' }} />
               </div>
-              {errors['card_number'] && <p className="text-[11px] text-red-500 font-semibold">{errors['card_number']}</p>}
+              {errors['card_number'] && <p className="text-[11px] font-semibold" style={stripeErrorStyle}>{errors['card_number']}</p>}
             </div>
 
             {/* Expiración y CVC Grid */}
@@ -511,7 +624,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               >
                 <label
                   className={`${labelClasses} block w-full text-left mb-1`}
-                  style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...labelStyle }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
                 >
                   Vencimiento (MM/AA) <span className="text-red-500">*</span>
                 </label>
@@ -528,9 +641,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                     handleInputChange({ id: 'card_expiry', name: 'card_expiry', label: 'Fecha de Vencimiento', type: 'text' }, val);
                   }}
                   className={`${inputClasses} font-mono block w-full`}
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...inputInlineStyle }}
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...stripeInputStyle }}
                 />
-                {errors['card_expiry'] && <p className="text-[11px] text-red-500 font-semibold">{errors['card_expiry']}</p>}
+                {errors['card_expiry'] && <p className="text-[11px] font-semibold" style={stripeErrorStyle}>{errors['card_expiry']}</p>}
               </div>
 
               {/* CVC / CVV */}
@@ -540,7 +653,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               >
                 <label
                   className={`${labelClasses} block w-full text-left mb-1`}
-                  style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...labelStyle }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
                 >
                   CVC / CVV <span className="text-red-500">*</span>
                 </label>
@@ -554,9 +667,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                     handleInputChange({ id: 'card_cvc', name: 'card_cvc', label: 'CVC / CVV', type: 'text' }, raw);
                   }}
                   className={`${inputClasses} font-mono block w-full`}
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...inputInlineStyle }}
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...stripeInputStyle }}
                 />
-                {errors['card_cvc'] && <p className="text-[11px] text-red-500 font-semibold">{errors['card_cvc']}</p>}
+                {errors['card_cvc'] && <p className="text-[11px] font-semibold" style={stripeErrorStyle}>{errors['card_cvc']}</p>}
               </div>
             </div>
           </div>
@@ -610,7 +723,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               }}
             />
             <label htmlFor="termsCheck" style={{ display: 'inline-block', textTransform: 'none', color: customStyles.text_color || (isDark ? '#ffffff' : '#1e293b'), fontSize: '0.8rem', margin: 0, cursor: 'pointer', lineHeight: 1.3 }}>
-              He leído y acepto los <a href="#" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} style={{ color: 'var(--yes-green, #10b981)', textDecoration: 'underline', fontWeight: 600 }}>Términos y Condiciones</a>
+              He leído y acepto los <a href="#" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} style={{ color: effectiveStripeAppearance?.link_color || 'var(--yes-green, #10b981)', textDecoration: 'underline', fontWeight: 600 }}>Términos y Condiciones</a>
             </label>
           </div>
           {errors['termsCheck'] && (
@@ -736,8 +849,12 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           <button
             type="submit"
             disabled={loading}
+            onMouseEnter={() => setIsBtnHovered(true)}
+            onMouseLeave={() => setIsBtnHovered(false)}
             className={`w-full flex items-center justify-center gap-2 text-white text-sm px-6 py-3.5 ${activeRadiusClass} font-bold shadow-lg hover:shadow-emerald-500/20 transition-all duration-200 disabled:opacity-50 cursor-pointer ${
-              paymentConfig?.enabled
+              effectiveStripeAppearance && paymentConfig?.enabled
+                ? ''
+                : paymentConfig?.enabled
                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500'
                 : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
             }`}
@@ -748,15 +865,29 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               justifyContent: 'center',
               boxSizing: 'border-box',
               textAlign: 'center',
-              ...buttonInlineStyle,
+              ...(paymentConfig?.enabled && effectiveStripeAppearance
+                ? {
+                    ...stripeButtonStyle,
+                    ...(isBtnHovered && effectiveStripeAppearance.button_hover_bg_color
+                      ? {
+                          backgroundColor: effectiveStripeAppearance.button_hover_bg_color,
+                          background: effectiveStripeAppearance.button_hover_bg_color,
+                        }
+                      : {}),
+                  }
+                : buttonInlineStyle),
             }}
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : paymentConfig?.enabled ? (
               <>
-                <CreditCard className="w-4 h-4 text-white shrink-0" />
-                <span>{submitText || `Pagar $${paymentConfig.amount || 0} ${paymentConfig.currency || 'USD'}`}</span>
+                <CreditCard className="w-4 h-4 shrink-0" style={{ color: stripeButtonStyle.color || '#ffffff' }} />
+                <span>
+                  {effectiveStripeAppearance?.button_text ||
+                    submitText ||
+                    `Pagar $${paymentConfig.amount || 0} ${paymentConfig.currency || 'USD'}`}
+                </span>
               </>
             ) : (
               <>
