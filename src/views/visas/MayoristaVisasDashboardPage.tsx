@@ -207,7 +207,7 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="overflow-x-auto">
           {isLoading ? (
             <div className="p-12 text-center text-slate-400">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
@@ -226,47 +226,82 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
                 );
               }
 
-              return currentList.map((dossier) => (
-                <div key={dossier.id} className="p-4 sm:p-5 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-base">
-                        {dossier.code}
-                      </span>
-                      <span className="text-slate-400">•</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {dossier.client?.name || 'Cliente'}
-                      </span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
-                        {dossier.agency?.name || 'Agencia'}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                      <span>{dossier.processType?.flag_icon} {dossier.processType?.name}</span>
-                      <span>Progreso: <strong className="text-slate-700 dark:text-slate-300">{dossier.progress}%</strong></span>
-                      <span>Estado: <strong className="capitalize text-slate-700 dark:text-slate-300">{dossier.status.replace('_', ' ')}</strong></span>
-                    </div>
-
-                    {dossier.action_required && (
-                      <div className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 font-medium bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg w-fit">
-                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>Acción: {dossier.action_required}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                    <Link
-                      href={`/visas/expedientes/${dossier.id}`}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-sm"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      Revisar Expediente 360°
-                    </Link>
-                  </div>
-                </div>
-              ));
+              return (
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="py-3.5 px-4">Código Expediente</th>
+                      <th className="py-3.5 px-4">Cliente / Solicitante</th>
+                      <th className="py-3.5 px-4">Agencia Afiliada</th>
+                      <th className="py-3.5 px-4">Trámite Migratorio</th>
+                      <th className="py-3.5 px-4 text-center">Progreso</th>
+                      <th className="py-3.5 px-4">Estado & Acción</th>
+                      <th className="py-3.5 px-4 text-right">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                    {currentList.map((dossier) => (
+                      <tr key={dossier.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <Link
+                            href={`/visas/expedientes/${dossier.id}`}
+                            className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-xs hover:underline"
+                          >
+                            {dossier.code}
+                          </Link>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap font-bold text-slate-900 dark:text-white">
+                          {dossier.client?.name || 'Cliente'}
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-semibold">
+                            {dossier.agency?.name || 'Agencia'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap text-slate-800 dark:text-slate-200">
+                          <span className="mr-1.5">{dossier.processType?.flag_icon || '🌐'}</span>
+                          <span>{dossier.processType?.name || 'Trámite'}</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center gap-2">
+                            <div className="w-16 h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                              <div
+                                className="h-full bg-indigo-600 rounded-full"
+                                style={{ width: `${Math.min(100, Math.max(0, dossier.progress || 0))}%` }}
+                              />
+                            </div>
+                            <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px]">
+                              {dossier.progress}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="space-y-1">
+                            <span className="inline-block capitalize font-bold text-[11px] text-slate-700 dark:text-slate-300">
+                              {dossier.status.replace('_', ' ')}
+                            </span>
+                            {dossier.action_required && (
+                              <div className="flex items-center gap-1 text-[10px] text-rose-600 dark:text-rose-400 font-semibold bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded">
+                                <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate max-w-[200px]">{dossier.action_required}</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <Link
+                            href={`/visas/expedientes/${dossier.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all shadow-xs"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Revisar 360°</span>
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              );
             })()
           )}
         </div>

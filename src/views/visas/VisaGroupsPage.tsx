@@ -129,72 +129,80 @@ export const VisaGroupsPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {isLoading ? (
-          <div className="col-span-full py-16 text-center text-slate-400">
-            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
-            Cargando grupos...
-          </div>
-        ) : groups.length === 0 ? (
-          <div className="col-span-full py-16 text-center text-slate-400">
-            <Users className="w-12 h-12 mx-auto mb-2 opacity-30 text-indigo-500" />
-            <p className="font-semibold text-slate-700 dark:text-slate-300">No hay grupos registrados</p>
-          </div>
-        ) : (
-          groups.map((group) => (
-            <div
-              key={group.id}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">{group.name}</h3>
-                    <span className="text-xs font-mono text-indigo-600 dark:text-indigo-400">{group.code}</span>
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase">
-                    {group.group_type}
-                  </span>
-                </div>
-
-                <div className="mt-3 space-y-1 text-xs text-slate-500">
-                  {group.contact_name && <div>Contacto: <strong>{group.contact_name}</strong></div>}
-                  {group.contact_email && <div className="truncate">Email: {group.contact_email}</div>}
-                  {group.contact_phone && <div>Tel: {group.contact_phone}</div>}
-                  <div className="pt-2 text-indigo-600 dark:text-indigo-400 font-semibold">
-                    {group.dossiers_count || 0} integrantes con expediente
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                <Link
-                  href={`/visas?group_id=${group.id}`}
-                  className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
-                >
-                  Ver expedientes →
-                </Link>
-
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => handleOpenModal(group)}
-                    className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg"
-                    title="Editar Grupo"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(group.id)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"
-                    title="Eliminar Grupo"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          {isLoading ? (
+            <div className="py-16 text-center text-slate-400">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
+              Cargando grupos...
             </div>
-          ))
-        )}
+          ) : groups.length === 0 ? (
+            <div className="py-16 text-center text-slate-400">
+              <Users className="w-12 h-12 mx-auto mb-2 opacity-30 text-indigo-500" />
+              <p className="font-semibold text-slate-700 dark:text-slate-300">No hay grupos registrados</p>
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
+                <tr>
+                  <th className="py-3.5 px-4">Grupo / Solicitantes</th>
+                  <th className="py-3.5 px-4">Tipo</th>
+                  <th className="py-3.5 px-4">Contacto Principal</th>
+                  <th className="py-3.5 px-4 text-center">Expedientes Vinculados</th>
+                  <th className="py-3.5 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                {groups.map((group) => (
+                  <tr key={group.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <div className="font-bold text-slate-900 dark:text-white text-xs">{group.name}</div>
+                      <div className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400">{group.code}</div>
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase">
+                        {group.group_type}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <div className="text-slate-800 dark:text-slate-200 font-semibold">{group.contact_name || 'Sin contacto'}</div>
+                      <div className="text-[11px] text-slate-500">{group.contact_email || group.contact_phone || '—'}</div>
+                    </td>
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-900/60">
+                        {group.dossiers_count || 0} integrantes
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5">
+                        <Link
+                          href={`/visas?group_id=${group.id}`}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs shadow-xs transition-all"
+                        >
+                          <span>Ver expedientes</span>
+                        </Link>
+                        <button
+                          onClick={() => handleOpenModal(group)}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          title="Editar Grupo"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(group.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                          title="Eliminar Grupo"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
 
       {/* Modal */}

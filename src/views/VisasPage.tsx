@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Visa, VisaRef } from '../types';
 import visaService from '../services/visaService';
 import { VisaFormModal } from '../components/VisaFormModal';
 import { 
-  FileCheck, Plus, Search, Trash2, Edit3, Link as LinkIcon, Eye, EyeOff, FolderPlus, Folder, Filter, CheckCircle2, XCircle, Clock, ArrowLeft, ChevronRight, FileText, ExternalLink
+  FileCheck, Plus, Search, Trash2, Edit3, Link as LinkIcon, Eye, EyeOff, 
+  FolderPlus, Folder, Filter, CheckCircle2, XCircle, Clock, ArrowLeft, 
+  ChevronRight, FileText, ExternalLink, Building2, RefreshCw, Users, ArrowUpRight
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
 import toast from 'react-hot-toast';
@@ -14,12 +17,17 @@ export const VisasPage: React.FC = () => {
   const [visas, setVisas] = useState<Visa[]>([]);
   const [visaRefs, setVisaRefs] = useState<VisaRef[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Group-First State: activeGroup = null means showing Groups table; activeGroup = VisaRef | { id: number | string, name: string } means inside group detail
+  // Tab state when activeGroup is null: 'grupos' (group folder view) or 'todos' (flat master table of all visas)
+  const [activeTab, setActiveTab] = useState<'grupos' | 'todos'>('grupos');
+
+  // Group detail view state: null = showing main tabs; object = inside specific group
   const [activeGroup, setActiveGroup] = useState<VisaRef | { id: number | string; name: string } | null>(null);
 
   const [search, setSearch] = useState('');
   const [selectedVisaType, setSelectedVisaType] = useState<string>('all');
+  const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>('all');
 
   // Modals
   const [isVisaModalOpen, setIsVisaModalOpen] = useState(false);
@@ -29,8 +37,13 @@ export const VisasPage: React.FC = () => {
   const [editingRef, setEditingRef] = useState<VisaRef | null>(null);
   const [refName, setRefName] = useState('');
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  const fetchData = async (showRefreshToast = false) => {
+    if (showRefreshToast) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+
     try {
       const [visasData, refsData] = await Promise.all([
         visaService.getVisas(),
@@ -38,11 +51,15 @@ export const VisasPage: React.FC = () => {
       ]);
       setVisas(visasData);
       setVisaRefs(refsData);
+      if (showRefreshToast) {
+        toast.success('Datos actualizados');
+      }
     } catch (err) {
       console.error('Error loading visas:', err);
       toast.error('Error al cargar la lista de visados');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -165,10 +182,18 @@ export const VisasPage: React.FC = () => {
     }
   };
 
+  const getGroupName = (refId?: number | string | null) => {
+    if (!refId || String(refId) === '0' || refId === 'general') {
+      return 'General / Sin Grupo';
+    }
+    const found = visaRefs.find((r) => String(r.id) === String(refId));
+    return found ? found.name : `Grupo #${refId}`;
+  };
+
   // Visas without a group
   const unassignedVisas = visas.filter((v) => !v.visa_ref_id || String(v.visa_ref_id) === '0');
 
-  // Visas for current active group
+  // Visas for current active group detail view
   const groupVisas = activeGroup ? visas.filter((v) => {
     if (activeGroup.id === 'general') return !v.visa_ref_id || String(v.visa_ref_id) === '0';
     return String(v.visa_ref_id) === String(activeGroup.id);
@@ -187,6 +212,29 @@ export const VisasPage: React.FC = () => {
   const filteredRefs = visaRefs.filter((r) => 
     r.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Filtered visas for master table (Tab "Todos los Expedientes")
+  const allFilteredVisas = visas.filter((v) => {
+    const matchesType = selectedVisaType === 'all' || v.visa_type === selectedVisaType;
+    const matchesGroup = 
+      selectedGroupFilter === 'all' ||
+      (selectedGroupFilter === 'general' && (!v.visa_ref_id || String(v.visa_ref_id) === '0')) ||
+      String(v.visa_ref_id) === selectedGroupFilter;
+    const groupName = getGroupName(v.visa_ref_id);
+    const matchesSearch = 
+      v.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
+      (v.passport_number && v.passport_number.toLowerCase().includes(search.toLowerCase())) ||
+      (v.description && v.description.toLowerCase().includes(search.toLowerCase())) ||
+      groupName.toLowerCase().includes(search.toLowerCase());
+
+    return matchesType && matchesGroup && matchesSearch;
+  });
+
+  // KPI Metrics
+  const totalGrupos = visaRefs.length + (unassignedVisas.length > 0 ? 1 : 0);
+  const totalExpedientes = visas.length;
+  const totalConfirmadas = visas.filter((v) => v.status === '2' || v.status === 'confirmed' || v.status === 'approved').length;
+  const totalPendientes = visas.filter((v) => v.status === '1' || v.status === 'pending').length;
 
   const renderStatusBadge = (status: string) => {
     if (status === '1' || status === 'pending') {
@@ -216,13 +264,13 @@ export const VisasPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div>
           {activeGroup ? (
             <div className="flex items-center space-x-2 text-xs font-bold text-sky-600 dark:text-sky-400 mb-1">
               <button onClick={() => setActiveGroup(null)} className="hover:underline flex items-center space-x-1">
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Listado de Grupos</span>
+                <span>Volver a Grupos</span>
               </button>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
               <span className="text-slate-900 dark:text-white font-extrabold">{activeGroup.name}</span>
@@ -233,23 +281,43 @@ export const VisasPage: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-sky-600 flex items-center justify-center text-white shadow-md shadow-sky-600/20">
               <FileCheck className="w-5 h-5" />
             </div>
-            <span>{activeGroup ? `Expedientes: ${activeGroup.name}` : 'Visas - Listado de Grupos'}</span>
+            <span>{activeGroup ? `Expedientes: ${activeGroup.name}` : 'Gestión de Visados: Grupos y Expedientes'}</span>
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-1">
             {activeGroup 
-              ? `Listado de solicitudes individuales de visas asociadas a ${activeGroup.name}`
-              : 'Gestión de grupos de visados (Replicado de CI3). Haz clic en ver expedientes para consultar las solicitudes individuales.'}
+              ? `Listado de solicitudes individuales asociadas al grupo ${activeGroup.name}.`
+              : 'Módulo independiente de gestión de grupos y expedientes migratorios. Consulta todos los expedientes históricos y grupos generados.'}
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Direct Link to Separate Wholesale Module */}
+          <Link
+            href="/visas/mayorista"
+            className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs rounded-xl border border-indigo-200 dark:border-indigo-800 transition-all"
+            title="Ir al módulo independiente de Operaciones Mayoristas B2B"
+          >
+            <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <span>Módulo Mayorista B2B</span>
+            <ArrowUpRight className="w-3.5 h-3.5 opacity-70" />
+          </Link>
+
+          <button
+            onClick={() => fetchData(true)}
+            disabled={isRefreshing}
+            className="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-200 dark:border-slate-700 transition-all"
+            title="Refrescar lista"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-sky-600' : ''}`} />
+          </button>
+
           {activeGroup && (
             <button
               onClick={() => setActiveGroup(null)}
               className="flex items-center space-x-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-200 dark:border-slate-700 transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Volver a Grupos</span>
+              <span>Volver</span>
             </button>
           )}
 
@@ -263,7 +331,7 @@ export const VisasPage: React.FC = () => {
 
           <button
             onClick={() => handleOpenCreateVisa(activeGroup)}
-            className="flex items-center space-x-2 px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-md transition-all"
+            className="flex items-center space-x-2 px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-600/20 transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Nueva Solicitud</span>
@@ -271,157 +339,472 @@ export const VisasPage: React.FC = () => {
         </div>
       </div>
 
-      {/* LEVEL 1: GROUPS DATA TABLE (Matching CI3 visas_ref.php) */}
-      {!activeGroup ? (
-        isLoading ? (
-          <TableSkeleton rows={5} />
-        ) : (
-          <div className="space-y-4">
-            {/* Search Filter for Groups */}
-            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center shadow-xs">
-              <Search className="w-4 h-4 text-slate-400 mr-3" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar grupo por nombre..."
-                className="w-full bg-transparent text-slate-900 dark:text-white text-xs font-medium focus:outline-none placeholder-slate-400"
-              />
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs">
-              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-                <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider flex items-center space-x-2">
-                  <Folder className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                  <span>Listado de grupos de visas</span>
-                </h4>
-              </div>
-
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full text-left border-collapse text-xs text-slate-700 dark:text-slate-300">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-20 whitespace-nowrap">No.</th>
-                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Nombre del Grupo</th>
-                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Solicitudes</th>
-                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {/* General / Unassigned Group */}
-                    {unassignedVisas.length > 0 && (
-                      <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-mono font-bold text-slate-400 whitespace-nowrap">—</td>
-                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 flex items-center justify-center font-bold shrink-0">
-                              <Folder className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <p className="font-extrabold text-slate-900 dark:text-white text-sm whitespace-nowrap">General / Sin Grupo</p>
-                              <p className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Solicitudes registradas sin asignación específica</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                            {unassignedVisas.length} {unassignedVisas.length === 1 ? 'solicitud' : 'solicitudes'}
-                          </span>
-                        </td>
-                        <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right whitespace-nowrap">
-                          <button
-                            onClick={() => setActiveGroup({ id: 'general', name: 'General / Sin Grupo' })}
-                            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs shadow-xs transition-all"
-                            title="Ver solicitudes de este grupo"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>Ver expedientes</span>
-                          </button>
-                        </td>
-                      </tr>
-                    )}
-
-                    {/* Visa Reference Groups */}
-                    {filteredRefs.map((ref) => {
-                      const count = visas.filter((v) => String(v.visa_ref_id) === String(ref.id)).length;
-                      return (
-                        <tr key={ref.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-mono font-bold text-slate-500 whitespace-nowrap">{ref.id}</td>
-                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400 flex items-center justify-center font-bold shrink-0">
-                                <Folder className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <p className="font-extrabold text-slate-900 dark:text-white text-sm whitespace-nowrap">{ref.name}</p>
-                                <p className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Expediente de visados grupales</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
-                              {count} {count === 1 ? 'solicitud' : 'solicitudes'}
-                            </span>
-                          </td>
-                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right space-x-1.5 whitespace-nowrap">
-                            {/* Botón Ver detalles (CI3 fa-file-lines) */}
-                            <button
-                              onClick={() => setActiveGroup(ref)}
-                              className="inline-flex items-center space-x-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs shadow-xs transition-all"
-                              title="Ver expedientes de este grupo"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                              <span>Ver expedientes</span>
-                            </button>
-
-                            {/* Botón Editar (CI3 fa-pencil) */}
-                            <button
-                              onClick={(e) => handleOpenEditRef(ref, e)}
-                              className="p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
-                              title="Editar nombre del grupo"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-
-                            {/* Botón Eliminar (CI3 fa-trash) */}
-                            <button
-                              onClick={(e) => handleDeleteRef(ref, e)}
-                              className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
-                              title="Eliminar grupo"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {filteredRefs.length === 0 && unassignedVisas.length === 0 && (
-                <div className="p-12 text-center space-y-3">
-                  <Folder className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
-                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400">No se encontraron grupos de visas.</p>
-                  <button
-                    onClick={handleOpenCreateRef}
-                    className="px-4 py-2 bg-sky-600 text-white font-bold text-xs rounded-xl hover:bg-sky-500 shadow-xs"
-                  >
-                    + Crear Primer Grupo
-                  </button>
-                </div>
-              )}
-            </div>
+      {/* KPI Metrics Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center font-black">
+            <Folder className="w-5 h-5" />
           </div>
-        )
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Grupos</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white">{totalGrupos}</p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-black">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Expedientes Totales</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white">{totalExpedientes}</p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Confirmadas</p>
+            <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{totalConfirmadas}</p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Pendientes</p>
+            <p className="text-xl font-black text-amber-600 dark:text-amber-400">{totalPendientes}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      {!activeGroup ? (
+        <div className="space-y-4">
+          {/* View Switcher Tabs: "Vista por Grupos" vs "Todos los Expedientes" */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+              <button
+                onClick={() => setActiveTab('grupos')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'grupos'
+                    ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Folder className="w-4 h-4" />
+                <span>Gestión por Grupos ({totalGrupos})</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('todos')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'todos'
+                    ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Todos los Expedientes ({totalExpedientes})</span>
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400 font-medium">
+              {activeTab === 'grupos' 
+                ? 'Carpetas y grupos de solicitantes para organizar visas.' 
+                : 'Listado completo de todas las solicitudes históricas y activas.'}
+            </p>
+          </div>
+
+          {/* TAB 1: GROUPS VIEW (Replicating CI3 visas_ref.php) */}
+          {activeTab === 'grupos' && (
+            isLoading ? (
+              <TableSkeleton rows={5} />
+            ) : (
+              <div className="space-y-4">
+                {/* Search Filter for Groups */}
+                <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center shadow-xs">
+                  <Search className="w-4 h-4 text-slate-400 mr-3 shrink-0" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar grupo por nombre..."
+                    className="w-full bg-transparent text-slate-900 dark:text-white text-xs font-medium focus:outline-none placeholder-slate-400"
+                  />
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs">
+                  <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider flex items-center space-x-2">
+                      <Folder className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                      <span>Listado de grupos de visas</span>
+                    </h4>
+                    <span className="text-[11px] font-bold text-slate-500">
+                      {filteredRefs.length + (unassignedVisas.length > 0 ? 1 : 0)} grupos encontrados
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left border-collapse text-xs text-slate-700 dark:text-slate-300">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-20 whitespace-nowrap">No.</th>
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Nombre del Grupo</th>
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center whitespace-nowrap">Expedientes Asociados</th>
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {/* General / Unassigned Group */}
+                        {unassignedVisas.length > 0 && (
+                          <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                            <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-mono font-bold text-slate-400 whitespace-nowrap">—</td>
+                            <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 flex items-center justify-center font-bold shrink-0">
+                                  <Folder className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <p className="font-extrabold text-slate-900 dark:text-white text-sm whitespace-nowrap">General / Sin Grupo</p>
+                                  <p className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Solicitudes registradas sin asignación específica de grupo</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                {unassignedVisas.length} {unassignedVisas.length === 1 ? 'expediente' : 'expedientes'}
+                              </span>
+                            </td>
+                            <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right whitespace-nowrap">
+                              <button
+                                onClick={() => setActiveGroup({ id: 'general', name: 'General / Sin Grupo' })}
+                                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs shadow-xs transition-all"
+                                title="Ver solicitudes de este grupo"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>Ver expedientes</span>
+                              </button>
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* Visa Reference Groups */}
+                        {filteredRefs.map((ref) => {
+                          const count = visas.filter((v) => String(v.visa_ref_id) === String(ref.id)).length;
+                          return (
+                            <tr key={ref.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-mono font-bold text-slate-500 whitespace-nowrap">#{ref.id}</td>
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400 flex items-center justify-center font-bold shrink-0">
+                                    <Folder className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <p className="font-extrabold text-slate-900 dark:text-white text-sm whitespace-nowrap">{ref.name}</p>
+                                    <p className="text-[11px] text-slate-500 font-medium whitespace-nowrap">Expediente de visados grupales / familiares</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-center whitespace-nowrap">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
+                                  {count} {count === 1 ? 'expediente' : 'expedientes'}
+                                </span>
+                              </td>
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right space-x-1.5 whitespace-nowrap">
+                                {/* Botón Ver expedientes */}
+                                <button
+                                  onClick={() => setActiveGroup(ref)}
+                                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs shadow-xs transition-all"
+                                  title="Ver expedientes de este grupo"
+                                >
+                                  <FileText className="w-3.5 h-3.5" />
+                                  <span>Ver expedientes</span>
+                                </button>
+
+                                {/* Botón Editar */}
+                                <button
+                                  onClick={(e) => handleOpenEditRef(ref, e)}
+                                  className="p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
+                                  title="Editar nombre del grupo"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+
+                                {/* Botón Eliminar */}
+                                <button
+                                  onClick={(e) => handleDeleteRef(ref, e)}
+                                  className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
+                                  title="Eliminar grupo"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {filteredRefs.length === 0 && unassignedVisas.length === 0 && (
+                    <div className="p-12 text-center space-y-3">
+                      <Folder className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
+                      <p className="text-xs font-bold text-slate-500 dark:text-slate-400">No se encontraron grupos de visas registrados.</p>
+                      <button
+                        onClick={handleOpenCreateRef}
+                        className="px-4 py-2 bg-sky-600 text-white font-bold text-xs rounded-xl hover:bg-sky-500 shadow-xs"
+                      >
+                        + Crear Primer Grupo
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          )}
+
+          {/* TAB 2: ALL EXPEDIENTES MASTER TABLE (Master table of all historical & current visas) */}
+          {activeTab === 'todos' && (
+            isLoading ? (
+              <TableSkeleton rows={5} />
+            ) : (
+              <div className="space-y-4">
+                {/* Filters Strip for Master Table */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Search */}
+                  <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center shadow-xs">
+                    <Search className="w-4 h-4 text-slate-400 mr-2.5 shrink-0" />
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Buscar por solicitante, pasaporte..."
+                      className="w-full bg-transparent text-slate-900 dark:text-white text-xs font-medium focus:outline-none placeholder-slate-400"
+                    />
+                  </div>
+
+                  {/* Filter by Group */}
+                  <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center space-x-2 shadow-xs">
+                    <Folder className="w-4 h-4 text-slate-400 shrink-0" />
+                    <select
+                      value={selectedGroupFilter}
+                      onChange={(e) => setSelectedGroupFilter(e.target.value)}
+                      className="w-full bg-transparent text-slate-900 dark:text-white text-xs font-medium focus:outline-none"
+                    >
+                      <option value="all">Todos los Grupos</option>
+                      <option value="general">General / Sin Grupo</option>
+                      {visaRefs.map((r) => (
+                        <option key={r.id} value={String(r.id)}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Filter by Visa Type */}
+                  <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center space-x-2 shadow-xs">
+                    <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                    <select
+                      value={selectedVisaType}
+                      onChange={(e) => setSelectedVisaType(e.target.value)}
+                      className="w-full bg-transparent text-slate-900 dark:text-white text-xs font-medium focus:outline-none"
+                    >
+                      <option value="all">Todos los Tipos de Visa</option>
+                      <option value="USA">Visa Americana (EEUU)</option>
+                      <option value="CANADA">Visa Canadiense</option>
+                      <option value="SCHENGEN">Visa Schengen (Europa)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs">
+                  <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider flex items-center space-x-2">
+                      <FileCheck className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                      <span>Listado maestro de expedientes migratorios</span>
+                    </h4>
+                    <span className="text-[11px] font-bold text-slate-500">
+                      {allFilteredVisas.length} expedientes encontrados
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left border-collapse text-xs text-slate-700 dark:text-slate-300">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-16 whitespace-nowrap">ID</th>
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Nombre / Solicitante</th>
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Grupo Asignado</th>
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Tipo de Visa</th>
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Fecha Registro</th>
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Estado</th>
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {allFilteredVisas.map((v) => {
+                          const groupName = getGroupName(v.visa_ref_id);
+                          return (
+                            <tr key={v.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-mono font-bold text-slate-400 whitespace-nowrap">
+                                #{v.id}
+                              </td>
+
+                              {/* Solicitante */}
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                                <div>
+                                  <p className="font-extrabold text-slate-900 dark:text-white text-sm whitespace-nowrap">{v.applicant_name}</p>
+                                  {v.passport_number && (
+                                    <p className="text-[11px] font-mono text-slate-500 font-medium">Pasaporte: {v.passport_number}</p>
+                                  )}
+                                  {v.description && (
+                                    <p className="text-[11px] text-slate-500 font-medium line-clamp-1">{v.description}</p>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Grupo */}
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                <span className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                                  v.visa_ref_id && String(v.visa_ref_id) !== '0'
+                                    ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                }`}>
+                                  <Folder className="w-3 h-3" />
+                                  <span>{groupName}</span>
+                                </span>
+                              </td>
+
+                              {/* Tipo de Visa */}
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                                {v.visa_type === 'USA' ? 'Visa americana' : v.visa_type === 'CANADA' ? 'Visa canadiense' : v.visa_type}
+                              </td>
+
+                              {/* Fecha */}
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-slate-500 font-medium whitespace-nowrap">
+                                {v.created_at ? new Date(v.created_at).toLocaleDateString() : '—'}
+                              </td>
+
+                              {/* Estado */}
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
+                                {renderStatusBadge(v.status)}
+                              </td>
+
+                              {/* Acciones */}
+                              <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right space-x-1.5 whitespace-nowrap">
+                                {/* Copiar enlace público */}
+                                <button
+                                  onClick={() => handleCopyPublicLink(v)}
+                                  className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
+                                  title="Copiar enlace público del formulario"
+                                >
+                                  <LinkIcon className="w-4 h-4" />
+                                </button>
+
+                                {/* Ver formulario consular público */}
+                                <a
+                                  href={`/visa/show/${btoa(String(v.id))}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
+                                  title="Abrir formulario consular del cliente"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </a>
+
+                                {/* Alternar estado rápido */}
+                                <button
+                                  onClick={() => handleToggleStatus(v)}
+                                  className="p-2 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
+                                  title={v.status === '1' || v.status === 'pending' ? 'Marcar como Confirmada' : 'Marcar como Pendiente'}
+                                >
+                                  {v.status === '1' || v.status === 'pending' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                </button>
+
+                                {/* Editar */}
+                                <button
+                                  onClick={() => handleOpenEditVisa(v)}
+                                  className="p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
+                                  title="Editar solicitud"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+
+                                {/* Eliminar */}
+                                <button
+                                  onClick={() => handleDeleteVisa(v)}
+                                  className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
+                                  title="Eliminar solicitud"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {allFilteredVisas.length === 0 && (
+                    <div className="p-12 text-center space-y-3">
+                      <FileCheck className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
+                      <p className="text-xs font-bold text-slate-500 dark:text-slate-400">No se encontraron expedientes con los filtros aplicados.</p>
+                      <button
+                        onClick={() => handleOpenCreateVisa(null)}
+                        className="px-4 py-2 bg-sky-600 text-white font-bold text-xs rounded-xl hover:bg-sky-500 shadow-xs"
+                      >
+                        + Crear Solicitud de Visa
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          )}
+        </div>
       ) : (
         /* LEVEL 2: INDIVIDUAL VISAS TABLE INSIDE SELECTED GROUP (Matching CI3 visa.php) */
         <div className="space-y-4">
+          {/* Header Inside Selected Group */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setActiveGroup(null)}
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors"
+                title="Volver al listado de grupos"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
+                  <Folder className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                  <span>Expedientes en {activeGroup.name}</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  {filteredGroupVisas.length} {filteredGroupVisas.length === 1 ? 'solicitud individual' : 'solicitudes individuales'} asociadas a este grupo
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handleOpenCreateVisa(activeGroup)}
+                className="flex items-center space-x-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-xs transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Agregar Solicitud al Grupo</span>
+              </button>
+            </div>
+          </div>
+
           {/* Filters Bar Inside Group */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Search */}
             <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 flex items-center shadow-xs">
-              <Search className="w-4 h-4 text-slate-400 mr-3" />
+              <Search className="w-4 h-4 text-slate-400 mr-3 shrink-0" />
               <input
                 type="text"
                 value={search}
@@ -490,6 +873,9 @@ export const VisasPage: React.FC = () => {
                         <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                           <div>
                             <p className="font-bold text-slate-900 dark:text-white text-sm whitespace-nowrap">{v.applicant_name}</p>
+                            {v.passport_number && (
+                              <p className="text-[11px] font-mono text-slate-500 font-medium">Pasaporte: {v.passport_number}</p>
+                            )}
                             {v.description && (
                               <p className="text-[11px] text-slate-500 font-medium line-clamp-1">{v.description}</p>
                             )}
@@ -501,7 +887,7 @@ export const VisasPage: React.FC = () => {
                           {v.created_at ? new Date(v.created_at).toLocaleDateString() : 'Hoy'}
                         </td>
 
-                        {/* Visa Type (Visa americana / Visa canadiense) */}
+                        {/* Visa Type */}
                         <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                           {v.visa_type === 'USA' ? 'Visa americana' : v.visa_type === 'CANADA' ? 'Visa canadiense' : v.visa_type}
                         </td>
@@ -522,7 +908,7 @@ export const VisasPage: React.FC = () => {
                             <LinkIcon className="w-4 h-4" />
                           </button>
 
-                          {/* Ver detalles / Formulario público (CI3 fa-file-lines) */}
+                          {/* Ver detalles / Formulario público */}
                           <a
                             href={`/visa/show/${btoa(String(v.id))}`}
                             target="_blank"
@@ -533,7 +919,7 @@ export const VisasPage: React.FC = () => {
                             <ExternalLink className="w-4 h-4" />
                           </a>
 
-                          {/* Alternar estado rápido (CI3 enableVisa) */}
+                          {/* Alternar estado rápido */}
                           <button
                             onClick={() => handleToggleStatus(v)}
                             className="p-2 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
@@ -542,7 +928,7 @@ export const VisasPage: React.FC = () => {
                             {v.status === '1' || v.status === 'pending' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                           </button>
 
-                          {/* Editar (CI3 fa-edit) */}
+                          {/* Editar */}
                           <button
                             onClick={() => handleOpenEditVisa(v)}
                             className="p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
@@ -551,7 +937,7 @@ export const VisasPage: React.FC = () => {
                             <Edit3 className="w-4 h-4" />
                           </button>
 
-                          {/* Eliminar (CI3 fa-trash) */}
+                          {/* Eliminar */}
                           <button
                             onClick={() => handleDeleteVisa(v)}
                             className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"

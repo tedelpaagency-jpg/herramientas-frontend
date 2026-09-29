@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { User } from '../types';
 import { WhiteLabel } from '../types/whiteLabel';
 import authService from '../services/authService';
@@ -271,7 +271,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return 'agent';
   })();
 
-  const effectivePermissions: string[] = (() => {
+  const effectivePermissions: string[] = useMemo(() => {
     if (isSuperAdmin) return ['*'];
 
     let basePerms: string[] = [];
@@ -304,11 +304,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return basePerms;
-  })();
+  }, [isSuperAdmin, user, currentAgency, isWhiteLabelAdmin]);
 
-  const hasPermission = (permission?: string | string[]): boolean => {
+  // Pre-compiled Set for instant O(1) lookup performance
+  const permissionsSet = useMemo(() => {
+    const set = new Set<string>();
+    effectivePermissions.forEach((p) => {
+      if (p) set.add(p.toLowerCase().trim());
+    });
+    return set;
+  }, [effectivePermissions]);
+
+  const hasPermission = useCallback((permission?: string | string[]): boolean => {
     if (!permission) return true;
-    if (isSuperAdmin || effectivePermissions.includes('*')) return true;
+    if (isSuperAdmin || permissionsSet.has('*')) return true;
 
     if (isWhiteLabelAdmin) {
       const wlAdminPerms = [
@@ -321,15 +330,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'plans.create',
         'plans.edit',
       ];
-      const reqList = (Array.isArray(permission) ? permission : [permission]).map((p) => p.toLowerCase().trim());
-      if (reqList.some((r) => wlAdminPerms.includes(r))) {
+      const reqList = Array.isArray(permission) ? permission : [permission];
+      if (reqList.some((r) => wlAdminPerms.includes(r.toLowerCase().trim()))) {
         return true;
       }
     }
 
-    const required = (Array.isArray(permission) ? permission : [permission]).map((p) => p.toLowerCase().trim());
-    return required.some((req) => effectivePermissions.map((ep) => ep.toLowerCase().trim()).includes(req));
-  };
+    const reqList = Array.isArray(permission) ? permission : [permission];
+    return reqList.some((req) => permissionsSet.has(req.toLowerCase().trim()));
+  }, [isSuperAdmin, isWhiteLabelAdmin, permissionsSet]);
 
   return (
     <AuthContext.Provider

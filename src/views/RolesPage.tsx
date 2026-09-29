@@ -79,23 +79,38 @@ export const RolesPage: React.FC = () => {
   const [deletingRole, setDeletingRole] = useState<Role | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  const DEFAULT_SYSTEM_ROLES: Role[] = useMemo(() => [
+    { id: 1, name: 'super_admin', display_name: 'Super Administrador', is_system: true, description: 'Acceso total y configuración global de la plataforma' },
+    { id: 2, name: 'white_label_admin', display_name: 'Administrador de Marca Blanca', is_system: true, description: 'Administración de red de agencias afiliadas y personalización' },
+    { id: 3, name: 'admin', display_name: 'Administrador de Agencia', is_system: true, description: 'Gestión integral de equipo, clientes y operaciones de agencia' },
+    { id: 4, name: 'gerente', display_name: 'Gerente de Operaciones', is_system: true, description: 'Supervisión de operaciones y autorización de expedientes' },
+    { id: 5, name: 'gerente_comercial', display_name: 'Gerente Comercial', is_system: true, description: 'Supervisión de ventas, leads y cierres comerciales' },
+    { id: 6, name: 'closer', display_name: 'Closer Comercial (CRM)', is_system: true, description: 'Atención directa de prospectos, clientes asignados y cierres' },
+    { id: 7, name: 'user', display_name: 'Asesor / Agente', is_system: true, description: 'Operación diaria, catálogo y atención al cliente' },
+  ], []);
+
   // Load roles & available permissions
   const loadRolesData = async () => {
-    if (!canManageRoles) {
-      setLoadingRoles(false);
-      return;
-    }
     setLoadingRoles(true);
     try {
       const [rolesData, permsData] = await Promise.all([
         roleService.getRoles().catch(() => []),
         roleService.getAvailablePermissions().catch(() => []),
       ]);
-      setRoles(rolesData);
-      setAvailablePermissions(permsData);
+
+      const seenNames = new Set((rolesData || []).map((r: Role) => r.name));
+      const mergedRoles = [...(rolesData || [])];
+      DEFAULT_SYSTEM_ROLES.forEach((defRole) => {
+        if (!seenNames.has(defRole.name)) {
+          mergedRoles.push(defRole);
+        }
+      });
+
+      setRoles(mergedRoles);
+      setAvailablePermissions(permsData || []);
     } catch (err) {
       console.error('Error al cargar roles:', err);
-      toast.error('No se pudieron cargar los roles del sistema');
+      setRoles(DEFAULT_SYSTEM_ROLES);
     } finally {
       setLoadingRoles(false);
     }
@@ -103,7 +118,7 @@ export const RolesPage: React.FC = () => {
 
   useEffect(() => {
     loadRolesData();
-  }, [canManageRoles]);
+  }, []);
 
   // User effective permissions resolution
   const userEffectivePerms = useMemo(() => {
@@ -509,201 +524,126 @@ export const RolesPage: React.FC = () => {
             </span>
           </button>
 
-          {canManageRoles && (
-            <button
-              onClick={() => setActiveTab('manage_roles')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'manage_roles'
-                  ? 'bg-white text-indigo-900 shadow-md'
-                  : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>Gestión de Roles del Equipo</span>
-              <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-indigo-100 text-indigo-900 font-black">
-                {roles.length}
-              </span>
-            </button>
-          )}
+          <button
+            onClick={() => setActiveTab('manage_roles')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'manage_roles'
+                ? 'bg-white text-indigo-900 shadow-md'
+                : 'text-white/80 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Gestión de Roles del Equipo</span>
+            <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-indigo-100 text-indigo-900 font-black">
+              {roles.length}
+            </span>
+          </button>
         </div>
       </div>
 
       {/* TAB 1: MIS ROLES & ACCESOS */}
       {activeTab === 'my_roles' && (
         <div className="space-y-6">
-          {/* User Profile & Roles Overview Card */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Identity Card */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xl flex items-center justify-center shrink-0 shadow-md shadow-blue-600/20 overflow-hidden">
+          {/* Tabla Resumen: Mi Usuario y Roles Asignados */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+            <div className="p-5 border-b border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50/50 dark:bg-slate-800/40">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center shrink-0 shadow-sm overflow-hidden text-sm">
                   {user?.photo ? (
-                    <img
-                      src={user.photo}
-                      alt={user.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
                   ) : (
                     (user?.name || 'US').substring(0, 2).toUpperCase()
                   )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-black text-slate-900 dark:text-white truncate">
-                    {user?.name} {user?.last_name || ''}
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>{user?.name} {user?.last_name || ''}</span>
+                    <span className="text-xs font-normal text-slate-500 font-mono">({user?.email})</span>
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                    {user?.email}
-                  </p>
-                  <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                    {userRolesList.map((r, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900"
-                      >
-                        <ShieldCheck className="w-3 h-3" />
-                        {r.display_name || r.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-2 text-xs">
-                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                  <span className="font-semibold flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                    Agencia:
-                  </span>
-                  <span className="font-bold text-slate-900 dark:text-white truncate max-w-[180px]">
-                    {activeAgencyName}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                  <span className="font-semibold flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-slate-400" />
-                    Marca Blanca:
-                  </span>
-                  <span className="font-bold text-slate-900 dark:text-white truncate max-w-[180px]">
-                    {activeWlName}
-                  </span>
-                </div>
-
-                {canManageRoles && (
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
-                    <button
-                      onClick={handleOpenAssignSelf}
-                      className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 font-bold text-xs transition-colors border border-blue-200/80 dark:border-blue-900 shadow-2xs"
-                    >
-                      <UserPlus className="w-3.5 h-3.5" />
-                      <span>Asignar / Cambiar mi Rol</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Plan & Subscription Card */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                      Plan de Suscripción
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Capacidades habilitadas
-                    </p>
-                  </div>
-                </div>
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                  Activo
-                </span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 space-y-2">
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  {user?.agency?.current_subscription?.plan?.name ||
-                    user?.agency?.plan?.name ||
-                    (user as any)?.agency_plan?.name ||
-                    'Plan Corporativo Integral'}
-                </p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Tus permisos efectivos se calculan de manera dinámica
-                  combinando el rol de tu usuario con las facultades activas del
-                  plan de tu organización.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-center">
-                <div className="p-3 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40">
-                  <p className="text-lg font-black text-blue-600 dark:text-blue-400">
-                    {userEffectivePerms.length}
-                  </p>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    Permisos Activos
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Roles asignados a tu cuenta y capacidades de suscripción vigentes
                   </p>
                 </div>
-                <div className="p-3 rounded-2xl bg-violet-50/50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900/40">
-                  <p className="text-lg font-black text-violet-600 dark:text-violet-400">
-                    {myModulesList.length}
-                  </p>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    Módulos Autorizados
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Access Info Card */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/60">
-                    <Key className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                      Seguridad & Gobernanza
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Privilegios de tu cuenta
-                    </p>
-                  </div>
-                </div>
-
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Si consideras que te hace falta acceso a algún módulo operativo
-                  (como expedientes de visados, contratos LexVault o comisiones),
-                  contacta con el administrador de tu agencia para solicitar una
-                  ampliación de permisos.
-                </p>
               </div>
 
               {canManageRoles && (
                 <button
-                  onClick={() => setActiveTab('manage_roles')}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold text-xs transition-colors"
+                  onClick={handleOpenAssignSelf}
+                  className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-xs"
                 >
-                  <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <span>Gestionar Roles del Equipo →</span>
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Asignar / Cambiar mi Rol</span>
                 </button>
               )}
             </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th className="py-3 px-4">Rol Asignado</th>
+                    <th className="py-3 px-4">Identificador</th>
+                    <th className="py-3 px-4">Agencia / Organización</th>
+                    <th className="py-3 px-4">Marca Blanca</th>
+                    <th className="py-3 px-4">Plan Activo</th>
+                    <th className="py-3 px-4 text-center">Permisos Habilitados</th>
+                    <th className="py-3 px-4 text-center">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                  {userRolesList.map((r, i) => (
+                    <tr key={i} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                          <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                          <span>{r.display_name || r.name}</span>
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        {r.name}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-800 dark:text-slate-200 font-semibold whitespace-nowrap">
+                        {activeAgencyName}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        {activeWlName}
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-900/60 font-semibold text-[11px]">
+                          {user?.agency?.current_subscription?.plan?.name ||
+                            user?.agency?.plan?.name ||
+                            (user as any)?.agency_plan?.name ||
+                            'Corporativo'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
+                          {userEffectivePerms.length} activos
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Vigente</span>
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          {/* Interactive Permissions Explorer */}
+          {/* Tabla Detallada: Explorador de Permisos Otorgados */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <Key className="w-5 h-5 text-blue-600" />
-                  <span>Explorador de Permisos Otorgados ({filteredMyPermissions.length})</span>
+                  <span>Tabla de Permisos Efectivos Otorgados ({filteredMyPermissions.length})</span>
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Busca o filtra para verificar si tienes autorización para realizar acciones específicas.
+                  Desglose tabular de capacidades y facultades autorizadas en la plataforma.
                 </p>
               </div>
 
@@ -754,7 +694,7 @@ export const RolesPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Permission Cards Grid */}
+            {/* Permissions Data Table */}
             {filteredMyPermissions.length === 0 ? (
               <div className="py-12 text-center space-y-2">
                 <XCircle className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
@@ -766,41 +706,55 @@ export const RolesPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredMyPermissions.map((permKey) => {
-                  const mod = getPermissionModule(permKey);
-                  const label = getPermissionLabel(permKey);
-                  const desc = getPermissionDescription(permKey);
+              <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="py-3 px-4 w-36">Módulo</th>
+                      <th className="py-3 px-4">Capacidad / Permiso</th>
+                      <th className="py-3 px-4">Descripción de la Facultad</th>
+                      <th className="py-3 px-4">Clave Técnica</th>
+                      <th className="py-3 px-4 text-center w-28">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                    {filteredMyPermissions.map((permKey) => {
+                      const mod = getPermissionModule(permKey);
+                      const label = getPermissionLabel(permKey);
+                      const desc = getPermissionDescription(permKey);
 
-                  return (
-                    <div
-                      key={permKey}
-                      className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm transition-all flex flex-col justify-between space-y-2"
-                    >
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-blue-100/70 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300">
-                            {mod}
-                          </span>
-                          <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Autorizado</span>
-                          </span>
-                        </div>
-                        <h4 className="text-xs font-black text-slate-900 dark:text-white leading-snug">
-                          {label}
-                        </h4>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">
-                          {desc}
-                        </p>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800/50 text-[10px] font-mono text-slate-400 truncate">
-                        {permKey}
-                      </div>
-                    </div>
-                  );
-                })}
+                      return (
+                        <tr
+                          key={permKey}
+                          className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                        >
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-900/60">
+                              {mod}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white text-xs">
+                            {label}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed max-w-md">
+                            {desc}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                            <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60">
+                              {permKey}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Habilitado</span>
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -808,8 +762,16 @@ export const RolesPage: React.FC = () => {
       )}
 
       {/* TAB 2: GESTIÓN DE ROLES DEL EQUIPO */}
-      {activeTab === 'manage_roles' && canManageRoles && (
+      {activeTab === 'manage_roles' && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6">
+          {!canManageRoles && (
+            <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900 flex items-center gap-3 text-xs text-blue-800 dark:text-blue-300">
+              <Info className="w-5 h-5 text-blue-600 shrink-0" />
+              <span>
+                Explora el catálogo de roles y permisos del sistema. Puedes asignarte un rol con el botón de asignación.
+              </span>
+            </div>
+          )}
           {/* Controls Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3">

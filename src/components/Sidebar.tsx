@@ -26,6 +26,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const pathname = usePathname();
   const { user, currentWhiteLabel, currentAgency, hasPermission } = useAuth();
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingPath(null);
+  }, [pathname]);
+
+  const handleNavClick = (path: string, e: React.MouseEvent) => {
+    setLeftSidebarOpen(false);
+    if (pathname === path) return;
+
+    setPendingPath(path);
+
+    // Safety fallback: If Next.js client-side navigation stalls or fails (e.g. RSC 404 or connection drop),
+    // trigger direct page load after 2.5s so the user is never stuck
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined' && window.location.pathname !== path) {
+        window.location.assign(path);
+      }
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  };
   const isSuperAdmin =
     user?.role === 'super_admin' ||
     user?.roles?.some((r) => r.name === 'super_admin');
@@ -209,63 +231,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     activeLogoToRender = isDarkBg ? (effectiveLogoDark || effectiveLogo) : (effectiveLogo || effectiveLogoDark);
   }
 
-  const currentPlan =
-    agency?.current_subscription?.plan ||
-    agency?.currentSubscription?.plan ||
-    agency?.plan ||
-    (user as any)?.agency_plan;
-
-  const activePlanPermissions: string[] = (
-    Array.isArray(currentPlan?.plan_permissions || currentPlan?.planPermissions || currentPlan?.permissions)
-      ? (currentPlan?.plan_permissions || currentPlan?.planPermissions || currentPlan?.permissions)
-      : []
-  )
-    .map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim())
-    .filter(Boolean);
-
-  const userDirectPermissions: string[] = (user?.permissions || [])
-    .map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase().trim())
-    .filter(Boolean);
-
-  const hostWhiteLabel =
-    currentWhiteLabel ||
-    (user as any)?.white_labels?.[0] ||
-    (user as any)?.whiteLabels?.[0] ||
-    (user as any)?.white_label ||
-    (agency as any)?.white_label;
-
-  const whiteLabelPlan = hostWhiteLabel?.plan;
-  const activeWhiteLabelPlanPermissions: string[] = (
-    Array.isArray(whiteLabelPlan?.plan_permissions || whiteLabelPlan?.planPermissions || whiteLabelPlan?.permissions)
-      ? (whiteLabelPlan?.plan_permissions || whiteLabelPlan?.planPermissions || whiteLabelPlan?.permissions)
-      : []
-  )
-    .map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim())
-    .filter(Boolean);
-
-  const hasWhiteLabelPlan = Boolean(whiteLabelPlan || hostWhiteLabel?.plan_id);
-
-  const isTravelAllowedByPlan = (plan: any) => {
-    if (!plan) return false;
-    const perms = Array.isArray(plan.plan_permissions || plan.planPermissions || plan.permissions)
-      ? (plan.plan_permissions || plan.planPermissions || plan.permissions)
-      : [];
-    return perms.some((p: any) => {
-      const name = (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase();
-      return name.startsWith('packages.') || name.startsWith('requests.') || name.includes('travel') || name.includes('visa');
-    });
-  };
-
-  const isTravelPlan = isTravelAllowedByPlan(currentPlan);
-  const isWhiteLabelTravelPlan = isTravelAllowedByPlan(whiteLabelPlan);
-
-  const isRealEstateAgency =
-    !isTravelPlan &&
-    (currentPlan?.name?.toLowerCase().includes('inmobiliaria') ||
-      (Array.isArray(currentPlan?.allowed_agency_types) &&
-        (currentPlan?.allowed_agency_types.includes('inmobiliaria') || currentPlan?.allowed_agency_types.includes('real_estate'))) ||
-      (Array.isArray((agency as any)?.allowed_agency_types) &&
-        ((agency as any)?.allowed_agency_types.includes('inmobiliaria') || (agency as any)?.allowed_agency_types.includes('real_estate'))));
 
   const isItemVisible = (item: { permission?: string | string[] }) => {
     if (isSuperAdmin) return true;
@@ -294,20 +259,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'MÓDULO DE VISADOS',
       items: [
-        { label: 'Gestión de Expedientes', path: '/visas', icon: ShieldCheck, permission: ['view_visas', 'visas.view'] },
+        { label: 'Grupos y Expedientes', path: '/visas', icon: ShieldCheck, permission: ['view_visas', 'visas.view'] },
         ...(isWhiteLabelAdmin || isSuperAdmin
           ? [
               { label: 'Operaciones Mayorista', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view'] },
               { label: 'Agencias Afiliadas', path: '/visas/mayorista/agencias', icon: Building2, permission: ['view_visas', 'visas.view'] },
               { label: 'Configurar Visas', path: '/visas/tipos', icon: Layers, permission: ['view_visas', 'visas.view', 'visas.processes.manage'] },
+              { label: 'Grupos B2B Mayorista', path: '/visas/grupos', icon: Users, permission: ['view_visas', 'visas.view', 'visas.groups.manage'] },
             ]
-          : []),
-        { label: 'Grupos & Familias', path: '/visas/grupos', icon: Users, permission: ['view_visas', 'visas.view', 'visas.groups.manage'] },
-        ...(!isWhiteLabelAdmin && !isSuperAdmin
-          ? [
+          : [
+              { label: 'Portal Mayorista (B2B)', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view'] },
               { label: 'Políticas de Visados', path: '/visas/politicas', icon: FileText, permission: ['view_visas', 'visas.settings.manage'] },
-            ]
-          : []),
+            ]),
       ],
     },
     {
@@ -349,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Marcas Blancas', path: '/admin/white-labels', icon: Globe, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
         { label: 'Gestión de Agencias', path: '/agencies', icon: Building2, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
         { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
-        { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck, permission: ['manage_users', 'view_users', 'users.view'] },
+        { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck },
         { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_agencies', 'manage_users'] },
         { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_agencies', 'manage_users'] },
       ],
@@ -389,9 +352,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           isDarkBg ? 'text-white' : 'text-slate-800'
         } ${leftSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'} lg:translate-x-0 w-[85vw] max-w-[280px] sm:w-64 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
       >
+        {pendingPath && (
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-400 z-50 animate-pulse shadow-sm" />
+        )}
         
         <div className={`py-5 flex items-center transition-all duration-300 ${isSidebarCollapsed ? 'px-3 lg:justify-center' : 'px-5'} justify-between`}>
-          <Link href="/" className="flex items-center gap-3 min-w-0">
+          <Link 
+            href="/" 
+            prefetch={false}
+            onClick={(e) => handleNavClick('/', e)}
+            className="flex items-center gap-3 min-w-0"
+          >
             {activeLogoToRender ? (
               <img
                 src={activeLogoToRender}
@@ -450,6 +421,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 {visibleCategoryItems.map((item) => {
                   const isActive = pathname === item.path;
+                  const isPending = pendingPath === item.path;
                   const Icon = item.icon;
                   const activeColor = activeWl?.primary_color || (agency as any)?.primary_color;
 
@@ -457,7 +429,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <Link 
                       key={item.path} 
                       href={item.path}
-                      onClick={() => setLeftSidebarOpen(false)}
+                      prefetch={false}
+                      onClick={(e) => handleNavClick(item.path, e)}
                       style={isActive && activeColor ? { color: activeColor } : undefined}
                       className={`flex items-center gap-3 py-1.5 rounded-xl transition-all duration-150 ${
                         isSidebarCollapsed ? 'px-2 lg:justify-center' : 'px-3'
@@ -469,16 +442,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           : (isDarkBg 
                               ? 'text-slate-300 hover:bg-slate-800/60 hover:text-white font-medium' 
                               : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium')
-                      }`}
+                      } ${isPending ? 'opacity-80 ring-1 ring-sky-500/60 bg-sky-50/50 dark:bg-sky-950/40 animate-pulse' : ''}`}
                     >
-                      <Icon 
-                        style={isActive && activeColor ? { color: activeColor } : undefined}
-                        className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors ${
-                          isActive 
-                            ? (activeColor ? '' : (isDarkBg ? 'text-white' : 'text-blue-600')) 
-                            : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
-                        }`} 
-                      />
+                      {isPending ? (
+                        <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                      ) : (
+                        <Icon 
+                          style={isActive && activeColor ? { color: activeColor } : undefined}
+                          className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors ${
+                            isActive 
+                              ? (activeColor ? '' : (isDarkBg ? 'text-white' : 'text-blue-600')) 
+                              : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
+                          }`} 
+                        />
+                      )}
                       
                       <span className={`text-[13px] leading-snug whitespace-nowrap tracking-tight transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>
                         {item.label}
@@ -494,7 +471,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="px-3 py-2.5 mt-auto space-y-1 border-t border-slate-200/60 dark:border-slate-800/60">
           <Link 
             href="/roles" 
-            onClick={() => setLeftSidebarOpen(false)}
+            prefetch={false}
+            onClick={(e) => handleNavClick('/roles', e)}
             className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-colors ${
               pathname === '/roles' || pathname === '/admin/roles'
                 ? (isDarkBg
@@ -503,20 +481,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 : (isDarkBg
                     ? 'text-slate-400 hover:text-white hover:bg-slate-800/40'
                     : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100')
-            }`}
+            } ${pendingPath === '/roles' ? 'opacity-80 ring-1 ring-sky-500/60 bg-sky-50/50 dark:bg-sky-950/40 animate-pulse' : ''}`}
           >
-            <ShieldCheck className={`w-4 h-4 stroke-[2] ${
-              pathname === '/roles' || pathname === '/admin/roles'
-                ? (isDarkBg ? 'text-white' : 'text-blue-600')
-                : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
-            }`} />
+            {pendingPath === '/roles' ? (
+              <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0" />
+            ) : (
+              <ShieldCheck className={`w-4 h-4 stroke-[2] ${
+                pathname === '/roles' || pathname === '/admin/roles'
+                  ? (isDarkBg ? 'text-white' : 'text-blue-600')
+                  : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
+              }`} />
+            )}
             <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Mis Roles & Permisos</span>
           </Link>
 
           {configHref && (
             <Link 
               href={configHref} 
-              onClick={() => setLeftSidebarOpen(false)}
+              prefetch={false}
+              onClick={(e) => handleNavClick(configHref, e)}
               className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-colors ${
                 pathname === configHref
                   ? (isDarkBg
@@ -525,13 +508,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : (isDarkBg
                       ? 'text-slate-400 hover:text-white hover:bg-slate-800/40'
                       : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100')
-              }`}
+              } ${pendingPath === configHref ? 'opacity-80 ring-1 ring-sky-500/60 bg-sky-50/50 dark:bg-sky-950/40 animate-pulse' : ''}`}
             >
-              <Settings className={`w-4 h-4 stroke-[2] ${
-                pathname === configHref
-                  ? (isDarkBg ? 'text-white' : 'text-blue-600')
-                  : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
-              }`} />
+              {pendingPath === configHref ? (
+                <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0" />
+              ) : (
+                <Settings className={`w-4 h-4 stroke-[2] ${
+                  pathname === configHref
+                    ? (isDarkBg ? 'text-white' : 'text-blue-600')
+                    : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
+                }`} />
+              )}
               <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
             </Link>
           )}

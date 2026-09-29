@@ -187,6 +187,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <Link
                           key={notif.id}
                           href={notif.dossier_id ? `/visas/expedientes/${notif.dossier_id}` : '/visas/notifications'}
+                          prefetch={false}
                           onClick={() => setShowNotifications(false)}
                           className={`p-3 block hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-xs space-y-0.5 ${
                             !notif.is_read ? 'bg-sky-50/40 dark:bg-sky-950/20' : ''
@@ -206,6 +207,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   <Link
                     href="/visas/notifications"
+                    prefetch={false}
                     onClick={() => setShowNotifications(false)}
                     className="block text-center py-2.5 text-xs font-bold text-sky-600 dark:text-sky-400 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 border-t border-slate-200 dark:border-slate-800"
                   >
@@ -223,6 +225,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <p className="font-label-md font-bold text-slate-800 dark:text-slate-100 truncate max-w-[140px]">{user?.name || 'Usuario SANTUN'}</p>
             <Link 
               href="/roles" 
+              prefetch={false}
               title="Ver mis roles y permisos"
               className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1 max-w-[140px] truncate"
             >
@@ -257,27 +260,27 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <div className="p-3 border-b border-slate-200 dark:border-slate-800 sm:hidden">
                     <p className="font-bold text-slate-800 dark:text-slate-100">{user?.name || 'Usuario SANTUN'}</p>
-                    <Link href="/roles" onClick={() => setShowUserMenu(false)} className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 mt-0.5">
+                    <Link href="/roles" prefetch={false} onClick={() => setShowUserMenu(false)} className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 mt-0.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                       <span>{user?.role || user?.email || 'Specialist'}</span>
                     </Link>
                   </div>
                   <div className="py-2">
-                    <Link href="/estates/new" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-primary font-bold transition-colors">
+                    <Link href="/estates/new" prefetch={false} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-primary font-bold transition-colors">
                       <span className="material-symbols-outlined text-lg">add_circle</span>
                       Nueva Propiedad
                     </Link>
                     <div className="h-px bg-slate-200 dark:bg-slate-800 my-1"></div>
-                    <Link href="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
+                    <Link href="/profile" prefetch={false} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
                       <span className="material-symbols-outlined text-[20px]">person</span>
                       Mi Perfil
                     </Link>
-                    <Link href="/roles" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
+                    <Link href="/roles" prefetch={false} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
                       <span className="material-symbols-outlined text-[20px]">shield_person</span>
                       Mis Roles & Permisos
                     </Link>
                     {configHref && (
-                      <Link href={configHref} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
+                      <Link href={configHref} prefetch={false} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
                         <span className="material-symbols-outlined text-[20px]">settings</span>
                         Configuración
                       </Link>
