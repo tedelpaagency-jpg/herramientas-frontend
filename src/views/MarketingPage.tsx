@@ -24,7 +24,40 @@ export const MarketingPage: React.FC = () => {
   const [stages, setStages] = useState<WorkspaceStage[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'templates' | 'credential_templates' | 'launcher' | 'campaigns'>('templates');
+  const [activeTab, setActiveTab] = useState<'templates' | 'credential_templates' | 'launcher' | 'campaigns' | 'visa_templates'>('templates');
+
+  // Visa Notification Template State
+  const [visaTemplates, setVisaTemplates] = useState<EmailTemplate[]>([]);
+  const [isVisaModalOpen, setIsVisaModalOpen] = useState(false);
+  const [editingVisaId, setEditingVisaId] = useState<number | null>(null);
+  const [visaName, setVisaName] = useState('');
+  const [visaSubject, setVisaSubject] = useState('');
+  const [visaBody, setVisaBody] = useState('');
+  const [visaEditMode, setVisaEditMode] = useState<'wysiwyg' | 'html'>('wysiwyg');
+
+  const [visaTestVars, setVisaTestVars] = useState({
+    cliente_nombre: 'Carlos Mendoza',
+    expediente: 'EXP-000104',
+    tipo_proceso: 'Visa Canadiense de Turismo (V-1)',
+    agencia: 'Viajes Mundiales S.A.',
+    estado: 'En Revisión',
+    progreso: '45%',
+    etapa: 'Revisión Documental',
+    accion_pendiente: 'Adjuntar Certificado Laboral actualizado',
+    link_cliente: 'https://app.tedelpa.com/visas/portal/a1b2c3d4e5f6',
+  });
+
+  const VISA_SHORTCUTS = [
+    { tag: '{{cliente_nombre}}', label: 'Nombre Cliente' },
+    { tag: '{{expediente}}', label: 'Código Expediente' },
+    { tag: '{{tipo_proceso}}', label: 'Tipo de Proceso' },
+    { tag: '{{agencia}}', label: 'Agencia' },
+    { tag: '{{estado}}', label: 'Estado' },
+    { tag: '{{progreso}}', label: 'Progreso (%)' },
+    { tag: '{{etapa}}', label: 'Etapa Actual' },
+    { tag: '{{accion_pendiente}}', label: 'Acción Pendiente' },
+    { tag: '{{link_cliente}}', label: 'Enlace del Cliente' },
+  ];
 
   // Editor Modes State
   const [templateEditMode, setTemplateEditMode] = useState<'wysiwyg' | 'html'>('wysiwyg');
@@ -87,18 +120,20 @@ export const MarketingPage: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [tplData, credTplData, cmpData, pipelineData, wsData] = await Promise.all([
+      const [tplData, credTplData, cmpData, pipelineData, wsData, visaTplData] = await Promise.all([
         marketingService.getTemplates(),
         marketingService.getCredentialTemplates().catch(() => []),
         marketingService.getCampaigns(),
         crmService.getPipelines(),
         workspaceMetaService.getWorkspaces().catch(() => []),
+        marketingService.getTemplates('visas').catch(() => []),
       ]);
-      setTemplates(tplData);
+      setTemplates(tplData.filter(t => t.category !== 'visas'));
       setCredentialTemplates(Array.isArray(credTplData) ? credTplData : []);
       setCampaigns(cmpData);
       setStages(pipelineData.stages || []);
       setWorkspaces(Array.isArray(wsData) ? wsData : []);
+      setVisaTemplates(Array.isArray(visaTplData) ? visaTplData : tplData.filter(t => t.category === 'visas'));
     } catch (err) {
       console.error('Error loading marketing data:', err);
       toast.error('Error al cargar datos de Marketing');
@@ -194,6 +229,76 @@ export const MarketingPage: React.FC = () => {
     toast.success(`Shortcut ${tag} insertado`);
   };
 
+  const handleOpenVisaModal = (tpl?: EmailTemplate) => {
+    if (tpl) {
+      setEditingVisaId(tpl.id);
+      setVisaName(tpl.name);
+      setVisaSubject(tpl.subject || '');
+      setVisaBody(tpl.body_html);
+    } else {
+      setEditingVisaId(null);
+      setVisaName('');
+      setVisaSubject('Actualización de tu trámite migratorio: {{tipo_proceso}} - {{expediente}}');
+      setVisaBody('<div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">\n  <h2 style="color: #0f172a; margin-bottom: 12px;">Hola {{cliente_nombre}},</h2>\n  <p style="font-size: 14px; line-height: 1.6; color: #475569;">Te informamos sobre una novedad en tu expediente <strong>{{expediente}}</strong> para el trámite de <strong>{{tipo_proceso}}</strong> gestionado a través de <strong>{{agencia}}</strong>.</p>\n  <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 14px 16px; margin: 20px 0; border-radius: 6px;">\n    <p style="margin: 0; font-size: 13px;"><strong>Estado actual:</strong> {{estado}}</p>\n    <p style="margin: 6px 0 0 0; font-size: 13px;"><strong>Etapa:</strong> {{etapa}} (Progreso: {{progreso}})</p>\n    <p style="margin: 6px 0 0 0; font-size: 13px; color: #b91c1c;"><strong>Acción requerida:</strong> {{accion_pendiente}}</p>\n  </div>\n  <p style="font-size: 14px; line-height: 1.6; color: #475569;">Puedes acceder a tu expediente digital y cargar la información solicitada haciendo clic en el siguiente enlace:</p>\n  <p style="text-align: center; margin: 28px 0;">\n    <a href="{{link_cliente}}" style="background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 28px; font-weight: bold; font-size: 14px; border-radius: 8px; display: inline-block;">Ver Mi Trámite Migratorio</a>\n  </p>\n  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />\n  <p style="font-size: 12px; color: #94a3b8; text-align: center;">Notificación generada automáticamente por el módulo Mayorista de Visas.</p>\n</div>');
+    }
+    setIsVisaModalOpen(true);
+  };
+
+  const handleSaveVisaTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!visaName.trim() || !visaBody.trim()) {
+      toast.error('Complete el nombre y contenido de la plantilla de visado');
+      return;
+    }
+
+    try {
+      if (editingVisaId) {
+        const updated = await marketingService.updateTemplate(editingVisaId, {
+          name: visaName,
+          subject: visaSubject,
+          body_html: visaBody,
+          category: 'visas',
+        });
+        setVisaTemplates(prev => prev.map(t => t.id === editingVisaId ? updated : t));
+        toast.success('Plantilla de visado actualizada');
+      } else {
+        const created = await marketingService.createTemplate({
+          name: visaName,
+          subject: visaSubject,
+          body_html: visaBody,
+          category: 'visas',
+        });
+        setVisaTemplates(prev => [created, ...prev]);
+        toast.success('Plantilla de visado creada');
+      }
+      setIsVisaModalOpen(false);
+    } catch (err) {
+      console.error('Error saving visa template:', err);
+      toast.error('Error al guardar plantilla de visado');
+    }
+  };
+
+  const handleDeleteVisaTemplate = async (id: number) => {
+    if (!confirm('¿Estás seguro de eliminar esta plantilla de notificaciones de visados?')) return;
+    try {
+      await marketingService.deleteTemplate(id);
+      setVisaTemplates(prev => prev.filter(t => t.id !== id));
+      toast.success('Plantilla de visado eliminada');
+    } catch (err) {
+      console.error('Error deleting visa template:', err);
+      toast.error('Error al eliminar plantilla');
+    }
+  };
+
+  const insertVisaShortcut = (tag: string, targetField: 'subject' | 'body' = 'body') => {
+    if (targetField === 'subject') {
+      setVisaSubject(prev => prev + ` ${tag}`);
+    } else {
+      setVisaBody(prev => prev + ` ${tag} `);
+    }
+    toast.success(`Placeholder ${tag} insertado`);
+  };
+
   const handleOpenPreviewModal = (subject: string, bodyHtml: string) => {
     setPreviewSubject(subject || 'Asunto del correo electrónico');
     setPreviewHtmlContent(bodyHtml || '<p style="color: #94a3b8; font-style: italic;">Sin contenido...</p>');
@@ -206,7 +311,16 @@ export const MarketingPage: React.FC = () => {
       .replace(/\{nombre\}/g, testVars.nombre)
       .replace(/\{email\}/g, testVars.email)
       .replace(/\{empresa\}/g, testVars.empresa)
-      .replace(/\{agencia\}/g, testVars.agencia);
+      .replace(/\{agencia\}/g, testVars.agencia)
+      .replace(/\{\{cliente_nombre\}\}/g, visaTestVars.cliente_nombre)
+      .replace(/\{\{expediente\}\}/g, visaTestVars.expediente)
+      .replace(/\{\{tipo_proceso\}\}/g, visaTestVars.tipo_proceso)
+      .replace(/\{\{agencia\}\}/g, visaTestVars.agencia)
+      .replace(/\{\{estado\}\}/g, visaTestVars.estado)
+      .replace(/\{\{progreso\}\}/g, visaTestVars.progreso)
+      .replace(/\{\{etapa\}\}/g, visaTestVars.etapa)
+      .replace(/\{\{accion_pendiente\}\}/g, visaTestVars.accion_pendiente)
+      .replace(/\{\{link_cliente\}\}/g, visaTestVars.link_cliente);
   };
 
   const insertPlaceholderToTarget = (tag: string, target: 'template' | 'campaign') => {
@@ -404,6 +518,18 @@ export const MarketingPage: React.FC = () => {
           <Mail className="w-4 h-4" />
           <span>Historial de Campañas ({campaigns.length})</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('visa_templates')}
+          className={`pb-3 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === 'visa_templates' 
+              ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400' 
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-emerald-500" />
+          <span>Plantillas de Notificaciones de Visados ({visaTemplates.length})</span>
+        </button>
       </div>
 
       {/* Tab 1: Plantillas */}
@@ -587,6 +713,96 @@ export const MarketingPage: React.FC = () => {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab: Plantillas de Notificaciones de Visados */}
+      {activeTab === 'visa_templates' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div>
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <span>Plantillas de Notificaciones de Visados</span>
+              </h3>
+              <p className="text-xs text-slate-500">
+                Diseña y gestiona plantillas automáticas para notificar avances, cambios de etapa, solicitudes y observaciones de expedientes migratorios.
+              </p>
+            </div>
+            <button
+              onClick={() => handleOpenVisaModal()}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Nueva Plantilla de Visado
+            </button>
+          </div>
+
+          {isLoading ? (
+            <div className="p-12 text-center text-slate-400 font-medium">Cargando plantillas de visados...</div>
+          ) : visaTemplates.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center space-y-3">
+              <Sparkles className="w-10 h-10 text-emerald-400 mx-auto" />
+              <h3 className="text-base font-black text-slate-900 dark:text-white">No tienes plantillas de visados creadas</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Crea una plantilla con placeholders dinámicos como <code className="text-emerald-500">{'{{cliente_nombre}}'}</code>, <code className="text-emerald-500">{'{{expediente}}'}</code>, <code className="text-emerald-500">{'{{tipo_proceso}}'}</code> o <code className="text-emerald-500">{'{{link_cliente}}'}</code> para notificar automáticamente a clientes y agencias.
+              </p>
+              <button
+                onClick={() => handleOpenVisaModal()}
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white font-extrabold text-xs shadow-md cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Crear Plantilla de Visado
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {visaTemplates.map((visaTpl) => (
+                <div key={visaTpl.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500 transition-all p-5 space-y-4 shadow-2xs hover:shadow-md flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start gap-2">
+                      <h4 className="font-extrabold text-slate-900 dark:text-white text-base line-clamp-1">{visaTpl.name}</h4>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        Visados
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-500 font-semibold line-clamp-1">
+                      <span className="text-slate-400">Asunto:</span> {visaTpl.subject || 'Sin asunto predeterminado'}
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800 max-h-24 overflow-hidden text-[11px] text-slate-600 dark:text-slate-400 font-mono italic">
+                    {visaTpl.body_html.replace(/<[^>]*>?/gm, '').substring(0, 120)}...
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => handleOpenPreviewModal(visaTpl.subject || '', visaTpl.body_html)}
+                      className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-lg hover:bg-slate-200 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Previsualizar
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenVisaModal(visaTpl)}
+                        className="p-1.5 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
+                        title="Editar Plantilla de Visado"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteVisaTemplate(visaTpl.id)}
+                        className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer"
+                        title="Eliminar Plantilla"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -1171,6 +1387,172 @@ export const MarketingPage: React.FC = () => {
                     <button
                       type="submit"
                       className="px-5 py-2 rounded-xl bg-amber-600 text-white text-xs font-extrabold shadow-md hover:bg-amber-700 active:scale-95"
+                    >
+                      Guardar Plantilla
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Visa Notification Template Create / Edit Modal */}
+      {isVisaModalOpen && (
+        <Portal>
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl p-4 sm:p-6 shadow-2xl space-y-4 text-slate-900 dark:text-white max-h-[95vh] overflow-y-auto custom-scrollbar">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-emerald-500" />
+                  <h3 className="text-lg font-black">
+                    {editingVisaId ? 'Editar Plantilla de Notificaciones de Visados' : 'Nueva Plantilla de Notificaciones de Visados'}
+                  </h3>
+                </div>
+                <button onClick={() => setIsVisaModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveVisaTemplate} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Plantilla *</label>
+                  <input
+                    type="text"
+                    required
+                    value={visaName}
+                    onChange={(e) => setVisaName(e.target.value)}
+                    placeholder="Ej: Notificación: Documento Observado o Corrección Requerida"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold outline-none"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Asunto del Correo Electrónico</label>
+                    <span className="text-[10px] text-slate-400">Puedes insertar placeholders en el asunto</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={visaSubject}
+                    onChange={(e) => setVisaSubject(e.target.value)}
+                    placeholder="Ej: Novedad en tu trámite {{tipo_proceso}} - {{expediente}}"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium outline-none"
+                  />
+                </div>
+
+                {/* Dynamic Visa Placeholders Selector Bar */}
+                <div className="p-3 bg-emerald-50/80 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-800/50 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-extrabold text-emerald-950 dark:text-emerald-200">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      <span>Placeholders de Visados (Haz clic para insertar):</span>
+                    </span>
+                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-normal">
+                      Se sustituyen por los datos del expediente.
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {VISA_SHORTCUTS.map((s) => (
+                      <button
+                        key={s.tag}
+                        type="button"
+                        onClick={() => insertVisaShortcut(s.tag, 'body')}
+                        className="px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 text-xs font-mono font-bold rounded-lg border border-emerald-200 dark:border-emerald-800/80 shadow-2xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                        title={`Insertar ${s.label}`}
+                      >
+                        <span>{s.tag}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Dual Editor Component (Visual WYSIWYG vs HTML Directo) */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap justify-between items-center gap-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Contenido del Correo de Visados</label>
+                    
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setVisaEditMode('wysiwyg')}
+                        className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                          visaEditMode === 'wysiwyg'
+                            ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-2xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Editor Visual</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setVisaEditMode('html')}
+                        className={`px-3 py-1 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                          visaEditMode === 'html'
+                            ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-2xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <Code className="w-3.5 h-3.5" />
+                        <span>Código HTML</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {visaEditMode === 'wysiwyg' ? (
+                    <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden text-slate-900 dark:text-white">
+                      <ReactQuill
+                        theme="snow"
+                        value={visaBody}
+                        onChange={setVisaBody}
+                        modules={{
+                          toolbar: [
+                            [{ header: [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ color: [] }, { background: [] }],
+                            [{ list: 'ordered' }, { list: 'bullet' }],
+                            [{ align: [] }],
+                            ['link', 'clean'],
+                          ],
+                        }}
+                        className="h-56 mb-12"
+                      />
+                    </div>
+                  ) : (
+                    <textarea
+                      required
+                      rows={10}
+                      value={visaBody}
+                      onChange={(e) => setVisaBody(e.target.value)}
+                      className="w-full p-4 bg-slate-950 text-emerald-400 font-mono text-xs border border-slate-800 rounded-xl focus:outline-none"
+                    />
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPreviewModal(visaSubject, visaBody)}
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 font-extrabold text-xs rounded-xl flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Eye className="w-4 h-4 text-emerald-600" />
+                    <span>Previsualizar</span>
+                  </button>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsVisaModalOpen(false)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold shadow-md hover:bg-emerald-700 active:scale-95 cursor-pointer"
                     >
                       Guardar Plantilla
                     </button>

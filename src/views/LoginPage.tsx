@@ -19,6 +19,7 @@ import {
 import { loginMediaService } from '../services/loginMediaService';
 import { PublicLoginVideoItem, PublicLoginLogoItem, LoginTexts, PublicWhiteLabelInfo } from '../types/loginMedia';
 import { normalizeFileUrl } from '../services/apiClient';
+import PasswordResetModal from '../components/auth/PasswordResetModal';
 
 const isMp4Video = (url?: string | null): boolean => {
   if (!url) return false;
@@ -130,6 +131,7 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   // Estados dinámicos de videos, logos y textos configurables por Marca Blanca / Dominio
   const [dynamicWhiteLabel, setDynamicWhiteLabel] = useState<PublicWhiteLabelInfo | null>(null);
@@ -429,9 +431,13 @@ export const LoginPage: React.FC = () => {
                       <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-widest">
                         Contraseña
                       </label>
-                      <a href="#" onClick={(e) => { e.preventDefault(); alert('Contacte a su administrador.'); }} className="text-[12px] font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => setIsResetModalOpen(true)}
+                        className="text-[12px] font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                      >
                         ¿Olvidaste tu contraseña?
-                      </a>
+                      </button>
                     </div>
                     <div className="relative">
                       <input
@@ -508,6 +514,20 @@ export const LoginPage: React.FC = () => {
           )}
         </div>
       </footer>
+
+      {/* Password Recovery Modal with 4-Step Verification Code */}
+      <PasswordResetModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        initialEmail={email}
+        brandName={brandName}
+        brandLogo={brandLogo}
+        onSuccess={(confirmedEmail) => {
+          setEmail(confirmedEmail);
+          setPassword('');
+          setError(null);
+        }}
+      />
 
     </div>
   );

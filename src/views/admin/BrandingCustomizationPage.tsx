@@ -100,6 +100,9 @@ export default function BrandingCustomizationPage({
     stripe_secret_key: '',
     stripe_webhook_secret: '',
     stripe_mode: 'test',
+    card_color: '#2563eb',
+    card_logo: '',
+    card_logo_file: null,
   });
 
   // Load available entities on mount
@@ -211,6 +214,9 @@ export default function BrandingCustomizationPage({
       stripe_secret_key: entity.stripe_secret_key || '',
       stripe_webhook_secret: entity.stripe_webhook_secret || '',
       stripe_mode: entity.stripe_mode || 'test',
+      card_color: entity.card_color || '#2563eb',
+      card_logo: entity.card_logo || '',
+      card_logo_file: null,
     });
 
     setMockCollapsed(navMode === 'compact');
@@ -313,6 +319,8 @@ export default function BrandingCustomizationPage({
             if (freshWl.logo_icon) localStorage.setItem('santun_sidebar_logo_icon', freshWl.logo_icon);
             if (freshWl.menu_background) localStorage.setItem('santun_menu_background', freshWl.menu_background);
             if (freshWl.dark_theme) localStorage.setItem('santun_dark_theme', freshWl.dark_theme);
+            if (freshWl.card_color) localStorage.setItem('santun_card_color', freshWl.card_color);
+            if (freshWl.card_logo) localStorage.setItem('santun_card_logo', freshWl.card_logo);
             if (form.navigation_mode) {
               localStorage.setItem('santun_sidebar_collapsed', String(form.navigation_mode === 'compact'));
             }
@@ -331,6 +339,8 @@ export default function BrandingCustomizationPage({
             if (freshAg.logo_icon) localStorage.setItem('santun_sidebar_logo_icon', freshAg.logo_icon);
             if (freshAg.menu_background) localStorage.setItem('santun_menu_background', freshAg.menu_background);
             if (freshAg.dark_theme) localStorage.setItem('santun_dark_theme', freshAg.dark_theme);
+            if (freshAg.card_color) localStorage.setItem('santun_card_color', freshAg.card_color);
+            if (freshAg.card_logo) localStorage.setItem('santun_card_logo', freshAg.card_logo);
             if (form.navigation_mode) {
               localStorage.setItem('santun_sidebar_collapsed', String(form.navigation_mode === 'compact'));
             }
@@ -673,6 +683,68 @@ export default function BrandingCustomizationPage({
                       />
                     </div>
                   </div>
+
+                  {/* Card Color (Right Sidebar 3D Digital Asset Card) */}
+                  <div className="sm:col-span-2 p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 dark:text-white uppercase">
+                          Color de Tarjeta Digital 3D (Right Sidebar)
+                        </label>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Personaliza el tono principal de la credencial virtual 3D que se visualiza en la barra lateral derecha bajo &quot;Activos Digitales&quot;.
+                        </p>
+                      </div>
+                      <div 
+                        className="w-8 h-8 rounded-lg shadow-inner border border-white/40 flex-shrink-0" 
+                        style={{ backgroundColor: form.card_color || '#2563eb' }}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={form.card_color || '#2563eb'}
+                        onChange={(e) => setForm({ ...form, card_color: e.target.value })}
+                        className="w-10 h-10 rounded-lg cursor-pointer border border-slate-300 p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={form.card_color || '#2563eb'}
+                        onChange={(e) => setForm({ ...form, card_color: e.target.value })}
+                        placeholder="#2563eb"
+                        className="w-full px-3 py-2 text-xs font-mono font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg uppercase"
+                      />
+                    </div>
+
+                    {/* Presets Rápidos para Tarjeta */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Presets sugeridos:</span>
+                      {[
+                        { name: 'Azul Real', color: '#1d4ed8' },
+                        { name: 'Azul Zafiro', color: '#2563eb' },
+                        { name: 'Esmeralda', color: '#00a884' },
+                        { name: 'Púrpura Neón', color: '#7c3aed' },
+                        { name: 'Ónix Oscuro', color: '#0f172a' },
+                        { name: 'Rubí Carmesí', color: '#e11d48' },
+                        { name: 'Oro Platino', color: '#d97706' },
+                      ].map((preset) => (
+                        <button
+                          key={preset.color}
+                          type="button"
+                          onClick={() => setForm({ ...form, card_color: preset.color })}
+                          className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all flex items-center gap-1.5 ${
+                            form.card_color === preset.color
+                              ? 'border-[#00a884] bg-emerald-50 dark:bg-emerald-950/40 text-[#00a884] font-black'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-400'
+                          }`}
+                        >
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: preset.color }} />
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <hr className="border-slate-100" />
@@ -878,6 +950,34 @@ export default function BrandingCustomizationPage({
                         setForm((prev: any) => ({
                           ...prev,
                           login_background: url || prev.login_background,
+                        }));
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* 5. Logo para Tarjeta Digital 3D (Right Sidebar) */}
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3 bg-slate-50 dark:bg-slate-850">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-blue-500" /> 5. Logo de la Tarjeta Digital 3D (Right Sidebar)
+                      </span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                        Logotipo personalizado para el frente de la credencial virtual 3D mostrada en &quot;Activos Digitales&quot;. Si no se configura, se mostrará el nombre de la marca.
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">PNG / SVG Transparente</span>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <MediaPicker
+                      value={form.card_logo}
+                      type="image"
+                      buttonLabel="Seleccionar Logo de Tarjeta"
+                      onChange={({ url }) => {
+                        setForm((prev: any) => ({
+                          ...prev,
+                          card_logo: url || prev.card_logo,
                         }));
                       }}
                     />

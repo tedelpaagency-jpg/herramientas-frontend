@@ -132,6 +132,13 @@ export interface User {
   status?: number;
   deleted_at?: string | null;
   created_at?: string;
+  support_contact?: {
+    type?: string;
+    title?: string;
+    subtitle?: string;
+    name?: string;
+    whatsapp?: string;
+  };
 }
 
 export interface EstateImage {
@@ -378,6 +385,7 @@ export interface EmailTemplate {
   subject?: string;
   body_html: string;
   files_json?: string[];
+  category?: string;
   status?: number;
   created_at?: string;
   updated_at?: string;

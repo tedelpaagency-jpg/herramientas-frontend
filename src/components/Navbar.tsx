@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { HeaderShortcuts } from './HeaderShortcuts';
+import visaWholesaleService, { VisaNotification } from '../services/visaWholesaleService';
 
 interface NavbarProps {
   leftSidebarOpen: boolean;
@@ -30,6 +31,34 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [notifications, setNotifications] = useState<VisaNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchRecentNotifications = async () => {
+    try {
+      const res = await visaWholesaleService.getRecentNotifications();
+      if (res) {
+        setNotifications(res.data || []);
+        setUnreadCount(res.unread_count || 0);
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchRecentNotifications();
+      const interval = setInterval(fetchRecentNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await visaWholesaleService.markAllNotificationsAsRead();
+      setUnreadCount(0);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (e) {}
+  };
 
   const isSuperAdmin =
     user?.role === 'super_admin' ||
@@ -116,11 +145,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="relative">
           <button 
             onClick={() => setShowNotifications(!showNotifications)} 
-            className={`hidden lg:flex w-11 h-11 flex-shrink-0 items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${showNotifications ? 'bg-primary text-white shadow-md' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+            className={`hidden lg:flex w-11 h-11 flex-shrink-0 items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary relative ${showNotifications ? 'bg-primary text-white shadow-md' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
             aria-label="Notificaciones"
             aria-expanded={showNotifications}
           >
             <span className={`material-symbols-outlined text-[20px] sm:text-[24px] ${showNotifications ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>notifications</span>
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-sm">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
           
           <AnimatePresence>
@@ -134,13 +168,49 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="absolute right-0 mt-3 w-80 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-[70] overflow-hidden"
                 >
                   <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-                    <h4 className="font-bold text-slate-800 dark:text-slate-100">Notificaciones</h4>
-                    <button onClick={() => setShowNotifications(false)} className="text-xs font-bold text-primary hover:underline">Marcar leídas</button>
+                    <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Notificaciones ({unreadCount})</h4>
+                    {unreadCount > 0 && (
+                      <button onClick={handleMarkAllRead} className="text-xs font-bold text-primary hover:underline">
+                        Marcar leídas
+                      </button>
+                    )}
                   </div>
-                  <div className="p-8 flex flex-col items-center justify-center text-center text-slate-500 dark:text-slate-400">
-                    <span className="material-symbols-outlined text-4xl mb-3 opacity-50">notifications_paused</span>
-                    <p className="text-sm font-medium">No tienes notificaciones recientes</p>
+                  
+                  <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                    {notifications.length === 0 ? (
+                      <div className="p-8 flex flex-col items-center justify-center text-center text-slate-500 dark:text-slate-400">
+                        <span className="material-symbols-outlined text-4xl mb-2 opacity-50">notifications_paused</span>
+                        <p className="text-xs font-medium">No tienes notificaciones recientes</p>
+                      </div>
+                    ) : (
+                      notifications.slice(0, 6).map((notif) => (
+                        <Link
+                          key={notif.id}
+                          href={notif.dossier_id ? `/visas/expedientes/${notif.dossier_id}` : '/visas/notifications'}
+                          onClick={() => setShowNotifications(false)}
+                          className={`p-3 block hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-xs space-y-0.5 ${
+                            !notif.is_read ? 'bg-sky-50/40 dark:bg-sky-950/20' : ''
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-slate-800 dark:text-slate-200 truncate pr-2">{notif.title}</span>
+                            <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                              {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-slate-500 dark:text-slate-400 line-clamp-2">{notif.message}</p>
+                        </Link>
+                      ))
+                    )}
                   </div>
+
+                  <Link
+                    href="/visas/notifications"
+                    onClick={() => setShowNotifications(false)}
+                    className="block text-center py-2.5 text-xs font-bold text-sky-600 dark:text-sky-400 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 border-t border-slate-200 dark:border-slate-800"
+                  >
+                    Ver todas las notificaciones →
+                  </Link>
                 </motion.div>
               </>
             )}

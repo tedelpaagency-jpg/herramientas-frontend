@@ -294,7 +294,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'MÓDULO DE VISADOS',
       items: [
-        { label: 'Gestión de Visados', path: '/visas', icon: ShieldCheck, permission: ['view_visas', 'manage_visas'] },
+        { label: 'Gestión de Expedientes', path: '/visas', icon: ShieldCheck, permission: ['view_visas', 'visas.view'] },
+        ...(isWhiteLabelAdmin || isSuperAdmin
+          ? [
+              { label: 'Operaciones Mayorista', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view'] },
+              { label: 'Agencias Afiliadas', path: '/visas/mayorista/agencias', icon: Building2, permission: ['view_visas', 'visas.view'] },
+              { label: 'Configurar Visas', path: '/visas/tipos', icon: Layers, permission: ['view_visas', 'visas.view', 'visas.processes.manage'] },
+            ]
+          : []),
+        { label: 'Grupos & Familias', path: '/visas/grupos', icon: Users, permission: ['view_visas', 'visas.view', 'visas.groups.manage'] },
+        ...(!isWhiteLabelAdmin && !isSuperAdmin
+          ? [
+              { label: 'Políticas de Visados', path: '/visas/politicas', icon: FileText, permission: ['view_visas', 'visas.settings.manage'] },
+            ]
+          : []),
       ],
     },
     {

@@ -2,17 +2,18 @@ import apiClient from './apiClient';
 import { EmailTemplate, EmailCampaign, CredentialTemplate } from '../types';
 
 export const marketingService = {
-  getTemplates: async (): Promise<EmailTemplate[]> => {
-    const response = await apiClient.get('/v1/marketing/templates');
+  getTemplates: async (params?: { category?: string } | string): Promise<EmailTemplate[]> => {
+    const queryParams = typeof params === 'string' ? { category: params } : params;
+    const response = await apiClient.get('/v1/marketing/templates', { params: queryParams });
     return response.data?.data || response.data || [];
   },
 
-  createTemplate: async (data: { name: string; subject?: string; body_html: string }): Promise<EmailTemplate> => {
+  createTemplate: async (data: { name: string; category?: string; subject?: string; body_html: string }): Promise<EmailTemplate> => {
     const response = await apiClient.post('/v1/marketing/templates', data);
     return response.data?.data || response.data;
   },
 
-  updateTemplate: async (id: number, data: { name?: string; subject?: string; body_html?: string }): Promise<EmailTemplate> => {
+  updateTemplate: async (id: number, data: { name?: string; category?: string; subject?: string; body_html?: string }): Promise<EmailTemplate> => {
     const response = await apiClient.put(`/v1/marketing/templates/${id}`, data);
     return response.data?.data || response.data;
   },

@@ -1,7 +1,5 @@
 'use client';
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 interface RightSidebarProps {
@@ -14,39 +12,82 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
   setRightSidebarOpen,
 }) => {
   const { user, currentWhiteLabel } = useAuth();
-  const [isAgendarModalOpen, setIsAgendarModalOpen] = useState(false);
+  const [, setTick] = useState(0);
 
-  const userName = user?.name ? user.name : 'Dr. Alexander Vane';
+  // Listen for local branding updates
+  useEffect(() => {
+    const handleBrandingUpdated = () => setTick((t) => t + 1);
+    window.addEventListener('branding-updated', handleBrandingUpdated);
+    return () => window.removeEventListener('branding-updated', handleBrandingUpdated);
+  }, []);
+
+  const userName = user?.name ? user.name : 'Usuario';
   const userPoints = user?.points !== undefined ? user.points.toLocaleString() : '15,000';
 
   const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
-  const isWhiteLabelAdmin = user?.role === 'white_label_admin' || user?.roles?.some((r: any) => r.name === 'white_label_admin');
+  const isWhiteLabelAdmin = !isSuperAdmin && (
+    user?.role === 'white_label_admin' || 
+    user?.roles?.some((r: any) => r.name === 'white_label_admin') ||
+    Boolean((user as any)?.whiteLabels?.length && !(user as any)?.agency_id)
+  );
 
-  let managerTitle = 'Gerente Comercial';
-  let managerSubtitle = 'Soporte Dedicado Exclusivo';
-  let managerName = 'Soporte Plataforma';
-  let managerInitials = 'SP';
+  // Dynamic branding assets for the 3D card
+  const cardColor = currentWhiteLabel?.card_color || 
+                    (user as any)?.agency?.card_color || 
+                    (typeof window !== 'undefined' ? localStorage.getItem('santun_card_color') : null) || 
+                    '#1d4ed8';
 
-  if (isWhiteLabelAdmin) {
-    managerTitle = 'Super Admin';
-    managerSubtitle = 'Administrador General de Plataforma';
-    managerName = (user as any)?.white_label?.creator?.name || (user as any)?.white_labels?.[0]?.creator?.name || 'Super Admin Platform';
-    managerInitials = 'SA';
-  } else if (isSuperAdmin) {
-    managerTitle = 'Super Admin';
-    managerSubtitle = 'Administración Global de Plataforma';
-    managerName = user?.name || 'Super Admin';
-    managerInitials = user?.name ? user.name.substring(0, 2).toUpperCase() : 'SA';
-  } else {
-    // Agency users / Agency Admins
-    const hostWhiteLabel = (user?.agency as any)?.white_label || currentWhiteLabel;
-    const wlAdminUser = hostWhiteLabel?.users?.[0] || (user as any)?.agency?.white_label_admin;
-    
-    managerTitle = 'Admin Marca Blanca';
-    managerSubtitle = hostWhiteLabel?.name ? `Marca Blanca ${hostWhiteLabel.name}` : 'Soporte Marca Blanca';
-    managerName = wlAdminUser?.name || hostWhiteLabel?.name || 'Admin Marca Blanca';
-    managerInitials = managerName.substring(0, 2).toUpperCase();
+  const cardLogo = currentWhiteLabel?.card_logo || 
+                   (user as any)?.agency?.card_logo || 
+                   (typeof window !== 'undefined' ? localStorage.getItem('santun_card_logo') : null) || 
+                   null;
+
+  const brandDisplayName = currentWhiteLabel?.name || (user as any)?.agency?.name || 'SANTUN';
+
+  // Support contact hierarchy:
+  // - Agency user -> Admin Marca Blanca (data of their White Label Admin)
+  // - Marca Blanca user -> Super Admin (data of Super Admin)
+  // - Super Admin -> Platform Admin / Self
+  let managerTitle = user?.support_contact?.title;
+  let managerSubtitle = user?.support_contact?.subtitle;
+  let managerName = user?.support_contact?.name;
+  let rawWhatsapp = user?.support_contact?.whatsapp;
+
+  if (!managerName) {
+    if (isWhiteLabelAdmin) {
+      managerTitle = 'Super Admin';
+      managerSubtitle = 'Administrador General de Plataforma';
+      managerName = (user as any)?.white_label?.creator?.name || 'Super Admin Platform';
+      rawWhatsapp = (user as any)?.white_label?.creator?.phone || '';
+    } else if (isSuperAdmin) {
+      managerTitle = 'Super Admin';
+      managerSubtitle = 'Administración Global de Plataforma';
+      managerName = user?.name || 'Super Admin';
+      rawWhatsapp = user?.phone || '';
+    } else {
+      // Agency users / Agency Admins
+      const hostWhiteLabel = (user?.agency as any)?.white_label || currentWhiteLabel;
+      const wlAdminUser = hostWhiteLabel?.users?.[0] || (user as any)?.agency?.white_label_admin;
+      
+      managerTitle = 'Admin Marca Blanca';
+      managerSubtitle = hostWhiteLabel?.name ? `Marca Blanca ${hostWhiteLabel.name}` : 'Soporte Marca Blanca';
+      managerName = wlAdminUser?.name || hostWhiteLabel?.name || 'Admin Marca Blanca';
+      rawWhatsapp = hostWhiteLabel?.whatsapp || wlAdminUser?.phone || hostWhiteLabel?.phone || '';
+    }
   }
+
+  const managerInitials = (managerName || 'SP').substring(0, 2).toUpperCase();
+
+  // Clean WhatsApp number to digits only for wa.me link
+  const cleanWhatsapp = (rawWhatsapp || '').replace(/[^0-9]/g, '');
+  const whatsappUrl = cleanWhatsapp
+    ? `https://wa.me/${cleanWhatsapp}?text=${encodeURIComponent(`Hola ${managerName}, necesito asistencia con el portal ${brandDisplayName}`)}`
+    : `https://wa.me/?text=${encodeURIComponent(`Hola ${managerName}, necesito asistencia con el portal ${brandDisplayName}`)}`;
+
+  // Determine card style background
+  const cardBgStyle = cardColor.startsWith('#') || cardColor.startsWith('rgb')
+    ? { background: `linear-gradient(135deg, ${cardColor} 0%, ${cardColor}dd 60%, ${cardColor}aa 100%)` }
+    : undefined;
 
   return (
     <>
@@ -74,13 +115,16 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
         <div className="p-6 pt-12 2xl:pt-6 flex flex-col items-center relative">
           <div className="w-full mb-4">
             <h2 className="font-headline-sm text-headline-sm text-on-surface">Activos Digitales</h2>
-            <p className="font-label-md text-on-surface-variant opacity-70">Credencial SANTUN 3D Verificada</p>
+            <p className="font-label-md text-on-surface-variant opacity-70">Credencial {brandDisplayName} 3D Verificada</p>
           </div>
           
           <div className="w-full py-4 perspective-[1000px]">
             <div className="relative w-full aspect-[1.58/1] preserve-3d transition-transform duration-500 hover:rotate-x-12 hover:-rotate-y-12 hover:-translate-y-2 hover:scale-105 rounded-xl cursor-pointer group shadow-xl">
               {/* Card Face */}
-              <div className="w-full h-full rounded-xl overflow-hidden border border-white/20 relative bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800 text-white p-5 flex flex-col justify-between shadow-inner">
+              <div 
+                className="w-full h-full rounded-xl overflow-hidden border border-white/20 relative text-white p-5 flex flex-col justify-between shadow-inner"
+                style={cardBgStyle}
+              >
                  
                  {/* Top Row: Chip and Contactless */}
                  <div className="flex justify-between items-start relative z-10 w-full">
@@ -98,10 +142,24 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                     <span className="material-symbols-outlined text-white/70 rotate-90 text-2xl font-bold">wifi</span>
                  </div>
                  
-                 {/* Middle: Brand Name */}
+                 {/* Middle: Brand Name or Custom Card Logo */}
                  <div className="relative z-10 w-full flex justify-start items-center gap-2 mt-1">
-                    <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center font-bold text-xs">S</div>
-                    <span className="text-lg font-extrabold tracking-widest text-white drop-shadow-sm font-sans uppercase">SANTUN</span>
+                    {cardLogo ? (
+                      <img 
+                        src={cardLogo} 
+                        alt={brandDisplayName} 
+                        className="max-h-7 max-w-[160px] object-contain drop-shadow-md" 
+                      />
+                    ) : (
+                      <>
+                        <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center font-bold text-xs uppercase">
+                          {brandDisplayName.charAt(0)}
+                        </div>
+                        <span className="text-lg font-extrabold tracking-widest text-white drop-shadow-sm font-sans uppercase truncate">
+                          {brandDisplayName}
+                        </span>
+                      </>
+                    )}
                  </div>
                  
                  {/* Bottom Row: Titular & Points */}
@@ -125,7 +183,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
         
         <div className="mx-6 border-t border-outline-variant/50"></div>
 
-        {/* Bottom Section: Dynamic Manager Contact Card */}
+        {/* Bottom Section: Dynamic Manager / Contact Card with WhatsApp */}
         <div className="p-4 flex flex-col flex-1">
           <div className="mb-3">
             <h2 className="font-bold text-sm text-on-surface">{managerTitle}</h2>
@@ -157,7 +215,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
             </div>
 
             <a 
-              href={`https://wa.me/1234567890?text=Hola%20${encodeURIComponent(managerName)},%20necesito%20asistencia%20con%20el%20portal%20SANTUN`} 
+              href={whatsappUrl} 
               target="_blank" 
               rel="noopener noreferrer" 
               className="flex items-center justify-center gap-2 w-full py-2 bg-[#25D366] text-white rounded-lg font-bold text-xs transition-all hover:bg-[#1da851] hover:shadow-md active:scale-95 mt-1"
@@ -166,92 +224,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
               <span>WhatsApp</span>
             </a>
           </div>
-
-          {/* Secondary Actions */}
-          <div className="mt-auto pt-6 space-y-2">
-            <button 
-              onClick={() => setIsAgendarModalOpen(true)} 
-              className="w-full py-2.5 px-4 bg-surface-container-high text-on-surface-variant font-bold text-sm rounded-lg flex items-center justify-between group transition-all duration-200 ease-in-out hover:bg-surface-container-highest hover:text-on-surface active:scale-[0.98] active:bg-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-            >
-              <span className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-                Agendar Visita
-              </span>
-              <span className="material-symbols-outlined text-[16px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 group-active:scale-90">chevron_right</span>
-            </button>
-          </div>
         </div>
       </aside>
-
-      {/* Agendar Visita Modal */}
-      <AnimatePresence>
-        {isAgendarModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }} 
-              onClick={() => setIsAgendarModalOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              aria-hidden="true"
-            />
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-surface w-full max-w-md rounded-2xl p-6 shadow-2xl relative z-10 border border-outline-variant"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="modal-title"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h3 id="modal-title" className="font-headline-sm font-bold text-on-surface">Agendar Visita</h3>
-                <button 
-                  onClick={() => setIsAgendarModalOpen(false)} 
-                  className="text-on-surface-variant hover:bg-surface-container rounded-full w-11 h-11 flex items-center justify-center transition-colors active:scale-90" 
-                  aria-label="Cerrar modal"
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-              <p className="text-body-md text-on-surface-variant mb-6">Selecciona una fecha y hora preferida para la visita de {managerName}.</p>
-              
-              <div className="space-y-4 mb-8">
-                <div>
-                  <label className="block text-label-sm font-bold text-on-surface mb-2">Fecha sugerida</label>
-                  <input type="date" className="w-full bg-surface-container-low border border-outline-variant rounded-lg p-3 text-body-md focus:ring-2 focus:ring-primary outline-none" />
-                </div>
-                <div>
-                  <label className="block text-label-sm font-bold text-on-surface mb-2">Horario preferido</label>
-                  <select className="w-full bg-surface-container-low border border-outline-variant rounded-lg p-3 text-body-md focus:ring-2 focus:ring-primary outline-none">
-                    <option>Mañana (09:00 - 12:00)</option>
-                    <option>Mediodía (12:00 - 15:00)</option>
-                    <option>Tarde (15:00 - 18:00)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-3 justify-end">
-                <button 
-                  onClick={() => setIsAgendarModalOpen(false)} 
-                  className="px-5 py-2.5 text-on-surface-variant font-bold rounded-xl transition-all duration-200 ease-in-out hover:bg-surface-container hover:text-on-surface active:scale-[0.98] active:bg-surface-container-high"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  onClick={() => {
-                    setIsAgendarModalOpen(false);
-                    toast.success(`Solicitud enviada. ${managerName} confirmará en breve.`);
-                  }} 
-                  className="px-5 py-2.5 bg-primary text-on-primary font-bold rounded-xl shadow-md transition-all duration-200 ease-in-out hover:bg-primary-container hover:shadow-lg active:scale-[0.98]"
-                >
-                  Confirmar Visita
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </>
   );
 };

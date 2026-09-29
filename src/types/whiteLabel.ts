@@ -29,6 +29,8 @@ export interface WhiteLabel {
   stripe_webhook_secret?: string | null;
   stripe_mode?: 'test' | 'live' | string | null;
   border_radius?: string | null;
+  card_color?: string | null;
+  card_logo?: string | null;
   status: 'active' | 'suspended';
   plan_id?: number | null;
   agencies?: any[];
