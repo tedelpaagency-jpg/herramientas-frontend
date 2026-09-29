@@ -3,11 +3,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import roleService, { CreateRolePayload, UpdateRolePayload } from '@/services/roleService';
-import { Role, Permission } from '@/types';
+import userService from '@/services/userService';
+import { Role, Permission, User } from '@/types';
 import { 
   ShieldCheck, Shield, Key, Users, Search, Plus, Edit3, Trash2, 
   CheckCircle2, XCircle, AlertCircle, Sparkles, Building2, Globe, 
-  Layers, Lock, Check, X, RefreshCw, Eye, Info, ChevronRight, UserCheck
+  Layers, Lock, Check, X, RefreshCw, Eye, Info, ChevronRight, UserCheck, UserPlus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -317,6 +318,107 @@ export const RolesPage: React.FC = () => {
     }
   };
 
+  // Assignment Modal State
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState<boolean>(false);
+  const [targetAssignUser, setTargetAssignUser] = useState<User | null>(null);
+  const [selectedRoleToAssign, setSelectedRoleToAssign] = useState<string>('');
+  const [teamUsers, setTeamUsers] = useState<User[]>([]);
+  const [loadingTeamUsers, setLoadingTeamUsers] = useState<boolean>(false);
+  const [savingAssignment, setSavingAssignment] = useState<boolean>(false);
+  const [assignUserSearch, setAssignUserSearch] = useState<string>('');
+
+  const allSelectableRoles = useMemo(() => {
+    const list: Array<{ name: string; display_name: string; is_system?: boolean }> = [];
+    const seen = new Set<string>();
+
+    roles.forEach((r) => {
+      seen.add(r.name);
+      list.push({
+        name: r.name,
+        display_name: r.display_name || r.name,
+        is_system: r.is_system,
+      });
+    });
+
+    const defaults = [
+      { name: 'user', display_name: 'User / Agente', is_system: true },
+      { name: 'admin', display_name: 'Administrador de Agencia', is_system: true },
+      { name: 'closer', display_name: 'Closer Comercial (CRM)', is_system: true },
+      { name: 'gerente', display_name: 'Gerente de Operaciones', is_system: true },
+      { name: 'gerente_comercial', display_name: 'Gerente Comercial', is_system: true },
+      { name: 'white_label_admin', display_name: 'Administrador Marca Blanca', is_system: true },
+      { name: 'super_admin', display_name: 'Super Administrador', is_system: true },
+    ];
+
+    defaults.forEach((d) => {
+      if (!seen.has(d.name)) {
+        list.push(d);
+      }
+    });
+
+    return list;
+  }, [roles]);
+
+  const fetchTeamUsers = async () => {
+    setLoadingTeamUsers(true);
+    try {
+      const res = await userService.getUsers();
+      const userArray = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.data)
+            ? res.data.data
+            : [];
+      setTeamUsers(userArray);
+    } catch (e) {
+      console.error('Error fetching team users:', e);
+    } finally {
+      setLoadingTeamUsers(false);
+    }
+  };
+
+  const handleOpenAssignSelf = () => {
+    setTargetAssignUser(user);
+    setSelectedRoleToAssign(user?.role || 'user');
+    setIsAssignModalOpen(true);
+  };
+
+  const handleOpenAssignRoleToTeam = (role: Role) => {
+    setSelectedRoleToAssign(role.name);
+    setTargetAssignUser(null);
+    fetchTeamUsers();
+    setIsAssignModalOpen(true);
+  };
+
+  const handleSaveRoleAssignment = async () => {
+    if (!targetAssignUser) {
+      toast.error('Selecciona un usuario para asignarle el rol');
+      return;
+    }
+    if (!selectedRoleToAssign) {
+      toast.error('Selecciona un rol válido');
+      return;
+    }
+
+    setSavingAssignment(true);
+    try {
+      await userService.assignRole(targetAssignUser.id, selectedRoleToAssign);
+      toast.success(`Rol "${selectedRoleToAssign}" asignado exitosamente a ${targetAssignUser.name}`);
+      setIsAssignModalOpen(false);
+
+      if (targetAssignUser.id === user?.id && refreshUser) {
+        await refreshUser();
+      }
+      loadRolesData();
+    } catch (err: any) {
+      console.error('Error al asignar rol:', err);
+      toast.error(err.response?.data?.message || 'Error al asignar el rol al usuario');
+    } finally {
+      setSavingAssignment(false);
+    }
+  };
+
   // User's active roles display list
   const userRolesList = useMemo(() => {
     if (user?.roles && user.roles.length > 0) {
@@ -485,6 +587,18 @@ export const RolesPage: React.FC = () => {
                     {activeWlName}
                   </span>
                 </div>
+
+                {canManageRoles && (
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      onClick={handleOpenAssignSelf}
+                      className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 font-bold text-xs transition-colors border border-blue-200/80 dark:border-blue-900 shadow-2xs"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Asignar / Cambiar mi Rol</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -855,6 +969,14 @@ export const RolesPage: React.FC = () => {
                         <td className="py-4 px-4 text-right">
                           <div className="inline-flex items-center gap-1">
                             <button
+                              onClick={() => handleOpenAssignRoleToTeam(role)}
+                              title="Asignar este rol a usuarios del equipo"
+                              className="p-1.5 rounded-lg text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors"
+                            >
+                              <UserPlus className="w-4 h-4" />
+                            </button>
+
+                            <button
                               onClick={() => setViewingRole(role)}
                               title="Ver permisos detallados"
                               className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -1210,6 +1332,186 @@ export const RolesPage: React.FC = () => {
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-600/20 transition-all disabled:opacity-60"
               >
                 {isDeleting ? 'Eliminando...' : 'Sí, Eliminar Rol'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ASSIGN ROLE MODAL */}
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    {targetAssignUser?.id === user?.id ? 'Cambiar Mi Rol Asignado' : 'Asignar Rol a Usuario'}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Selecciona el rol y el usuario destinatario
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAssignModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 overflow-y-auto flex-1 custom-scrollbar">
+              {/* Target User Selector */}
+              {targetAssignUser?.id === user?.id ? (
+                <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs">
+                      {(user?.name || 'US').substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                        {user?.name} {user?.last_name || ''}
+                      </p>
+                      <p className="text-[11px] text-slate-500">{user?.email}</p>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                    Tu Usuario
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Seleccionar Usuario Destinatario *
+                  </label>
+                  {loadingTeamUsers ? (
+                    <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Cargando miembros del equipo...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative mb-2">
+                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          value={assignUserSearch}
+                          onChange={(e) => setAssignUserSearch(e.target.value)}
+                          placeholder="Filtrar por nombre o email..."
+                          className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium"
+                        />
+                      </div>
+                      <div className="max-h-40 overflow-y-auto space-y-1 rounded-xl border border-slate-200 dark:border-slate-700 p-1 custom-scrollbar">
+                        {teamUsers
+                          .filter((u) => {
+                            if (!assignUserSearch) return true;
+                            const q = assignUserSearch.toLowerCase();
+                            return (
+                              u.name.toLowerCase().includes(q) ||
+                              u.email.toLowerCase().includes(q)
+                            );
+                          })
+                          .map((u) => {
+                            const isSelected = targetAssignUser?.id === u.id;
+                            return (
+                              <button
+                                key={u.id}
+                                type="button"
+                                onClick={() => setTargetAssignUser(u)}
+                                className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-xs transition-colors ${
+                                  isSelected
+                                    ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-900'
+                                    : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                }`}
+                              >
+                                <span className="truncate">{u.name} ({u.email})</span>
+                                <span className="text-[10px] text-slate-400 capitalize shrink-0 ml-2">
+                                  {u.role || 'user'}
+                                </span>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Role to Assign Selector */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Seleccionar Rol a Asignar *
+                </label>
+                <div className="grid grid-cols-1 gap-2 max-h-52 overflow-y-auto custom-scrollbar p-1">
+                  {allSelectableRoles.map((r) => {
+                    const isSelected = selectedRoleToAssign === r.name;
+                    return (
+                      <label
+                        key={r.name}
+                        onClick={() => setSelectedRoleToAssign(r.name)}
+                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-blue-50/80 dark:bg-blue-950/50 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-100 font-bold shadow-xs'
+                            : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <input
+                            type="radio"
+                            name="assign_role_radio"
+                            checked={isSelected}
+                            onChange={() => setSelectedRoleToAssign(r.name)}
+                            className="text-blue-600 focus:ring-blue-500 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold truncate leading-tight">
+                              {r.display_name}
+                            </p>
+                            <p className="text-[10px] font-mono text-slate-400 truncate">
+                              {r.name}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                          r.is_system
+                            ? 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                            : 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+                        }`}>
+                          {r.is_system ? 'Sistema' : 'Personalizado'}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsAssignModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={savingAssignment || !targetAssignUser || !selectedRoleToAssign}
+                onClick={handleSaveRoleAssignment}
+                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {savingAssignment ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Guardando Asignación...</span>
+                  </>
+                ) : (
+                  <span>Confirmar y Asignar Rol</span>
+                )}
               </button>
             </div>
           </div>
