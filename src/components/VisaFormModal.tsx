@@ -61,32 +61,37 @@ export const VisaFormModal: React.FC<VisaFormModalProps> = ({
     e.preventDefault();
     setIsSaving(true);
     try {
-      const payload: Partial<Visa> = {
-        applicant_name: formData.applicant_name,
-        description: formData.description,
+      const parsedRefId = formData.visa_ref_id && formData.visa_ref_id !== 'general' && formData.visa_ref_id !== '0' && formData.visa_ref_id !== ''
+        ? Number(formData.visa_ref_id)
+        : null;
+
+      const payload: any = {
+        applicant_name: formData.applicant_name.trim(),
+        description: formData.description?.trim() || null,
         visa_type: formData.visa_type,
-        visa_ref_id: formData.visa_ref_id ? Number(formData.visa_ref_id) : undefined,
+        visa_ref_id: parsedRefId,
         country_destination: formData.visa_type === 'USA' ? 'Estados Unidos' : formData.visa_type === 'CANADA' ? 'Canadá' : 'Europa',
         status: visa ? visa.status : '1',
         fields: {
           ...(visa?.fields || {}),
-          processing_location: formData.processing_location,
+          ...(formData.processing_location ? { processing_location: formData.processing_location } : {}),
         },
       };
 
       let savedResult: Visa | undefined;
       if (visa) {
         savedResult = await visaService.updateVisa(visa.id, payload);
-        toast.success('Solicitud de visa actualizada');
+        toast.success('Solicitud de visa actualizada exitosamente');
       } else {
         savedResult = await visaService.createVisa(payload);
-        toast.success('Nueva solicitud de visa habilitada');
+        toast.success('Nueva solicitud de visa creada exitosamente');
       }
       onSaved(savedResult);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving visa:', err);
-      toast.error('Error al guardar la solicitud');
+      const serverMsg = err.response?.data?.message || err.message;
+      toast.error(serverMsg || 'Error al guardar la solicitud');
     } finally {
       setIsSaving(false);
     }
@@ -127,10 +132,9 @@ export const VisaFormModal: React.FC<VisaFormModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Descripción / Observaciones</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Descripción / Observaciones (Opcional)</label>
             <textarea
               rows={3}
-              required
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Descripción breve u observaciones de la solicitud..."
@@ -152,7 +156,7 @@ export const VisaFormModal: React.FC<VisaFormModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Lugar donde se tramita la visa *</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Lugar donde se tramita la visa</label>
             <select
               value={formData.processing_location || ''}
               onChange={(e) => setFormData({ ...formData, processing_location: e.target.value })}
@@ -165,13 +169,13 @@ export const VisaFormModal: React.FC<VisaFormModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Grupo de Visa (Referencia)</label>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Grupo de Visa (Carpeta / Familia)</label>
             <select
               value={formData.visa_ref_id}
               onChange={(e) => setFormData({ ...formData, visa_ref_id: e.target.value })}
               className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:border-sky-500"
             >
-              <option value="">Seleccionar Grupo</option>
+              <option value="">General / Sin Grupo Específico</option>
               {visaRefs.map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}

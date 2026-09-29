@@ -167,14 +167,10 @@ export const VisasPage: React.FC = () => {
       setVisas(visasData);
       setVisaRefs(refsData);
 
-      if (savedVisa) {
-        if (savedVisa.visa_ref_id) {
-          const foundRef = refsData.find((r) => String(r.id) === String(savedVisa.visa_ref_id));
-          if (foundRef) {
-            setActiveGroup(foundRef);
-          }
-        } else {
-          setActiveGroup({ id: 'general', name: 'General / Sin Grupo' });
+      if (activeGroup && savedVisa && savedVisa.visa_ref_id) {
+        const foundRef = refsData.find((r) => String(r.id) === String(savedVisa.visa_ref_id));
+        if (foundRef) {
+          setActiveGroup(foundRef);
         }
       }
     } catch (err) {
