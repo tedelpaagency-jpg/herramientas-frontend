@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Agency } from '../types';
+import { User, Agency, Role } from '../types';
 import userService from '../services/userService';
 import adminService from '../services/adminService';
+import roleService from '../services/roleService';
 import { useAuth } from '../context/AuthContext';
 import { X, UserPlus, Save, Loader2, ShieldCheck, Building } from 'lucide-react';
 import Portal from './Portal';
@@ -41,12 +42,14 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [dynamicRoles, setDynamicRoles] = useState<Role[]>([]);
   const [isLoadingAgencies, setIsLoadingAgencies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
+      roleService.getRoles().then(setDynamicRoles).catch(() => {});
       if (canSelectAgency) {
         setIsLoadingAgencies(true);
         adminService.getAgencies()
@@ -236,15 +239,24 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all appearance-none"
                 >
-                  <option value="user">User / Agente</option>
-                  <option value="admin">Administrador de Agencia</option>
-                  {!isAgencyAdmin && (
-                    <>
-                      <option value="closer">Closer (CRM & Clientes Asignados)</option>
-                      <option value="gerente">Gerente de Operaciones</option>
-                      {isSuperAdmin && <option value="gerente_comercial">Gerente Comercial</option>}
-                      {isSuperAdmin && <option value="super_admin">Super Admin</option>}
-                    </>
+                  <optgroup label="Roles del Sistema">
+                    <option value="user">User / Agente</option>
+                    <option value="admin">Administrador de Agencia</option>
+                    {!isAgencyAdmin && (
+                      <>
+                        <option value="closer">Closer (CRM & Clientes Asignados)</option>
+                        <option value="gerente">Gerente de Operaciones</option>
+                        {isSuperAdmin && <option value="gerente_comercial">Gerente Comercial</option>}
+                        {isSuperAdmin && <option value="super_admin">Super Admin</option>}
+                      </>
+                    )}
+                  </optgroup>
+                  {dynamicRoles.filter(r => !r.is_system).length > 0 && (
+                    <optgroup label="Roles Personalizados de la Organización">
+                      {dynamicRoles.filter(r => !r.is_system).map(r => (
+                        <option key={r.id} value={r.name}>{r.display_name || r.name}</option>
+                      ))}
+                    </optgroup>
                   )}
                 </select>
               </div>

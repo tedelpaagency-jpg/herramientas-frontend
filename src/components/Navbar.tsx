@@ -221,7 +221,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2 sm:gap-3 ml-0.5 sm:ml-2 lg:ml-4 relative">
           <div className="text-right hidden sm:block">
             <p className="font-label-md font-bold text-slate-800 dark:text-slate-100 truncate max-w-[140px]">{user?.name || 'Usuario SANTUN'}</p>
-            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">{user?.role || user?.email || 'Specialist'}</p>
+            <Link 
+              href="/roles" 
+              title="Ver mis roles y permisos"
+              className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1 max-w-[140px] truncate"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+              <span className="truncate">{user?.role || user?.email || 'Specialist'}</span>
+            </Link>
           </div>
           <button 
             onClick={() => setShowUserMenu(!showUserMenu)}
@@ -250,7 +257,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <div className="p-3 border-b border-slate-200 dark:border-slate-800 sm:hidden">
                     <p className="font-bold text-slate-800 dark:text-slate-100">{user?.name || 'Usuario SANTUN'}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{user?.role || user?.email || 'Specialist'}</p>
+                    <Link href="/roles" onClick={() => setShowUserMenu(false)} className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      <span>{user?.role || user?.email || 'Specialist'}</span>
+                    </Link>
                   </div>
                   <div className="py-2">
                     <Link href="/estates/new" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-primary font-bold transition-colors">
@@ -261,6 +271,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <Link href="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
                       <span className="material-symbols-outlined text-[20px]">person</span>
                       Mi Perfil
+                    </Link>
+                    <Link href="/roles" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
+                      <span className="material-symbols-outlined text-[20px]">shield_person</span>
+                      Mis Roles & Permisos
                     </Link>
                     {configHref && (
                       <Link href={configHref} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">

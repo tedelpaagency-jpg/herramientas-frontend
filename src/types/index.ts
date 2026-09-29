@@ -93,6 +93,15 @@ export interface Role {
   id: number;
   name: string;
   guard_name?: string;
+  display_name?: string;
+  description?: string;
+  is_system?: boolean;
+  white_label_id?: number | null;
+  agency_id?: number | null;
+  permissions?: Permission[];
+  users_count?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Permission {

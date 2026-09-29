@@ -349,6 +349,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Marcas Blancas', path: '/admin/white-labels', icon: Globe, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
         { label: 'Gestión de Agencias', path: '/agencies', icon: Building2, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
         { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
+        { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck, permission: ['manage_users', 'view_users', 'users.view'] },
         { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_agencies', 'manage_users'] },
         { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_agencies', 'manage_users'] },
       ],
@@ -362,6 +363,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               { label: 'Personalizar Marca', path: '/admin/branding', icon: Palette },
               { label: 'Accesos Directos Header', path: '/admin/shortcuts', icon: LayoutGrid },
               { label: 'Configuración del Login', path: '/admin/login-settings', icon: Film },
+              { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck },
               { label: 'Importar Estudiantes', path: '/white-label/import-students', icon: FileSpreadsheet },
               { label: 'Planes de mi Marca', path: '/admin/plans', icon: Layers },
               { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key },
@@ -489,8 +491,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </nav>
 
-        {configHref && (
-          <div className="px-3 py-2.5 mt-auto space-y-1">
+        <div className="px-3 py-2.5 mt-auto space-y-1 border-t border-slate-200/60 dark:border-slate-800/60">
+          <Link 
+            href="/roles" 
+            onClick={() => setLeftSidebarOpen(false)}
+            className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-colors ${
+              pathname === '/roles' || pathname === '/admin/roles'
+                ? (isDarkBg
+                    ? 'bg-slate-800/90 text-white font-extrabold border border-slate-700/80 shadow-xs'
+                    : 'bg-blue-50 text-blue-700 font-extrabold border border-blue-200/80 shadow-xs')
+                : (isDarkBg
+                    ? 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100')
+            }`}
+          >
+            <ShieldCheck className={`w-4 h-4 stroke-[2] ${
+              pathname === '/roles' || pathname === '/admin/roles'
+                ? (isDarkBg ? 'text-white' : 'text-blue-600')
+                : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
+            }`} />
+            <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Mis Roles & Permisos</span>
+          </Link>
+
+          {configHref && (
             <Link 
               href={configHref} 
               onClick={() => setLeftSidebarOpen(false)}
@@ -511,8 +534,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`} />
               <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
             </Link>
-          </div>
-        )}
+          )}
+        </div>
 
       </aside>
     </>

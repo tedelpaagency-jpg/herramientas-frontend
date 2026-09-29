@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { 
   FileText, Clock, CheckCircle2, XCircle, AlertCircle, Loader2, Sparkles, Eye, Download, MapPin
 } from 'lucide-react';
@@ -57,6 +58,29 @@ export const AgentPackageRequestsPage: React.FC = () => {
           <p className="text-slate-300 text-sm max-w-xl">
             Sigue en tiempo real el avance de tus solicitudes de paquetes turísticos enviados.
           </p>
+        </div>
+
+        <div className="relative z-10 flex flex-wrap items-center gap-2">
+          <Link
+            href="/travel-packages"
+            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5"
+          >
+            <span>Catálogo POS</span>
+          </Link>
+          <Link
+            href="/travel-packages/my-requests"
+            className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-600/30 flex items-center gap-1.5"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Mis Solicitudes</span>
+          </Link>
+          <Link
+            href="/travel-packages/pos"
+            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Cotizador Mayorista</span>
+          </Link>
         </div>
       </div>
 

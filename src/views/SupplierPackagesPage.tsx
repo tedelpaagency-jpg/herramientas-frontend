@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { 
   Plus, Edit2, CheckCircle2, Loader2, Sparkles, MapPin, Clock, 
   DollarSign, Upload, Image as ImageIcon, Home, Building2, Car, Compass
@@ -194,14 +195,28 @@ export const SupplierPackagesPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => { resetForm(); setShowModal(true); }}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs transition-all shadow-lg shadow-purple-600/20 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>+ Publicar Recurso / Paquete</span>
-        </button>
+        <div className="relative z-10 flex flex-wrap items-center gap-2">
+          <Link
+            href="/supplier"
+            className="px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs shadow-md shadow-purple-600/30 flex items-center gap-1.5"
+          >
+            <span>📦 Paquetes e Inventarios</span>
+          </Link>
+          <Link
+            href="/supplier/requests"
+            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5"
+          >
+            <span>📋 Solicitudes Recibidas</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => { resetForm(); setShowModal(true); }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition-all shadow-lg shadow-emerald-600/20 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Publicar Recurso</span>
+          </button>
+        </div>
       </div>
 
       {/* Package List Grid */}
