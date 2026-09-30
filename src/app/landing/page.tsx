@@ -117,6 +117,23 @@ function CustomHtmlIframeContainer({
       });
       ro.observe(doc.body);
     }
+
+    // Scroll to section if initial URL has hash (e.g. #seccion-compra)
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hashId = window.location.hash.substring(1);
+      setTimeout(() => {
+        const targetEl = doc.getElementById(hashId) || doc.querySelector(`[name="${CSS.escape ? CSS.escape(hashId) : hashId}"]`);
+        if (targetEl && iframeNode) {
+          const iframeBox = iframeNode.getBoundingClientRect();
+          const targetBox = targetEl.getBoundingClientRect();
+          const targetTop = window.pageYOffset + iframeBox.top + targetBox.top;
+          window.scrollTo({
+            top: Math.max(0, targetTop - 25),
+            behavior: 'smooth',
+          });
+        }
+      }, 350);
+    }
   };
 
   return (

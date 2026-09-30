@@ -127,6 +127,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      const currentAgencyId = user?.agency_id || (user?.agency?.id ? user.agency.id : undefined);
       const [dashRes, dossiersRes, processes, groupsRes, clientsRes] = await Promise.all([
         visaWholesaleService.getAgencyDashboard().catch(() => null),
         visaWholesaleService.getDossiers({
@@ -139,7 +140,10 @@ export const AgencyVisasDashboardPage: React.FC = () => {
         }).catch(() => null),
         visaWholesaleService.getProcessTypes().catch(() => []),
         visaWholesaleService.getGroups({ per_page: 100 }).catch(() => ({ data: [] })),
-        clientService.getClients({ per_page: 100 }).catch(() => ({ data: [] })),
+        visaWholesaleService.getAgencyClients(currentAgencyId).catch(async () => {
+          const fallback = await clientService.getClients({ per_page: 100, agency_id: currentAgencyId }).catch(() => ({ data: [] }));
+          return fallback.data || [];
+        }),
       ]);
 
       if (dashRes?.metrics) {
@@ -168,7 +172,12 @@ export const AgencyVisasDashboardPage: React.FC = () => {
         const updated = freshGroups.find((g: any) => String(g.id) === String(prev.id));
         return updated || prev;
       });
-      setClients(Array.isArray(clientsRes?.data) ? clientsRes.data : []);
+
+      const rawClients: any[] = Array.isArray(clientsRes) ? clientsRes : ((clientsRes as any)?.data || []);
+      const exclusiveClients = currentAgencyId
+        ? rawClients.filter((c: any) => Number(c.agency_id) === Number(currentAgencyId))
+        : rawClients;
+      setClients(exclusiveClients);
     } catch (err) {
       console.error('Error al cargar datos:', err);
       toast.error('Error al cargar la información del panel');

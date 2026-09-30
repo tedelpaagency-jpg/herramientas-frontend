@@ -416,12 +416,14 @@ export const DynamicFormRenderer: React.FC<Props> = ({
             className="flex flex-col space-y-1.5 text-left w-full"
             style={{ display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box', textAlign: 'left' }}
           >
-            <label
-              className={`${labelClasses} block w-full text-left mb-1`}
-              style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...labelStyle }}
-            >
-              {field.label} {field.required && <span className="text-red-500">*</span>}
-            </label>
+            {field.type !== 'checkbox' && (
+              <label
+                className={`${labelClasses} block w-full text-left mb-1`}
+                style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...labelStyle }}
+              >
+                {field.label} {field.required && <span className="text-red-500">*</span>}
+              </label>
+            )}
 
             {field.type === 'textarea' ? (
               <textarea
@@ -449,16 +451,18 @@ export const DynamicFormRenderer: React.FC<Props> = ({
             ) : field.type === 'checkbox' ? (
               <label
                 className={`flex items-center gap-2.5 cursor-pointer text-xs ${isDark ? 'text-slate-300' : 'text-slate-700 font-medium'}`}
-                style={{ display: 'flex', alignItems: 'center', width: '100%', ...labelStyle }}
+                style={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer', ...labelStyle }}
               >
                 <input
                   type="checkbox"
                   checked={!!formData[field.name]}
                   onChange={(e) => handleInputChange(field, e.target.checked)}
                   className="rounded border-slate-300 bg-white text-indigo-600 w-4 h-4 focus:ring-indigo-500"
-                  style={{ display: 'inline-block', width: '16px', height: '16px', margin: '0' }}
+                  style={{ display: 'inline-block', width: '16px', height: '16px', margin: '0 6px 0 0', flexShrink: 0, cursor: 'pointer' }}
                 />
-                <span>{field.placeholder || 'Acepto las condiciones'}</span>
+                <span style={{ cursor: 'pointer', lineHeight: 1.3 }}>
+                  {field.label} {field.required && <span className="text-red-500">*</span>}
+                </span>
               </label>
             ) : field.type === 'file' ? (
               <div className="flex flex-col space-y-1 w-full" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>

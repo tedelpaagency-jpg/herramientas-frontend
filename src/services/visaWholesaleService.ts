@@ -188,6 +188,13 @@ class VisaWholesaleService {
     return res.data;
   }
 
+  async getAgencyClients(agencyId?: number | string): Promise<any[]> {
+    const res = await apiClient.get('/v1/visas/agency-clients', {
+      params: agencyId ? { agency_id: agencyId } : undefined,
+    });
+    return res.data?.data || [];
+  }
+
   async updateDossier(id: number, data: Record<string, any>) {
     const res = await apiClient.put(`/v1/visas/dossiers/${id}`, data);
     return res.data;

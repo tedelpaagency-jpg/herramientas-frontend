@@ -1,7 +1,7 @@
 /**
  * Helper to prepare and normalize custom HTML for landings.
  * Fixes CDN loading, mixed content (HTTP -> HTTPS), protocol-relative URLs,
- * and ensures documents are properly structured without duplicate shells.
+ * removes rogue <base> tags that break anchor links, and enables smooth in-page navigation.
  */
 
 export function prepareLandingHtml(
@@ -27,11 +27,14 @@ export function prepareLandingHtml(
     }
   }
 
-  // 2. Normalize protocol-relative URLs (//cdn... -> https://cdn...)
+  // 2. Remove any <base> tags that may redirect fragment/anchor links to the website root (e.g. /dashboard or /login)
+  html = html.replace(/<base\s+[^>]*>/gi, '');
+
+  // 3. Normalize protocol-relative URLs (//cdn... -> https://cdn...)
   // Inside srcDoc iframes, protocol-relative '//' can resolve to 'about://' and fail
   html = html.replace(/(src|href)=["']\/\/([a-zA-Z0-9_\-\.]+)/gi, '$1="https://$2');
 
-  // 3. Upgrade insecure http:// CDN URLs to https:// to prevent Mixed Content blocking on HTTPS
+  // 4. Upgrade insecure http:// CDN URLs to https:// to prevent Mixed Content blocking on HTTPS
   const cdnDomains = [
     'cdn.jsdelivr.net',
     'cdnjs.cloudflare.com',
@@ -58,10 +61,6 @@ export function prepareLandingHtml(
 
   // Also upgrade any other http:// for script and link tags
   html = html.replace(/<(script|link)([^>]*?)(src|href)=["']http:\/\/([^"'>]+)["']/gi, '<$1$2$3="https://$4"');
-
-  // 4. Clean up broken SRI hashes that may fail cross-origin in iframe srcDoc
-  // Note: if an integrity hash fails on a CDN script in srcDoc, browsers block the script entirely
-  // html = html.replace(/\s+integrity=["'][^"']*["']/gi, '');
 
   // 5. Replace {{DYNAMIC_FORM}} placeholder
   const placeholder = options.formPlaceholderHtml || '';
@@ -120,25 +119,88 @@ export function prepareLandingHtml(
     </style>
   ` : '';
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const baseTag = origin ? `<base href="${origin}/" />` : '';
+  // 7. In-page anchor navigation script:
+  // Intercepts anchor links (e.g. href="#seccion-compra", href="#formulario") so they scroll
+  // smoothly inside the document/parent window instead of navigating away.
+  const anchorScript = `
+    <script id="landing-anchor-scroll-helper">
+      (function() {
+        document.addEventListener('click', function(e) {
+          var a = e.target.closest('a');
+          if (!a) return;
+          var href = a.getAttribute('href');
+          if (!href) return;
+
+          // 1. Handle in-page fragment / anchor links (e.g. #seccion-compra)
+          if (href.startsWith('#') && href.length > 1) {
+            e.preventDefault();
+            var targetId = href.substring(1);
+            var targetEl = document.getElementById(targetId) || 
+                           document.querySelector('[name="' + (window.CSS && CSS.escape ? CSS.escape(targetId) : targetId) + '"]');
+
+            // Fallback: check if the link intended the dynamic form
+            if (!targetEl && (targetId.includes('form') || targetId.includes('compra') || targetId.includes('lead') || targetId.includes('registro') || targetId.includes('contacto'))) {
+              targetEl = document.getElementById('react-dynamic-form-container') || document.querySelector('form');
+            }
+
+            if (targetEl) {
+              if (window.parent && window.parent !== window) {
+                try {
+                  var iframe = window.frameElement;
+                  var parentScrollY = window.parent.pageYOffset || window.parent.document.documentElement.scrollTop || 0;
+                  var iframeTop = iframe ? (iframe.getBoundingClientRect().top + parentScrollY) : 0;
+                  var targetRect = targetEl.getBoundingClientRect();
+                  var absoluteTargetTop = iframeTop + targetRect.top;
+
+                  window.parent.scrollTo({
+                    top: Math.max(0, absoluteTargetTop - 25),
+                    behavior: 'smooth'
+                  });
+
+                  if (window.parent.history && window.parent.history.pushState) {
+                    window.parent.history.pushState(null, '', href);
+                  }
+                } catch (err) {
+                  targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              } else {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }
+          } else if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('whatsapp:') || href.startsWith('https://wa.me')) {
+            // Ensure external links open cleanly in a new window/tab
+            if (!a.getAttribute('target')) {
+              a.setAttribute('target', '_blank');
+              a.setAttribute('rel', 'noopener noreferrer');
+            }
+          }
+        }, true);
+      })();
+    </script>
+  `;
 
   if (isFullDoc) {
-    if (html.includes('</head>')) {
-      return html.replace('</head>', `${baseTag}${formStyles}</head>`);
-    } else if (html.includes('<head>')) {
-      return html.replace('<head>', `<head>${baseTag}${formStyles}`);
-    } else if (html.includes('<html')) {
-      return html.replace(/(<html[^>]*>)/i, `$1<head>${baseTag}${formStyles}</head>`);
+    let result = html;
+    if (result.includes('</head>')) {
+      result = result.replace('</head>', `${formStyles}</head>`);
+    } else if (result.includes('<head>')) {
+      result = result.replace('<head>', `<head>${formStyles}`);
+    } else if (result.includes('<html')) {
+      result = result.replace(/(<html[^>]*>)/i, `$1<head>${formStyles}</head>`);
     }
-    return html;
+
+    if (result.includes('</body>')) {
+      result = result.replace('</body>', `${anchorScript}</body>`);
+    } else {
+      result += anchorScript;
+    }
+    return result;
   } else {
     return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  ${baseTag}
   ${formStyles}
   <style>
     html { color-scheme: light; }
@@ -147,6 +209,7 @@ export function prepareLandingHtml(
 </head>
 <body>
   ${html}
+  ${anchorScript}
 </body>
 </html>`;
   }
