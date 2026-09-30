@@ -41,8 +41,22 @@ export const RolesPage: React.FC = () => {
     isAgencyAdmin ||
     hasPermission(['manage_users', 'manage_roles', 'users.view', 'view_users']);
 
-  // Tabs: 'my_roles' | 'manage_roles'
-  const [activeTab, setActiveTab] = useState<'my_roles' | 'manage_roles'>('my_roles');
+  // Tabs: 'my_roles' | 'manage_roles' - Default to manage_roles for admins
+  const [activeTab, setActiveTab] = useState<'my_roles' | 'manage_roles'>('manage_roles');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'my_roles') {
+        setActiveTab('my_roles');
+      } else if (tabParam === 'manage_roles') {
+        setActiveTab('manage_roles');
+      } else if (!canManageRoles) {
+        setActiveTab('my_roles');
+      }
+    }
+  }, [canManageRoles]);
 
   // Roles management states
   const [roles, setRoles] = useState<Role[]>([]);
@@ -764,6 +778,26 @@ export const RolesPage: React.FC = () => {
       {/* TAB 2: GESTIÓN DE ROLES DEL EQUIPO */}
       {activeTab === 'manage_roles' && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6">
+          {/* RBAC Notice Banner */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200/80 dark:border-blue-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-blue-600 text-white shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                  Control de Accesos Centralizado por Rol (RBAC)
+                </h4>
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  Los permisos se configuran a nivel de Rol. Todos los usuarios del equipo heredan automáticamente las facultades de su rol asignado.
+                </p>
+              </div>
+            </div>
+            <div className="text-xs font-bold text-blue-700 dark:text-blue-300 whitespace-nowrap bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-800">
+              {roles.length} roles configurables
+            </div>
+          </div>
+
           {!canManageRoles && (
             <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900 flex items-center gap-3 text-xs text-blue-800 dark:text-blue-300">
               <Info className="w-5 h-5 text-blue-600 shrink-0" />
@@ -946,10 +980,10 @@ export const RolesPage: React.FC = () => {
                               <Eye className="w-4 h-4" />
                             </button>
 
-                            {(!isSystem || isSuperAdmin) && (
+                            {(isSuperAdmin || (canManageRoles && role.name !== 'super_admin')) && (
                               <button
                                 onClick={() => handleOpenEdit(role)}
-                                title="Editar rol y permisos"
+                                title="Editar rol y configurar permisos"
                                 className="p-1.5 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 transition-colors"
                               >
                                 <Edit3 className="w-4 h-4" />

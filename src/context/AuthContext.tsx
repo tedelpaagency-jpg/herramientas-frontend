@@ -167,7 +167,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setCurrentAgency((res.user as any).agency);
         }
         if ((res.user as any).white_labels && (res.user as any).white_labels.length > 0) {
-          setCurrentWhiteLabel((res.user as any).white_labels[0]);
+          const wl = (res.user as any).white_labels[0];
+          setCurrentWhiteLabel(wl);
+          localStorage.setItem('santun_white_label', JSON.stringify(wl));
+        } else if ((res.user as any).agency?.white_label) {
+          const wl = (res.user as any).agency.white_label;
+          setCurrentWhiteLabel(wl);
+          localStorage.setItem('santun_white_label', JSON.stringify(wl));
         }
       }
     } finally {

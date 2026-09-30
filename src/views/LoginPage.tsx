@@ -209,7 +209,15 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
-      router.push('/');
+      // Extraer URL de redirección previa si el usuario intentó acceder a un módulo directo (ej: /visas/grupos)
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectParam = searchParams.get('redirect');
+      const targetUrl = (redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')) 
+        ? redirectParam 
+        : '/';
+      
+      // Navegación limpia con recarga para sincronizar contexto, permisos y cabeceras de axios
+      window.location.href = targetUrl;
     } catch (err: any) {
       if (err.response?.data?.message) {
         setError(err.response.data.message);

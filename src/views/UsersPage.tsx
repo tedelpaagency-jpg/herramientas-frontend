@@ -9,7 +9,6 @@ import adminService from '../services/adminService';
 import whiteLabelService from '../services/whiteLabelService';
 import { useAuth } from '../context/AuthContext';
 import UserFormModal from '../components/UserFormModal';
-import UserPermissionsModal from '../components/UserPermissionsModal';
 import {
   Users,
   UserPlus,
@@ -25,7 +24,6 @@ import {
   ChevronLeft,
   ChevronRight,
   UserCheck,
-  Key,
   Mail,
   Send,
 } from 'lucide-react';
@@ -167,8 +165,6 @@ export const UsersPage: React.FC = () => {
     }
   };
 
-  // Modal de Permisos CRUD Granulares
-  const [permissionsUser, setPermissionsUser] = useState<User | null>(null);
 
   // Selección múltiple y Modal de Envío de Credenciales
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
@@ -570,13 +566,7 @@ export const UsersPage: React.FC = () => {
                               >
                                 <Mail className="w-4 h-4" />
                               </button>
-                              <Link
-                                href={`/users/${u.id}/permissions`}
-                                title="Gestionar Permisos Granulares"
-                                className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors"
-                              >
-                                <Key className="w-4 h-4" />
-                              </Link>
+
                               <button
                                 onClick={() => handleEdit(u)}
                                 title="Editar Usuario"
@@ -637,15 +627,6 @@ export const UsersPage: React.FC = () => {
         userToEdit={selectedUser}
       />
 
-      {/* Modal de Permisos CRUD Granulares por Usuario */}
-      {permissionsUser && (
-        <UserPermissionsModal
-          user={permissionsUser}
-          isOpen={!!permissionsUser}
-          onClose={() => setPermissionsUser(null)}
-          onSuccess={fetchUsers}
-        />
-      )}
 
       {/* Modal de Envío / Reenvío de Credenciales */}
       <SendCredentialsModal

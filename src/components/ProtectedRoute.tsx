@@ -17,6 +17,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, permis
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname + window.location.search;
+        if (currentPath && currentPath !== '/login' && !currentPath.startsWith('/login')) {
+          router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+          return;
+        }
+      }
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);

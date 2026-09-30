@@ -6,7 +6,7 @@ import { Visa, VisaRef } from '../types';
 import visaService from '../services/visaService';
 import { VisaFormModal } from '../components/VisaFormModal';
 import { 
-  FileCheck, Plus, Search, Trash2, Edit3, Link as LinkIcon, Eye, EyeOff, 
+  FileCheck, Plus, Search, Trash2, Edit3, Link as LinkIcon, 
   FolderPlus, Folder, Filter, CheckCircle2, XCircle, Clock, ArrowLeft, 
   ChevronRight, FileText, ExternalLink, Building2, RefreshCw, Users, ArrowUpRight
 } from 'lucide-react';
@@ -91,22 +91,10 @@ export const VisasPage: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = async (v: Visa) => {
-    const nextStatus = v.status === '1' || v.status === 'pending' ? '2' : '1';
-    try {
-      await visaService.updateVisaStatus(v.id, nextStatus);
-      toast.success(`Estado actualizado a ${nextStatus === '2' ? 'Confirmada' : 'Pendiente'}`);
-      fetchData();
-    } catch (err) {
-      console.error('Error toggling visa status:', err);
-      toast.error('Error al cambiar estado de la visa');
-    }
-  };
-
   const handleCopyPublicLink = (v: Visa) => {
     const publicUrl = `${window.location.origin}/visa/show/${btoa(String(v.id))}`;
     navigator.clipboard.writeText(publicUrl);
-    toast.success('Enlace público copiado al portapapeles');
+    toast.success('¡Enlace para el cliente copiado! Envíalo para que lo llene.');
   };
 
   const handleOpenCreateRef = () => {
@@ -226,36 +214,9 @@ export const VisasPage: React.FC = () => {
     return matchesType && matchesGroup && matchesSearch;
   });
 
-  // KPI Metrics
+  // KPI Metrics (Minoristas: Enfoque ágil sin control de estados)
   const totalGrupos = visaRefs.length + (unassignedVisas.length > 0 ? 1 : 0);
   const totalExpedientes = visas.length;
-  const totalConfirmadas = visas.filter((v) => v.status === '2' || v.status === 'confirmed' || v.status === 'approved').length;
-  const totalPendientes = visas.filter((v) => v.status === '1' || v.status === 'pending').length;
-
-  const renderStatusBadge = (status: string) => {
-    if (status === '1' || status === 'pending') {
-      return (
-        <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
-          <Clock className="w-3 h-3" />
-          <span>Pendiente</span>
-        </span>
-      );
-    }
-    if (status === '2' || status === 'confirmed' || status === 'approved') {
-      return (
-        <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
-          <CheckCircle2 className="w-3 h-3" />
-          <span>Confirmada</span>
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-800 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20">
-        <XCircle className="w-3 h-3" />
-        <span>Rechazado</span>
-      </span>
-    );
-  };
 
   return (
     <div className="space-y-6">
@@ -335,6 +296,31 @@ export const VisasPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Banner Informativo de Independencia Minorista */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200/70 dark:border-sky-800/50 text-slate-700 dark:text-slate-200">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 rounded-xl bg-sky-600 text-white shrink-0">
+            <FileText className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-black uppercase text-sky-900 dark:text-sky-300">
+              Visas Minoristas (Gestión Directa con Clientes)
+            </h4>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400">
+              Flujo simplificado e independiente: genera el grupo o solicitud, copia el enlace y envíaselo al cliente para que lo llene. Sin control de estados ni etapas de aprobación intermedias.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/visas/mayorista"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-bold text-xs border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shrink-0 shadow-xs"
+        >
+          <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+          <span>Ir a Portal Mayorista B2B</span>
+          <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
+        </Link>
+      </div>
+
       {/* KPI Metrics Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center space-x-3.5">
@@ -352,28 +338,31 @@ export const VisasPage: React.FC = () => {
             <FileText className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Expedientes Totales</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Solicitudes</p>
             <p className="text-xl font-black text-slate-900 dark:text-white">{totalExpedientes}</p>
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center space-x-3.5">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black">
-            <CheckCircle2 className="w-5 h-5" />
+            <LinkIcon className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Confirmadas</p>
-            <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{totalConfirmadas}</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Listos para Llenar</p>
+            <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{totalExpedientes}</p>
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center space-x-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black">
-            <Clock className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center font-black">
+            <Building2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Pendientes</p>
-            <p className="text-xl font-black text-amber-600 dark:text-amber-400">{totalPendientes}</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Expedientes Mayoristas</p>
+            <Link href="/visas/mayorista" className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 mt-0.5">
+              <span>Portal B2B</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </div>
@@ -635,7 +624,7 @@ export const VisasPage: React.FC = () => {
                           <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Grupo Asignado</th>
                           <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Tipo de Visa</th>
                           <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Fecha Registro</th>
-                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Estado</th>
+                          <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Formulario para Llenar</th>
                           <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Acciones</th>
                         </tr>
                       </thead>
@@ -683,9 +672,16 @@ export const VisasPage: React.FC = () => {
                                 {v.created_at ? new Date(v.created_at).toLocaleDateString() : '—'}
                               </td>
 
-                              {/* Estado */}
+                              {/* Formulario para Llenar */}
                               <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
-                                {renderStatusBadge(v.status)}
+                                <button
+                                  onClick={() => handleCopyPublicLink(v)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 transition-all shadow-xs active:scale-95"
+                                  title="Copiar enlace para enviar al cliente por WhatsApp o correo"
+                                >
+                                  <LinkIcon className="w-3.5 h-3.5" />
+                                  <span>Mandar para llenar</span>
+                                </button>
                               </td>
 
                               {/* Acciones */}
@@ -694,7 +690,7 @@ export const VisasPage: React.FC = () => {
                                 <button
                                   onClick={() => handleCopyPublicLink(v)}
                                   className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
-                                  title="Copiar enlace público del formulario"
+                                  title="Copiar enlace del formulario"
                                 >
                                   <LinkIcon className="w-4 h-4" />
                                 </button>
@@ -705,19 +701,10 @@ export const VisasPage: React.FC = () => {
                                   target="_blank"
                                   rel="noreferrer"
                                   className="inline-flex items-center p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
-                                  title="Abrir formulario consular del cliente"
+                                  title="Abrir formulario del cliente para ver respuestas"
                                 >
                                   <ExternalLink className="w-4 h-4" />
                                 </a>
-
-                                {/* Alternar estado rápido */}
-                                <button
-                                  onClick={() => handleToggleStatus(v)}
-                                  className="p-2 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
-                                  title={v.status === '1' || v.status === 'pending' ? 'Marcar como Confirmada' : 'Marcar como Pendiente'}
-                                >
-                                  {v.status === '1' || v.status === 'pending' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                </button>
 
                                 {/* Editar */}
                                 <button
@@ -858,7 +845,7 @@ export const VisasPage: React.FC = () => {
                       <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Nombre / Solicitante</th>
                       <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Fecha</th>
                       <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Visa</th>
-                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Estado</th>
+                      <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">Formulario para Llenar</th>
                       <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right whitespace-nowrap">Acciones</th>
                     </tr>
                   </thead>
@@ -888,9 +875,16 @@ export const VisasPage: React.FC = () => {
                           {v.visa_type === 'USA' ? 'Visa americana' : v.visa_type === 'CANADA' ? 'Visa canadiense' : v.visa_type}
                         </td>
 
-                        {/* Status Badge */}
+                        {/* Formulario para Llenar */}
                         <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
-                          {renderStatusBadge(v.status)}
+                          <button
+                            onClick={() => handleCopyPublicLink(v)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 transition-all shadow-xs active:scale-95"
+                            title="Copiar enlace para enviar al cliente por WhatsApp o correo"
+                          >
+                            <LinkIcon className="w-3.5 h-3.5" />
+                            <span>Mandar para llenar</span>
+                          </button>
                         </td>
 
                         {/* Actions matching CI3 visa.php botones */}
@@ -914,15 +908,6 @@ export const VisasPage: React.FC = () => {
                           >
                             <ExternalLink className="w-4 h-4" />
                           </a>
-
-                          {/* Alternar estado rápido */}
-                          <button
-                            onClick={() => handleToggleStatus(v)}
-                            className="p-2 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-800"
-                            title={v.status === '1' || v.status === 'pending' ? 'Marcar como Confirmada' : 'Marcar como Pendiente'}
-                          >
-                            {v.status === '1' || v.status === 'pending' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                          </button>
 
                           {/* Editar */}
                           <button
