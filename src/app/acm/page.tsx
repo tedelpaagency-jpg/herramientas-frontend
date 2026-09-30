@@ -7,7 +7,7 @@ import { AcmPage } from '@/views/AcmPage';
 
 export default function AcmRoute() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute permission="view_estates">
       <Layout>
         <AcmPage />
       </Layout>

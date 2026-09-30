@@ -119,6 +119,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (savedUser && savedToken) {
         try {
           const parsedUser = JSON.parse(savedUser);
+          if ((parsedUser as any)?.permission_version !== 3) {
+            delete (parsedUser as any).effective_permissions;
+          }
           setUser(parsedUser);
           setToken(savedToken);
 
@@ -304,9 +307,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const planPerms = Array.isArray(plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
         ? (plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
         : [];
-      const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase());
       const extracted = planPerms.map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase()).filter(Boolean);
-      basePerms = Array.from(new Set([...extracted, ...directPerms]));
+      
+      if (dashboardType === 'agency_admin' || dashboardType === 'agent') {
+        basePerms = extracted;
+      } else {
+        const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase());
+        basePerms = Array.from(new Set([...extracted, ...directPerms]));
+      }
     }
 
     if (isWhiteLabelAdmin) {

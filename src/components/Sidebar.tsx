@@ -257,8 +257,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'MODULO INMOBILIARIO',
       items: [
-        { label: 'ACM (Avalúo Comercial)', path: '/acm', icon: Calculator, permission: ['view_acm', 'acm.view'] },
-        { label: 'Propiedades e Inmuebles', path: '/estates', icon: Building2, permission: ['view_properties', 'properties.view', 'view_estates'] },
+        { label: 'ACM (Avalúo Comercial)', path: '/acm', icon: Calculator, permission: ['view_estates', 'manage_estates'] },
+        { label: 'Propiedades e Inmuebles', path: '/estates', icon: Building2, permission: ['view_estates', 'manage_estates'] },
       ],
     },
     {
