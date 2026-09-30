@@ -111,9 +111,11 @@ export const MarketingPage: React.FC = () => {
     { tag: '{correo}', label: 'Correo' },
     { tag: '{usuario}', label: 'Usuario' },
     { tag: '{contraseña}', label: 'Contraseña' },
+    { tag: '{contrasena}', label: 'Contraseña (sin tilde)' },
     { tag: '{telefono}', label: 'Teléfono' },
     { tag: '{empresa}', label: 'Empresa / Agencia' },
     { tag: '{rol}', label: 'Rol' },
+    { tag: '{url_inicio}', label: 'URL de Inicio' },
     { tag: '{url_login}', label: 'URL Login' },
   ];
 

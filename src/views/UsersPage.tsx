@@ -247,7 +247,35 @@ export const UsersPage: React.FC = () => {
           agency_id: agencyFilter ? Number(agencyFilter) : undefined,
           white_label_id: whiteLabelFilter ? Number(whiteLabelFilter) : undefined,
         }, passwordOptions);
-        toast.success(res.message || 'Se ha iniciado el proceso de envío a todos los usuarios.', { duration: 5000 });
+        const data = res?.data || res;
+        const total = data.total ?? 0;
+        const updated = data.updated ?? total;
+        const sent = data.sent ?? total;
+        const failed = data.failed ?? 0;
+        const failedUsers = data.failed_users || [];
+
+        if (failed > 0) {
+          toast((t) => (
+            <div className="text-xs space-y-1">
+              <p className="font-bold">Resumen Envío a Todos los Usuarios</p>
+              <p>Total procesados: {total}</p>
+              <p>Credenciales actualizadas: {updated}</p>
+              <p>Correos enviados: {sent}</p>
+              <p className="text-rose-600 font-semibold">Correos con error: {failed}</p>
+              {failedUsers.length > 0 && (
+                <div className="mt-2 border-t pt-1 text-[11px] text-rose-700">
+                  <p className="font-bold">Detalle de errores:</p>
+                  {failedUsers.slice(0, 5).map((fu: any) => (
+                    <p key={fu.id || fu.email}>• {fu.email || fu.name}: {fu.reason}</p>
+                  ))}
+                  {failedUsers.length > 5 && <p>...y {failedUsers.length - 5} más</p>}
+                </div>
+              )}
+            </div>
+          ), { duration: 8000 });
+        } else {
+          showSuccessAlert('Credenciales enviadas a todos', `Proceso completado con éxito:\nTotal usuarios: ${total}\nCredenciales actualizadas: ${updated}\nCorreos enviados: ${sent}`);
+        }
       }
       setIsCredentialsModalOpen(false);
     } catch (err: any) {

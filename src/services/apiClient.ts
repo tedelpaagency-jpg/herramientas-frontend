@@ -123,7 +123,10 @@ apiClient.interceptors.response.use(
         console.error('Error interno del servidor (500).', error.response.data);
       }
     } else if (error.request) {
-      console.error('Sin respuesta del servidor de Laravel. Verifique la conexión o la URL base:', getApiBaseUrl());
+      const isSilent = (error.config as any)?.silent;
+      if (!isSilent) {
+        console.error('Sin respuesta del servidor de Laravel. Verifique la conexión o la URL base:', getApiBaseUrl());
+      }
     }
     
     return Promise.reject(error);

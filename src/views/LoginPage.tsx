@@ -36,6 +36,7 @@ const CardVideoPlayer: React.FC<{ src: string }> = ({ src }) => {
   useEffect(() => {
     setIsLoaded(false);
     setHasError(false);
+    if (!src) return;
     const video = videoRef.current;
     if (video) {
       video.muted = true;
@@ -45,12 +46,18 @@ const CardVideoPlayer: React.FC<{ src: string }> = ({ src }) => {
       if (playPromise !== undefined) {
         playPromise
           .then(() => setIsLoaded(true))
-          .catch((err) => {
-            console.warn('Autoplay aviso:', err);
+          .catch(() => {
+            // Autoplay silencioso si el navegador lo restringe inicialmente
           });
       }
     }
   }, [src]);
+
+  if (!src || hasError) {
+    return (
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950 transition-opacity duration-700" />
+    );
+  }
 
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden z-0 bg-slate-950">
@@ -61,34 +68,30 @@ const CardVideoPlayer: React.FC<{ src: string }> = ({ src }) => {
         }`} 
       />
 
-      {!hasError && (
-        <video
-          key={src}
-          ref={videoRef}
-          src={src}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          crossOrigin="anonymous"
-          onCanPlay={() => {
-            setIsLoaded(true);
-            videoRef.current?.play().catch(() => {});
-          }}
-          onLoadedData={() => {
-            setIsLoaded(true);
-            videoRef.current?.play().catch(() => {});
-          }}
-          onError={(e) => {
-            console.warn('Error cargando video src:', src, e);
-            setHasError(true);
-          }}
-          className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-700 filter brightness-[0.95] contrast-[1.05] ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-      )}
+      <video
+        key={src}
+        ref={videoRef}
+        src={src}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        onCanPlay={() => {
+          setIsLoaded(true);
+          videoRef.current?.play().catch(() => {});
+        }}
+        onLoadedData={() => {
+          setIsLoaded(true);
+          videoRef.current?.play().catch(() => {});
+        }}
+        onError={() => {
+          setHasError(true);
+        }}
+        className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-700 filter brightness-[0.95] contrast-[1.05] ${
+          isLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
     </div>
   );
 };
@@ -99,28 +102,28 @@ const rewardsData = [
     title: 'Propiedades Exclusivas', 
     subtitle: 'Gestión inmobiliaria premium',
     emoji: '🏢',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: 'https://portalperu.tikvao.com/public/assets/videos/login-bg.mp4',
   },
   { 
     id: 2, 
     title: 'Embudo CRM & Leads', 
     subtitle: 'Seguimiento automatizado',
     emoji: '🚀',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    videoUrl: 'https://portalperu.tikvao.com/public/assets/videos/login-bg.mp4',
   },
   { 
     id: 3, 
     title: 'Bóveda Legal LexVault', 
     subtitle: 'Contratos y firmas digitales',
     emoji: '📜',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    videoUrl: 'https://portalperu.tikvao.com/public/assets/videos/login-bg.mp4',
   },
   { 
     id: 4, 
     title: 'Ruleta & Recompensas', 
     subtitle: 'Gamificación de ventas',
     emoji: '🎁',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoylikes.mp4',
+    videoUrl: 'https://portalperu.tikvao.com/public/assets/videos/login-bg.mp4',
   }
 ];
 

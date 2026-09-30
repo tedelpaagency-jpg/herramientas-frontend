@@ -269,6 +269,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ]
           : [
               { label: 'Portal Mayorista (B2B)', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view'] },
+              { label: 'Grupos / Familias B2B', path: '/visas/grupos', icon: Users, permission: ['view_visas', 'visas.view', 'visas.groups.manage'] },
               { label: 'Políticas de Visados', path: '/visas/politicas', icon: FileText, permission: ['view_visas', 'visas.settings.manage'] },
             ]),
       ],

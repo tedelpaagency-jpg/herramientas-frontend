@@ -47,8 +47,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   useEffect(() => {
     if (user) {
       fetchRecentNotifications();
-      const interval = setInterval(fetchRecentNotifications, 30000);
-      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -144,7 +142,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Notifications Dropdown Button & Popover */}
         <div className="relative">
           <button 
-            onClick={() => setShowNotifications(!showNotifications)} 
+            onClick={() => {
+              const nextState = !showNotifications;
+              setShowNotifications(nextState);
+              if (nextState) {
+                fetchRecentNotifications();
+              }
+            }} 
             className={`hidden lg:flex w-11 h-11 flex-shrink-0 items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary relative ${showNotifications ? 'bg-primary text-white shadow-md' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
             aria-label="Notificaciones"
             aria-expanded={showNotifications}
@@ -168,7 +172,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="absolute right-0 mt-3 w-80 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-[70] overflow-hidden"
                 >
                   <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-                    <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Notificaciones ({unreadCount})</h4>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Notificaciones ({unreadCount})</h4>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fetchRecentNotifications();
+                        }}
+                        title="Actualizar notificaciones"
+                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px] block">refresh</span>
+                      </button>
+                    </div>
                     {unreadCount > 0 && (
                       <button onClick={handleMarkAllRead} className="text-xs font-bold text-primary hover:underline">
                         Marcar leídas

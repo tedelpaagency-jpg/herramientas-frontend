@@ -96,16 +96,25 @@ export const SendCredentialsModal: React.FC<SendCredentialsModalProps> = ({
     }
 
     return content
-      .replace(/\{nombre\}/g, name)
-      .replace(/\{apellido\}/g, '')
-      .replace(/\{nombre_completo\}/g, name)
-      .replace(/\{correo\}/g, email)
-      .replace(/\{usuario\}/g, email)
-      .replace(/\{contraseña\}/g, `<strong><em>${pwdPreview}</em></strong>`)
-      .replace(/\{telefono\}/g, phone)
-      .replace(/\{empresa\}/g, company)
-      .replace(/\{rol\}/g, role)
-      .replace(/\{url_login\}/g, loginUrl);
+      .replace(/\{nombre\}/gi, name)
+      .replace(/\{first_name\}/gi, name)
+      .replace(/\{apellido\}/gi, '')
+      .replace(/\{last_name\}/gi, '')
+      .replace(/\{nombre_completo\}/gi, name)
+      .replace(/\{full_name\}/gi, name)
+      .replace(/\{correo\}/gi, email)
+      .replace(/\{email\}/gi, email)
+      .replace(/\{usuario\}/gi, email)
+      .replace(/\{user\}/gi, email)
+      .replace(/\{contrase(?:ña|na|&ntilde;a)\}|\{password\}|\{clave\}|\{pass\}|\{contrase(?:ña|na|&ntilde;a)_temporal\}|\{password_temporal\}/gi, `<strong><em>${pwdPreview}</em></strong>`)
+      .replace(/\{telefono\}/gi, phone)
+      .replace(/\{phone\}/gi, phone)
+      .replace(/\{empresa\}/gi, company)
+      .replace(/\{agencia\}/gi, company)
+      .replace(/\{company\}/gi, company)
+      .replace(/\{rol\}/gi, role)
+      .replace(/\{role\}/gi, role)
+      .replace(/\{url_inicio\}|\{url_login\}|\{url_de_inicio\}|\{link_inicio\}|\{link_login\}|\{login_url\}|\{url_sistema\}|\{url_acceso\}|\{link_acceso\}|\{url\}|\{link\}|\{inicio\}/gi, loginUrl);
   };
 
   function ucfirst(str: string) {

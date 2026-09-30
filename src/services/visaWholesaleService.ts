@@ -359,7 +359,7 @@ class VisaWholesaleService {
   // ===================== NOTIFICACIONES =====================
 
   async getRecentNotifications() {
-    const res = await apiClient.get('/v1/visas/notifications/recent');
+    const res = await apiClient.get('/v1/visas/notifications/recent', { silent: true } as any);
     return res.data;
   }
 
