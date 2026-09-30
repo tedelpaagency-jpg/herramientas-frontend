@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import userService from '../services/userService';
-import MediaPicker from '../components/media/MediaPicker';
+import MediaLibraryModal from '../components/media/MediaLibraryModal';
+import { normalizeFileUrl } from '../services/apiClient';
 import {
   User as UserIcon,
   Mail,
@@ -25,12 +26,14 @@ import {
   FileText,
   BadgeCheck,
   Camera,
-  Upload
+  Upload,
+  ImagePlus,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export const UserProfilePage: React.FC = () => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, updateUserSession } = useAuth();
   const [activeTab, setActiveTab] = useState<'info' | 'security' | 'agency'>('info');
 
   // Form State - Personal Info
@@ -39,7 +42,10 @@ export const UserProfilePage: React.FC = () => {
   const [phone, setPhone] = useState<string>('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoLoadError, setPhotoLoadError] = useState<boolean>(false);
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState<boolean>(false);
   const [savingInfo, setSavingInfo] = useState<boolean>(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Form State - Security & Password
   const [currentPassword, setCurrentPassword] = useState<string>('');
@@ -58,6 +64,7 @@ export const UserProfilePage: React.FC = () => {
       setPhone(user.phone || '');
       if (user.photo) {
         setPhotoPreview(user.photo);
+        setPhotoLoadError(false);
       }
     }
   }, [user]);
@@ -67,7 +74,22 @@ export const UserProfilePage: React.FC = () => {
       const file = e.target.files[0];
       setPhotoFile(file);
       setPhotoPreview(URL.createObjectURL(file));
+      setPhotoLoadError(false);
     }
+  };
+
+  const handleSelectFromLibrary = (media: any) => {
+    const url = media.full_url || media.url;
+    setPhotoPreview(url);
+    setPhotoFile(null);
+    setPhotoLoadError(false);
+    setIsMediaModalOpen(false);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setPhotoLoadError(false);
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -88,9 +110,15 @@ export const UserProfilePage: React.FC = () => {
         email: email.trim(),
         phone: phone.trim() || undefined,
         photo_file: photoFile || undefined,
+        photo: !photoFile ? (photoPreview !== null ? photoPreview : '') : undefined,
       });
 
+      if (response.user) {
+        updateUserSession(response.user);
+      }
+
       toast.success(response.message || 'Perfil actualizado correctamente');
+      setPhotoFile(null);
       
       // Refresh global auth user state
       await refreshUser();
@@ -179,19 +207,69 @@ export const UserProfilePage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-5">
             {/* Avatar Badge with Upload */}
-            <div className="relative group">
-              <MediaPicker
-                value={photoPreview}
-                allowedTypes={['image']}
-                buttonLabel="Cambiar foto de perfil"
-                compact
-                onChange={({ url, file }) => {
-                  if (file) setPhotoFile(file);
-                  if (url) setPhotoPreview(url);
-                }}
-              />
-              <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full border-2 border-white dark:border-slate-900 shadow-xs" title="Cuenta Activa">
-                <CheckCircle2 className="w-4 h-4" />
+            <div className="flex flex-col items-center gap-2 shrink-0">
+              <div className="relative group">
+                <div
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white dark:border-slate-800 shadow-md overflow-hidden relative cursor-pointer bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black transition-all hover:ring-4 hover:ring-blue-500/30"
+                  title="Haz clic para cambiar tu foto de perfil"
+                >
+                  {photoPreview && !photoLoadError ? (
+                    <img
+                      src={normalizeFileUrl(photoPreview)}
+                      alt={name || user.name}
+                      className="w-full h-full object-cover"
+                      onError={() => setPhotoLoadError(true)}
+                    />
+                  ) : (
+                    <span className="text-xl sm:text-2xl tracking-wider">
+                      {getInitials(name || user.name)}
+                    </span>
+                  )}
+
+                  {/* Hover overlay with Camera */}
+                  <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold gap-1 backdrop-blur-[2px]">
+                    <Camera className="w-5 h-5 text-white" />
+                    <span>Cambiar</span>
+                  </div>
+                </div>
+
+                {/* Cuenta Activa indicator */}
+                <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs z-10" title="Cuenta Activa">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Subir archivo local"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>Subir</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsMediaModalOpen(true)}
+                  className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Biblioteca de medios"
+                >
+                  <ImagePlus className="w-3 h-3" />
+                  <span>Galería</span>
+                </button>
+                {photoPreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    className="p-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 text-[10px] transition-colors cursor-pointer"
+                    title="Quitar foto"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -288,6 +366,63 @@ export const UserProfilePage: React.FC = () => {
             </div>
 
             <form onSubmit={handleUpdateProfile} className="space-y-4">
+              {/* Sección de Foto de Perfil */}
+              <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex flex-col sm:flex-row items-center gap-4">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shrink-0 border-2 border-slate-200 dark:border-slate-700 shadow-xs">
+                  {photoPreview && !photoLoadError ? (
+                    <img
+                      src={normalizeFileUrl(photoPreview)}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                      onError={() => setPhotoLoadError(true)}
+                    />
+                  ) : (
+                    getInitials(name || user.name)
+                  )}
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Foto de Perfil del Usuario
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Formatos admitidos: JPG, PNG, WEBP o GIF (Máx. 10MB).
+                  </p>
+                  {(photoFile || (photoPreview && photoPreview !== user.photo)) && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-1 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                      <Sparkles className="w-3 h-3" />
+                      Nueva foto seleccionada (se guardará al hacer clic en Guardar Cambios)
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Subir Foto</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsMediaModalOpen(true)}
+                    className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ImagePlus className="w-3.5 h-3.5" />
+                    <span>Galería</span>
+                  </button>
+                  {photoPreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="px-3 py-2 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Quitar</span>
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Nombre Completo *</label>
                 <input
@@ -544,6 +679,23 @@ export const UserProfilePage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Hidden file input for avatar direct upload */}
+      <input
+        ref={avatarInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handlePhotoSelect}
+        className="hidden"
+      />
+
+      {/* Media Library Modal */}
+      <MediaLibraryModal
+        isOpen={isMediaModalOpen}
+        onClose={() => setIsMediaModalOpen(false)}
+        onSelect={handleSelectFromLibrary}
+        filterType="image"
+        title="Seleccionar Foto de Perfil"
+      />
     </div>
   );
 };

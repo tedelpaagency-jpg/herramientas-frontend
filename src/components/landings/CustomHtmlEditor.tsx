@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Code, Upload, Eye, Copy, Check, FileText } from 'lucide-react';
+import { prepareLandingHtml } from '@/utils/landingHtmlHelper';
 
 interface Props {
   customHtml: string;
@@ -38,33 +39,10 @@ export const CustomHtmlEditor: React.FC<Props> = ({ customHtml, onChange }) => {
   };
 
   const previewDoc = React.useMemo(() => {
-    let raw = customHtml.replace(
-      '{{DYNAMIC_FORM}}',
-      '<div style="padding:24px;background:#f8fafc;border:2px dashed #6366f1;border-radius:16px;text-align:center;color:#4f46e5;font-family:sans-serif;font-weight:bold;">[FORMULARIO DINÁMICO SE MOSTRARÁ AQUÍ]</div>'
-    );
-
-    const tailwindHeader = `
-      <script>
-        window.tailwind = {
-          darkMode: 'class',
-          theme: { extend: {} }
-        };
-      </script>
-      <script src="https://cdn.tailwindcss.com"></script>
-      <style>
-        html { color-scheme: light; }
-      </style>
-    `;
-
-    if (raw.includes('</head>')) {
-      return raw.replace('</head>', `${tailwindHeader}</head>`);
-    } else if (raw.includes('<head>')) {
-      return raw.replace('<head>', `<head>${tailwindHeader}`);
-    } else if (raw.includes('<html>')) {
-      return raw.replace('<html>', `<html><head>${tailwindHeader}</head>`);
-    } else {
-      return `<!DOCTYPE html><html><head>${tailwindHeader}</head><body>${raw}</body></html>`;
-    }
+    return prepareLandingHtml(customHtml, {
+      formPlaceholderHtml: '<div style="padding:24px;background:#f8fafc;border:2px dashed #6366f1;border-radius:16px;text-align:center;color:#4f46e5;font-family:sans-serif;font-weight:bold;">[FORMULARIO DINÁMICO SE MOSTRARÁ AQUÍ]</div>',
+      injectFormStyles: false,
+    });
   }, [customHtml]);
 
   return (
@@ -156,6 +134,7 @@ export const CustomHtmlEditor: React.FC<Props> = ({ customHtml, onChange }) => {
             srcDoc={previewDoc}
             title="HTML Landing Preview"
             className="w-full h-full border-0 block"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           />
         </div>
       )}

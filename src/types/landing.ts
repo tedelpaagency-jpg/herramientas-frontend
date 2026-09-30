@@ -145,6 +145,7 @@ export interface LandingTemplate {
   builder_schema?: BuilderSchema | null;
   form_schema?: FormSchema | null;
   terms_and_conditions?: string | null;
+  privacy_policy?: string | null;
   encoded_id?: string;
   public_url?: string;
   events?: any[];

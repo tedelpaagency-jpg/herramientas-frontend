@@ -7,6 +7,7 @@ import landingService from '@/services/landingService';
 import DynamicFormRenderer from '@/components/landings/DynamicFormRenderer';
 import { Globe, AlertTriangle, ShieldAlert, CheckCircle2, Loader2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import { prepareLandingHtml } from '@/utils/landingHtmlHelper';
 
 function CustomHtmlIframeContainer({
   customHtml,
@@ -14,6 +15,7 @@ function CustomHtmlIframeContainer({
   paymentConfig,
   stripePublishableKey,
   termsAndConditions,
+  privacyPolicy,
   stripeAppearance,
   onSubmit,
   submitted,
@@ -23,6 +25,7 @@ function CustomHtmlIframeContainer({
   paymentConfig?: any;
   stripePublishableKey?: string | null;
   termsAndConditions?: string | null;
+  privacyPolicy?: string | null;
   stripeAppearance?: any;
   onSubmit: (answers: Record<string, any>) => void;
   submitted: boolean;
@@ -39,67 +42,11 @@ function CustomHtmlIframeContainer({
   }
 
   const processedHtml = React.useMemo(() => {
-    let raw = customHtml.replace(
-      /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
-      `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`
-    );
-
-    const tailwindConfigHeader = `
-      <script>
-        window.tailwind = {
-          darkMode: 'class',
-          theme: { extend: {} }
-        };
-      </script>
-      <style>
-        html { color-scheme: light; }
-        #react-dynamic-form-container form {
-          display: flex !important;
-          flex-direction: column !important;
-          width: 100% !important;
-          box-sizing: border-box !important;
-        }
-        #react-dynamic-form-container label:not([for="termsCheck"]) {
-          display: block !important;
-          width: 100% !important;
-          text-align: left !important;
-          float: none !important;
-          margin-bottom: 4px !important;
-        }
-        #react-dynamic-form-container input:not([type="checkbox"]):not([type="radio"]),
-        #react-dynamic-form-container select,
-        #react-dynamic-form-container textarea {
-          display: block !important;
-          width: 100% !important;
-          box-sizing: border-box !important;
-          max-width: 100% !important;
-        }
-        #react-dynamic-form-container input[type="checkbox"] {
-          display: inline-block !important;
-          width: 18px !important;
-          min-width: 18px !important;
-          max-width: 18px !important;
-          height: 18px !important;
-          min-height: 18px !important;
-          max-height: 18px !important;
-          margin: 0 6px 0 0 !important;
-          flex-shrink: 0 !important;
-        }
-        #react-dynamic-form-container button {
-          box-sizing: border-box !important;
-        }
-      </style>
-    `;
-
-    if (raw.includes('</head>')) {
-      return raw.replace('</head>', `${tailwindConfigHeader}</head>`);
-    } else if (raw.includes('<head>')) {
-      return raw.replace('<head>', `<head>${tailwindConfigHeader}`);
-    } else if (raw.includes('<html>')) {
-      return raw.replace('<html>', `<html><head>${tailwindConfigHeader}</head>`);
-    } else {
-      return `<!DOCTYPE html><html><head>${tailwindConfigHeader}</head><body>${raw}</body></html>`;
-    }
+    return prepareLandingHtml(customHtml, {
+      formPlaceholderHtml: `<div id="react-dynamic-form-container" class="${customFormClass}"></div>`,
+      injectFormStyles: true,
+      customFormClass,
+    });
   }, [customHtml, customFormClass]);
 
   const checkAndMountTarget = React.useCallback(() => {
@@ -144,35 +91,21 @@ function CustomHtmlIframeContainer({
     const doc = iframeNode.contentDocument || iframeNode.contentWindow?.document;
     if (!doc) return;
 
-    // Inject tailwind config script if not present
-    if (!doc.head.querySelector('script[id="tailwind-config-script"]')) {
-      const configScript = doc.createElement('script');
-      configScript.id = 'tailwind-config-script';
-      configScript.textContent = `
-        window.tailwind = {
-          darkMode: 'class',
-          theme: { extend: {} }
-        };
-      `;
-      doc.head.insertBefore(configScript, doc.head.firstChild);
-    }
+    // Check if the custom HTML explicitly uses tailwind
+    const usesTailwind = 
+      doc.querySelector('script[src*="tailwindcss"]') || 
+      doc.querySelector('link[href*="tailwind"]') ||
+      customHtml.includes('tailwind');
 
-    // Ensure Tailwind CSS script is injected in iframe head if not already present
-    const existingScript = doc.querySelector('script[src*="tailwindcss"]');
-    const existingLink = doc.querySelector('link[href*="tailwind"]');
-
-    if (!existingScript && !existingLink) {
+    // Only inject Tailwind if explicitly used and not already present, to avoid breaking Bootstrap or other foreign CSS CDNs
+    if (usesTailwind && !doc.querySelector('script[src*="tailwindcss"]')) {
       const twScript = doc.createElement('script');
       twScript.src = 'https://cdn.tailwindcss.com';
-      twScript.onload = () => {
-        setTimeout(() => setIsStyleReady(true), 60);
-      };
-      twScript.onerror = () => {
-        setIsStyleReady(true);
-      };
+      twScript.onload = () => setIsStyleReady(true);
+      twScript.onerror = () => setIsStyleReady(true);
       doc.head.appendChild(twScript);
     } else {
-      setTimeout(() => setIsStyleReady(true), 60);
+      setIsStyleReady(true);
     }
 
     if (typeof window !== 'undefined' && window.ResizeObserver && doc.body) {
@@ -195,6 +128,7 @@ function CustomHtmlIframeContainer({
         title="Custom Landing Page"
         onLoad={setupIframe}
         className="w-full border-0 block overflow-hidden"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         style={{ height: `${iframeHeight}px`, minHeight: '100vh', width: '100%' }}
       />
       {mountTarget && createPortal(
@@ -212,6 +146,7 @@ function CustomHtmlIframeContainer({
             paymentConfig={paymentConfig}
             stripePublishableKey={stripePublishableKey}
             termsAndConditions={termsAndConditions}
+            privacyPolicy={privacyPolicy}
             stripeAppearance={stripeAppearance || paymentConfig?.stripe_appearance || formSchema?.stripe_appearance}
             isFormLoading={!isStyleReady}
           />
@@ -360,6 +295,7 @@ function PublicLandingContent() {
         paymentConfig={landing.payment_config}
         stripePublishableKey={landing.stripe_publishable_key}
         termsAndConditions={landing.terms_and_conditions}
+        privacyPolicy={landing.privacy_policy}
         stripeAppearance={landing.stripe_appearance || landing.payment_config?.stripe_appearance || landing.form_schema?.stripe_appearance}
         onSubmit={handleSubmitLead}
         submitted={submitted}
@@ -418,6 +354,7 @@ function PublicLandingContent() {
               paymentConfig={landing.payment_config}
               stripePublishableKey={landing.stripe_publishable_key}
               termsAndConditions={landing.terms_and_conditions}
+              privacyPolicy={landing.privacy_policy}
               stripeAppearance={landing.stripe_appearance || landing.payment_config?.stripe_appearance || landing.form_schema?.stripe_appearance}
             />
           )}

@@ -13,6 +13,7 @@ interface Props {
   paymentConfig?: PaymentConfig | null;
   stripePublishableKey?: string | null;
   termsAndConditions?: string | null;
+  privacyPolicy?: string | null;
   stripeAppearance?: StripeAppearanceConfig | null;
 }
 
@@ -27,6 +28,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   paymentConfig,
   stripePublishableKey,
   termsAndConditions,
+  privacyPolicy,
   stripeAppearance,
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -34,6 +36,8 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [isBtnHovered, setIsBtnHovered] = useState(false);
 
   const getFormattedTermsHtml = (raw: string | null | undefined): string => {
@@ -102,6 +106,12 @@ export const DynamicFormRenderer: React.FC<Props> = ({
     if (termsAndConditions && termsAndConditions.trim() && isLastStep) {
       if (!termsAccepted) {
         newErrors['termsCheck'] = 'Debes aceptar los Términos y Condiciones para continuar';
+      }
+    }
+
+    if (privacyPolicy && privacyPolicy.trim() && isLastStep) {
+      if (!privacyAccepted) {
+        newErrors['privacyCheck'] = 'Debes aceptar las Políticas de Privacidad para continuar';
       }
     }
 
@@ -734,6 +744,53 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         </div>
       )}
 
+      {/* Privacy Policy Checkbox & Modal Link */}
+      {privacyPolicy && privacyPolicy.trim() !== '' && isLastStep && (
+        <div className="form-check mt-3 mb-3 text-left w-full" style={{ marginTop: '0.75rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', boxSizing: 'border-box' }}>
+            <input
+              type="checkbox"
+              id="privacyCheck"
+              required
+              checked={privacyAccepted}
+              onChange={(e) => {
+                setPrivacyAccepted(e.target.checked);
+                if (errors['privacyCheck']) {
+                  setErrors((prev) => {
+                    const u = { ...prev };
+                    delete u['privacyCheck'];
+                    return u;
+                  });
+                }
+              }}
+              style={{
+                display: 'inline-block',
+                width: '18px',
+                height: '18px',
+                minWidth: '18px',
+                minHeight: '18px',
+                maxWidth: '18px',
+                maxHeight: '18px',
+                margin: '0 6px 0 0',
+                padding: 0,
+                accentColor: 'var(--yes-green, #10b981)',
+                cursor: 'pointer',
+                flexShrink: 0,
+                boxSizing: 'border-box',
+              }}
+            />
+            <label htmlFor="privacyCheck" style={{ display: 'inline-block', textTransform: 'none', color: customStyles.text_color || (isDark ? '#ffffff' : '#1e293b'), fontSize: '0.8rem', margin: 0, cursor: 'pointer', lineHeight: 1.3 }}>
+              He leído y acepto las <a href="#" onClick={(e) => { e.preventDefault(); setShowPrivacyModal(true); }} style={{ color: effectiveStripeAppearance?.link_color || 'var(--yes-green, #10b981)', textDecoration: 'underline', fontWeight: 600 }}>Políticas de Privacidad</a>
+            </label>
+          </div>
+          {errors['privacyCheck'] && (
+            <p className="text-[11px] text-red-500 font-semibold" style={{ marginTop: '4px', textAlign: 'left' }}>
+              {errors['privacyCheck']}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Terms Modal Popup (Positioned High Up near Top of Viewport) */}
       {showTermsModal && termsAndConditions && (
         <div
@@ -822,6 +879,100 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 style={{ backgroundColor: 'var(--yes-green, #10b981)', color: '#000000', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
               >
                 Aceptar Términos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Policy Modal Popup (Positioned High Up near Top of Viewport) */}
+      {showPrivacyModal && privacyPolicy && (
+        <div
+          className="fixed inset-0 z-[999999] bg-black/80 backdrop-blur-sm font-sans"
+          onClick={() => setShowPrivacyModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 999999,
+            backgroundColor: 'rgba(0, 0, 0, 0.82)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            paddingTop: '20px',
+            boxSizing: 'border-box',
+            overflowY: 'auto'
+          }}
+        >
+          <div
+            className="modal-content bg-dark text-white rounded-2xl max-w-2xl w-full shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: '#0d0d0f',
+              border: '1px solid var(--yes-green, #10b981)',
+              borderRadius: '1rem',
+              maxWidth: '42rem',
+              width: '92%',
+              maxHeight: '88vh',
+              margin: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 25px rgba(16, 185, 129, 0.25)',
+              zIndex: 1000000
+            }}
+          >
+            <div className="modal-header flex items-center justify-between p-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <h5 className="modal-title font-bold text-base m-0" style={{ color: 'var(--yes-green, #10b981)', fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>
+                Políticas de Privacidad
+              </h5>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(false)}
+                className="btn-close btn-close-white text-slate-400 hover:text-white p-1"
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer', padding: '0.25rem', lineHeight: 1 }}
+              >
+                ✕
+              </button>
+            </div>
+            <div
+              className="modal-body p-5 overflow-y-auto text-left terms-rich-html-content"
+              style={{ padding: '1.25rem', fontSize: '0.85rem', lineHeight: '1.6', color: '#cbd5e1', maxHeight: '68vh', overflowY: 'auto', wordBreak: 'break-word' }}
+              dangerouslySetInnerHTML={{ __html: getFormattedTermsHtml(privacyPolicy) }}
+            />
+            <div className="modal-footer flex items-center justify-end gap-2 p-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', padding: '1rem 1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(false)}
+                className="btn btn-secondary px-4 py-2 text-xs font-semibold rounded-lg"
+                style={{ backgroundColor: '#334155', color: '#ffffff', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cerrar y Entendido
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPrivacyAccepted(true);
+                  setShowPrivacyModal(false);
+                  if (errors['privacyCheck']) {
+                    setErrors((prev) => {
+                      const u = { ...prev };
+                      delete u['privacyCheck'];
+                      return u;
+                    });
+                  }
+                }}
+                className="btn text-xs font-bold rounded-lg"
+                style={{ backgroundColor: 'var(--yes-green, #10b981)', color: '#000000', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
+              >
+                Aceptar Políticas
               </button>
             </div>
           </div>

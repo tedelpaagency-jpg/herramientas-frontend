@@ -33,20 +33,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [pathname]);
 
   const handleNavClick = (path: string, e: React.MouseEvent) => {
-    setLeftSidebarOpen(false);
-    if (pathname === path) return;
+    // If opening in a new tab via middle-click, Ctrl+click, Cmd+click, or Shift+click, allow native browser handling
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) {
+      return;
+    }
 
+    setLeftSidebarOpen(false);
+
+    if (pathname === path) {
+      e.preventDefault();
+      return;
+    }
+
+    // Prevent Next.js client router from firing broken RSC flight request that silently freezes
+    e.preventDefault();
     setPendingPath(path);
 
-    // Safety fallback: If Next.js client-side navigation stalls or fails (e.g. RSC 404 or connection drop),
-    // trigger direct page load after 2.5s so the user is never stuck
-    const timer = setTimeout(() => {
-      if (typeof window !== 'undefined' && window.location.pathname !== path) {
-        window.location.assign(path);
-      }
-    }, 2500);
-
-    return () => clearTimeout(timer);
+    if (typeof window !== 'undefined') {
+      window.location.assign(path);
+    }
   };
   const isSuperAdmin =
     user?.role === 'super_admin' ||
@@ -282,17 +287,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Punto de Venta POS', path: '/pos', icon: ShoppingCart, permission: ['view_pos', 'manage_pos'] },
         { label: 'Gestión de Comisiones', path: '/commissions', icon: CreditCard, permission: 'commissions.view' },
         { label: 'Directorio de Proveedores', path: '/supplier', icon: Store, permission: ['view_products', 'packages.view'] },
-        { label: 'Productos e Insumos', path: '/products', icon: Package, permission: ['view_products', 'packages.view'] },
+        { label: 'Productos e Insumos', path: '/products', icon: Package, permission: ['view_products'] },
       ],
     },
     {
       title: 'MARKETING & LEGAL',
       items: [
         { label: 'LexVault (Contratos)', path: '/lexvault', icon: FileText, permission: ['view_lexvault', 'manage_lexvault', 'view_contracts', 'contracts.view'] },
-        { label: 'Hunter Stores', path: '/hunter', icon: Store, permission: ['view_products', 'packages.view', 'view_crm'] },
-        { label: 'Landings', path: '/landings', icon: Globe, permission: ['view_crm', 'view_estates'] },
-        { label: 'Marketing & Campañas', path: '/marketing', icon: Zap, permission: ['view_crm', 'campaigns.view'] },
-        { label: 'Automatizaciones', path: '/automations', icon: Wrench, permission: ['view_crm', 'manage_crm'] },
+        { label: 'Hunter Stores', path: '/hunter', icon: Store, permission: ['view_hunter'] },
+        { label: 'Landings', path: '/landings', icon: Globe, permission: ['web', 'view_landings'] },
+        { label: 'Marketing & Campañas', path: '/marketing', icon: Zap, permission: ['email_marketing', 'view_email_marketing', 'campaigns.view'] },
+        { label: 'Automatizaciones', path: '/automations', icon: Wrench, permission: ['automations', 'view_automations'] },
       ],
     },
     {
@@ -301,21 +306,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap, permission: 'courses.view' },
         { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: 'courses.view' },
         { label: 'Biblioteca de Medios', path: '/media', icon: ImageIcon, permission: ['courses.view', 'activities.view', 'agencies.view'] },
-        { label: 'Grupos de Actividades', path: '/activities', icon: CheckSquare, permission: ['activities.view', 'activities.create', 'activities.update', 'courses.view'] },
+        { label: 'Grupos de Actividades', path: '/activities', icon: CheckSquare, permission: ['activities.view', 'activities.create', 'activities.update'] },
 
-        { label: 'Mis Actividades', path: '/my-activities', icon: FileText, permission: ['activities.view', 'courses.view'] },
+        { label: 'Mis Actividades', path: '/my-activities', icon: FileText, permission: ['activities.view'] },
         { label: 'Gamificación & Puntos', path: '/gamification', icon: Trophy, permission: ['view_spin_wheel', 'view_gamification'] },
       ],
     },
     {
       title: 'ADMINISTRACIÓN SISTEMA',
       items: [
-        { label: 'Marcas Blancas', path: '/admin/white-labels', icon: Globe, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
-        { label: 'Gestión de Agencias', path: '/agencies', icon: Building2, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
+        ...(isSuperAdmin || isWhiteLabelAdmin
+          ? [
+              { label: 'Marcas Blancas', path: '/admin/white-labels', icon: Globe, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
+              { label: 'Gestión de Agencias', path: '/agencies', icon: Building2, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
+            ]
+          : []),
         { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
-        { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck },
-        { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_agencies', 'manage_users'] },
-        { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_agencies', 'manage_users'] },
+        { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck, permission: ['roles.manage', 'manage_roles'] },
+        ...(isSuperAdmin || isWhiteLabelAdmin
+          ? [
+              { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_plans', 'manage_agencies'] },
+              { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_subscriptions', 'manage_agencies'] },
+            ]
+          : []),
       ],
     },
     ...((isWhiteLabelAdmin && !isSuperAdmin)

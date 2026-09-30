@@ -187,15 +187,17 @@ export const AgencyAdminDashboard: React.FC<AgencyAdminDashboardProps> = ({ data
           />
         </PermissionGate>
 
-        <DashboardMetricCard
-          title="Equipo de Trabajo"
-          value={metrics.team_members}
-          label="Usuarios en tu agencia"
-          icon={Users}
-          gradient="from-slate-700 to-slate-900"
-          link="/users"
-          isLoading={isLoading}
-        />
+        <PermissionGate permission="manage_users">
+          <DashboardMetricCard
+            title="Equipo de Trabajo"
+            value={metrics.team_members}
+            label="Usuarios en tu agencia"
+            icon={Users}
+            gradient="from-slate-700 to-slate-900"
+            link="/users"
+            isLoading={isLoading}
+          />
+        </PermissionGate>
       </div>
 
       {/* Dynamic Content Widgets */}

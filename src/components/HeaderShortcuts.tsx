@@ -56,13 +56,9 @@ export const HeaderShortcuts: React.FC = () => {
       }
       window.open(targetUrl, '_blank', 'noopener,noreferrer');
     } else {
-      router.push(shortcut.destino);
-      // Fallback in case client-side transition hangs
-      setTimeout(() => {
-        if (typeof window !== 'undefined' && window.location.pathname !== shortcut.destino) {
-          window.location.assign(shortcut.destino);
-        }
-      }, 2500);
+      if (typeof window !== 'undefined') {
+        window.location.assign(shortcut.destino);
+      }
     }
   };
 

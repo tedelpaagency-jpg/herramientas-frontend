@@ -23,6 +23,8 @@ interface Props {
   resources?: LandingAvailableResources;
   termsAndConditions?: string;
   onTermsAndConditionsChange?: (text: string) => void;
+  privacyPolicy?: string;
+  onPrivacyPolicyChange?: (text: string) => void;
 }
 
 export const FormSchemaEditor: React.FC<Props> = ({
@@ -39,9 +41,12 @@ export const FormSchemaEditor: React.FC<Props> = ({
   resources,
   termsAndConditions,
   onTermsAndConditionsChange,
+  privacyPolicy,
+  onPrivacyPolicyChange,
 }) => {
   const [activeTab, setActiveTab] = useState<'fields' | 'steps' | 'styles' | 'stripe' | 'automation'>('fields');
   const [termsEditorMode, setTermsEditorMode] = useState<'rich' | 'code'>('rich');
+  const [privacyEditorMode, setPrivacyEditorMode] = useState<'rich' | 'code'>('rich');
 
   const fields = formSchema.fields || [];
   const steps = formSchema.steps || [];
@@ -986,6 +991,71 @@ export const FormSchemaEditor: React.FC<Props> = ({
             value={termsAndConditions || ''}
             onChange={(e) => onTermsAndConditionsChange && onTermsAndConditionsChange(e.target.value)}
             placeholder="Escribe o pega código HTML para los Términos y Condiciones..."
+            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-emerald-400 font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+          />
+        )}
+      </div>
+
+      {/* Políticas de Privacidad Editor Box (Rich Text / HTML) */}
+      <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label className="font-bold text-slate-200 flex items-center gap-2">
+            🛡️ Políticas de Privacidad de la Landing (Rich Text / HTML)
+          </label>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPrivacyEditorMode(privacyEditorMode === 'rich' ? 'code' : 'rich')}
+              className="inline-flex items-center gap-1.5 text-[11px] bg-slate-900 border border-slate-700 text-indigo-300 hover:text-white px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
+            >
+              {privacyEditorMode === 'rich' ? (
+                <>
+                  <Code className="w-3.5 h-3.5 text-cyan-400" /> Código HTML
+                </>
+              ) : (
+                <>
+                  <FileText className="w-3.5 h-3.5 text-pink-400" /> Editor Enriquecido
+                </>
+              )}
+            </button>
+            {privacyPolicy && privacyPolicy.trim() !== '' ? (
+              <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/90 px-2.5 py-0.5 rounded-full border border-emerald-800 flex items-center gap-1">
+                ✓ Checkbox & Modal Activo
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-500 font-medium bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
+                No mostrado (vacío)
+              </span>
+            )}
+          </div>
+        </div>
+        <p className="text-[11px] text-slate-400 leading-relaxed">
+          Diseña o pega el contenido completo de las Políticas de Privacidad. Puedes aplicar formato en negrita, listas, títulos o pegar código HTML. Se mostrará enriquecido en el modal público de todas las Landings Pages.
+        </p>
+
+        {privacyEditorMode === 'rich' ? (
+          <div className="bg-slate-900 rounded-lg overflow-hidden border border-slate-700 text-white shadow-inner">
+            <ReactQuill
+              theme="snow"
+              value={privacyPolicy || ''}
+              onChange={(val) => onPrivacyPolicyChange && onPrivacyPolicyChange(val)}
+              placeholder="Escribe aquí las Políticas de Privacidad con formato enriquecido..."
+              modules={{
+                toolbar: [
+                  [{ header: [1, 2, 3, false] }],
+                  ['bold', 'italic', 'underline', 'strike'],
+                  [{ list: 'ordered' }, { list: 'bullet' }],
+                  ['link', 'clean'],
+                ],
+              }}
+            />
+          </div>
+        ) : (
+          <textarea
+            rows={6}
+            value={privacyPolicy || ''}
+            onChange={(e) => onPrivacyPolicyChange && onPrivacyPolicyChange(e.target.value)}
+            placeholder="Escribe o pega código HTML para las Políticas de Privacidad..."
             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-emerald-400 font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
           />
         )}

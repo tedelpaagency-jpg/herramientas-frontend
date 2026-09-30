@@ -121,12 +121,13 @@ export const userService = {
     return res.data;
   },
 
-  updateMyProfile: async (data: { name: string; email: string; phone?: string; photo?: string; photo_file?: File }) => {
+  updateMyProfile: async (data: { name: string; email: string; phone?: string; photo?: string | null; photo_file?: File | null }) => {
     if (data.photo_file) {
       const formData = new FormData();
       formData.append('name', data.name);
       formData.append('email', data.email);
       if (data.phone) formData.append('phone', data.phone);
+      if (data.photo !== undefined && data.photo !== null) formData.append('photo', data.photo);
       formData.append('photo_file', data.photo_file);
       formData.append('_method', 'PUT');
       const res = await apiClient.post('/v1/profile', formData, {
@@ -135,6 +136,20 @@ export const userService = {
       return res.data;
     }
     const res = await apiClient.put('/v1/profile', data);
+    return res.data;
+  },
+
+  uploadMyAvatar: async (file: File) => {
+    const formData = new FormData();
+    formData.append('photo_file', file);
+    const res = await apiClient.post('/v1/profile/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
+  updateMyAvatarUrl: async (photoUrl: string | null) => {
+    const res = await apiClient.post('/v1/profile/avatar', { photo: photoUrl });
     return res.data;
   },
 

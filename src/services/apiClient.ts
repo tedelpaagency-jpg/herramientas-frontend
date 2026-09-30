@@ -50,9 +50,26 @@ export const normalizeFileUrl = (url: string | undefined | null): string => {
     return `${apiBase}${url}`;
   }
 
+  if (url.startsWith('storage/')) {
+    return `${apiBase}/${url}`;
+  }
+
   if (url.includes('/storage/')) {
     const pathAfterStorage = url.substring(url.indexOf('/storage/'));
     return `${apiBase}${pathAfterStorage}`;
+  }
+
+  if (url.startsWith('/uploads')) {
+    return `${apiBase}${url}`;
+  }
+
+  if (url.startsWith('uploads/')) {
+    return `${apiBase}/${url}`;
+  }
+
+  if (url.includes('/uploads/')) {
+    const pathAfterUploads = url.substring(url.indexOf('/uploads/'));
+    return `${apiBase}${pathAfterUploads}`;
   }
 
   return url;

@@ -24,6 +24,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  updateUserSession: (userData: Partial<User>) => void;
   startImpersonation: (token: string, user: any, impersonatingFrom: any) => void;
   stopImpersonation: () => Promise<void>;
 }
@@ -94,6 +95,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   };
+
+  const updateUserSession = useCallback((userData: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, ...userData };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('santun_user', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+  }, []);
 
   useEffect(() => {
     let hasSavedSession = false;
@@ -365,6 +379,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         refreshUser,
+        updateUserSession,
         startImpersonation,
         stopImpersonation,
       }}

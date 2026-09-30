@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import roleService, { CreateRolePayload, UpdateRolePayload } from '@/services/roleService';
 import userService from '@/services/userService';
+import { normalizeFileUrl } from '@/services/apiClient';
 import { Role, Permission, User } from '@/types';
 import { 
   ShieldCheck, Shield, Key, Users, Search, Plus, Edit3, Trash2, 
@@ -564,7 +565,12 @@ export const RolesPage: React.FC = () => {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center shrink-0 shadow-sm overflow-hidden text-sm">
                   {user?.photo ? (
-                    <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
+                    <img 
+                      src={normalizeFileUrl(user.photo)} 
+                      alt={user.name} 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                    />
                   ) : (
                     (user?.name || 'US').substring(0, 2).toUpperCase()
                   )}

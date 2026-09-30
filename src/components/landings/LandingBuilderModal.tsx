@@ -8,6 +8,7 @@ import CustomHtmlEditor from './CustomHtmlEditor';
 import WorkflowPaymentSettings from './WorkflowPaymentSettings';
 import DynamicFormRenderer from './DynamicFormRenderer';
 import { X, Save, Layout, Layers, Zap, Code, Eye, Plus, Trash2, Loader2, Globe } from 'lucide-react';
+import { prepareLandingHtml } from '@/utils/landingHtmlHelper';
 
 interface Props {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
   const [workflowId, setWorkflowId] = useState<number | null>(null);
   const [courseIds, setCourseIds] = useState<number[]>([]);
   const [termsAndConditions, setTermsAndConditions] = useState<string>('');
+  const [privacyPolicy, setPrivacyPolicy] = useState<string>('');
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({
     enabled: false,
     currency: 'USD',
@@ -97,6 +99,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
         setWorkflowId(landing.workflow_id || null);
         setCourseIds(landing.course_ids || []);
         setTermsAndConditions(landing.terms_and_conditions || '');
+        setPrivacyPolicy(landing.privacy_policy || '');
 
         const initialPayment = landing.payment_config || { enabled: false, currency: 'USD', amount: 0, product_name: '' };
         const initialFormSchema = landing.form_schema || {
@@ -177,6 +180,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
         workflow_id: workflowId,
         course_ids: courseIds,
         terms_and_conditions: termsAndConditions,
+        privacy_policy: privacyPolicy,
         payment_config: paymentConfig,
         builder_schema: builderSchema,
         form_schema: formSchema,
@@ -426,6 +430,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
               resources={resources}
               termsAndConditions={termsAndConditions}
               onTermsAndConditionsChange={setTermsAndConditions}
+              privacyPolicy={privacyPolicy}
+              onPrivacyPolicyChange={setPrivacyPolicy}
             />
           )}
 
@@ -452,32 +458,13 @@ export const LandingBuilderModal: React.FC<Props> = ({
               {mode === 'custom_html' && customHtml ? (
                 <div className="w-full h-[600px] bg-white rounded-xl overflow-hidden border border-slate-800 shadow-2xl">
                   <iframe
-                    srcDoc={`
-                      <!DOCTYPE html>
-                      <html>
-                        <head>
-                          <meta charset="utf-8">
-                          <script>
-                            window.tailwind = {
-                              darkMode: 'class',
-                              theme: { extend: {} }
-                            };
-                          </script>
-                          <script src="https://cdn.tailwindcss.com"></script>
-                          <style>
-                            html { color-scheme: light; }
-                          </style>
-                        </head>
-                        <body>
-                          ${customHtml.replace(
-                            /\{\{DYNAMIC_FORM[^}]*\}\}/gi,
-                            '<div style="padding:24px;background:#f8fafc;border:2px dashed #6366f1;border-radius:16px;text-align:center;color:#4f46e5;font-family:sans-serif;font-weight:bold;">[FORMULARIO DINÁMICO SE MOSTRARÁ AQUÍ]</div>'
-                          )}
-                        </body>
-                      </html>
-                    `}
+                    srcDoc={prepareLandingHtml(customHtml, {
+                      formPlaceholderHtml: '<div style="padding:24px;background:#f8fafc;border:2px dashed #6366f1;border-radius:16px;text-align:center;color:#4f46e5;font-family:sans-serif;font-weight:bold;">[FORMULARIO DINÁMICO SE MOSTRARÁ AQUÍ]</div>',
+                      injectFormStyles: false,
+                    })}
                     title="Custom HTML Landing Preview"
                     className="w-full h-full border-0 block"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                   />
                 </div>
               ) : (
@@ -486,6 +473,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
                     formSchema={formSchema}
                     paymentConfig={paymentConfig}
                     termsAndConditions={termsAndConditions}
+                    privacyPolicy={privacyPolicy}
                     stripeAppearance={formSchema?.stripe_appearance || paymentConfig?.stripe_appearance}
                     onSubmit={(data) => {
                       alert('Formulario enviado (Vista previa):\n' + JSON.stringify(data, null, 2));

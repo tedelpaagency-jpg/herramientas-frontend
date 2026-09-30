@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { HeaderShortcuts } from './HeaderShortcuts';
 import visaWholesaleService, { VisaNotification } from '../services/visaWholesaleService';
+import { normalizeFileUrl } from '../services/apiClient';
 
 interface NavbarProps {
   leftSidebarOpen: boolean;
@@ -56,6 +57,16 @@ export const Navbar: React.FC<NavbarProps> = ({
       setUnreadCount(0);
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch (e) {}
+  };
+
+  const handleNavClick = (path: string, e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    setShowUserMenu(false);
+    setShowNotifications(false);
+    if (typeof window !== 'undefined') {
+      window.location.assign(path);
+    }
   };
 
   const isSuperAdmin =
@@ -199,32 +210,35 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <p className="text-xs font-medium">No tienes notificaciones recientes</p>
                       </div>
                     ) : (
-                      notifications.slice(0, 6).map((notif) => (
-                        <Link
-                          key={notif.id}
-                          href={notif.dossier_id ? `/visas/expedientes/${notif.dossier_id}` : '/visas/notifications'}
-                          prefetch={false}
-                          onClick={() => setShowNotifications(false)}
-                          className={`p-3 block hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-xs space-y-0.5 ${
-                            !notif.is_read ? 'bg-sky-50/40 dark:bg-sky-950/20' : ''
-                          }`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-slate-800 dark:text-slate-200 truncate pr-2">{notif.title}</span>
-                            <span className="text-[10px] text-slate-400 whitespace-nowrap">
-                              {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <p className="text-slate-500 dark:text-slate-400 line-clamp-2">{notif.message}</p>
-                        </Link>
-                      ))
+                      notifications.slice(0, 6).map((notif) => {
+                        const targetPath = notif.dossier_id ? `/visas/expedientes/${notif.dossier_id}` : '/visas/notifications';
+                        return (
+                          <Link
+                            key={notif.id}
+                            href={targetPath}
+                            prefetch={false}
+                            onClick={(e) => handleNavClick(targetPath, e)}
+                            className={`p-3 block hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-xs space-y-0.5 ${
+                              !notif.is_read ? 'bg-sky-50/40 dark:bg-sky-950/20' : ''
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold text-slate-800 dark:text-slate-200 truncate pr-2">{notif.title}</span>
+                              <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                                {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className="text-slate-500 dark:text-slate-400 line-clamp-2">{notif.message}</p>
+                          </Link>
+                        );
+                      })
                     )}
                   </div>
 
                   <Link
                     href="/visas/notifications"
                     prefetch={false}
-                    onClick={() => setShowNotifications(false)}
+                    onClick={(e) => handleNavClick('/visas/notifications', e)}
                     className="block text-center py-2.5 text-xs font-bold text-sky-600 dark:text-sky-400 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 border-t border-slate-200 dark:border-slate-800"
                   >
                     Ver todas las notificaciones →
@@ -242,6 +256,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Link 
               href="/roles" 
               prefetch={false}
+              onClick={(e) => handleNavClick('/roles', e)}
               title="Ver mis roles y permisos"
               className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1 max-w-[140px] truncate"
             >
@@ -256,7 +271,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             aria-expanded={showUserMenu}
           >
             {user?.photo ? (
-              <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
+              <img 
+                src={normalizeFileUrl(user.photo)} 
+                alt={user.name} 
+                className="w-full h-full object-cover" 
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                }}
+              />
             ) : user?.name ? (
               user.name.substring(0, 2).toUpperCase()
             ) : (
@@ -276,27 +298,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <div className="p-3 border-b border-slate-200 dark:border-slate-800 sm:hidden">
                     <p className="font-bold text-slate-800 dark:text-slate-100">{user?.name || 'Usuario SANTUN'}</p>
-                    <Link href="/roles" prefetch={false} onClick={() => setShowUserMenu(false)} className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 mt-0.5">
+                    <Link href="/roles" prefetch={false} onClick={(e) => handleNavClick('/roles', e)} className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 mt-0.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                       <span>{user?.role || user?.email || 'Specialist'}</span>
                     </Link>
                   </div>
                   <div className="py-2">
-                    <Link href="/estates/new" prefetch={false} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-primary font-bold transition-colors">
-                      <span className="material-symbols-outlined text-lg">add_circle</span>
-                      Nueva Propiedad
-                    </Link>
-                    <div className="h-px bg-slate-200 dark:bg-slate-800 my-1"></div>
-                    <Link href="/profile" prefetch={false} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
+                    <Link href="/profile" prefetch={false} onClick={(e) => handleNavClick('/profile', e)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
                       <span className="material-symbols-outlined text-[20px]">person</span>
                       Mi Perfil
                     </Link>
-                    <Link href="/roles" prefetch={false} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
+                    <Link href="/roles" prefetch={false} onClick={(e) => handleNavClick('/roles', e)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
                       <span className="material-symbols-outlined text-[20px]">shield_person</span>
                       Mis Roles & Permisos
                     </Link>
                     {configHref && (
-                      <Link href={configHref} prefetch={false} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
+                      <Link href={configHref} prefetch={false} onClick={(e) => handleNavClick(configHref, e)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
                         <span className="material-symbols-outlined text-[20px]">settings</span>
                         Configuración
                       </Link>

@@ -220,8 +220,19 @@ export const AgencyVisasDashboardPage: React.FC = () => {
         payload.client_email = newDossierData.client_email;
         payload.client_phone = newDossierData.client_phone;
         payload.client_document_number = newDossierData.client_document_number;
+        payload.applicant_name = newDossierData.client_name;
+        payload.applicant_email = newDossierData.client_email;
+        payload.applicant_phone = newDossierData.client_phone;
+        payload.passport_number = newDossierData.client_document_number;
       } else {
         payload.client_id = Number(newDossierData.client_id);
+        const selClient = clients.find((c) => c.id === Number(newDossierData.client_id));
+        if (selClient) {
+          payload.applicant_name = selClient.name;
+          payload.applicant_email = selClient.email;
+          payload.applicant_phone = selClient.phone;
+          payload.passport_number = selClient.document_number;
+        }
       }
 
       const res = await visaWholesaleService.createDossier(payload);
