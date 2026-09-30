@@ -64,6 +64,14 @@ export const VisasPage: React.FC = () => {
   };
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const gid = params.get('group_id');
+      if (gid) {
+        window.location.replace(`/visas/mayorista?group_id=${gid}`);
+        return;
+      }
+    }
     fetchData();
   }, []);
 
@@ -238,12 +246,12 @@ export const VisasPage: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-sky-600 flex items-center justify-center text-white shadow-md shadow-sky-600/20">
               <FileCheck className="w-5 h-5" />
             </div>
-            <span>{activeGroup ? `Expedientes: ${activeGroup.name}` : 'Gestión de Visados: Grupos y Expedientes'}</span>
+            <span>{activeGroup ? `Lote de Formularios: ${activeGroup.name}` : 'Visas Minoristas (Formularios para Clientes)'}</span>
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-1">
             {activeGroup 
-              ? `Listado de solicitudes individuales asociadas al grupo ${activeGroup.name}.`
-              : 'Módulo independiente de gestión de grupos y expedientes migratorios. Consulta todos los expedientes históricos y grupos generados.'}
+              ? `Listado de solicitudes individuales asociadas a ${activeGroup.name}. Genera y envía el enlace para que el cliente llene el formulario consular.`
+              : 'Módulo independiente de visas minoristas. No requiere aprobación de mayorista ni control de etapas: solo genera el enlace para que el cliente lo llene.'}
           </p>
         </div>
 

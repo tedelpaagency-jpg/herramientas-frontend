@@ -153,7 +153,18 @@ export const AgencyVisasDashboardPage: React.FC = () => {
       const freshGroups = groupsRes?.data?.data || groupsRes?.data || [];
       setGroups(freshGroups);
       setActiveGroup((prev) => {
-        if (!prev || prev.id === 'unassigned') return prev;
+        if (!prev) {
+          if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const gid = params.get('group_id');
+            if (gid) {
+              const matched = freshGroups.find((g: any) => String(g.id) === String(gid));
+              if (matched) return matched;
+            }
+          }
+          return null;
+        }
+        if (prev.id === 'unassigned') return prev;
         const updated = freshGroups.find((g: any) => String(g.id) === String(prev.id));
         return updated || prev;
       });

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
@@ -9,6 +9,16 @@ import { AgencyVisasDashboardPage } from '@/views/visas/AgencyVisasDashboardPage
 
 export default function MayoristaVisasRoute() {
   const { user } = useAuth();
+  const [hasGroupIdParam, setHasGroupIdParam] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('group_id')) {
+        setHasGroupIdParam(true);
+      }
+    }
+  }, []);
 
   const isMayorista = user?.role === 'super_admin' || 
     user?.role === 'white_label_admin' || 
@@ -17,9 +27,8 @@ export default function MayoristaVisasRoute() {
   return (
     <ProtectedRoute permission={['view_visas', 'visas.view']}>
       <Layout>
-        {isMayorista ? <MayoristaVisasDashboardPage /> : <AgencyVisasDashboardPage />}
+        {isMayorista && !hasGroupIdParam ? <MayoristaVisasDashboardPage /> : <AgencyVisasDashboardPage />}
       </Layout>
     </ProtectedRoute>
   );
 }
-

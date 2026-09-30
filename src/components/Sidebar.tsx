@@ -9,7 +9,7 @@ import {
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
   Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
-  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator, Palette, X, Film, Image as ImageIcon, LayoutGrid
+  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator, Palette, X, Film, Image as ImageIcon, LayoutGrid, FileCheck
 } from 'lucide-react';
 
 
@@ -259,18 +259,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'MÓDULO DE VISADOS',
       items: [
-        { label: 'Grupos y Expedientes', path: '/visas', icon: ShieldCheck, permission: ['view_visas', 'visas.view'] },
+        { label: 'Visas Minoristas (Formularios)', path: '/visas', icon: FileCheck, permission: ['view_visas', 'visas.view'] },
         ...(isWhiteLabelAdmin || isSuperAdmin
           ? [
-              { label: 'Operaciones Mayorista', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view'] },
-              { label: 'Agencias Afiliadas', path: '/visas/mayorista/agencias', icon: Building2, permission: ['view_visas', 'visas.view'] },
-              { label: 'Configurar Visas', path: '/visas/tipos', icon: Layers, permission: ['view_visas', 'visas.view', 'visas.processes.manage'] },
-              { label: 'Grupos B2B Mayorista', path: '/visas/grupos', icon: Users, permission: ['view_visas', 'visas.view', 'visas.groups.manage'] },
+              { label: 'Operaciones Mayorista B2B', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view'] },
+              { label: 'Agencias Afiliadas B2B', path: '/visas/mayorista/agencias', icon: Building2, permission: ['view_visas', 'visas.view'] },
+              { label: 'Configurar Visas B2B', path: '/visas/tipos', icon: Layers, permission: ['view_visas', 'visas.view', 'visas.processes.manage'] },
+              { label: 'Grupos / Familias B2B', path: '/visas/grupos', icon: Users, permission: ['view_visas', 'visas.view', 'visas.groups.manage'] },
             ]
           : [
               { label: 'Portal Mayorista (B2B)', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view'] },
               { label: 'Grupos / Familias B2B', path: '/visas/grupos', icon: Users, permission: ['view_visas', 'visas.view', 'visas.groups.manage'] },
-              { label: 'Políticas de Visados', path: '/visas/politicas', icon: FileText, permission: ['view_visas', 'visas.settings.manage'] },
+              { label: 'Políticas de Visados B2B', path: '/visas/politicas', icon: FileText, permission: ['view_visas', 'visas.settings.manage'] },
             ]),
       ],
     },

@@ -82,20 +82,27 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/visas/grupos"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10 backdrop-blur-md"
+          >
+            <Users className="w-4 h-4 text-indigo-300" />
+            <span>Grupos y Familias B2B</span>
+          </Link>
           <Link
             href="/visas/mayorista/agencias"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10 backdrop-blur-md"
           >
             <Building2 className="w-4 h-4" />
-            Directorio de Agencias ({metrics.total_agencias})
+            <span>Directorio de Agencias ({metrics.total_agencias})</span>
           </Link>
           <Link
             href="/visas/tipos"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-md shadow-indigo-600/30"
           >
             <ShieldCheck className="w-4 h-4" />
-            Configurar Tipos de Visas
+            <span>Configurar Tipos de Visas</span>
           </Link>
         </div>
       </div>

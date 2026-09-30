@@ -210,7 +210,7 @@ export const MayoristaAgenciesPage: React.FC = () => {
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Navegación Contextual</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Link
-                  href={`/visas?agency_id=${selectedAgency.id}`}
+                  href={`/visas/mayorista?agency_id=${selectedAgency.id}`}
                   className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 flex items-center justify-between group transition-all"
                 >
                   <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 group-hover:text-indigo-600">
