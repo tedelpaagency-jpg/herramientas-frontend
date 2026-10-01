@@ -33,6 +33,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
   const [mode, setMode] = useState<'visual' | 'custom_html'>('visual');
   const [customHtml, setCustomHtml] = useState('');
   const [actionType, setActionType] = useState<ActionType>('lead');
+  const [planId, setPlanId] = useState<number | null>(null);
+  const [defaultPassword, setDefaultPassword] = useState<string>('Acceso@2026');
   const [workspaceId, setWorkspaceId] = useState<number | null>(null);
   const [stageId, setStageId] = useState<number | null>(null);
   const [workflowId, setWorkflowId] = useState<number | null>(null);
@@ -94,6 +96,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
         }
         setCustomHtml(rawHtml);
         setActionType(landing.action_type || 'lead');
+        setPlanId(landing.plan_id || null);
+        setDefaultPassword(landing.default_password || (landing.form_schema as any)?.default_password || 'Acceso@2026');
         setWorkspaceId(landing.workspace_id || null);
         setStageId(landing.stage_id || null);
         setWorkflowId(landing.workflow_id || null);
@@ -175,6 +179,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
         mode,
         custom_html: safeCustomHtml,
         action_type: actionType,
+        plan_id: planId,
+        default_password: defaultPassword,
         workspace_id: workspaceId,
         stage_id: stageId,
         workflow_id: workflowId,
@@ -421,6 +427,10 @@ export const LandingBuilderModal: React.FC<Props> = ({
               onChange={handleFormSchemaChange}
               actionType={actionType}
               onActionTypeChange={setActionType}
+              planId={planId}
+              onPlanChange={setPlanId}
+              defaultPassword={defaultPassword}
+              onDefaultPasswordChange={setDefaultPassword}
               workspaceId={workspaceId}
               onWorkspaceChange={setWorkspaceId}
               stageId={stageId}

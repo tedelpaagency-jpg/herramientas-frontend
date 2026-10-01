@@ -139,6 +139,7 @@ export interface LandingTemplate {
   workflow_id?: number | null;
   action_type?: ActionType;
   plan_id?: number | null;
+  default_password?: string | null;
   course_ids?: number[] | null;
   payment_config?: PaymentConfig | null;
   stripe_appearance?: StripeAppearanceConfig | null;
@@ -170,4 +171,16 @@ export interface LandingAvailableResources {
   workflows: Array<{ id: number; name: string }>;
   white_labels: Array<{ id: number; name: string }>;
   agencies: Array<{ id: number; name: string; white_label_id?: number }>;
+  plans?: Array<{
+    id: number;
+    name: string;
+    type?: string;
+    price?: number | string;
+    billing_type?: string;
+    duration_value?: number;
+    duration_unit?: string;
+    status?: boolean | number;
+    white_label_id?: number | null;
+  }>;
 }
+

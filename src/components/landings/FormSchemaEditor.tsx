@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { FormSchema, FormFieldSchema, FormStepSchema, FormStyleConfig, FormLayoutType, ActionType, LandingAvailableResources } from '../../types/landing';
-import { Plus, Trash2, MoveUp, MoveDown, Layers, CheckSquare, ListOrdered, BookOpen, GitBranch, Palette, Sparkles, Sliders, Code, FileText, CreditCard } from 'lucide-react';
+import { Plus, Trash2, MoveUp, MoveDown, Layers, CheckSquare, ListOrdered, BookOpen, GitBranch, Palette, Sparkles, Sliders, Code, FileText, CreditCard, Award, Key, Eye, EyeOff } from 'lucide-react';
 import 'react-quill/dist/quill.snow.css';
 import { StripeAppearanceEditor } from './StripeAppearanceEditor';
 
@@ -14,6 +14,10 @@ interface Props {
   onChange: (schema: FormSchema) => void;
   actionType: ActionType;
   onActionTypeChange: (actionType: ActionType) => void;
+  planId?: number | null;
+  onPlanChange?: (id: number | null) => void;
+  defaultPassword?: string;
+  onDefaultPasswordChange?: (password: string) => void;
   workspaceId?: number | null;
   onWorkspaceChange: (id: number | null) => void;
   stageId?: number | null;
@@ -32,6 +36,10 @@ export const FormSchemaEditor: React.FC<Props> = ({
   onChange,
   actionType,
   onActionTypeChange,
+  planId,
+  onPlanChange,
+  defaultPassword = 'Acceso@2026',
+  onDefaultPasswordChange,
   workspaceId,
   onWorkspaceChange,
   stageId,
@@ -47,6 +55,7 @@ export const FormSchemaEditor: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<'fields' | 'steps' | 'styles' | 'stripe' | 'automation'>('fields');
   const [termsEditorMode, setTermsEditorMode] = useState<'rich' | 'code'>('rich');
   const [privacyEditorMode, setPrivacyEditorMode] = useState<'rich' | 'code'>('rich');
+  const [showPassword, setShowPassword] = useState(false);
 
   const fields = formSchema.fields || [];
   const steps = formSchema.steps || [];
@@ -815,6 +824,129 @@ export const FormSchemaEditor: React.FC<Props> = ({
               </label>
             </div>
           </div>
+
+          {/* Plan de Suscripción para la Nueva Agencia */}
+          {actionType === 'register_agency' && (
+            <div className="p-4 bg-emerald-950/25 border border-emerald-800/60 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-emerald-300 font-bold text-xs">
+                  <Award className="w-4 h-4 text-emerald-400" /> Plan de Suscripción para la Nueva Agencia
+                </div>
+                {planId ? (
+                  <span className="text-[10px] bg-emerald-900/60 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                    ✓ Plan Asignado
+                  </span>
+                ) : (
+                  <span className="text-[10px] bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded-full font-semibold">
+                    Sin Plan Seleccionado
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Selecciona el plan al cual se suscribirá automáticamente la nueva agencia creada desde esta landing page. Al enviar el formulario, el sistema creará la suscripción activa con las fechas y permisos del plan elegido.
+              </p>
+
+              <div>
+                <select
+                  value={planId || ''}
+                  onChange={(e) => onPlanChange && onPlanChange(e.target.value ? Number(e.target.value) : null)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition"
+                >
+                  <option value="">-- Sin plan asignado (requiere activación manual) --</option>
+                  {(resources?.plans || []).map((p) => {
+                    const priceFormatted = Number(p.price || 0) > 0 ? `$${Number(p.price).toFixed(2)}` : 'Gratis / Base';
+                    const durationText = p.duration_value 
+                      ? `${p.duration_value} ${p.duration_unit === 'month' ? 'mes(es)' : p.duration_unit === 'year' ? 'año(s)' : 'día(s)'}`
+                      : 'Indefinido';
+                    const planTypeLabel = p.type ? `[${p.type.toUpperCase()}] ` : '';
+                    return (
+                      <option key={p.id} value={p.id}>
+                        {planTypeLabel}{p.name} — {priceFormatted} ({durationText})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Selected Plan Details Card */}
+              {(() => {
+                const selectedPlan = (resources?.plans || []).find((p) => p.id === planId);
+                if (!selectedPlan) return null;
+                const priceFormatted = Number(selectedPlan.price || 0) > 0 ? `$${Number(selectedPlan.price).toFixed(2)} USD` : 'Gratuito / Incluido';
+                const durationText = selectedPlan.duration_value 
+                  ? `${selectedPlan.duration_value} ${selectedPlan.duration_unit === 'month' ? (selectedPlan.duration_value === 1 ? 'Mes' : 'Meses') : selectedPlan.duration_unit === 'year' ? (selectedPlan.duration_value === 1 ? 'Año' : 'Años') : 'Días'}`
+                  : 'Sin duración definida';
+                return (
+                  <div className="bg-slate-900/90 border border-emerald-800/40 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="space-y-0.5">
+                      <div className="font-bold text-white flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        {selectedPlan.name}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        Cobro: <span className="text-slate-200 capitalize">{selectedPlan.billing_type || 'Fijo'}</span> • Duración: <span className="text-slate-200">{durationText}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-black text-emerald-400 text-sm">{priceFormatted}</div>
+                      <div className="text-[10px] text-slate-400">Suscripción automática</div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Contraseña Inicial para el Admin de la Nueva Agencia */}
+          {actionType === 'register_agency' && (
+            <div className="p-4 bg-amber-950/20 border border-amber-800/50 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-amber-300 font-bold text-xs">
+                  <Key className="w-4 h-4 text-amber-400" /> Contraseña Inicial para el Admin de la Agencia
+                </div>
+                <span className="text-[10px] bg-amber-900/60 text-amber-300 border border-amber-700/60 px-2 py-0.5 rounded-full font-semibold">
+                  Rol: Administrador de Agencia
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Establece la contraseña predeterminada con la que se creará la cuenta del administrador de la nueva agencia para iniciar sesión en la plataforma.
+              </p>
+
+              <div className="space-y-2">
+                <div className="relative max-w-md">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={defaultPassword || ''}
+                    onChange={(e) => onDefaultPasswordChange && onDefaultPasswordChange(e.target.value)}
+                    placeholder="Ej: Acceso@2026"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-3 pr-10 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500 transition font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition"
+                    title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4 text-slate-300" /> : <Eye className="w-4 h-4 text-slate-300" />}
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                  <span>Contraseña asignada:</span>
+                  <code className="bg-slate-900 text-amber-300 px-2 py-0.5 rounded border border-slate-800 font-mono font-bold text-[11px]">
+                    {defaultPassword || 'Acceso@2026'}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => onDefaultPasswordChange && onDefaultPasswordChange('Acceso@2026')}
+                    className="text-[10px] text-slate-500 hover:text-amber-400 underline transition cursor-pointer"
+                  >
+                    Restablecer por defecto (Acceso@2026)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* CRM Workspace & Stage Selection */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
