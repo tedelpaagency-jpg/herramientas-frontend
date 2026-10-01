@@ -47,12 +47,22 @@ export const LexvaultPage: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [tmplRes, docRes] = await Promise.all([
+      const [tmplResult, docResult] = await Promise.allSettled([
         lexvaultService.getTemplates(),
         lexvaultService.getDocuments(),
       ]);
-      setTemplates(tmplRes);
-      setDocuments(docRes);
+
+      if (tmplResult.status === 'fulfilled') {
+        setTemplates(tmplResult.value);
+      } else {
+        console.error('Error fetching templates:', tmplResult.reason);
+      }
+
+      if (docResult.status === 'fulfilled') {
+        setDocuments(docResult.value);
+      } else {
+        console.error('Error fetching documents:', docResult.reason);
+      }
     } catch (err) {
       console.error('Error fetching LexVault data:', err);
     } finally {
