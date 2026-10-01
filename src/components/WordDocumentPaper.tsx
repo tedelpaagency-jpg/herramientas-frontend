@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   FileText,
   Printer,
@@ -38,12 +38,17 @@ import {
 import toast from 'react-hot-toast';
 import { getApiBaseUrl, normalizeFileUrl } from '../services/apiClient';
 
+export interface WordDocumentPaperRef {
+  save: () => Promise<void>;
+  getCurrentHtml: () => string;
+}
+
 export interface WordDocumentPaperProps {
   htmlContent: string;
   onContentChange?: (newHtml: string) => void;
   fieldValues?: Record<string, string>;
   onFieldValuesChange?: (newFieldValues: Record<string, string>) => void;
-  onSave?: (savedHtml: string, savedFieldValues: Record<string, string>) => void;
+  onSave?: (savedHtml: string, savedFieldValues: Record<string, string>) => void | Promise<void>;
   title?: string;
   documentNumber?: string;
   watermarkText?: string;
@@ -56,7 +61,7 @@ export interface WordDocumentPaperProps {
 
 export const PAGE_BREAK_MARKER = `<div class="page-break" style="page-break-after: always; break-after: page; border-top: 2px dashed #cbd5e1; margin: 2rem 0; text-align: center; color: #94a3b8; font-size: 10px; font-weight: bold; text-transform: uppercase;" data-page-break="true">--- Salto de Hoja ---</div>`;
 
-export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
+export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPaperProps>(({
   htmlContent,
   onContentChange,
   fieldValues = {},
@@ -70,7 +75,7 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
   showToolbar = true,
   editablePages = true,
   className = '',
-}) => {
+}, ref) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [copied, setCopied] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
@@ -155,15 +160,6 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
     if (onContentChange) {
       onContentChange(finalHtml);
     }
-  };
-
-  // Save Document and Field Values for public view replacement
-  const handleSave = () => {
-    updateHtml(localHtml);
-    if (onSave) {
-      onSave(localHtml, tokenValues);
-    }
-    toast.success('Documento y valores de campos guardados exitosamente');
   };
 
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -291,6 +287,46 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
     const validParts = parts.filter((p) => p.length > 0);
     return validParts.length > 0 ? validParts : [sanitizedHtml];
   }, [sanitizedHtml]);
+
+  // Extract live HTML directly from page DOM nodes to guarantee no typed characters are lost
+  const getCurrentFullHtml = (): string => {
+    const pageBodies: string[] = [];
+    if (pageRefs.current && pageRefs.current.length > 0) {
+      for (let i = 0; i < pages.length; i++) {
+        const sheet = pageRefs.current[i];
+        const bodyEl = sheet?.querySelector('.word-document-body') as HTMLElement | null;
+        if (bodyEl) {
+          pageBodies.push(bodyEl.innerHTML);
+        } else if (pages[i]) {
+          pageBodies.push(pages[i]);
+        }
+      }
+    }
+    const combined = pageBodies.length > 0 ? pageBodies.join(`\n${PAGE_BREAK_MARKER}\n`) : localHtml;
+
+    let finalHtml = combined.replace(/<div[^>]*data-bg-image=["'][^"']*["'][^>]*>\s*<\/div>\n?/gi, '');
+    if (storedBgImage && storedBgImage !== 'none' && storedBgImage.trim() !== '') {
+      finalHtml = `<div data-bg-image="${storedBgImage}"></div>\n` + finalHtml;
+    }
+    return finalHtml;
+  };
+
+  // Save Document and Field Values for public view replacement
+  const handleSave = async () => {
+    const finalHtml = getCurrentFullHtml();
+    setLocalHtml(finalHtml);
+    if (onContentChange) {
+      onContentChange(finalHtml);
+    }
+    if (onSave) {
+      await onSave(finalHtml, tokenValues);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    save: handleSave,
+    getCurrentHtml: getCurrentFullHtml,
+  }), [pages, localHtml, storedBgImage, tokenValues, onSave, onContentChange]);
 
   // Execute rich text formatting commands (Word Style Toolbar formatDoc as in inmosoft lexvault_edit)
   const formatDoc = (cmd: string, value: string | undefined = undefined) => {
@@ -1136,6 +1172,8 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
       )}
     </div>
   );
-};
+});
+
+WordDocumentPaper.displayName = 'WordDocumentPaper';
 
 export default WordDocumentPaper;

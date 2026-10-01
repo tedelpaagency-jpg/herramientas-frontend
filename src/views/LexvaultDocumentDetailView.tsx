@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { LexvaultDocument, LexvaultTemplate } from '../types';
 import lexvaultService from '../services/lexvaultService';
-import WordDocumentPaper from '../components/WordDocumentPaper';
+import WordDocumentPaper, { WordDocumentPaperRef } from '../components/WordDocumentPaper';
 import toast from 'react-hot-toast';
 
 interface LexvaultDocumentDetailViewProps {
@@ -32,10 +32,13 @@ interface LexvaultDocumentDetailViewProps {
 }
 
 export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProps> = ({ id, type }) => {
+  const paperRef = useRef<WordDocumentPaperRef>(null);
   const [document, setDocument] = useState<LexvaultDocument | null>(null);
   const [template, setTemplate] = useState<LexvaultTemplate | null>(null);
+  const [docTitle, setDocTitle] = useState('');
   const [currentBg, setCurrentBg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Background Selection Modal / Popover
@@ -51,11 +54,13 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
       if (type === 'contract') {
         const doc = await lexvaultService.getDocument(id);
         setDocument(doc);
+        setDocTitle(doc.title || '');
         const initialBg = doc.background_image || doc.bg_image_url || doc.template?.background_image || null;
         setCurrentBg(initialBg);
       } else {
         const tmpl = await lexvaultService.getTemplate(id);
         setTemplate(tmpl);
+        setDocTitle(tmpl.title || '');
         const initialBg = tmpl.background_image || tmpl.bg_image_url || null;
         setCurrentBg(initialBg);
       }
@@ -64,6 +69,12 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
       setError('No fue posible cargar el registro solicitado.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleExplicitSave = async () => {
+    if (paperRef.current) {
+      await paperRef.current.save();
     }
   };
 
@@ -190,22 +201,30 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="text"
+                value={docTitle}
+                onChange={(e) => setDocTitle(e.target.value)}
+                disabled={!canEdit}
+                placeholder={title}
+                className="text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-blue-500 focus:bg-slate-50 dark:focus:bg-slate-800/50 rounded px-1 -mx-1 transition-all outline-none max-w-md"
+                title="Haz clic para editar el nombre de este documento o plantilla"
+              />
               {type === 'template' ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0">
                   Plantilla Base
                 </span>
               ) : isSigned ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
                   Firmado
                 </span>
               ) : isDeclined ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-50 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-50 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shrink-0">
                   Rechazado
                 </span>
               ) : (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
                   Borrador
                 </span>
               )}
@@ -230,6 +249,24 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
             >
               <ImageIcon className={`w-4 h-4 ${currentBg && currentBg !== 'none' ? 'text-blue-600' : 'text-slate-400'}`} />
               <span>Fondo: {currentBg && currentBg !== 'none' ? 'Membrete Asignado' : 'Sin Fondo'}</span>
+            </button>
+          )}
+
+          {/* Prominent Save Changes Button */}
+          {canEdit && (
+            <button
+              type="button"
+              onClick={handleExplicitSave}
+              disabled={isSaving}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              title="Guardar todos los cambios del documento y fondo en el servidor"
+            >
+              {isSaving ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span>{isSaving ? 'Guardando...' : 'Guardar Cambios'}</span>
             </button>
           )}
 
@@ -394,8 +431,9 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
 
       {/* Word Document Paper Workspace */}
       <WordDocumentPaper
+        ref={paperRef}
         htmlContent={bodyHtml}
-        title={title}
+        title={docTitle || title}
         documentNumber={docNumber}
         watermarkText={watermarkText}
         backgroundImageUrl={currentBg === 'none' ? 'none' : (currentBg || undefined)}
@@ -410,29 +448,39 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
           undefined
         }
         onSave={async (updatedHtml, savedFieldValues) => {
+          setIsSaving(true);
           const toastId = toast.loading('Guardando documento en el servidor...');
           try {
-            const finalBgValue = currentBg === 'none' ? '' : (currentBg || null);
+            const finalBgValue = currentBg === 'none' ? 'none' : (currentBg || null);
 
             if (type === 'template' && template?.id) {
-              await lexvaultService.updateTemplate(template.id, {
+              const res = await lexvaultService.updateTemplate(template.id, {
+                title: docTitle.trim() || template.title,
+                category: template.category,
+                description: template.description,
                 html_content: updatedHtml,
                 background_image: finalBgValue || undefined,
               });
+              setTemplate(res);
               toast.success('¡Plantilla y fondo de hoja guardados exitosamente!', { id: toastId });
             } else if (document?.id) {
-              await lexvaultService.updateDocument(document.id, {
+              const res = await lexvaultService.updateDocument(document.id, {
+                title: docTitle.trim() || document.title,
                 rendered_html: updatedHtml,
                 content: updatedHtml,
                 filled_content: updatedHtml,
                 background_image: finalBgValue || undefined,
                 field_values_json: savedFieldValues,
               });
+              setDocument(res);
               toast.success('¡Contrato y fondo de hoja guardados exitosamente!', { id: toastId });
             }
-          } catch (err) {
+          } catch (err: any) {
             console.error('Error saving document:', err);
-            toast.error('Error al guardar los cambios en la base de datos', { id: toastId });
+            const msg = err.response?.data?.message || err.message || 'Error al guardar los cambios en la base de datos';
+            toast.error(msg, { id: toastId });
+          } finally {
+            setIsSaving(false);
           }
         }}
       />
