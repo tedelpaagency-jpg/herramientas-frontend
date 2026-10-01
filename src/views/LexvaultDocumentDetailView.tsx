@@ -215,18 +215,25 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0">
                   Plantilla Base
                 </span>
-              ) : isSigned ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
-                  Firmado
-                </span>
-              ) : isDeclined ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-50 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shrink-0">
-                  Rechazado
-                </span>
               ) : (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
-                  Borrador
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                    Contrato Individual
+                  </span>
+                  {isSigned ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      Firmado
+                    </span>
+                  ) : isDeclined ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-50 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                      Rechazado
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                      Borrador
+                    </span>
+                  )}
+                </div>
               )}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5 flex flex-wrap items-center gap-2">
@@ -302,6 +309,23 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
           )}
         </div>
       </div>
+
+      {/* Individual Contract Context Banner */}
+      {type === 'contract' && (
+        <div className="bg-purple-50/80 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-900/40 px-4 py-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-purple-950 dark:text-purple-200 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
+            <span>
+              <strong>Edición Individual Aislada:</strong> Cualquier cambio en la redacción, títulos o fondo de hoja se guarda exclusivamente en este contrato sin alterar la plantilla original.
+            </span>
+          </div>
+          {document?.template && (
+            <span className="text-[11px] text-purple-700 dark:text-purple-300 font-semibold shrink-0">
+              Plantilla base: {document.template.title}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Background Picker Modal */}
       {isBgModalOpen && (

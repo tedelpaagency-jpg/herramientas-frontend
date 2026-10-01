@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   ShieldCheck, 
   Plus, 
@@ -30,6 +31,7 @@ import { LexvaultSignModal } from '@/components/LexvaultSignModal';
 import toast from 'react-hot-toast';
 
 export const LexvaultPage: React.FC = () => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'documents' | 'templates'>('documents');
   const [templates, setTemplates] = useState<LexvaultTemplate[]>([]);
   const [documents, setDocuments] = useState<LexvaultDocument[]>([]);
@@ -303,10 +305,22 @@ export const LexvaultPage: React.FC = () => {
                     return (
                       <tr key={doc.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">
-                          {doc.document_number || `#LEX-${doc.id}`}
+                          <Link 
+                            href={`/lexvault/contracts/${doc.id}`}
+                            className="hover:underline hover:text-blue-700 dark:hover:text-blue-300"
+                            title="Editar contrato individual"
+                          >
+                            {doc.document_number || `#LEX-${doc.id}`}
+                          </Link>
                         </td>
                         <td className="py-3.5 px-4">
-                          <h4 className="font-bold text-slate-900 dark:text-white text-sm">{doc.title}</h4>
+                          <Link 
+                            href={`/lexvault/contracts/${doc.id}`}
+                            className="font-bold text-slate-900 dark:text-white text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors block"
+                            title="Editar contrato individual"
+                          >
+                            {doc.title}
+                          </Link>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[10px] text-slate-400 uppercase font-semibold">
                               {doc.template?.category || 'Contrato Legal'}
@@ -353,13 +367,13 @@ export const LexvaultPage: React.FC = () => {
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5">
-                            {/* View / Edit Contract in Full Document Sheet View */}
+                            {/* Edit Contract in Full Document Sheet View */}
                             <Link
                               href={`/lexvault/contracts/${doc.id}`}
-                              className="p-1.5 rounded-lg text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors inline-block"
-                              title="Abrir en vista completa de documento"
+                              className="p-1.5 rounded-lg text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 transition-colors inline-block"
+                              title="Editar contrato individual en vista completa de documento"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Edit3 className="w-4 h-4" />
                             </Link>
 
                             {/* PDF Download Direct Button */}
@@ -523,7 +537,8 @@ export const LexvaultPage: React.FC = () => {
         onSuccess={(doc) => {
           fetchData();
           if (doc?.id) {
-            lexvaultService.downloadDocumentPdf(doc.id, doc.document_number);
+            toast.success('Contrato emitido exitosamente');
+            router.push(`/lexvault/contracts/${doc.id}`);
           }
         }}
         template={selectedTemplateForGen}
