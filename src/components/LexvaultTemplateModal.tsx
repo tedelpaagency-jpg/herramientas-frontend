@@ -1,403 +1,306 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Plus, Code, HelpCircle } from 'lucide-react';
+import { 
+  X, 
+  FileText, 
+  ArrowRight, 
+  UploadCloud, 
+  Image as ImageIcon, 
+  Check, 
+  Loader2, 
+  Sparkles,
+  Layers,
+  FileCheck
+} from 'lucide-react';
 import { LexvaultTemplate } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import toast from 'react-hot-toast';
-
-import WordDocumentPaper, { PAGE_BREAK_MARKER } from './WordDocumentPaper';
 
 interface LexvaultTemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  templateToEdit?: LexvaultTemplate | null;
 }
 
 export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  templateToEdit,
 }) => {
+  const router = useRouter();
+
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Contrato');
-  const [htmlContent, setHtmlContent] = useState('');
+  const [description, setDescription] = useState('');
+  const [bgMode, setBgMode] = useState<'none' | 'upload' | 'url'>('none');
+  const [bgUrl, setBgUrl] = useState('');
+  const [isUploadingBg, setIsUploadingBg] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
-
-  // Custom Fields & Tokens State
-  const [customFields, setCustomFields] = useState<Record<string, string>>({});
-  const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
-  const [newFieldName, setNewFieldName] = useState('');
-  const [newFieldLabel, setNewFieldLabel] = useState('');
-
-  const defaultTokens = [
-    'CIUDAD',
-    'FECHA',
-    'CLIENTE_NOMBRE',
-    'CLIENTE_CEDULA',
-    'CLIENTE_CORREO',
-    'CLIENTE_TELEFONO',
-    'DIRECCION_INMUEBLE',
-    'MONTO',
-    'FIRMA_CLIENTE',
-    'FIRMA_USUARIO',
-  ];
-
-  useEffect(() => {
-    if (templateToEdit) {
-      setTitle(templateToEdit.title || '');
-      setCategory(templateToEdit.category || 'Contrato');
-      setHtmlContent(templateToEdit.html_content || templateToEdit.template_body || '');
-      setCustomFields(templateToEdit.fields_json || {});
-    } else {
-      setTitle('');
-      setCategory('Contrato');
-      setCustomFields({});
-      setHtmlContent(
-        `<h2>CONTRATO DE ARRENDAMIENTO / PROMESA DE COMPRAVENTA</h2>\n<p>En la ciudad de {{CIUDAD}}, el {{FECHA}}, comparecen por una parte {{CLIENTE_NOMBRE}} con Cédula/RUC N° {{CLIENTE_CEDULA}}, en calidad de ARRENDATARIO, y por otra parte la Inmobiliaria.</p>\n<p><strong>PRIMERA: OBJETO.</strong> El propietario entrega en alquiler el inmueble ubicado en {{DIRECCION_INMUEBLE}} por el valor de USD $ {{MONTO}}.</p>\n<br/><br/>\n<table style="width:100%;"><tr><td style="text-align:center;">{{FIRMA_CLIENTE}}<br/>_____________________<br/>Firma Cliente</td><td style="text-align:center;">{{FIRMA_USUARIO}}<br/>_____________________<br/>Firma Asesor</td></tr></table>`
-      );
-    }
-    setActiveTab('editor');
-  }, [isOpen, templateToEdit]);
 
   if (!isOpen) return null;
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor seleccione un archivo de imagen (PNG, JPG, WebP)');
+      return;
+    }
+
+    setIsUploadingBg(true);
+    const toastId = toast.loading('Subiendo fondo de hoja...');
+    try {
+      const res = await lexvaultService.uploadBackground(file);
+      setBgUrl(res.url);
+      setBgMode('upload');
+      toast.success('Fondo de hoja cargado exitosamente', { id: toastId });
+    } catch (err) {
+      console.error('Error subiendo fondo:', err);
+      toast.error('Error al subir la imagen de fondo', { id: toastId });
+    } finally {
+      setIsUploadingBg(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    const toastId = toast.loading(templateToEdit ? 'Actualizando plantilla...' : 'Guardando plantilla legal...');
 
-    // Extract all tokens from HTML
-    const regex = /(?:\{\{|\[)([A-Z0-9_]+)(?:\}\}|\])/g;
-    let match;
-    const extractedTokens: string[] = [];
-    while ((match = regex.exec(htmlContent)) !== null) {
-      if (!extractedTokens.includes(match[1])) {
-        extractedTokens.push(match[1]);
-      }
+    if (!title.trim()) {
+      toast.error('Por favor ingrese un título para la plantilla');
+      return;
     }
-    Object.keys(customFields).forEach((k) => {
-      if (!extractedTokens.includes(k)) extractedTokens.push(k);
-    });
+
+    setIsSubmitting(true);
+    const toastId = toast.loading('Creando plantilla legal...');
 
     try {
-      const payload = {
-        title,
-        category,
-        html_content: htmlContent,
-        tokens_json: extractedTokens,
-        fields_json: customFields,
-      };
+      const finalBg = bgMode === 'none' ? null : (bgUrl.trim() || null);
 
-      if (templateToEdit) {
-        await lexvaultService.updateTemplate(templateToEdit.id, payload);
-        toast.success('Plantilla legal actualizada', { id: toastId });
-      } else {
-        await lexvaultService.createTemplate({
-          ...payload,
-          is_active: true,
-        });
-        toast.success('Plantilla legal creada exitosamente', { id: toastId });
-      }
+      const created = await lexvaultService.createTemplate({
+        title: title.trim(),
+        category: category.trim(),
+        description: description.trim() || undefined,
+        background_image: finalBg || undefined,
+        is_active: true,
+      });
+
+      toast.success('Plantilla creada. Abriendo editor de documento completo...', { id: toastId });
       onSuccess();
       onClose();
-    } catch (err) {
-      console.error('Error saving template:', err);
-      toast.error('Error al guardar la plantilla legal', { id: toastId });
+
+      // Redirigir inmediatamente a la vista completa de redacción del documento
+      router.push(`/lexvault/templates/${created.id}`);
+    } catch (err: any) {
+      console.error('Error creating template:', err);
+      const msg = err.response?.data?.message || 'Error al crear la plantilla legal';
+      toast.error(msg, { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const insertToken = (tokenName: string) => {
-    const formatted = tokenName.toUpperCase().trim().replace(/[^A-Z0-9_]/g, '_');
-    setHtmlContent((prev) => prev + ` {{${formatted}}}`);
-  };
-
-  const handleAddCustomField = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFieldName.trim()) return;
-
-    const formattedKey = newFieldName.toUpperCase().trim().replace(/[^A-Z0-9_]/g, '_');
-    const label = newFieldLabel.trim() || formattedKey.replace(/_/g, ' ');
-
-    setCustomFields((prev) => ({
-      ...prev,
-      [formattedKey]: label,
-    }));
-
-    // Insert into textarea
-    insertToken(formattedKey);
-
-    toast.success(`Campo {{${formattedKey}}} agregado como shortcut e insertado.`);
-    setNewFieldName('');
-    setNewFieldLabel('');
-    setIsAddFieldModalOpen(false);
-  };
-
-  // Combine default + custom tokens for shortcuts
-  const allShortcutTokens = Array.from(new Set([...defaultTokens, ...Object.keys(customFields)]));
-
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm"
-        />
-
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 overflow-hidden my-auto flex flex-col max-h-[90vh]"
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col"
         >
-          <div className="bg-slate-900 text-white px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 flex-shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shrink-0">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs">
                 <FileText className="w-5 h-5" />
               </div>
-              <div className="min-w-0">
-                <h3 className="font-extrabold text-sm text-white truncate">
-                  {templateToEdit ? 'Editar Plantilla Legal' : 'Nueva Plantilla Legal LexVault'}
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  Nueva Plantilla Legal
                 </h3>
-                <p className="text-[11px] text-slate-400">{"Configure los marcadores dinámicos tipo {{NOMBRE_TOKEN}}"}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Crea la base de la plantilla y edítala en vista completa.
+                </p>
               </div>
             </div>
-
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('editor')}
-                  className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition-colors ${
-                    activeTab === 'editor' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Editor
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('preview')}
-                  className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition-colors ${
-                    activeTab === 'preview' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Vista Previa Carta
-                </button>
-              </div>
-
-              <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Título de la Plantilla</label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
-                  placeholder="Ej. Promesa de Compraventa Inmobiliaria"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Categoría</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
-                >
-                  <option value="Contrato">Contrato</option>
-                  <option value="Promesa">Promesa de Compraventa</option>
-                  <option value="Arrendamiento">Arrendamiento</option>
-                  <option value="Servicios">Prestación de Servicios</option>
-                  <option value="Poder">Poder Legal</option>
-                  <option value="Otro">Otro Documento</option>
-                </select>
-              </div>
+          {/* Form Body */}
+          <form onSubmit={handleSubmit} className="p-6 space-y-4.5">
+            {/* Title */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                Título del Documento / Contrato <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ej. Contrato de Arrendamiento Comercial"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600"
+              />
             </div>
 
-            {activeTab === 'editor' ? (
-              <>
-                {/* Shortcuts Toolbar Bar with Add Custom Variable Button */}
-                <div className="bg-blue-50/80 p-3.5 rounded-2xl border border-blue-100 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-extrabold text-blue-900 flex items-center gap-1.5 uppercase tracking-wider">
-                      <Code className="w-4 h-4 text-blue-600" />
-                      <span>Shortcuts / Variables de Sustitución:</span>
-                    </p>
+            {/* Category */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                Categoría Legal
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 cursor-pointer"
+              >
+                <option value="Contrato">Contrato General</option>
+                <option value="Convenio">Convenio de Cooperación</option>
+                <option value="Acuerdo de Confidencialidad (NDA)">Acuerdo de Confidencialidad (NDA)</option>
+                <option value="Declaración Jurada">Declaración Jurada</option>
+                <option value="Prestación de Servicios">Prestación de Servicios</option>
+                <option value="Poder Legal">Poder Especial / General</option>
+                <option value="Pagaré">Pagaré a la Orden</option>
+                <option value="Recibo / Finiquito">Recibo / Finiquito</option>
+                <option value="Otro">Otro Documento</option>
+              </select>
+            </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsAddFieldModalOpen(true)}
-                      className="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-2xs transition-colors flex items-center gap-1"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>+ Agregar Campo Personalizado</span>
-                    </button>
-                  </div>
+            {/* Description */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                Descripción / Uso Interno <span className="text-slate-400 font-normal lowercase">(opcional)</span>
+              </label>
+              <textarea
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Breve indicación sobre el propósito de este modelo de contrato..."
+                className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 resize-none"
+              />
+            </div>
 
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setHtmlContent((prev) => prev + `\n${PAGE_BREAK_MARKER}\n`)}
-                      className="px-2.5 py-1 rounded-xl bg-amber-500 text-white font-extrabold text-[11px] hover:bg-amber-600 transition-all shadow-2xs flex items-center gap-1"
-                      title="Insertar nueva hoja (Salto de Página)"
-                    >
-                      <span>+ Salto de Hoja (Nueva Página)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => insertToken('FIRMA')}
-                      className="px-2.5 py-1 rounded-xl bg-purple-600 text-white font-extrabold text-[11px] hover:bg-purple-700 transition-all shadow-2xs flex items-center gap-1"
-                      title="Insertar ubicación de Firma Digital [FIRMA]"
-                    >
-                      <span>✍️ + [FIRMA]</span>
-                    </button>
-
-                    {allShortcutTokens.map((tok) => (
-                      <button
-                        key={tok}
-                        type="button"
-                        onClick={() => insertToken(tok)}
-                        className="px-2.5 py-1 rounded-xl bg-white border border-blue-200 text-[11px] font-extrabold text-blue-700 hover:bg-blue-600 hover:text-white transition-all shadow-2xs"
-                        title={customFields[tok] || `Insertar {{${tok}}}`}
-                      >
-                        {`+ {{${tok}}}`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                    Cuerpo del Documento Legal (HTML / Texto)
-                  </label>
-                  <textarea
-                    required
-                    rows={12}
-                    value={htmlContent}
-                    onChange={(e) => setHtmlContent(e.target.value)}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono text-slate-800 leading-relaxed focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
-                  />
-                </div>
-              </>
-            ) : (
-              /* Word Letter Paper Preview */
-              <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
-                <WordDocumentPaper
-                  htmlContent={htmlContent || '<p className="text-slate-400 italic">Sin contenido aún</p>'}
-                  onContentChange={setHtmlContent}
-                  title={title || 'Plantilla de Contrato'}
-                  documentNumber={templateToEdit ? `PLANTILLA #${templateToEdit.id}` : 'NUEVA PLANTILLA'}
-                  watermarkText="VISTA PREVIA CARTA"
-                  editablePages={true}
-                />
+            {/* Individual Letterhead / Fondo de Hoja Selection */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  Fondo de Hoja / Membrete Individual
+                </label>
+                <span className="text-[10px] text-slate-400 font-medium">Personalizable por plantilla</span>
               </div>
-            )}
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 flex-shrink-0">
-              <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* Option 1: No Background */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBgMode('none');
+                    setBgUrl('');
+                  }}
+                  className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
+                    bgMode === 'none'
+                      ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-1 ring-blue-600/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  <FileCheck className="w-4 h-4 shrink-0 mt-0.5 text-blue-600" />
+                  <div>
+                    <span className="block text-xs font-bold">Sin Fondo (Blanco)</span>
+                    <span className="block text-[10px] text-slate-400 leading-tight mt-0.5">Hoja limpia estándar</span>
+                  </div>
+                </button>
+
+                {/* Option 2: Upload Background */}
+                <label
+                  className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all cursor-pointer ${
+                    bgMode === 'upload' && bgUrl
+                      ? 'border-emerald-600 bg-emerald-50/60 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-600/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  <UploadCloud className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+                  <div className="overflow-hidden">
+                    <span className="block text-xs font-bold truncate">
+                      {isUploadingBg ? 'Subiendo...' : bgUrl ? 'Membrete Cargado' : 'Subir Membrete'}
+                    </span>
+                    <span className="block text-[10px] text-slate-400 leading-tight mt-0.5 truncate">
+                      {bgUrl ? 'Fondo asignado' : 'PNG, JPG hoja Carta'}
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={isUploadingBg}
+                  />
+                </label>
+              </div>
+
+              {/* Show uploaded image preview or URL input */}
+              {bgUrl && bgMode !== 'none' && (
+                <div className="mt-2.5 p-2 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 truncate">
+                    <ImageIcon className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-mono text-[11px] text-emerald-800 dark:text-emerald-300 truncate">
+                      {bgUrl}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBgUrl('');
+                      setBgMode('none');
+                    }}
+                    className="text-rose-600 hover:text-rose-700 font-bold text-[11px] shrink-0"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="pt-2 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
                 Cancelar
               </button>
+
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all"
+                disabled={isSubmitting || isUploadingBg}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {isSubmitting ? 'Guardando...' : templateToEdit ? 'Actualizar Plantilla' : 'Crear Plantilla'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Creando plantilla...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Crear y Abrir en Editor Completo</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </div>
           </form>
         </motion.div>
       </div>
-
-      {/* Modal para Agregar Campo / Variable Personalizada */}
-      {isAddFieldModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div
-            onClick={() => setIsAddFieldModalOpen(false)}
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs"
-          />
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 relative z-10 max-w-md w-full space-y-4"
-          >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                <Code className="w-4 h-4 text-blue-600" />
-                <span>Agregar Campo Personalizado</span>
-              </h4>
-              <button
-                type="button"
-                onClick={() => setIsAddFieldModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddCustomField} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Nombre de la Variable (Token)</label>
-                <input
-                  type="text"
-                  required
-                  value={newFieldName}
-                  onChange={(e) => setNewFieldName(e.target.value)}
-                  placeholder="Ej. NUMERO_MOTOR, VALOR_CANON, PLACA"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">Se convertirá automáticamente a MAYÚSCULAS sin espacios.</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Etiqueta / Descripción para el Usuario</label>
-                <input
-                  type="text"
-                  value={newFieldLabel}
-                  onChange={(e) => setNewFieldLabel(e.target.value)}
-                  placeholder="Ej. Número de motor del vehículo"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsAddFieldModalOpen(false)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all"
-                >
-                  Crear Shortcut
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
     </AnimatePresence>
   );
 };

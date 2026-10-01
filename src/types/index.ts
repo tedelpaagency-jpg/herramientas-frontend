@@ -544,6 +544,9 @@ export interface W8Form {
 export interface LexvaultTemplate {
   id: number;
   agency_id?: number;
+  white_label_id?: number;
+  agency?: any;
+  whiteLabel?: any;
   title: string;
   category?: string;
   description?: string;
@@ -551,6 +554,8 @@ export interface LexvaultTemplate {
   template_body?: string;
   tokens_json?: string[];
   fields_json?: Record<string, string>;
+  background_image?: string;
+  bg_image_url?: string;
   is_active?: boolean;
   status?: number;
   created_at?: string;
@@ -560,6 +565,10 @@ export interface LexvaultTemplate {
 export interface LexvaultDocument {
   id: number;
   agency_id?: number;
+  white_label_id?: number;
+  user_id?: number;
+  agency?: any;
+  whiteLabel?: any;
   template_id?: number;
   template?: LexvaultTemplate;
   client_id?: number;
@@ -574,6 +583,8 @@ export interface LexvaultDocument {
   replacements?: Record<string, any>;
   pdf_path?: string;
   pdf_url?: string;
+  background_image?: string;
+  bg_image_url?: string;
   p12_certificate_path?: string | null;
   p12_info_json?: Record<string, any> | null;
   signature_type?: 'canvas' | 'image' | 'p12' | string;

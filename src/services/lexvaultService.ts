@@ -8,6 +8,11 @@ export const lexvaultService = {
     return Array.isArray(response.data) ? response.data : (response.data?.data || []);
   },
 
+  getTemplate: async (id: number | string): Promise<LexvaultTemplate> => {
+    const response = await apiClient.get(`/v1/lexvault/templates/${id}`);
+    return response.data?.data || response.data;
+  },
+
   createTemplate: async (data: Partial<LexvaultTemplate>): Promise<LexvaultTemplate> => {
     const payload = {
       ...data,
@@ -30,6 +35,15 @@ export const lexvaultService = {
     await apiClient.delete(`/v1/lexvault/templates/${id}`);
   },
 
+  uploadBackground: async (file: File): Promise<{ url: string; filename: string }> => {
+    const formData = new FormData();
+    formData.append('background', file);
+    const response = await apiClient.post('/v1/lexvault/upload-background', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
   // --- DOCUMENTS / CONTRACTS ---
   getDocuments: async (params?: Record<string, any>): Promise<LexvaultDocument[]> => {
     const response = await apiClient.get('/v1/lexvault/documents', { params });
@@ -50,6 +64,8 @@ export const lexvaultService = {
     template_id: number;
     client_id?: number | null;
     title?: string;
+    background_image?: string;
+    agency_id?: number;
     replacements: Record<string, string>;
   }): Promise<LexvaultDocument> => {
     const response = await apiClient.post('/v1/lexvault/generate-document', data);

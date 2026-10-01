@@ -214,6 +214,36 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     description: 'Gestión de agencias registradas y suscripciones',
     module: 'SuperAdmin',
   },
+  'landings.view': {
+    label: 'Ver Landing Pages',
+    description: 'Acceso a consultar y listar páginas de aterrizaje de la agencia',
+    module: 'Landing Pages',
+  },
+  'landings.create': {
+    label: 'Crear Landing Pages',
+    description: 'Permite diseñar y publicar nuevas landing pages para la agencia',
+    module: 'Landing Pages',
+  },
+  'landings.edit': {
+    label: 'Editar Landing Pages',
+    description: 'Permite modificar formularios, diseño y configuración de landings',
+    module: 'Landing Pages',
+  },
+  'landings.delete': {
+    label: 'Eliminar Landing Pages',
+    description: 'Permite dar de baja o eliminar landing pages existentes',
+    module: 'Landing Pages',
+  },
+  view_landings: {
+    label: 'Ver Landing Pages',
+    description: 'Acceso a consultar y listar páginas de aterrizaje de la agencia',
+    module: 'Landing Pages',
+  },
+  manage_landings: {
+    label: 'Administrar Landing Pages',
+    description: 'Acceso completo para crear, editar y eliminar páginas de aterrizaje',
+    module: 'Landing Pages',
+  },
 };
 
 const ACTION_MAP: Record<string, { verb: string; desc: string }> = {
@@ -251,6 +281,8 @@ const DOMAIN_MAP: Record<string, string> = {
   user: 'Usuarios y Equipo',
   tasks: 'Tareas y Secuencias',
   task: 'Tareas y Secuencias',
+  landings: 'Landing Pages',
+  landing: 'Landing Pages',
 };
 
 export function getPermissionLabel(key: string): string {

@@ -8,6 +8,7 @@ import {
   Upload, FileText, Send, Eye, RefreshCw, Check, ArrowRight, Lock, 
   HelpCircle, ChevronDown, ChevronUp, User, Globe
 } from 'lucide-react';
+import ConsularFormRenderer from '@/components/visas/forms/ConsularFormRenderer';
 import toast from 'react-hot-toast';
 
 export const PublicClientVisaPortalPage: React.FC = () => {
@@ -267,83 +268,30 @@ export const PublicClientVisaPortalPage: React.FC = () => {
           </div>
         )}
 
-        {/* SECCIÓN 1: FORMULARIO DINÁMICO */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/60">
+        {/* SECCIÓN 1: FORMULARIO CONSULAR OFICIAL COMPLETO (EXACTAMENTE IGUAL A VISAS MINORISTAS) */}
+        <div className="space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <h3 className="font-bold text-slate-900 text-base">Formulario Consular Oficial</h3>
-              <p className="text-xs text-slate-500">Ingrese la información requerida por la autoridad migratoria.</p>
+              <p className="text-xs text-slate-500">
+                Complete la información oficial requerida por la autoridad migratoria ({dossier?.country_destination || process?.name || 'Destino'}). Los datos se guardan automáticamente.
+              </p>
             </div>
+            {lastSavedTime && (
+              <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-full flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> Guardado a las {lastSavedTime}
+              </span>
+            )}
           </div>
 
-          <div className="divide-y divide-slate-100">
-            {sections.map((section: any, idx: number) => {
-              const isOpen = activeSectionId === section.id;
-              return (
-                <div key={section.id}>
-                  <button
-                    type="button"
-                    onClick={() => setActiveSectionId(isOpen ? '' : section.id)}
-                    className="w-full px-5 py-4 flex justify-between items-center text-left hover:bg-slate-50 transition-colors"
-                  >
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-sky-100 text-sky-700 text-xs font-black flex items-center justify-center">
-                          {idx + 1}
-                        </span>
-                        {section.title}
-                      </h4>
-                      {section.description && (
-                        <p className="text-xs text-slate-400 ml-8">{section.description}</p>
-                      )}
-                    </div>
-                    {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                  </button>
-
-                  {isOpen && (
-                    <div className="p-5 pt-1 space-y-4 bg-slate-50/40">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {section.fields?.map((field: any) => (
-                          <div key={field.name} className="space-y-1">
-                            <label className="block text-xs font-bold text-slate-700">
-                              {field.label} {field.required && <span className="text-rose-500">*</span>}
-                            </label>
-
-                            {field.type === 'select' ? (
-                              <select
-                                value={formData[field.name] || ''}
-                                onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                              >
-                                <option value="">Seleccione una opción...</option>
-                                {field.options?.map((opt: string) => (
-                                  <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                              </select>
-                            ) : field.type === 'textarea' ? (
-                              <textarea
-                                rows={2}
-                                value={formData[field.name] || ''}
-                                onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                              />
-                            ) : (
-                              <input
-                                type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : field.type === 'email' ? 'email' : 'text'}
-                                value={formData[field.name] || ''}
-                                onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <ConsularFormRenderer
+            countryDestination={dossier?.country_destination}
+            visaType={process?.name?.includes('Schengen') || process?.name?.includes('Europa') ? 'SCHENGEN' : process?.name?.includes('Canad') ? 'CANADA' : 'USA'}
+            processSlug={process?.slug}
+            formData={formData}
+            onFieldChange={handleInputChange}
+            applicantName={portalData?.client?.name}
+          />
         </div>
 
         {/* SECCIÓN 2: CHECKLIST DE DOCUMENTOS */}

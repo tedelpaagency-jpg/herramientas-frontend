@@ -11,7 +11,7 @@ import {
   RefreshCw, CheckCircle2, AlertCircle, Sparkles, Building2, 
   Plane, Users, ShoppingCart, Trophy, ShieldCheck, Mail, Zap, 
   Store, GraduationCap, Palette, LayoutGrid, ToggleLeft, ToggleRight,
-  UserCheck, Lock
+  UserCheck, Lock, Globe
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -122,6 +122,14 @@ const SYSTEM_MODULES: ModuleDefinition[] = [
     description: 'Permite a la agencia subir su propio logo, favicon y paleta de colores personalizada.',
     icon: Palette,
     permissions: ['custom_agency_branding'],
+  },
+  {
+    id: 'landings',
+    name: 'Módulo Landing Pages',
+    category: 'MARKETING',
+    description: 'Generador de páginas de aterrizaje públicas, captación de leads y eventos de conversión.',
+    icon: Globe,
+    permissions: ['landings.view', 'landings.create', 'landings.edit', 'landings.delete'],
   },
 ];
 

@@ -295,7 +295,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: 'LexVault (Contratos)', path: '/lexvault', icon: FileText, permission: ['view_lexvault', 'manage_lexvault', 'view_contracts', 'contracts.view'] },
         { label: 'Hunter Stores', path: '/hunter', icon: Store, permission: ['view_hunter'] },
-        { label: 'Landings', path: '/landings', icon: Globe, permission: ['web', 'view_landings'] },
+        { label: 'Landings', path: '/landings', icon: Globe, permission: ['landings.view', 'view_landings', 'landings', 'landings.create', 'manage_landings'] },
         { label: 'Marketing & Campañas', path: '/marketing', icon: Zap, permission: ['email_marketing', 'view_email_marketing', 'campaigns.view'] },
         { label: 'Automatizaciones', path: '/automations', icon: Wrench, permission: ['automations', 'view_automations'] },
       ],

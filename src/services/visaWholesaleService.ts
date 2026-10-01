@@ -131,6 +131,7 @@ export interface VisaDossier {
   token_expires_at?: string;
   terms_accepted_at?: string;
   deadline?: string;
+  country_destination?: string;
   form_data?: Record<string, any>;
   internal_notes?: string;
   deletion_request_status?: string;

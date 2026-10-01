@@ -111,7 +111,7 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
   useEffect(() => {
     setLocalHtml(htmlContent);
 
-    if (backgroundImageUrl) {
+    if (backgroundImageUrl !== undefined) {
       setStoredBgImage(backgroundImageUrl);
       return;
     }
@@ -145,7 +145,10 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
   // Update HTML content and ensure background image attribute is NEVER lost
   const updateHtml = (newBodyContent: string) => {
     let finalHtml = newBodyContent;
-    if (storedBgImage && !finalHtml.includes('data-bg-image')) {
+    // Strip existing data-bg-image tags first
+    finalHtml = finalHtml.replace(/<div[^>]*data-bg-image=["'][^"']*["'][^>]*>\s*<\/div>\n?/gi, '');
+
+    if (storedBgImage && storedBgImage !== 'none' && storedBgImage.trim() !== '') {
       finalHtml = `<div data-bg-image="${storedBgImage}"></div>\n` + finalHtml;
     }
     setLocalHtml(finalHtml);
@@ -167,18 +170,20 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
 
   // Extracted background image URL prioritizing stored persistent state
   const extractedBg = useMemo(() => {
-    if (backgroundImageUrl) return backgroundImageUrl;
-    if (storedBgImage) return storedBgImage;
+    if (backgroundImageUrl === 'none' || backgroundImageUrl === '') return null;
+    if (backgroundImageUrl) return normalizeFileUrl(backgroundImageUrl);
+    if (storedBgImage === 'none' || storedBgImage === '') return null;
+    if (storedBgImage) return normalizeFileUrl(storedBgImage);
     if (!localHtml) return null;
 
     const dataMatch = localHtml.match(/data-bg-image=["']([^"']+)["']/i);
-    if (dataMatch) return dataMatch[1];
+    if (dataMatch && dataMatch[1] !== 'none' && dataMatch[1] !== '') return normalizeFileUrl(dataMatch[1]);
 
     const urlMatch = localHtml.match(/(?:background-image|background)\s*:\s*url\((?:&quot;|&#34;|&#39;|["'])?([^"'\)\s&]+)(?:&quot;|&#34;|&#39;|["'])?\)/i);
-    if (urlMatch) return urlMatch[1];
+    if (urlMatch && urlMatch[1] !== 'none' && urlMatch[1] !== '') return normalizeFileUrl(urlMatch[1]);
 
     const bgAttrMatch = localHtml.match(/\bbackground=["']([^"']+)["']/i);
-    if (bgAttrMatch) return bgAttrMatch[1];
+    if (bgAttrMatch && bgAttrMatch[1] !== 'none' && bgAttrMatch[1] !== '') return normalizeFileUrl(bgAttrMatch[1]);
 
     return null;
   }, [localHtml, backgroundImageUrl, storedBgImage]);
@@ -977,7 +982,7 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
                   transform: `scale(${effectiveScale})`,
                   transformOrigin: 'top center',
                 }}
-                className="bg-white text-slate-900 shadow-2xl shadow-slate-900/25 border border-slate-300 w-[816px] min-w-[816px] max-w-[816px] h-[1056px] max-h-[1056px] p-16 relative font-serif text-sm leading-relaxed rounded-xs overflow-hidden flex flex-col justify-between select-none"
+                className="word-paper-sheet bg-white text-slate-900 shadow-2xl shadow-slate-900/25 border border-slate-300 w-[816px] min-w-[816px] max-w-[816px] h-[1056px] max-h-[1056px] p-16 relative font-serif text-sm leading-relaxed rounded-xs overflow-hidden flex flex-col justify-between select-none"
               >
                 {/* Persistent Background Image covering FULL page sheet for EVERY single page */}
                 {extractedBg && (
@@ -1022,7 +1027,7 @@ export const WordDocumentPaper: React.FC<WordDocumentPaperProps> = ({
                   suppressContentEditableWarning={true}
                   onKeyDown={(e) => handleKeyDown(e, actualPageIndex)}
                   onBlur={(e) => handlePageBlur(actualPageIndex, e.currentTarget as HTMLDivElement)}
-                  className={`relative z-10 word-document-body prose prose-slate max-w-none prose-headings:font-serif prose-headings:text-slate-900 prose-headings:text-center prose-headings:font-extrabold prose-p:text-justify prose-p:leading-relaxed prose-strong:text-slate-900 pt-4 outline-none flex-1 min-h-[800px] max-h-[880px] overflow-hidden ${
+                  className={`relative z-10 word-document-body pt-4 outline-none flex-1 min-h-[800px] max-h-[880px] overflow-y-auto custom-scrollbar ${
                     editablePages ? 'cursor-text select-text' : 'cursor-default select-text'
                   }`}
                   dangerouslySetInnerHTML={{ __html: pageHtml }}

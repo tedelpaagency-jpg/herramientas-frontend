@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, UserCheck, Sparkles, Eye, Download, FileCode } from 'lucide-react';
+import { X, FileText, UserCheck, Sparkles, Eye, Download, FileCode, Image as ImageIcon } from 'lucide-react';
 import { LexvaultTemplate, Client } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import clientService from '../services/clientService';
@@ -31,6 +31,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
   const [docTitle, setDocTitle] = useState('');
   const [tokens, setTokens] = useState<string[]>([]);
   const [replacements, setReplacements] = useState<Record<string, string>>({});
+  const [customBg, setCustomBg] = useState<string | null>(template?.background_image || null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewTab, setPreviewTab] = useState<'form' | 'preview'>('form');
 
@@ -46,6 +47,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
     if (template) {
       setActiveTemplate(template);
       setSelectedTemplateId(template.id);
+      setCustomBg(template.background_image || null);
     }
   }, [template]);
 
@@ -54,8 +56,11 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
     if (!activeTemplate) {
       setTokens([]);
       setReplacements({});
+      setCustomBg(null);
       return;
     }
+
+    setCustomBg(activeTemplate.background_image || null);
 
     if (!docTitle || docTitle.includes(activeTemplate.title)) {
       setDocTitle(`${activeTemplate.title} - ${new Date().toLocaleDateString()}`);
@@ -179,6 +184,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
         template_id: activeTemplate.id,
         client_id: selectedClientId ? parseInt(selectedClientId) : null,
         title: docTitle,
+        background_image: customBg === 'none' ? 'none' : (customBg || undefined),
         replacements,
       });
 
@@ -302,6 +308,68 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
                   </div>
                 </div>
 
+                {/* 2b. Selector de Fondo de Hoja Individual para el Contrato */}
+                <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-blue-600" />
+                      Fondo de Hoja / Membrete de este Contrato
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-medium">Individual por contrato</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCustomBg(activeTemplate?.background_image || null)}
+                      className={`p-2.5 rounded-xl border text-xs font-bold text-left transition-all ${
+                        customBg === (activeTemplate?.background_image || null) && customBg !== 'none'
+                          ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-1 ring-blue-600/30'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <span className="block truncate">De la Plantilla</span>
+                      <span className="block text-[10px] font-normal text-slate-400 truncate">
+                        {activeTemplate?.background_image ? 'Membrete original' : 'Sin fondo'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCustomBg('none')}
+                      className={`p-2.5 rounded-xl border text-xs font-bold text-left transition-all ${
+                        customBg === 'none'
+                          ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-1 ring-blue-600/30'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <span className="block">Sin Fondo</span>
+                      <span className="block text-[10px] font-normal text-slate-400">Hoja blanca limpia</span>
+                    </button>
+
+                    <label className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold text-left cursor-pointer transition-all flex flex-col justify-center">
+                      <span className="truncate">{customBg && customBg !== 'none' && customBg !== activeTemplate?.background_image ? 'Membrete Nuevo' : 'Subir Fondo'}</span>
+                      <span className="text-[10px] font-normal text-slate-400 truncate">PNG/JPG Carta</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const res = await lexvaultService.uploadBackground(file);
+                            setCustomBg(res.url);
+                            toast.success('Membrete asignado a este contrato');
+                          } catch {
+                            toast.error('Error al subir membrete');
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
                 {/* 3. Tokens Input Fields */}
                 <div>
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-3">Campos de la Plantilla Seleccionada</h4>
@@ -341,6 +409,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
                   title={docTitle || activeTemplate?.title || 'Contrato'}
                   documentNumber={`PROYECTO-${activeTemplate?.id || 'NEW'}`}
                   watermarkText="VISTA PREVIA"
+                  backgroundImageUrl={customBg === 'none' ? 'none' : (customBg || undefined)}
                 />
               </div>
             )}

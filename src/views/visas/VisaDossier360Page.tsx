@@ -13,6 +13,7 @@ import {
   Building2, Calendar, FileText, Send, Eye, RefreshCw, Upload, 
   Lock, MessageSquare, History, CheckSquare, Sparkles, X, ChevronRight
 } from 'lucide-react';
+import ConsularFormRenderer from '@/components/visas/forms/ConsularFormRenderer';
 import toast from 'react-hot-toast';
 
 export const VisaDossier360Page: React.FC = () => {
@@ -501,43 +502,28 @@ export const VisaDossier360Page: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 2: FORMULARIO */}
+        {/* TAB 2: FORMULARIO CONSULAR OFICIAL */}
         {activeTab === 'formulario' && (
-          <div className="space-y-6">
-            {dossier.processType?.form_schema?.sections?.map((section) => {
-              const formData = dossier.form_data || {};
-              return (
-                <div key={section.id} className="border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-3">
-                  <div className="border-b border-slate-100 dark:border-slate-800 pb-2">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">{section.title}</h4>
-                    {section.description && <p className="text-xs text-slate-400">{section.description}</p>}
-                  </div>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                  Formulario Consular Oficial ({dossier.country_destination || dossier.processType?.name || 'Visado'})
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Visualización completa de las casillas y respuestas oficiales registradas para el expediente.
+                </p>
+              </div>
+            </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {section.fields?.map((field) => {
-                      const val = formData[field.name];
-                      return (
-                        <div key={field.name} className="p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-lg">
-                          <div className="flex justify-between items-center text-[11px] text-slate-500 mb-1">
-                            <span className="font-medium">{field.label}</span>
-                            {field.required_for_review && (
-                              <span className="text-[10px] font-bold text-sky-600 bg-sky-100 dark:bg-sky-950/60 px-1.5 py-0.2 rounded">
-                                Requerido para Revisión
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                            {val !== undefined && val !== null && val !== '' 
-                              ? (Array.isArray(val) ? val.join(', ') : String(val)) 
-                              : <span className="text-slate-400 italic">No proporcionado</span>}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+            <ConsularFormRenderer
+              countryDestination={dossier.country_destination}
+              visaType={dossier.processType?.name?.includes('Schengen') || dossier.processType?.name?.includes('Europa') ? 'SCHENGEN' : dossier.processType?.name?.includes('Canad') ? 'CANADA' : 'USA'}
+              processSlug={dossier.processType?.slug}
+              formData={dossier.form_data || {}}
+              applicantName={dossier.client?.name}
+              readOnly={true}
+            />
           </div>
         )}
 
