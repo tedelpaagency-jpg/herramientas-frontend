@@ -607,6 +607,7 @@ export const VisasPage: React.FC = () => {
                       <option value="all">Todos los Tipos de Visa</option>
                       <option value="USA">Visa Americana (EEUU)</option>
                       <option value="CANADA">Visa Canadiense</option>
+                      <option value="UK">Visa Reino Unido</option>
                       <option value="SCHENGEN">Visa Schengen (Europa)</option>
                     </select>
                   </div>
@@ -672,7 +673,7 @@ export const VisasPage: React.FC = () => {
 
                               {/* Tipo de Visa */}
                               <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                                {v.visa_type === 'USA' ? 'Visa americana' : v.visa_type === 'CANADA' ? 'Visa canadiense' : v.visa_type}
+                                {v.visa_type === 'USA' ? 'Visa americana' : v.visa_type === 'CANADA' ? 'Visa canadiense' : v.visa_type === 'UK' ? 'Visa Reino Unido' : v.visa_type}
                               </td>
 
                               {/* Fecha */}
@@ -816,6 +817,7 @@ export const VisasPage: React.FC = () => {
                 <option value="all">Todos los Tipos de Visa</option>
                 <option value="USA">Visa Americana (EEUU)</option>
                 <option value="CANADA">Visa Canadiense</option>
+                <option value="UK">Visa Reino Unido</option>
                 <option value="SCHENGEN">Visa Schengen (Europa)</option>
               </select>
             </div>
@@ -880,7 +882,7 @@ export const VisasPage: React.FC = () => {
 
                         {/* Visa Type */}
                         <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                          {v.visa_type === 'USA' ? 'Visa americana' : v.visa_type === 'CANADA' ? 'Visa canadiense' : v.visa_type}
+                          {v.visa_type === 'USA' ? 'Visa americana' : v.visa_type === 'CANADA' ? 'Visa canadiense' : v.visa_type === 'UK' ? 'Visa Reino Unido' : v.visa_type}
                         </td>
 
                         {/* Formulario para Llenar */}

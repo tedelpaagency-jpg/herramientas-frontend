@@ -270,16 +270,23 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
                           <span>{dossier.processType?.name || 'Trámite'}</span>
                         </td>
                         <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                          <div className="inline-flex items-center gap-2">
-                            <div className="w-16 h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                              <div
-                                className="h-full bg-indigo-600 rounded-full"
-                                style={{ width: `${Math.min(100, Math.max(0, dossier.progress || 0))}%` }}
-                              />
+                          <div className="inline-flex flex-col items-center gap-1">
+                            <div className="inline-flex items-center gap-2">
+                              <div className="w-16 h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                <div
+                                  className="h-full bg-indigo-600 rounded-full"
+                                  style={{ width: `${Math.min(100, Math.max(0, dossier.progress || 0))}%` }}
+                                />
+                              </div>
+                              <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px]">
+                                {dossier.progress}%
+                              </span>
                             </div>
-                            <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-                              {dossier.progress}%
-                            </span>
+                            {(dossier.currentPhase || dossier.current_phase) && (
+                              <span className="text-[10px] text-slate-400 font-medium truncate max-w-[140px]" title={(dossier.currentPhase || dossier.current_phase)?.name}>
+                                Fase {(dossier.currentPhase || dossier.current_phase)?.order}: {(dossier.currentPhase || dossier.current_phase)?.name}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">

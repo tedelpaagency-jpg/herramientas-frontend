@@ -31,8 +31,9 @@ export const ConsularFormRenderer: React.FC<ConsularFormRendererProps> = ({
 
   const isSchengen = norm.includes('schengen') || norm.includes('europa') || norm.includes('europe');
   const isCanada = norm.includes('canad') || norm.includes('imm-5257') || norm.includes('imm5257');
-  const isUsa = !isSchengen && !isCanada;
-  const countryName = isUsa ? 'Estados Unidos' : isCanada ? 'Canadá' : 'Espacio Schengen (Europa)';
+  const isUk = norm.includes('reino unido') || norm.includes('uk') || norm.includes('united kingdom') || norm.includes('inglaterra');
+  const isUsa = !isSchengen && !isCanada && !isUk;
+  const countryName = isUsa ? 'Estados Unidos' : isCanada ? 'Canadá' : isUk ? 'Reino Unido' : 'Espacio Schengen (Europa)';
 
   if (isSchengen) {
     return (

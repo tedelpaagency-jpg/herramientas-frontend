@@ -70,7 +70,7 @@ export const VisaFormModal: React.FC<VisaFormModalProps> = ({
         description: formData.description?.trim() || null,
         visa_type: formData.visa_type,
         visa_ref_id: parsedRefId,
-        country_destination: formData.visa_type === 'USA' ? 'Estados Unidos' : formData.visa_type === 'CANADA' ? 'Canadá' : 'Europa',
+        country_destination: formData.visa_type === 'USA' ? 'Estados Unidos' : formData.visa_type === 'CANADA' ? 'Canadá' : formData.visa_type === 'UK' ? 'Reino Unido' : 'Europa',
         status: visa ? visa.status : '1',
         fields: {
           ...(visa?.fields || {}),
@@ -151,6 +151,7 @@ export const VisaFormModal: React.FC<VisaFormModalProps> = ({
             >
               <option value="USA">Visa Americana</option>
               <option value="CANADA">Visa Canadiense</option>
+              <option value="UK">Visa Reino Unido</option>
               <option value="SCHENGEN">Visa Schengen (Europa)</option>
             </select>
           </div>

@@ -424,10 +424,14 @@ export const AgencyVisasDashboardPage: React.FC = () => {
           </td>
         )}
 
-        <td className="py-3.5 px-4 min-w-[140px]">
+        <td className="py-3.5 px-4 min-w-[150px]">
           <div className="flex justify-between items-center text-xs mb-1">
             <span className="font-bold text-slate-700 dark:text-slate-300">{dossier.progress}%</span>
-            <span className="text-slate-400 truncate max-w-[90px]">{dossier.current_stage_key.replace('_', ' ')}</span>
+            <span className="text-slate-400 truncate max-w-[100px] text-[11px]" title={(dossier.currentPhase || dossier.current_phase)?.name || dossier.current_stage_key.replace('_', ' ')}>
+              {(dossier.currentPhase || dossier.current_phase)?.name
+                ? `Fase ${(dossier.currentPhase || dossier.current_phase)?.order}: ${(dossier.currentPhase || dossier.current_phase)?.name}`
+                : dossier.current_stage_key.replace('_', ' ')}
+            </span>
           </div>
           <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
             <div

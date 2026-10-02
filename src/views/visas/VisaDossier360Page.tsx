@@ -14,6 +14,7 @@ import {
   Lock, MessageSquare, History, CheckSquare, Sparkles, X, ChevronRight
 } from 'lucide-react';
 import ConsularFormRenderer from '@/components/visas/forms/ConsularFormRenderer';
+import VisaProcessTimeline from '@/components/visas/VisaProcessTimeline';
 import toast from 'react-hot-toast';
 
 export const VisaDossier360Page: React.FC = () => {
@@ -306,9 +307,11 @@ export const VisaDossier360Page: React.FC = () => {
               <span className="font-bold text-slate-800 dark:text-slate-200">
                 Progreso: {dossier.progress}%
               </span>
-              <span className="text-slate-400">• Etapa Actual:</span>
+              <span className="text-slate-400">• Fase / Etapa:</span>
               <strong className="text-sky-600 dark:text-sky-400 font-semibold capitalize">
-                {dossier.current_stage_key.replace('_', ' ')}
+                {(dossier.currentPhase || dossier.current_phase)?.name 
+                  ? `Fase ${(dossier.currentPhase || dossier.current_phase)?.order}: ${(dossier.currentPhase || dossier.current_phase)?.name}`
+                  : dossier.current_stage_key.replace('_', ' ')}
               </strong>
             </div>
 
@@ -488,6 +491,19 @@ export const VisaDossier360Page: React.FC = () => {
               </div>
             </div>
 
+            {/* Sistema de Fases / Timeline del Trámite */}
+            <div className="pt-2">
+              <VisaProcessTimeline
+                dossierId={dossier.id}
+                dossierCode={dossier.code}
+                currentPhaseId={dossier.current_phase_id}
+                phases={dossier.phases || dossier.processType?.phases || []}
+                histories={dossier.phaseHistories || dossier.phase_histories || []}
+                isOperator={isMayorista}
+                onPhaseAdvanced={fetchDossier}
+              />
+            </div>
+
             {/* Notas Internas */}
             {isMayorista && (
               <div className="p-4 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl space-y-2">
@@ -518,7 +534,7 @@ export const VisaDossier360Page: React.FC = () => {
 
             <ConsularFormRenderer
               countryDestination={dossier.country_destination}
-              visaType={dossier.processType?.name?.includes('Schengen') || dossier.processType?.name?.includes('Europa') ? 'SCHENGEN' : dossier.processType?.name?.includes('Canad') ? 'CANADA' : 'USA'}
+              visaType={dossier.processType?.name?.includes('Schengen') || dossier.processType?.name?.includes('Europa') ? 'SCHENGEN' : dossier.processType?.name?.includes('Canad') ? 'CANADA' : (dossier.processType?.name?.includes('Reino Unido') || dossier.processType?.name?.includes('UK')) ? 'UK' : 'USA'}
               processSlug={dossier.processType?.slug}
               formData={dossier.form_data || {}}
               applicantName={dossier.client?.name}

@@ -21,7 +21,7 @@ interface AuthContextType {
   effectivePermissions: string[];
   dashboardType: 'super_admin' | 'white_label_admin' | 'agency_admin' | 'agent';
   hasPermission: (permission?: string | string[]) => boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, remember?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateUserSession: (userData: Partial<User>) => void;
@@ -166,10 +166,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, remember?: boolean) => {
     setIsLoading(true);
     try {
-      const res = await authService.login(email, password);
+      const res = await authService.login(email, password, remember);
       setToken(res.token);
       setUser(res.user);
       localStorage.setItem('santun_auth_token', res.token);

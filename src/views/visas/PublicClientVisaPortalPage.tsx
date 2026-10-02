@@ -9,6 +9,7 @@ import {
   HelpCircle, ChevronDown, ChevronUp, User, Globe
 } from 'lucide-react';
 import ConsularFormRenderer from '@/components/visas/forms/ConsularFormRenderer';
+import VisaProcessTimeline from '@/components/visas/VisaProcessTimeline';
 import toast from 'react-hot-toast';
 
 export const PublicClientVisaPortalPage: React.FC = () => {
@@ -268,6 +269,19 @@ export const PublicClientVisaPortalPage: React.FC = () => {
           </div>
         )}
 
+        {/* LÍNEA DE FASES DEL PROCESO MIGRATORIO (SOLO LECTURA) */}
+        {portalData?.phases && portalData.phases.length > 0 && (
+          <VisaProcessTimeline
+            dossierId={dossier?.id}
+            dossierCode={dossier?.code}
+            currentPhaseId={dossier?.current_phase_id}
+            phases={portalData.phases}
+            histories={portalData.phase_histories || []}
+            isOperator={false}
+            readOnly={true}
+          />
+        )}
+
         {/* SECCIÓN 1: FORMULARIO CONSULAR OFICIAL COMPLETO (EXACTAMENTE IGUAL A VISAS MINORISTAS) */}
         <div className="space-y-4">
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -286,7 +300,7 @@ export const PublicClientVisaPortalPage: React.FC = () => {
 
           <ConsularFormRenderer
             countryDestination={dossier?.country_destination}
-            visaType={process?.name?.includes('Schengen') || process?.name?.includes('Europa') ? 'SCHENGEN' : process?.name?.includes('Canad') ? 'CANADA' : 'USA'}
+            visaType={process?.name?.includes('Schengen') || process?.name?.includes('Europa') ? 'SCHENGEN' : process?.name?.includes('Canad') ? 'CANADA' : (process?.name?.includes('Reino Unido') || process?.name?.includes('UK')) ? 'UK' : 'USA'}
             processSlug={process?.slug}
             formData={formData}
             onFieldChange={handleInputChange}

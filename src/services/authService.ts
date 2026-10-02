@@ -8,8 +8,12 @@ export interface LoginResponse {
 }
 
 export const authService = {
-  login: async (email: string, password: string): Promise<LoginResponse> => {
-    const response = await apiClient.post('/v1/login', { email, password });
+  login: async (email: string, password: string, remember?: boolean): Promise<LoginResponse> => {
+    const payload: { email: string; password: string; remember?: boolean } = { email, password };
+    if (typeof remember === 'boolean') {
+      payload.remember = remember;
+    }
+    const response = await apiClient.post('/v1/login', payload);
     return response.data;
   },
 

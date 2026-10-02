@@ -130,6 +130,7 @@ const rewardsData = [
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -180,6 +181,20 @@ export const LoginPage: React.FC = () => {
     return () => { isMounted = false; };
   }, []);
 
+  // Cargar credencial guardada si el usuario marcó "Recordarme" previamente
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedEmail = localStorage.getItem('santun_remember_email');
+      const savedRemember = localStorage.getItem('santun_remember_me');
+      if (savedEmail) {
+        setEmail(savedEmail);
+      }
+      if (savedRemember === 'true') {
+        setRememberMe(true);
+      }
+    }
+  }, []);
+
   // Lista efectiva de videos dinámicos si existen.
   // En el contexto de una Marca Blanca sin videos personalizados creados aún,
   // la lista se mantiene vacía para no mostrar los videos de demostración globales.
@@ -208,7 +223,17 @@ export const LoginPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
+      if (typeof window !== 'undefined') {
+        if (rememberMe) {
+          localStorage.setItem('santun_remember_email', email.trim());
+          localStorage.setItem('santun_remember_me', 'true');
+        } else {
+          localStorage.removeItem('santun_remember_email');
+          localStorage.removeItem('santun_remember_me');
+        }
+      }
+
+      await login(email, password, rememberMe);
       // Extraer URL de redirección previa si el usuario intentó acceder a un módulo directo (ej: /visas/grupos)
       const searchParams = new URLSearchParams(window.location.search);
       const redirectParam = searchParams.get('redirect');
@@ -438,18 +463,9 @@ export const LoginPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-widest">
-                        Contraseña
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setIsResetModalOpen(true)}
-                        className="text-[12px] font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-                      >
-                        ¿Olvidaste tu contraseña?
-                      </button>
-                    </div>
+                    <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">
+                      Contraseña
+                    </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -467,6 +483,28 @@ export const LoginPage: React.FC = () => {
                         {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
                       </button>
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-0.5">
+                    <label className="flex items-center gap-2 cursor-pointer select-none group">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500/30 dark:bg-slate-800 cursor-pointer accent-blue-600 transition-colors"
+                      />
+                      <span className="text-[12px] sm:text-[13px] font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors">
+                        Recordarme
+                      </span>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsResetModalOpen(true)}
+                      className="text-[12px] font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
                   </div>
 
                   <button

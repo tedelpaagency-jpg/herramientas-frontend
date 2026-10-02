@@ -139,8 +139,9 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
 
   const isUsa = visaData.visa_type === 'USA';
   const isCanada = visaData.visa_type === 'CANADA';
+  const isUk = visaData.visa_type === 'UK' || visaData.visa_type === 'REINO_UNIDO';
   const isSchengen = visaData.visa_type === 'SCHENGEN';
-  const countryName = isUsa ? 'Estados Unidos' : isCanada ? 'Canadá' : 'Espacio Schengen (Europa)';
+  const countryName = isUsa ? 'Estados Unidos' : isCanada ? 'Canadá' : isUk ? 'Reino Unido' : 'Espacio Schengen (Europa)';
 
   const getInputClass = (fieldName: string) => {
     const st = fieldStatuses[fieldName];
@@ -162,7 +163,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
             <div>
               <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                {isUsa ? 'Formulario - Visa Americana (DS-160)' : isCanada ? 'Formulario - Visa Canadiense (IMM-5257)' : 'Solicitud de Visado Schengen (Oficial)'}
+                {isUsa ? 'Formulario - Visa Americana (DS-160)' : isCanada ? 'Formulario - Visa Canadiense (IMM-5257)' : isUk ? 'Formulario - Visa Reino Unido (Standard Visitor)' : 'Solicitud de Visado Schengen (Oficial)'}
               </h1>
               <p className="text-xs text-slate-600 font-medium mt-0.5">
                 Solicitante: <strong className="text-slate-900 dark:text-slate-100">{visaData.applicant_name}</strong> | {visaData.agency_name}

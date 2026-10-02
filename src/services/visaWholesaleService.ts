@@ -36,6 +36,42 @@ export interface VisaProcessType {
     description?: string;
     required: boolean;
   }>;
+  phases?: VisaPhase[];
+}
+
+export interface VisaPhase {
+  id: number;
+  visa_process_type_id: number;
+  name: string;
+  description?: string;
+  order: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface VisaProcessPhaseHistory {
+  id: number;
+  dossier_id: number;
+  phase_id: number;
+  status: 'en_proceso' | 'completada' | 'cancelada';
+  started_at: string;
+  completed_at?: string | null;
+  completed_by?: number | null;
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  phase?: VisaPhase;
+  completedByUser?: {
+    id: number;
+    name: string;
+    email?: string;
+  } | null;
+  completed_by_user?: {
+    id: number;
+    name: string;
+    email?: string;
+  } | null;
 }
 
 export interface VisaGroup {
@@ -126,6 +162,12 @@ export interface VisaDossier {
   priority: 'urgente' | 'requiere_atencion' | 'pendiente' | 'completado';
   progress: number;
   current_stage_key: string;
+  current_phase_id?: number | null;
+  currentPhase?: VisaPhase | null;
+  current_phase?: VisaPhase | null;
+  phases?: VisaPhase[];
+  phaseHistories?: VisaProcessPhaseHistory[];
+  phase_histories?: VisaProcessPhaseHistory[];
   action_required?: string;
   access_token: string;
   token_expires_at?: string;
@@ -199,6 +241,16 @@ class VisaWholesaleService {
   async updateDossier(id: number, data: Record<string, any>) {
     const res = await apiClient.put(`/v1/visas/dossiers/${id}`, data);
     return res.data;
+  }
+
+  async advancePhase(id: number, notes?: string) {
+    const res = await apiClient.post(`/v1/visas/dossiers/${id}/advance-phase`, { notes });
+    return res.data;
+  }
+
+  async getDossierPhases(id: number) {
+    const res = await apiClient.get(`/v1/visas/dossiers/${id}/phases`);
+    return res.data?.data;
   }
 
   async getClientLink(id: number, regenerate = false) {
