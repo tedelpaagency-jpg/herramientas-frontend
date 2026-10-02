@@ -109,7 +109,7 @@ export const crmService = {
   },
 
   // Stage CRUD
-  createStage: async (data: { name: string; color?: string }): Promise<WorkspaceStage> => {
+  createStage: async (data: { name: string; color?: string; workspace_id?: number }): Promise<WorkspaceStage> => {
     const response = await apiClient.post('/v1/crm/stages', data);
     return response.data?.data || response.data;
   },
@@ -188,15 +188,7 @@ export const crmService = {
 
   // Delete Lead / Pipeline Card
   deleteLead: async (pipelineId: number): Promise<void> => {
-    try {
-      await apiClient.delete(`/v1/crm/leads/${pipelineId}`);
-    } catch (err: any) {
-      if (err.response?.status === 404) {
-        await apiClient.delete(`/v1/clients/${pipelineId}`);
-      } else {
-        throw err;
-      }
-    }
+    await apiClient.delete(`/v1/crm/leads/${pipelineId}`);
   },
 
   // Update Client Classification

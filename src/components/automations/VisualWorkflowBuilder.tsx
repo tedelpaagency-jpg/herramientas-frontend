@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Portal from '../Portal';
-import { PipelineAutomation, AutomationMeta, AutomationWorkspace } from '../../services/automationService';
+import { PipelineAutomation, AutomationMeta, AutomationWorkspace, automationService, WebhookTestResult } from '../../services/automationService';
 
 interface WorkflowNode {
   id: string;
@@ -154,6 +154,58 @@ export default function VisualWorkflowBuilder({
   // Drag & Drop / Node Selector Modal state
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const [isAddNodeModalOpen, setIsAddNodeModalOpen] = useState<boolean>(false);
+
+  // Webhook Testing State
+  const [testingWebhook, setTestingWebhook] = useState<boolean>(false);
+  const [webhookTestResult, setWebhookTestResult] = useState<WebhookTestResult | null>(null);
+
+  useEffect(() => {
+    setWebhookTestResult(null);
+  }, [selectedNodeId]);
+
+  const handleTestWebhookNode = async () => {
+    if (!selectedNode?.config.url || !selectedNode.config.url.startsWith('http')) {
+      toast.error('Por favor ingresa una URL válida (ej: https://api.ejemplo.com/webhook)');
+      return;
+    }
+
+    setTestingWebhook(true);
+    setWebhookTestResult(null);
+
+    try {
+      const res = await automationService.testWebhook({
+        url: selectedNode.config.url,
+        method: selectedNode.config.method || 'POST',
+        headers: selectedNode.config.headers || [],
+        custom_data: selectedNode.config.customData || [],
+      });
+      setWebhookTestResult(res);
+      if (res.status === 'success') {
+        toast.success(`Webhook OK: HTTP ${res.http_status} (${res.duration_ms}ms)`);
+      } else {
+        toast.error(`Webhook respondió con HTTP ${res.http_status}`);
+      }
+    } catch (err: any) {
+      const errorData = err.response?.data;
+      if (errorData) {
+        setWebhookTestResult(errorData);
+        toast.error(errorData.message || 'Error en ejecución de webhook');
+      } else {
+        setWebhookTestResult({
+          status: 'error',
+          http_status: 0,
+          duration_ms: 0,
+          url: selectedNode.config.url,
+          method: selectedNode.config.method || 'POST',
+          message: err.message || 'Error al conectar con el servidor',
+          error: err.message,
+        });
+        toast.error('Fallo al conectar con webhook');
+      }
+    } finally {
+      setTestingWebhook(false);
+    }
+  };
 
   useEffect(() => {
     if (automation) {
@@ -947,12 +999,104 @@ export default function VisualWorkflowBuilder({
                               </div>
                             ))}
                           </div>
+
+                          {/* Interactive Webhook Test Button & Live Output */}
+                          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+                            <button
+                              type="button"
+                              onClick={handleTestWebhookNode}
+                              disabled={testingWebhook || !selectedNode.config.url}
+                              className="w-full py-2 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                            >
+                              {testingWebhook ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Probando Ejecución...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                                  <span>Probar Ejecución de Webhook</span>
+                                </>
+                              )}
+                            </button>
+
+                            {webhookTestResult && (
+                              <div className={`p-3 rounded-xl border text-[11px] space-y-2 animate-in fade-in zoom-in-95 ${
+                                webhookTestResult.status === 'success' && webhookTestResult.http_status >= 200 && webhookTestResult.http_status < 400
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200'
+                                  : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800/60 text-rose-900 dark:text-rose-200'
+                              }`}>
+                                <div className="flex items-center justify-between font-bold">
+                                  <div className="flex items-center gap-1.5">
+                                    {webhookTestResult.status === 'success' && webhookTestResult.http_status >= 200 && webhookTestResult.http_status < 400 ? (
+                                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                    ) : (
+                                      <XCircle className="w-4 h-4 text-rose-500" />
+                                    )}
+                                    <span className="font-mono uppercase">
+                                      HTTP {webhookTestResult.http_status || 'ERROR'}
+                                    </span>
+                                  </div>
+                                  <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
+                                    ⏱ {webhookTestResult.duration_ms} ms
+                                  </span>
+                                </div>
+
+                                <p className="text-[11px] leading-tight">{webhookTestResult.message}</p>
+
+                                {webhookTestResult.response_data && (
+                                  <div className="space-y-1">
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Respuesta del Servidor Target:</div>
+                                    <pre className="p-2 bg-slate-900 text-slate-100 rounded-lg text-[10px] font-mono overflow-x-auto max-h-36 leading-tight select-all">
+                                      {typeof webhookTestResult.response_data === 'object'
+                                        ? JSON.stringify(webhookTestResult.response_data, null, 2)
+                                        : String(webhookTestResult.response_data)}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 
                       {/* EMAIL SPECIFIC FORM */}
                       {(selectedNode.actionType === 'send_email' || selectedNode.actionType === 'send_lead_email') && (
                         <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+                          {/* Saved Email Templates Selector */}
+                          {meta?.email_templates && meta.email_templates.length > 0 && (
+                            <div className="space-y-1 p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/50 dark:border-indigo-800/40 rounded-xl">
+                              <div className="flex items-center justify-between">
+                                <label className="block text-[11px] font-bold text-indigo-700 dark:text-indigo-400 uppercase flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Cargar Plantilla Guardada:
+                                </label>
+                                <span className="text-[10px] text-slate-400 font-medium">Templates</span>
+                              </div>
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  const tId = Number(e.target.value);
+                                  const tpl = meta.email_templates?.find(t => t.id === tId);
+                                  if (tpl) {
+                                    if (tpl.subject) updateSelectedNodeConfig('subject', tpl.subject);
+                                    if (tpl.body_html) updateSelectedNodeConfig('body', tpl.body_html);
+                                    updateSelectedNodeConfig('templateId', tpl.id);
+                                    toast.success(`Plantilla "${tpl.name}" aplicada al correo`);
+                                  }
+                                }}
+                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700/60 rounded-xl text-slate-900 dark:text-white font-medium text-xs shadow-xs"
+                              >
+                                <option value="">-- Seleccionar una Plantilla Guardada --</option>
+                                {meta.email_templates.map(tpl => (
+                                  <option key={tpl.id} value={tpl.id}>
+                                    {tpl.name} {tpl.category ? `[${tpl.category}]` : ''} - {tpl.subject?.slice(0, 35)}...
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+
                           <div className="space-y-1">
                             <label className="block text-slate-700 dark:text-slate-300 font-bold uppercase">Destinatario del Correo:</label>
                             <select

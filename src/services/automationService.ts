@@ -12,11 +12,40 @@ export interface AutomationAgency {
   name: string;
 }
 
+export interface AutomationEmailTemplate {
+  id: number;
+  name: string;
+  category?: string;
+  subject: string;
+  body_html: string;
+}
+
+export interface WebhookTestPayload {
+  url: string;
+  method?: string;
+  headers?: { key: string; value: string }[] | Record<string, string>;
+  custom_data?: { key: string; value: string }[] | Record<string, any>;
+  customData?: { key: string; value: string }[] | Record<string, any>;
+}
+
+export interface WebhookTestResult {
+  status: 'success' | 'error';
+  http_status: number;
+  duration_ms: number;
+  url: string;
+  method: string;
+  response_data?: any;
+  sent_payload?: any;
+  message: string;
+  error?: string;
+}
+
 export interface PipelineAutomation {
   id: number;
   agency_id?: number;
   workspace_id?: number;
   stage_id?: number;
+  email_template_id?: number | null;
   name: string;
   trigger_type: string;
   condition_type: string;
@@ -47,6 +76,7 @@ export interface AutomationMeta {
   users: { id: number; name: string; email: string; agency_id?: number }[];
   workspaces?: AutomationWorkspace[];
   agencies?: AutomationAgency[];
+  email_templates?: AutomationEmailTemplate[];
 }
 
 export const automationService = {
@@ -78,6 +108,12 @@ export const automationService = {
     const response = await apiClient.post('/v1/automations/test-email', data);
     return response.data;
   },
+
+  testWebhook: async (data: WebhookTestPayload): Promise<WebhookTestResult> => {
+    const response = await apiClient.post('/v1/automations/test-webhook', data);
+    return response.data;
+  },
 };
 
 export default automationService;
+
