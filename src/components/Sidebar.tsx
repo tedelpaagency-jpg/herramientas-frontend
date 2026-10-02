@@ -262,9 +262,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
-      title: 'MÓDULO DE VISADOS',
+      title: 'VISAS MINORISTAS',
       items: [
         { label: 'Visas Minoristas (Formularios)', path: '/visas', icon: FileCheck, permission: ['view_visas', 'visas.view'] },
+      ],
+    },
+    {
+      title: 'VISAS MAYORISTAS & B2B',
+      items: [
         ...(isWhiteLabelAdmin || isSuperAdmin
           ? [
               { label: 'Operaciones Mayorista B2B', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view'] },
@@ -301,15 +306,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
-      title: 'ACADEMIA & RECURSOS',
+      title: 'CURSOS & CAPACITACIÓN',
       items: [
         { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap, permission: 'courses.view' },
         { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: 'courses.view' },
-        { label: 'Biblioteca de Medios', path: '/media', icon: ImageIcon, permission: ['courses.view', 'activities.view', 'agencies.view'] },
-        { label: 'Grupos de Actividades', path: '/activities', icon: CheckSquare, permission: ['activities.view', 'activities.create', 'activities.update'] },
-
-        { label: 'Mis Actividades', path: '/my-activities', icon: FileText, permission: ['activities.view'] },
         { label: 'Gamificación & Puntos', path: '/gamification', icon: Trophy, permission: ['view_spin_wheel', 'view_gamification'] },
+      ],
+    },
+    {
+      title: 'MÓDULO DE ACTIVIDADES',
+      items: [
+        { label: 'Grupos de Actividades', path: '/activities', icon: CheckSquare, permission: ['activities.view', 'activities.create', 'activities.update'] },
+        { label: 'Mis Actividades', path: '/my-activities', icon: FileText, permission: ['activities.view'] },
       ],
     },
     {
@@ -323,6 +331,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           : []),
         { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
         { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck, permission: ['roles.manage', 'manage_roles'] },
+        { label: 'Biblioteca de Medios', path: '/media', icon: ImageIcon, permission: ['courses.view', 'activities.view', 'agencies.view'] },
         ...(isSuperAdmin || isWhiteLabelAdmin
           ? [
               { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_plans', 'manage_agencies'] },

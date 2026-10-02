@@ -12,7 +12,7 @@ export const MediaLibraryPage: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">
             <ImageIcon className="w-4 h-4" />
-            <span>Academia & Recursos</span>
+            <span>Administración Sistema</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             Biblioteca de Medios (Media Library)
