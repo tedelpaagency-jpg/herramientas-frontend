@@ -83,8 +83,6 @@ export const LandingBuilderModal: React.FC<Props> = ({
       loadResources();
       if (landing) {
         setTitle(landing.title || '');
-        setMode(landing.mode || 'visual');
-
         let rawHtml = landing.custom_html || '';
         if (typeof rawHtml === 'string' && rawHtml.startsWith('base64:')) {
           try {
@@ -94,6 +92,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
             rawHtml = landing.custom_html || '';
           }
         }
+        setMode(landing.mode === 'custom_html' || (rawHtml && rawHtml.length > 50) ? 'custom_html' : (landing.mode || 'visual'));
         setCustomHtml(rawHtml);
         setActionType(landing.action_type || 'lead');
         setPlanId(landing.plan_id || null);
@@ -173,10 +172,12 @@ export const LandingBuilderModal: React.FC<Props> = ({
 
       const activeStripeAppearance = formSchema?.stripe_appearance || paymentConfig?.stripe_appearance;
 
+      const finalMode = (mode === 'custom_html' || (customHtml && customHtml.trim().length > 50)) ? 'custom_html' : mode;
+
       const payload: Partial<LandingTemplate> = {
         title: title.trim(),
         name: title.trim(),
-        mode,
+        mode: finalMode,
         custom_html: safeCustomHtml,
         action_type: actionType,
         plan_id: planId,

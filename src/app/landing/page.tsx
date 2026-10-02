@@ -321,7 +321,7 @@ function PublicLandingContent() {
     );
   }
 
-  const isCustomHtml = landing.mode === 'custom_html' && landing.custom_html;
+  const isCustomHtml = (landing.mode === 'custom_html' || Boolean(landing.custom_html && (landing.custom_html.includes('<html') || landing.custom_html.includes('<!DOCTYPE') || landing.custom_html.length > 50))) && Boolean(landing.custom_html);
 
   // Custom HTML Rendering with full style isolation and native script execution via Iframe + React Portal
   if (isCustomHtml) {

@@ -327,6 +327,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'plans.view',
         'plans.create',
         'plans.edit',
+        'activities.view',
+        'activities.create',
+        'activities.update',
       ];
       basePerms = Array.from(new Set([...basePerms, ...wlAdminDefaults]));
     }
@@ -357,6 +360,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'plans.view',
         'plans.create',
         'plans.edit',
+        'activities.view',
+        'activities.create',
+        'activities.update',
       ];
       const reqList = Array.isArray(permission) ? permission : [permission];
       if (reqList.some((r) => wlAdminPerms.includes(r.toLowerCase().trim()))) {

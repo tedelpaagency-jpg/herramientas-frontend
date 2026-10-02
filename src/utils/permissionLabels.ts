@@ -199,6 +199,41 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     description: 'Permite adjuntar archivos en PDF, video y material descargable',
     module: 'Capacitación',
   },
+  'activities.view': {
+    label: 'Módulo de Actividades & Tareas',
+    description: 'Acceso a consultar grupos de actividades, asignaciones y entregas de estudiantes',
+    module: 'Actividades',
+  },
+  'activities.create': {
+    label: 'Crear Grupos de Actividades',
+    description: 'Permite diseñar nuevos grupos de actividades, cuestionarios y tareas formativas',
+    module: 'Actividades',
+  },
+  'activities.update': {
+    label: 'Editar Actividades & Tareas',
+    description: 'Permite modificar consignas, fechas límite y configuración de actividades',
+    module: 'Actividades',
+  },
+  'activities.delete': {
+    label: 'Eliminar Actividades',
+    description: 'Permite remover grupos de actividades y tareas creadas',
+    module: 'Actividades',
+  },
+  'activities.assign': {
+    label: 'Asignar Actividades a Estudiantes',
+    description: 'Permite asignar actividades a usuarios, agencias o cursos específicos',
+    module: 'Actividades',
+  },
+  'activities.resources': {
+    label: 'Recursos de Actividades',
+    description: 'Permite adjuntar guías, rúbricas y material de apoyo en las actividades',
+    module: 'Actividades',
+  },
+  'activities.progress': {
+    label: 'Ver Progreso & Calificaciones',
+    description: 'Permite revisar entregas de alumnos, calificar y ver el estado de avance',
+    module: 'Actividades',
+  },
   view_lexvault: {
     label: 'Módulo de Contratos Lexvault',
     description: 'Acceso a firma de contratos digitales e instrumentos legales',

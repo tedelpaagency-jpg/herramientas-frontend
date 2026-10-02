@@ -11,7 +11,7 @@ import {
   RefreshCw, CheckCircle2, AlertCircle, Sparkles, Building2, 
   Plane, Users, ShoppingCart, Trophy, ShieldCheck, Mail, Zap, 
   Store, GraduationCap, Palette, LayoutGrid, ToggleLeft, ToggleRight,
-  UserCheck, Lock, Globe
+  UserCheck, Lock, Globe, CheckSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -108,6 +108,14 @@ const SYSTEM_MODULES: ModuleDefinition[] = [
     permissions: ['courses.view', 'courses.create'],
   },
   {
+    id: 'activities',
+    name: 'Módulo de Actividades & Tareas',
+    category: 'ACADEMIA',
+    description: 'Gestión y asignación de grupos de actividades, tareas de formación, entregas y progreso de alumnos.',
+    icon: CheckSquare,
+    permissions: ['activities.view', 'activities.create', 'activities.update'],
+  },
+  {
     id: 'users',
     name: 'Módulo Gestión de Usuarios & Equipos',
     category: 'GESTIÓN',
@@ -152,12 +160,23 @@ export const PlanPermissionsPage: React.FC = () => {
 
   const isModuleAllowedForWhiteLabel = (mod: ModuleDefinition): boolean => {
     if (!isRestrictionActive) return true;
+    if (mod.id === 'activities') {
+      return whiteLabelPlanPermissions.some(
+        (p) => p.startsWith('activities.') || p.startsWith('courses.')
+      );
+    }
     return mod.permissions.some((p) => whiteLabelPlanPermissions.includes(p.toLowerCase()));
   };
 
   const isSinglePermAllowedForWhiteLabel = (permName: string): boolean => {
     if (!isRestrictionActive) return true;
-    return whiteLabelPlanPermissions.includes(permName.toLowerCase());
+    const lower = permName.toLowerCase();
+    if (lower.startsWith('activities.')) {
+      return whiteLabelPlanPermissions.some(
+        (p) => p.startsWith('activities.') || p.startsWith('courses.')
+      );
+    }
+    return whiteLabelPlanPermissions.includes(lower);
   };
 
   const planId = params?.id ? Number(params.id) : searchParams.get('id') ? Number(searchParams.get('id')) : null;

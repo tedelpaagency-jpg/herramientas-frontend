@@ -183,11 +183,11 @@ export function prepareLandingHtml(
         }, true);
       })();
 
-      // Automatic initialization runner for animation & interactive scripts (AOS, Swiper, etc.)
+      // Automatic initialization runner and form lead binder
       (function() {
         var retries = 0;
         function runScripts() {
-          if (typeof window.AOS !== 'undefined' && !window.__aos_inited) {
+          if (typeof window.AOS !== 'undefined' && window.AOS.init && !window.__aos_inited && !window.AOS.__is_shim) {
             window.__aos_inited = true;
             try {
               window.AOS.init({ once: true, offset: 50, duration: 800, easing: 'ease-out-cubic' });
@@ -199,6 +199,21 @@ export function prepareLandingHtml(
               window.initTrivaliScripts();
             } catch (err) {}
           }
+
+          // Always guarantee first hero slide text is visible
+          var firstSlideText = document.querySelector('.hero-swiper .swiper-slide .slide-text') || document.querySelector('.slide-text');
+          if (firstSlideText && (firstSlideText.style.opacity === '0' || firstSlideText.classList.contains('opacity-0'))) {
+            firstSlideText.style.opacity = '1';
+            firstSlideText.style.transform = 'translateY(0)';
+          }
+
+          // Ensure data-aos elements are animated and visible
+          document.querySelectorAll('[data-aos]').forEach(function(el) {
+            el.classList.add('aos-animate');
+            el.style.opacity = '1';
+            el.style.transform = 'none';
+          });
+
           if (retries < 30) {
             retries++;
             setTimeout(runScripts, 150);
@@ -210,20 +225,92 @@ export function prepareLandingHtml(
           document.addEventListener('DOMContentLoaded', runScripts);
         }
         window.addEventListener('load', runScripts);
+
+        // Auto-bind custom embedded forms to capture leads into TEDELPA CRM
+        function bindForms() {
+          var embeddedForms = document.querySelectorAll('form:not(#dynamicLandingForm)');
+          embeddedForms.forEach(function(f) {
+            if (f.__tedelpa_bound) return;
+            f.__tedelpa_bound = true;
+
+            var inputs = f.querySelectorAll('input:not([type="submit"]):not([type="button"])');
+            inputs.forEach(function(inp) {
+              if (!inp.getAttribute('name')) {
+                var placeholder = (inp.getAttribute('placeholder') || '').toLowerCase();
+                var label = (inp.closest('div') ? inp.closest('div').querySelector('label') : null);
+                var labelText = (label ? label.textContent : '').toLowerCase();
+                var type = (inp.getAttribute('type') || '').toLowerCase();
+
+                if (type === 'email' || placeholder.includes('correo') || placeholder.includes('email') || labelText.includes('correo') || labelText.includes('email')) {
+                  inp.setAttribute('name', 'email');
+                } else if (type === 'tel' || placeholder.includes('tel') || placeholder.includes('whatsapp') || labelText.includes('tel') || labelText.includes('whatsapp')) {
+                  inp.setAttribute('name', 'phone');
+                } else if (placeholder.includes('perez') || placeholder.includes('apellido') || labelText.includes('apellido')) {
+                  inp.setAttribute('name', 'last_name');
+                } else if (placeholder.includes('juan') || placeholder.includes('nombre') || labelText.includes('nombre')) {
+                  inp.setAttribute('name', 'first_name');
+                }
+              }
+            });
+
+            f.addEventListener('submit', function() {
+              try {
+                var formData = new FormData(f);
+                var urlParams = new URLSearchParams(window.location.search);
+                var rawId = urlParams.get('id') || '';
+                if (rawId) {
+                  formData.append('landing_id', rawId);
+                  formData.append('landing_slug', rawId);
+                }
+                var fn = formData.get('first_name') || '';
+                var ln = formData.get('last_name') || '';
+                if (!formData.get('name') && (fn || ln)) {
+                  formData.append('name', (fn + ' ' + ln).trim());
+                }
+
+                fetch('/landing/lead', {
+                  method: 'POST',
+                  body: formData,
+                  headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).catch(function() {});
+              } catch(e) {}
+            }, true);
+          });
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          bindForms();
+        } else {
+          document.addEventListener('DOMContentLoaded', bindForms);
+        }
+        window.addEventListener('load', bindForms);
       })();
     </script>
   `;
 
   const headInjections = `${formStyles}
     <style id="landing-animation-safety">
-      @keyframes aosFallbackSafety {
-        to { opacity: 1 !important; transform: none !important; }
-      }
       [data-aos] {
-        animation: aosFallbackSafety 0.1s forwards;
-        animation-delay: 2.5s;
+        opacity: 1 !important;
+        transform: none !important;
+        transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      }
+      [data-aos].aos-animate {
+        opacity: 1 !important;
+        transform: none !important;
       }
     </style>
+    <script id="landing-lib-safeguard">
+      // Safeguard for inline scripts calling AOS before CDN finishes loading
+      if (!window.AOS) {
+        window.AOS = {
+          __is_shim: true,
+          init: function() {},
+          refresh: function() {},
+          refreshHard: function() {}
+        };
+      }
+    </script>
   `;
 
   if (isFullDoc) {
