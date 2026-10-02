@@ -51,6 +51,17 @@ export const hunterService = {
     const res = await apiClient.post(`/v1/public/hunter/store/${idOrToken}/request`, data);
     return res.data.data;
   },
+
+  downloadQr: async (id: number, format: 'png' | 'svg' = 'png', campaignUrl?: string): Promise<Blob> => {
+    const res = await apiClient.get(`/v1/hunters/${id}/qr-download`, {
+      params: { 
+        format,
+        ...(campaignUrl ? { campaign_url: campaignUrl } : {})
+      },
+      responseType: 'blob',
+    });
+    return res.data;
+  },
 };
 
 export default hunterService;

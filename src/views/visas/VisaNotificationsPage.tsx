@@ -8,8 +8,10 @@ import {
   ExternalLink, CheckCircle2, Clock, MailOpen, Trash2 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/context/AuthContext';
 
 export const VisaNotificationsPage: React.FC = () => {
+  const { currentWhiteLabel } = useAuth();
   const [notifications, setNotifications] = useState<VisaNotification[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -32,7 +34,17 @@ export const VisaNotificationsPage: React.FC = () => {
 
   useEffect(() => {
     fetchNotifications();
-  }, [page]);
+  }, [page, currentWhiteLabel?.id]);
+
+  useEffect(() => {
+    const handleBrandingChange = () => {
+      fetchNotifications();
+    };
+    window.addEventListener('branding-updated', handleBrandingChange);
+    return () => {
+      window.removeEventListener('branding-updated', handleBrandingChange);
+    };
+  }, []);
 
   const handleMarkAsRead = async (id: number) => {
     try {

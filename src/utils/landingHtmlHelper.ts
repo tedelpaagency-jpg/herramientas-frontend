@@ -62,12 +62,18 @@ export function prepareLandingHtml(
   // Also upgrade any other http:// for script and link tags
   html = html.replace(/<(script|link)([^>]*?)(src|href)=["']http:\/\/([^"'>]+)["']/gi, '<$1$2$3="https://$4"');
 
+  // Fix common mistake where bootstrap css is loaded inside a <script> tag
+  html = html.replace(/<script([^>]*?)src=["']([^"']*?)bootstrap\.bundle\.min\.css["']([^>]*?)><\/script>/gi, '<script$1src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"$3></script>');
+
   // 5. Replace {{DYNAMIC_FORM}} placeholder
   const placeholder = options.formPlaceholderHtml || '';
+  const hasEmbeddedForm = /<form\b[^>]*id=["']?(?:trivaliForm|customForm|contactForm|leadForm|registroForm)/i.test(html) ||
+    (/<form\b/i.test(html) && !html.includes('{{DYNAMIC_FORM'));
+
   if (html.includes('{{DYNAMIC_FORM') || /\{\{DYNAMIC_FORM[^}]*\}\}/i.test(html)) {
     html = html.replace(/\{\{DYNAMIC_FORM[^}]*\}\}/gi, placeholder);
-  } else if (placeholder && !html.includes('id="react-dynamic-form-container"')) {
-    // If there is a form placeholder and user didn't specify {{DYNAMIC_FORM}}, append it gracefully before </body> or at the end
+  } else if (placeholder && !hasEmbeddedForm && !html.includes('id="react-dynamic-form-container"')) {
+    // If there is a form placeholder and user didn't specify {{DYNAMIC_FORM}} and page does not have its own form, append it gracefully
     if (html.includes('</body>')) {
       html = html.replace('</body>', `<div class="max-w-2xl mx-auto my-12 px-4">${placeholder}</div></body>`);
     } else {
@@ -176,17 +182,58 @@ export function prepareLandingHtml(
           }
         }, true);
       })();
+
+      // Automatic initialization runner for animation & interactive scripts (AOS, Swiper, etc.)
+      (function() {
+        var retries = 0;
+        function runScripts() {
+          if (typeof window.AOS !== 'undefined' && !window.__aos_inited) {
+            window.__aos_inited = true;
+            try {
+              window.AOS.init({ once: true, offset: 50, duration: 800, easing: 'ease-out-cubic' });
+            } catch (err) {}
+          }
+          if (typeof window.initTrivaliScripts === 'function' && !window.__trivali_inited) {
+            window.__trivali_inited = true;
+            try {
+              window.initTrivaliScripts();
+            } catch (err) {}
+          }
+          if (retries < 30) {
+            retries++;
+            setTimeout(runScripts, 150);
+          }
+        }
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          runScripts();
+        } else {
+          document.addEventListener('DOMContentLoaded', runScripts);
+        }
+        window.addEventListener('load', runScripts);
+      })();
     </script>
+  `;
+
+  const headInjections = `${formStyles}
+    <style id="landing-animation-safety">
+      @keyframes aosFallbackSafety {
+        to { opacity: 1 !important; transform: none !important; }
+      }
+      [data-aos] {
+        animation: aosFallbackSafety 0.1s forwards;
+        animation-delay: 2.5s;
+      }
+    </style>
   `;
 
   if (isFullDoc) {
     let result = html;
     if (result.includes('</head>')) {
-      result = result.replace('</head>', `${formStyles}</head>`);
+      result = result.replace('</head>', `${headInjections}</head>`);
     } else if (result.includes('<head>')) {
-      result = result.replace('<head>', `<head>${formStyles}`);
+      result = result.replace('<head>', `<head>${headInjections}`);
     } else if (result.includes('<html')) {
-      result = result.replace(/(<html[^>]*>)/i, `$1<head>${formStyles}</head>`);
+      result = result.replace(/(<html[^>]*>)/i, `$1<head>${headInjections}</head>`);
     }
 
     if (result.includes('</body>')) {

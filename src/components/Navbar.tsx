@@ -27,7 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   rightSidebarOpen,
   setRightSidebarOpen,
 }) => {
-  const { user, logout } = useAuth();
+  const { user, currentWhiteLabel, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -49,6 +49,18 @@ export const Navbar: React.FC<NavbarProps> = ({
     if (user) {
       fetchRecentNotifications();
     }
+  }, [user, currentWhiteLabel?.id]);
+
+  useEffect(() => {
+    const handleBrandingChange = () => {
+      if (user) {
+        fetchRecentNotifications();
+      }
+    };
+    window.addEventListener('branding-updated', handleBrandingChange);
+    return () => {
+      window.removeEventListener('branding-updated', handleBrandingChange);
+    };
   }, [user]);
 
   const handleMarkAllRead = async () => {

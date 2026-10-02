@@ -108,14 +108,44 @@ function CustomHtmlIframeContainer({
       setIsStyleReady(true);
     }
 
-    if (typeof window !== 'undefined' && window.ResizeObserver && doc.body) {
-      const ro = new ResizeObserver(() => {
-        if (doc.body) {
-          const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, doc.body.offsetHeight, 600);
-          setIframeHeight(height);
+    const updateHeight = () => {
+      if (!doc || !doc.body) return;
+      const height = Math.max(
+        doc.body.scrollHeight,
+        doc.documentElement?.scrollHeight || 0,
+        doc.body.offsetHeight,
+        doc.documentElement?.offsetHeight || 0,
+        600
+      );
+      setIframeHeight((prev) => (Math.abs(prev - height) > 5 ? height : prev));
+    };
+
+    updateHeight();
+
+    try {
+      iframeNode.contentWindow?.addEventListener('load', updateHeight);
+      iframeNode.contentWindow?.addEventListener('resize', updateHeight);
+
+      const imgs = doc.querySelectorAll('img');
+      imgs.forEach((img) => {
+        if (!img.complete) {
+          img.addEventListener('load', updateHeight);
+          img.addEventListener('error', updateHeight);
         }
       });
+    } catch (e) {}
+
+    const intervalId = setInterval(updateHeight, 400);
+    setTimeout(() => clearInterval(intervalId), 4000);
+
+    if (typeof window !== 'undefined' && window.ResizeObserver && doc.body) {
+      const ro = new ResizeObserver(() => {
+        updateHeight();
+      });
       ro.observe(doc.body);
+      if (doc.documentElement && doc.documentElement !== doc.body) {
+        ro.observe(doc.documentElement);
+      }
     }
 
     // Scroll to section if initial URL has hash (e.g. #seccion-compra)

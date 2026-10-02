@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Store, Plus, Search, Mail, Phone, MapPin, QrCode, Copy, Check, 
   Trash2, Edit3, Eye, ShieldAlert, CheckCircle2, XCircle, Clock, 
-  TrendingUp, Users, DollarSign, Award, X, Sparkles, ExternalLink, RefreshCw, ChevronLeft, UserCheck, Video, Image as ImageIcon
+  TrendingUp, Users, DollarSign, Award, X, Sparkles, ExternalLink, RefreshCw, ChevronLeft, UserCheck, Video, Image as ImageIcon,
+  Download, Printer, FileDown
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -31,8 +32,13 @@ export const HunterStoresPage: React.FC = () => {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [activeTab, setActiveTab] = useState<'stats' | 'requests' | 'edit' | 'delete'>('stats');
 
-  // QR Modal
+  // QR Modal & Downloads
   const [qrModalStore, setQrModalStore] = useState<HunterStore | null>(null);
+  const [downloadingFormat, setDownloadingFormat] = useState<'png' | 'card' | 'svg' | null>(null);
+
+  // Delete Store State
+  const [storeToDelete, setStoreToDelete] = useState<HunterStore | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Approve / Reject Modals for requests
   const [approvingRequest, setApprovingRequest] = useState<HunterRequest | null>(null);
@@ -164,26 +170,289 @@ export const HunterStoresPage: React.FC = () => {
     }
   };
 
-  const handleDeleteStore = async (storeId: number) => {
-    if (!confirm('¿Está seguro de eliminar o deshabilitar esta Tienda Hunter?')) return;
+  const handleDeleteStore = (store: HunterStore) => {
+    setStoreToDelete(store);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!storeToDelete) return;
+    setIsDeleting(true);
     try {
-      await hunterService.deleteStore(storeId);
-      toast.success('Tienda Hunter eliminada');
-      if (selectedProfileStoreId === storeId) {
+      await hunterService.deleteStore(storeToDelete.id);
+      toast.success(`Tienda "${storeToDelete.name}" eliminada exitosamente`);
+      if (selectedProfileStoreId === storeToDelete.id) {
         setSelectedProfileStoreId(null);
+        setProfileData(null);
       }
+      setStoreToDelete(null);
       fetchStores();
-    } catch (err) {
-      toast.error('Error al eliminar tienda');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || 'Error al eliminar tienda');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
+  const getStoreCampaignUrl = (store: HunterStore) => {
+    return `${window.location.origin}/form?campaign=${store.campaign_token || store.id}`;
+  };
+
+  const getStoreQrCodeUrl = (store: HunterStore, size = 500) => {
+    const campaignUrl = getStoreCampaignUrl(store);
+    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(campaignUrl)}`;
+  };
+
   const handleCopyCampaignLink = (store: HunterStore) => {
-    const url = `${window.location.origin}/form?campaign=${store.campaign_token}`;
+    const url = getStoreCampaignUrl(store);
     navigator.clipboard.writeText(url);
     setCopiedStoreId(store.id);
     toast.success('¡Enlace de captación copiado al portapapeles!');
     setTimeout(() => setCopiedStoreId(null), 2500);
+  };
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const drawRoundedRect = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number
+  ) => {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  };
+
+  const drawRoundedTopRect = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number
+  ) => {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height);
+    ctx.lineTo(x, y + height);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  };
+
+  const generatePrintableCard = async (store: HunterStore, qrImgUrl: string): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = 1060;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas no disponible'));
+        return;
+      }
+
+      // Outer Background
+      ctx.fillStyle = '#f1f5f9';
+      ctx.fillRect(0, 0, 800, 1060);
+
+      // Card White Panel
+      ctx.fillStyle = '#ffffff';
+      drawRoundedRect(ctx, 40, 40, 720, 980, 28);
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.stroke();
+
+      // Top Header Banner
+      const gradient = ctx.createLinearGradient(40, 40, 760, 220);
+      gradient.addColorStop(0, '#0f172a');
+      gradient.addColorStop(0.5, '#1e1b4b');
+      gradient.addColorStop(1, '#4338ca');
+      ctx.fillStyle = gradient;
+      drawRoundedTopRect(ctx, 40, 40, 720, 180, 28);
+      ctx.fill();
+
+      // Header Badge & Text
+      ctx.fillStyle = '#818cf8';
+      ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('RED OFICIAL DE AFILIADOS • PROGRAMA HUNTER', 400, 85);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      const storeName = store.name || 'Comercio Aliado';
+      ctx.fillText(storeName.length > 28 ? storeName.substring(0, 25) + '...' : storeName, 400, 135);
+
+      ctx.fillStyle = '#c7d2fe';
+      ctx.font = '500 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText('Punto Autorizado de Registro y Captación Directa', 400, 175);
+
+      // QR Container Frame
+      ctx.fillStyle = '#ffffff';
+      drawRoundedRect(ctx, 160, 260, 480, 480, 24);
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 10;
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#e0e7ff';
+      ctx.stroke();
+
+      // Image loading
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        // Draw QR centered inside frame
+        ctx.drawImage(img, 200, 300, 400, 400);
+
+        // Call to action below QR
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('¡Escanea con tu cámara!', 400, 785);
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = '500 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText('Apunta la cámara de tu teléfono para acceder al formulario oficial', 400, 820);
+        ctx.fillText('y recibir atención prioritaria de nuestro equipo.', 400, 846);
+
+        // Divider
+        ctx.strokeStyle = '#f1f5f9';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(90, 885);
+        ctx.lineTo(710, 885);
+        ctx.stroke();
+
+        // Footer contact info
+        ctx.fillStyle = '#334155';
+        ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        const parts = [
+          store.phone ? `Tel: ${store.phone}` : null,
+          store.email,
+          store.canton ? `${store.canton}, ${store.country || 'Ecuador'}` : store.country
+        ].filter(Boolean);
+        ctx.fillText(parts.join('  •  ') || 'Atención y Servicios Exclusivos', 400, 930);
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText('Sistema de Captación Hunter • Todos los derechos reservados', 400, 965);
+
+        canvas.toBlob((b) => {
+          if (b) resolve(b);
+          else reject(new Error('Error al generar la imagen de la ficha'));
+        }, 'image/png');
+      };
+      img.onerror = (e) => reject(e);
+      img.src = qrImgUrl;
+    });
+  };
+
+  const generateCleanQrPng = async (qrImgUrl: string, size = 600): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas no disponible'));
+        return;
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const padding = Math.round(size * 0.05);
+        ctx.drawImage(img, padding, padding, size - padding * 2, size - padding * 2);
+        canvas.toBlob((b) => {
+          if (b) resolve(b);
+          else reject(new Error('Error al procesar la imagen PNG'));
+        }, 'image/png');
+      };
+      img.onerror = (e) => reject(e);
+      img.src = qrImgUrl;
+    });
+  };
+
+  const handleDownloadQr = async (store: HunterStore, format: 'png' | 'card' | 'svg' = 'png') => {
+    setDownloadingFormat(format);
+    const toastId = toast.loading(
+      format === 'card' 
+        ? 'Generando ficha imprimible con código QR...' 
+        : format === 'svg' 
+          ? 'Generando vector SVG...' 
+          : 'Descargando código QR...'
+    );
+
+    const safeName = (store.name || 'hunter-store').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const campaignUrl = getStoreCampaignUrl(store);
+    const highResQrUrl = getStoreQrCodeUrl(store, 600);
+
+    try {
+      if (format === 'svg') {
+        const blob = await hunterService.downloadQr(store.id, 'svg', campaignUrl);
+        triggerDownload(blob, `QR_Hunter_${safeName}.svg`);
+        toast.success('¡Archivo SVG descargado exitosamente!', { id: toastId });
+        return;
+      }
+
+      if (format === 'card') {
+        try {
+          const blob = await generatePrintableCard(store, highResQrUrl);
+          triggerDownload(blob, `Ficha_QR_Hunter_${safeName}.png`);
+          toast.success('¡Ficha imprimible descargada con éxito!', { id: toastId });
+          return;
+        } catch (cardErr) {
+          console.warn('Canvas card generation failed, fallback', cardErr);
+        }
+      }
+
+      // Default PNG format
+      try {
+        const blob = await generateCleanQrPng(highResQrUrl, 600);
+        triggerDownload(blob, `QR_Hunter_${safeName}.png`);
+        toast.success('¡Código QR (PNG) descargado con éxito!', { id: toastId });
+        return;
+      } catch (cleanPngErr) {
+        console.warn('Direct canvas failed, falling back to backend download', cleanPngErr);
+      }
+
+      // Backend API Fallback with explicit campaignUrl
+      const blob = await hunterService.downloadQr(store.id, 'png', campaignUrl);
+      triggerDownload(blob, `QR_Hunter_${safeName}.png`);
+      toast.success('¡Código QR descargado con éxito!', { id: toastId });
+    } catch (err: any) {
+      console.error('Error downloading QR:', err);
+      toast.error('No se pudo descargar el código QR. Intente de nuevo.', { id: toastId });
+    } finally {
+      setDownloadingFormat(null);
+    }
   };
 
   const handleConfirmApprove = async () => {
@@ -305,15 +574,29 @@ export const HunterStoresPage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <button
                   onClick={() => setQrModalStore(profileData.store)}
-                  className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 font-bold rounded-xl flex items-center gap-1.5"
+                  className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 font-bold rounded-xl flex items-center gap-1.5 transition-all"
                 >
                   <QrCode className="w-4 h-4 text-indigo-600" />
                   <span>Ver Código QR</span>
                 </button>
 
                 <button
+                  onClick={() => handleDownloadQr(profileData.store, 'png')}
+                  disabled={downloadingFormat !== null}
+                  className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 font-bold rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 transition-all disabled:opacity-50"
+                  title="Descargar imagen QR en PNG"
+                >
+                  {downloadingFormat === 'png' ? (
+                    <RefreshCw className="w-4 h-4 animate-spin text-emerald-600" />
+                  ) : (
+                    <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  )}
+                  <span>Descargar QR</span>
+                </button>
+
+                <button
                   onClick={() => handleCopyCampaignLink(profileData.store)}
-                  className="px-3 py-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-bold rounded-xl border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5"
+                  className="px-3 py-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-bold rounded-xl border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-all"
                 >
                   <Copy className="w-4 h-4" />
                   <span>Copiar Link de Campaña</span>
@@ -562,10 +845,12 @@ export const HunterStoresPage: React.FC = () => {
                   Al deshabilitar o eliminar la tienda Hunter, el código QR y enlace de captura ya no permitirán registrar nuevas solicitudes. Los reportes y ventas pasadas se conservarán en el historial.
                 </p>
                 <button
-                  onClick={() => handleDeleteStore(profileData.store.id)}
-                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95"
+                  type="button"
+                  onClick={() => handleDeleteStore(profileData.store)}
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-2"
                 >
-                  Confirmar Eliminación de Tienda
+                  <Trash2 className="w-4 h-4" />
+                  <span>Eliminar Tienda Hunter</span>
                 </button>
               </div>
             )}
@@ -663,10 +948,19 @@ export const HunterStoresPage: React.FC = () => {
 
                             <button
                               onClick={() => setQrModalStore(store)}
-                              className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 rounded-lg"
-                              title="Ver QR"
+                              className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 rounded-lg transition-all"
+                              title="Ver QR y Opciones de Descarga"
                             >
                               <QrCode className="w-4 h-4 text-indigo-600" />
+                            </button>
+
+                            <button
+                              onClick={() => handleDownloadQr(store, 'png')}
+                              disabled={downloadingFormat !== null}
+                              className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 rounded-lg transition-all disabled:opacity-50"
+                              title="Descargar QR (PNG)"
+                            >
+                              <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                             </button>
                           </div>
                         </td>
@@ -681,21 +975,30 @@ export const HunterStoresPage: React.FC = () => {
                           </span>
                         </td>
 
-                        <td className="p-4 text-right space-x-1">
+                        <td className="p-4 text-right space-x-1 whitespace-nowrap">
                           <button
                             onClick={() => loadProfile(store.id)}
-                            className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 hover:bg-indigo-100 rounded-xl"
+                            className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 hover:bg-indigo-100 rounded-xl transition-colors"
                             title="Ver Perfil & Registros"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleOpenEditModal(store)}
-                            className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 rounded-xl"
+                            className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 rounded-xl transition-colors"
                             title="Editar Tienda"
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
+                          {!isHunter && (
+                            <button
+                              onClick={() => handleDeleteStore(store)}
+                              className="p-2 bg-rose-50 dark:bg-rose-950/40 text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-xl transition-colors"
+                              title="Eliminar Tienda"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -878,20 +1181,37 @@ export const HunterStoresPage: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateModalOpen(false)}
-                    className="px-4 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold shadow-md hover:bg-indigo-700 active:scale-95"
-                  >
-                    {editingStore ? 'Guardar Cambios' : 'Crear Tienda'}
-                  </button>
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                  {editingStore && !isHunter ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const s = editingStore;
+                        setIsCreateModalOpen(false);
+                        handleDeleteStore(s);
+                      }}
+                      className="px-3 py-2 rounded-xl font-bold text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-1.5 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Eliminar Tienda</span>
+                    </button>
+                  ) : <div />}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateModalOpen(false)}
+                      className="px-4 py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold shadow-md hover:bg-indigo-700 active:scale-95"
+                    >
+                      {editingStore ? 'Guardar Cambios' : 'Crear Tienda'}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
@@ -900,41 +1220,164 @@ export const HunterStoresPage: React.FC = () => {
       )}
 
       {/* DISPLAY QR MODAL */}
-      {qrModalStore && (
-        <Portal>
-          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-4 sm:p-6 text-center shadow-2xl space-y-4">
-              <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">Código QR de la Tienda</h3>
-                <button onClick={() => setQrModalStore(null)} className="text-slate-400 hover:text-slate-600">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      {qrModalStore && (() => {
+        const modalCampaignUrl = getStoreCampaignUrl(qrModalStore);
+        const modalQrPreviewUrl = getStoreQrCodeUrl(qrModalStore, 500);
 
-              <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex justify-center">
-                <img
-                  src={qrModalStore.qr_code_url}
-                  alt="QR Code"
-                  className="w-48 h-48 rounded-xl shadow-md bg-white p-2"
-                />
-              </div>
+        return (
+          <Portal>
+            <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-4 sm:p-6 text-center shadow-2xl space-y-4">
+                <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div className="text-left">
+                    <h3 className="font-black text-base text-slate-900 dark:text-white flex items-center gap-2">
+                      <QrCode className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                      <span>Código QR de Captación</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[260px]">{qrModalStore.name}</p>
+                  </div>
+                  <button 
+                    onClick={() => setQrModalStore(null)} 
+                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
 
-              <div>
-                <p className="text-xs font-bold text-slate-900 dark:text-white">{qrModalStore.name}</p>
-                <p className="text-[11px] text-slate-400">Escanea para acceder al formulario público de registro</p>
-              </div>
+                {/* QR Image Frame */}
+                <div className="p-5 bg-gradient-to-b from-slate-50 to-indigo-50/30 dark:from-slate-950 dark:to-indigo-950/20 border border-slate-200 dark:border-slate-800 rounded-3xl flex flex-col items-center justify-center space-y-3 shadow-inner">
+                  <div className="relative group p-3 bg-white rounded-2xl shadow-lg border border-slate-100">
+                    <img
+                      src={modalQrPreviewUrl}
+                      alt={`QR Code ${qrModalStore.name}`}
+                      className="w-48 h-48 object-contain rounded-xl"
+                    />
+                    <div className="absolute inset-0 bg-slate-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                      <span className="px-3 py-1 bg-black/80 text-white text-[10px] font-bold rounded-full backdrop-blur-xs">
+                        Listo para escanear
+                      </span>
+                    </div>
+                  </div>
 
-              <button
-                type="button"
-                onClick={() => setQrModalStore(null)}
-                className="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl"
-              >
-                Cerrar
-              </button>
+                  <div className="text-center max-w-xs space-y-1">
+                    <span className="inline-block px-2.5 py-0.5 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-black uppercase tracking-wider rounded-full">
+                      Campaña Hunter
+                    </span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Escanea este código con cualquier cámara móvil para abrir el formulario de captación.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Direct Campaign Link Row */}
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-1.5 text-left">
+                  <input
+                    type="text"
+                    readOnly
+                    value={modalCampaignUrl}
+                    className="bg-transparent text-xs text-slate-600 dark:text-slate-300 font-mono px-2 flex-1 focus:outline-hidden truncate"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCampaignLink(qrModalStore)}
+                    className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
+                    title="Copiar Enlace"
+                  >
+                    {copiedStoreId === qrModalStore.id ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Copiado</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copiar</span>
+                      </>
+                    )}
+                  </button>
+                  <a
+                    href={modalCampaignUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-colors shrink-0"
+                    title="Abrir formulario público en nueva pestaña"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+
+                {/* Download Options */}
+                <div className="space-y-2 pt-1 text-left">
+                  <p className="text-[11px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">
+                    Opciones de Descarga
+                  </p>
+
+                  {/* Primary Download: HD PNG */}
+                  <button
+                    type="button"
+                    disabled={downloadingFormat !== null}
+                    onClick={() => handleDownloadQr(qrModalStore, 'png')}
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {downloadingFormat === 'png' ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    <span>
+                      {downloadingFormat === 'png' ? 'Generando descarga...' : 'Descargar Código QR (PNG HD)'}
+                    </span>
+                  </button>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Printable Flyer Card */}
+                    <button
+                      type="button"
+                      disabled={downloadingFormat !== null}
+                      onClick={() => handleDownloadQr(qrModalStore, 'card')}
+                      className="py-2.5 px-3 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-bold text-xs rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                      title="Ficha con diseño listo para imprimir o mostrador"
+                    >
+                      {downloadingFormat === 'card' ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Printer className="w-3.5 h-3.5" />
+                      )}
+                      <span>Ficha de Mostrador</span>
+                    </button>
+
+                    {/* Vectorial SVG */}
+                    <button
+                      type="button"
+                      disabled={downloadingFormat !== null}
+                      onClick={() => handleDownloadQr(qrModalStore, 'svg')}
+                      className="py-2.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                      title="Descargar en formato vectorial SVG"
+                    >
+                      {downloadingFormat === 'svg' ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <FileDown className="w-3.5 h-3.5" />
+                      )}
+                      <span>Vectorial (SVG)</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setQrModalStore(null)}
+                    className="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </Portal>
-      )}
+          </Portal>
+        );
+      })()}
 
       {/* APPROVE REQUEST MODAL */}
       {approvingRequest && (
@@ -1058,6 +1501,61 @@ export const HunterStoresPage: React.FC = () => {
                   className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-md transition-all active:scale-95"
                 >
                   Confirmar Rechazo
+                </button>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* DELETE STORE CONFIRMATION MODAL */}
+      {storeToDelete && (
+        <Portal>
+          <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-sm">
+                <Trash2 className="w-6 h-6" />
+              </div>
+
+              <div className="text-center space-y-1.5">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                  ¿Eliminar Tienda Hunter?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Estás a punto de eliminar la tienda <span className="font-extrabold text-slate-800 dark:text-slate-200">"{storeToDelete.name}"</span> ({storeToDelete.email || 'Sin correo'}).
+                </p>
+              </div>
+
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/30 rounded-xl border border-rose-200/80 dark:border-rose-900/40 text-[11px] text-rose-700 dark:text-rose-300">
+                El enlace público de captación y el código QR quedarán deshabilitados.
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setStoreToDelete(null)}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-extrabold text-xs shadow-md transition-all flex items-center gap-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Eliminando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Sí, Eliminar Tienda</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

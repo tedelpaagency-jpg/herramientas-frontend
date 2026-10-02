@@ -98,6 +98,19 @@ apiClient.interceptors.request.use(
       config.headers['X-Domain'] = window.location.hostname;
     }
 
+    // 3. Inyectar dinámicamente X-White-Label-ID desde santun_white_label si existe
+    if (typeof window !== 'undefined' && config.headers) {
+      const savedWl = localStorage.getItem('santun_white_label');
+      if (savedWl) {
+        try {
+          const parsedWl = JSON.parse(savedWl);
+          if (parsedWl && parsedWl.id) {
+            config.headers['X-White-Label-ID'] = String(parsedWl.id);
+          }
+        } catch (e) {}
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
