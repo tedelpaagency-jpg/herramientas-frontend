@@ -1,5 +1,27 @@
 import apiClient, { getApiBaseUrl } from './apiClient';
 
+export const formatPublicDossierLink = (accessToken?: string, serverLink?: string): string => {
+  const defaultDomain = 'https://santun.tedelpa.com';
+
+  if (serverLink && typeof serverLink === 'string') {
+    if (serverLink.includes('localhost') || serverLink.includes('127.0.0.1')) {
+      return serverLink.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, defaultDomain);
+    }
+    return serverLink;
+  }
+
+  if (!accessToken) return '';
+
+  if (typeof window !== 'undefined' && window.location) {
+    const { hostname, origin } = window.location;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `${origin}/visas/portal/${accessToken}`;
+    }
+  }
+
+  return `${defaultDomain}/visas/portal/${accessToken}`;
+};
+
 export interface VisaProcessType {
   id: number;
   slug: string;
@@ -140,7 +162,11 @@ export interface VisaDossier {
   id: number;
   agency_id: number;
   white_label_id?: number;
-  client_id: number;
+  client_id?: number | null;
+  applicant_name?: string;
+  applicant_email?: string;
+  applicant_phone?: string;
+  passport_number?: string;
   group_id?: number;
   visa_process_type_id: number;
   responsible_user_id?: number;
@@ -258,7 +284,11 @@ class VisaWholesaleService {
 
   async getClientLink(id: number, regenerate = false) {
     const res = await apiClient.post(`/v1/visas/dossiers/${id}/client-link`, { regenerate });
-    return res.data?.data;
+    const data = res.data?.data;
+    if (data?.public_link) {
+      data.public_link = formatPublicDossierLink(data.access_token, data.public_link);
+    }
+    return data;
   }
 
   async deleteDossier(id: number) {

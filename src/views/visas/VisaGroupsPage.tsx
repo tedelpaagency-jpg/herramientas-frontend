@@ -360,8 +360,8 @@ export const VisaGroupsPage: React.FC = () => {
                                             {d.code}
                                           </td>
                                           <td className="py-3 px-4">
-                                            <p className="font-bold text-slate-900 dark:text-white">{d.client?.name || 'Cliente'}</p>
-                                            <p className="text-[10px] text-slate-400">{d.client?.email || d.client?.phone || '—'}</p>
+                                            <p className="font-bold text-slate-900 dark:text-white">{d.applicant_name || d.client?.name || 'Solicitante'}</p>
+                                            <p className="text-[10px] text-slate-400">{d.applicant_email || d.client?.email || d.applicant_phone || d.client?.phone || '—'}</p>
                                           </td>
                                           <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
                                             <span className="mr-1">{d.processType?.flag_icon || '🌐'}</span>

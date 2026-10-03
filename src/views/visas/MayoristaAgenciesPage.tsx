@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import visaWholesaleService, { VisaDossier, VisaGroup } from '@/services/visaWholesaleService';
+import visaWholesaleService, { VisaDossier, VisaGroup, formatPublicDossierLink } from '@/services/visaWholesaleService';
 import { useAuth } from '@/context/AuthContext';
 import { 
   Building2, Users, Search, RefreshCw, Eye, ArrowRight, ArrowLeft,
@@ -290,8 +290,7 @@ export const MayoristaAgenciesPage: React.FC = () => {
   };
 
   const handleCopyClientLink = (dossier: VisaDossier) => {
-    if (!dossier.access_token) return;
-    const url = `${window.location.origin}/visas/portal/${dossier.access_token}`;
+    const url = formatPublicDossierLink(dossier.access_token);
     navigator.clipboard.writeText(url);
     setCopiedTokenDossierId(dossier.id);
     toast.success('Enlace del portal de cliente copiado');
@@ -716,9 +715,9 @@ export const MayoristaAgenciesPage: React.FC = () => {
                       agencyDossiers.map((dossier) => {
                         const statusBadge = getDossierStatusBadge(dossier.status);
                         const respBadge = getResponsibleBadge(dossier.current_responsible);
-                        const clientName = dossier.client 
+                        const clientName = dossier.applicant_name || (dossier.client 
                           ? `${dossier.client.first_name || ''} ${dossier.client.last_name || ''}`.trim() || dossier.client.name
-                          : 'Sin cliente asignado';
+                          : 'Solicitante Principal');
 
                         return (
                           <tr
@@ -747,11 +746,11 @@ export const MayoristaAgenciesPage: React.FC = () => {
                                     {clientName}
                                   </span>
                                   <div className="text-[11px] text-slate-400 flex items-center gap-2">
-                                    {dossier.client?.document_number && (
-                                      <span>Doc: {dossier.client.document_number}</span>
+                                    {(dossier.passport_number || dossier.client?.document_number) && (
+                                      <span>Doc: {dossier.passport_number || dossier.client?.document_number}</span>
                                     )}
-                                    {dossier.client?.email && (
-                                      <span className="truncate max-w-[150px]">{dossier.client.email}</span>
+                                    {(dossier.applicant_email || dossier.client?.email) && (
+                                      <span className="truncate max-w-[150px]">{dossier.applicant_email || dossier.client?.email}</span>
                                     )}
                                   </div>
                                 </div>
@@ -1052,14 +1051,6 @@ export const MayoristaAgenciesPage: React.FC = () => {
                                   <FileText className="w-3.5 h-3.5" />
                                   <span>Ver Expedientes</span>
                                 </button>
-
-                                <Link
-                                  href={`/visas/grupos?agency_id=${selectedAgencyForDashboard.id}`}
-                                  className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                  title="Gestionar grupos"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </Link>
                               </div>
                             </td>
                           </tr>

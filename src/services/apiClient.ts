@@ -38,41 +38,50 @@ export const normalizeFileUrl = (url: string | undefined | null): string => {
   if (!url) return '';
   if (url.startsWith('data:') || url.startsWith('blob:')) return url;
 
+  let cleanUrl = url;
+  if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1')) {
+    cleanUrl = cleanUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, 'https://santun.tedelpa.com');
+  }
+
   const apiBase = getApiBaseUrl().replace(/\/api$/, '');
 
   // Bypass 403 Forbidden Nginx/Apache block on direct /storage/signatures/ URLs
-  if (url.includes('/signatures/')) {
-    const filename = url.substring(url.lastIndexOf('/') + 1);
+  if (cleanUrl.includes('/signatures/')) {
+    const filename = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1);
     return `${apiBase}/api/v1/public/storage/signatures/${filename}`;
   }
 
-  if (url.startsWith('/storage')) {
-    return `${apiBase}${url}`;
+  if (cleanUrl.startsWith('/storage')) {
+    return `${apiBase}${cleanUrl}`;
   }
 
-  if (url.startsWith('storage/')) {
-    return `${apiBase}/${url}`;
+  if (cleanUrl.startsWith('storage/')) {
+    return `${apiBase}/${cleanUrl}`;
   }
 
-  if (url.includes('/storage/')) {
-    const pathAfterStorage = url.substring(url.indexOf('/storage/'));
+  if (cleanUrl.includes('/storage/')) {
+    const pathAfterStorage = cleanUrl.substring(cleanUrl.indexOf('/storage/'));
     return `${apiBase}${pathAfterStorage}`;
   }
 
-  if (url.startsWith('/uploads')) {
-    return `${apiBase}${url}`;
+  if (cleanUrl.startsWith('/uploads')) {
+    return `${apiBase}${cleanUrl}`;
   }
 
-  if (url.startsWith('uploads/')) {
-    return `${apiBase}/${url}`;
+  if (cleanUrl.startsWith('uploads/')) {
+    return `${apiBase}/${cleanUrl}`;
   }
 
-  if (url.includes('/uploads/')) {
-    const pathAfterUploads = url.substring(url.indexOf('/uploads/'));
+  if (cleanUrl.includes('/uploads/')) {
+    const pathAfterUploads = cleanUrl.substring(cleanUrl.indexOf('/uploads/'));
     return `${apiBase}${pathAfterUploads}`;
   }
 
-  return url;
+  if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+    return `${apiBase}/storage/${cleanUrl.replace(/^\/+/, '')}`;
+  }
+
+  return cleanUrl;
 };
 
 export const apiClient = axios.create({

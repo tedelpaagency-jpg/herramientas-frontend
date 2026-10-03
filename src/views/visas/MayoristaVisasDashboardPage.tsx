@@ -84,13 +84,6 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
-            href="/visas/grupos"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10 backdrop-blur-md"
-          >
-            <Users className="w-4 h-4 text-indigo-300" />
-            <span>Grupos y Familias B2B</span>
-          </Link>
-          <Link
             href="/visas/mayorista/agencias"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10 backdrop-blur-md"
           >

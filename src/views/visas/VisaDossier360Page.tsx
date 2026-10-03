@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import visaWholesaleService, { 
-  VisaDossier, VisaDocument, VisaMessage, VisaTimelineEvent 
+  VisaDossier, VisaDocument, VisaMessage, VisaTimelineEvent, formatPublicDossierLink 
 } from '@/services/visaWholesaleService';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -50,34 +50,10 @@ export const VisaDossier360Page: React.FC = () => {
   const [messageVisibility, setMessageVisibility] = useState<'public' | 'internal'>('public');
 
   const [copiedLink, setCopiedLink] = useState(false);
-  const [operators, setOperators] = useState<any[]>([]);
-  const [isAssigningOperator, setIsAssigningOperator] = useState(false);
 
   const isMayorista = user?.role === 'super_admin' || 
     user?.role === 'white_label_admin' || 
     user?.roles?.some((r: any) => ['super_admin', 'white_label_admin', 'mayorista_supervisor', 'mayorista_operador'].includes(r.name));
-
-  useEffect(() => {
-    if (isMayorista) {
-      visaWholesaleService.getMayoristaOperators()
-        .then((ops) => setOperators(ops || []))
-        .catch(() => {});
-    }
-  }, [isMayorista]);
-
-  const handleAssignDossierOperator = async (operatorId: number | null) => {
-    if (!dossier) return;
-    setIsAssigningOperator(true);
-    try {
-      const res = await visaWholesaleService.assignDossierOperator(dossier.id, operatorId);
-      toast.success(res?.message || 'Operador asignado correctamente');
-      fetchDossier();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al asignar operador');
-    } finally {
-      setIsAssigningOperator(false);
-    }
-  };
 
   const fetchDossier = async () => {
     if (!dossierId) return;
@@ -101,7 +77,7 @@ export const VisaDossier360Page: React.FC = () => {
     if (!dossier) return;
     try {
       const res = await visaWholesaleService.getClientLink(dossier.id);
-      const url = res?.public_link || `${window.location.origin}/visas/portal/${dossier.access_token}`;
+      const url = formatPublicDossierLink(dossier.access_token, res?.public_link);
       navigator.clipboard.writeText(url);
       setCopiedLink(true);
       toast.success('¡Enlace único copiado al portapapeles!');
@@ -293,7 +269,7 @@ export const VisaDossier360Page: React.FC = () => {
                 {dossier.code}
               </span>
               <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                {dossier.client?.name || 'Cliente'}
+                {dossier.applicant_name || dossier.client?.name || 'Solicitante'}
               </span>
               <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                 {dossier.agency?.name || 'Agencia'}
@@ -460,19 +436,19 @@ export const VisaDossier360Page: React.FC = () => {
                 <div className="text-xs space-y-2">
                   <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5">
                     <span className="text-slate-400">Nombre Completo:</span>
-                    <strong className="text-slate-800 dark:text-slate-200">{dossier.client?.name || 'N/A'}</strong>
+                    <strong className="text-slate-800 dark:text-slate-200">{dossier.applicant_name || dossier.client?.name || 'Solicitante Principal'}</strong>
                   </div>
                   <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5">
-                    <span className="text-slate-400">Documento / Cédula:</span>
-                    <strong className="text-slate-800 dark:text-slate-200">{dossier.client?.document_number || 'N/A'}</strong>
+                    <span className="text-slate-400">Documento / Pasaporte:</span>
+                    <strong className="text-slate-800 dark:text-slate-200">{dossier.passport_number || dossier.client?.document_number || 'N/A'}</strong>
                   </div>
                   <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5">
                     <span className="text-slate-400">Correo Electrónico:</span>
-                    <strong className="text-slate-800 dark:text-slate-200">{dossier.client?.email || 'N/A'}</strong>
+                    <strong className="text-slate-800 dark:text-slate-200">{dossier.applicant_email || dossier.client?.email || 'N/A'}</strong>
                   </div>
                   <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5">
                     <span className="text-slate-400">Teléfono / WhatsApp:</span>
-                    <strong className="text-slate-800 dark:text-slate-200">{dossier.client?.phone || 'N/A'}</strong>
+                    <strong className="text-slate-800 dark:text-slate-200">{dossier.applicant_phone || dossier.client?.phone || 'N/A'}</strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Grupo Familiar/Corporativo:</span>
@@ -502,36 +478,14 @@ export const VisaDossier360Page: React.FC = () => {
                     <span className="text-slate-400">Agencia Afiliada:</span>
                     <strong className="text-slate-800 dark:text-slate-200">{dossier.agency?.name}</strong>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-2 gap-1.5">
+                  <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5">
                     <span className="text-slate-400 flex items-center gap-1.5">
                       <UserCheck className="w-3.5 h-3.5 text-sky-500" />
                       Operador Mayorista:
                     </span>
-                    {isMayorista ? (
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={dossier.assigned_operator_id || ''}
-                          onChange={(e) => {
-                            const val = e.target.value ? Number(e.target.value) : null;
-                            handleAssignDossierOperator(val);
-                          }}
-                          disabled={isAssigningOperator}
-                          className="py-1 px-2.5 text-xs font-semibold rounded-lg bg-sky-50/80 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200 focus:ring-2 focus:ring-sky-500"
-                        >
-                          <option value="">-- Sin Operador Asignado --</option>
-                          {operators.map((op) => (
-                            <option key={op.id} value={op.id}>
-                              {op.name} ({op.role === 'white_label_admin' ? 'Admin' : op.role === 'mayorista_supervisor' ? 'Supervisor' : 'Operador'})
-                            </option>
-                          ))}
-                        </select>
-                        {isAssigningOperator && <RefreshCw className="w-3 h-3 animate-spin text-sky-500" />}
-                      </div>
-                    ) : (
-                      <strong className="text-slate-800 dark:text-slate-200">
-                        {dossier.assignedOperator?.name || (dossier as any).assigned_operator?.name || 'Pendiente de asignación'}
-                      </strong>
-                    )}
+                    <strong className="text-slate-800 dark:text-slate-200">
+                      {dossier.assignedOperator?.name || (dossier as any).assigned_operator?.name || dossier.agency?.assigned_operator?.name || (dossier.agency as any)?.assignedOperator?.name || 'Asignado por Agencia'}
+                    </strong>
                   </div>
                   <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5">
                     <span className="text-slate-400">Términos Aceptados por Cliente:</span>
@@ -608,7 +562,7 @@ export const VisaDossier360Page: React.FC = () => {
               visaType={dossier.processType?.name?.includes('Schengen') || dossier.processType?.name?.includes('Europa') ? 'SCHENGEN' : dossier.processType?.name?.includes('Canad') ? 'CANADA' : (dossier.processType?.name?.includes('Reino Unido') || dossier.processType?.name?.includes('UK')) ? 'UK' : 'USA'}
               processSlug={dossier.processType?.slug}
               formData={dossier.form_data || {}}
-              applicantName={dossier.client?.name}
+              applicantName={dossier.applicant_name || dossier.client?.name}
               readOnly={true}
             />
           </div>

@@ -1,16 +1,14 @@
 'use client';
 
-import React from 'react';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Layout from '@/components/Layout';
-import { VisaGroupsPage } from '@/views/visas/VisaGroupsPage';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function VisaGroupsRoute() {
-  return (
-    <ProtectedRoute permission={['view_visas', 'visas.view']}>
-      <Layout>
-        <VisaGroupsPage />
-      </Layout>
-    </ProtectedRoute>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/visas/mayorista');
+  }, [router]);
+
+  return null;
 }

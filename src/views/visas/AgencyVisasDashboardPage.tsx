@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import visaWholesaleService, { VisaDossier, VisaProcessType, VisaGroup } from '@/services/visaWholesaleService';
+import visaWholesaleService, { VisaDossier, VisaProcessType, VisaGroup, formatPublicDossierLink } from '@/services/visaWholesaleService';
 import clientService from '@/services/clientService';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -51,18 +51,76 @@ export const AgencyVisasDashboardPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newDossierData, setNewDossierData] = useState({
-    client_id: '',
-    client_name: '',
-    client_email: '',
-    client_phone: '',
-    client_document_number: '',
     group_id: '',
     visa_process_type_id: '',
     priority: 'pendiente',
     deadline: '',
     notes: '',
   });
-  const [createNewClient, setCreateNewClient] = useState(false);
+
+  // Group Creation Modal (Flujo integrado idéntico al minorista)
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isSubmittingGroup, setIsSubmittingGroup] = useState(false);
+  const [groupFormData, setGroupFormData] = useState<{
+    name: string;
+    group_type: 'familia' | 'pareja' | 'corporativo' | 'viaje' | 'otro';
+    contact_name: string;
+    contact_email: string;
+    contact_phone: string;
+    notes: string;
+  }>({
+    name: '',
+    group_type: 'familia',
+    contact_name: '',
+    contact_email: '',
+    contact_phone: '',
+    notes: '',
+  });
+
+  const handleOpenCreateGroup = () => {
+    setGroupFormData({
+      name: '',
+      group_type: 'familia',
+      contact_name: '',
+      contact_email: '',
+      contact_phone: '',
+      notes: '',
+    });
+    setIsGroupModalOpen(true);
+  };
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!groupFormData.name.trim()) {
+      toast.error('Ingrese el nombre del grupo');
+      return;
+    }
+
+    setIsSubmittingGroup(true);
+    try {
+      const currentAgencyId = user?.agency_id || (user?.agency?.id ? user.agency.id : undefined);
+      const res = await visaWholesaleService.createGroup({
+        ...groupFormData,
+        agency_id: currentAgencyId,
+      });
+      const createdGroup: VisaGroup = res.data;
+      toast.success(`¡Grupo "${createdGroup.name}" creado con éxito!`);
+      setIsGroupModalOpen(false);
+
+      // Add to groups list & expand
+      setGroups((prev) => [createdGroup, ...prev]);
+      if (createdGroup.id) {
+        setExpandedGroupIds((prev) => new Set([...prev, Number(createdGroup.id)]));
+      }
+
+      // Automatically open dossier creation inside this new group!
+      handleOpenCreateDossier(createdGroup);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al crear el grupo');
+    } finally {
+      setIsSubmittingGroup(false);
+    }
+  };
 
   // Deletion Request Modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -95,11 +153,6 @@ export const AgencyVisasDashboardPage: React.FC = () => {
       const grp = groups.find(g => String(g.id) === String(targetGroup.id)) || (targetGroup as VisaGroup);
       setPresetGroupForModal(grp);
       setNewDossierData({
-        client_id: '',
-        client_name: '',
-        client_email: '',
-        client_phone: '',
-        client_document_number: '',
         group_id: String(grp.id),
         visa_process_type_id: '',
         priority: 'pendiente',
@@ -109,11 +162,6 @@ export const AgencyVisasDashboardPage: React.FC = () => {
     } else {
       setPresetGroupForModal(null);
       setNewDossierData({
-        client_id: '',
-        client_name: '',
-        client_email: '',
-        client_phone: '',
-        client_document_number: '',
         group_id: '',
         visa_process_type_id: '',
         priority: 'pendiente',
@@ -202,12 +250,9 @@ export const AgencyVisasDashboardPage: React.FC = () => {
       toast.error('Seleccione el tipo de trámite migratorio');
       return;
     }
-    if (!createNewClient && !newDossierData.client_id) {
-      toast.error('Seleccione un cliente o marque crear uno nuevo');
-      return;
-    }
-    if (createNewClient && (!newDossierData.client_name || !newDossierData.client_email)) {
-      toast.error('Nombre y correo del cliente son requeridos');
+
+    if (!newDossierData.group_id) {
+      toast.error('Debe seleccionar o crear un grupo para el expediente');
       return;
     }
 
@@ -215,44 +260,16 @@ export const AgencyVisasDashboardPage: React.FC = () => {
     try {
       const payload: any = {
         visa_process_type_id: Number(newDossierData.visa_process_type_id),
+        group_id: Number(newDossierData.group_id),
         priority: newDossierData.priority,
         deadline: newDossierData.deadline || undefined,
         notes: newDossierData.notes || undefined,
       };
 
-      if (newDossierData.group_id) {
-        payload.group_id = Number(newDossierData.group_id);
-      }
-
-      if (createNewClient) {
-        payload.client_name = newDossierData.client_name;
-        payload.client_email = newDossierData.client_email;
-        payload.client_phone = newDossierData.client_phone;
-        payload.client_document_number = newDossierData.client_document_number;
-        payload.applicant_name = newDossierData.client_name;
-        payload.applicant_email = newDossierData.client_email;
-        payload.applicant_phone = newDossierData.client_phone;
-        payload.passport_number = newDossierData.client_document_number;
-      } else {
-        payload.client_id = Number(newDossierData.client_id);
-        const selClient = clients.find((c) => c.id === Number(newDossierData.client_id));
-        if (selClient) {
-          payload.applicant_name = selClient.name;
-          payload.applicant_email = selClient.email;
-          payload.applicant_phone = selClient.phone;
-          payload.passport_number = selClient.document_number;
-        }
-      }
-
       const res = await visaWholesaleService.createDossier(payload);
       toast.success('¡Expediente creado correctamente con link generado!');
       setIsCreateModalOpen(false);
       setNewDossierData({
-        client_id: '',
-        client_name: '',
-        client_email: '',
-        client_phone: '',
-        client_document_number: '',
         group_id: '',
         visa_process_type_id: '',
         priority: 'pendiente',
@@ -266,7 +283,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
         setExpandedGroupIds((prev) => new Set([...prev, Number(created.group_id)]));
       }
       if (created?.access_token) {
-        const publicUrl = `${window.location.origin}/visas/portal/${created.access_token}`;
+        const publicUrl = formatPublicDossierLink(created.access_token, created.public_link);
         setLinkModalData({
           isOpen: true,
           link: publicUrl,
@@ -285,7 +302,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
   const handleOpenLinkModal = async (dossier: VisaDossier) => {
     try {
       const res = await visaWholesaleService.getClientLink(dossier.id);
-      const publicUrl = res?.public_link || `${window.location.origin}/visas/portal/${dossier.access_token}`;
+      const publicUrl = formatPublicDossierLink(dossier.access_token, res?.public_link);
       setLinkModalData({
         isOpen: true,
         link: publicUrl,
@@ -373,8 +390,8 @@ export const AgencyVisasDashboardPage: React.FC = () => {
     const matchesContact = (g.contact_name || '').toLowerCase().includes(term) || (g.contact_email || '').toLowerCase().includes(term);
     const matchesDossiers = (g.dossiers || []).some(d => 
       (d.code || '').toLowerCase().includes(term) || 
-      (d.client?.name || '').toLowerCase().includes(term) ||
-      (d.client?.email || '').toLowerCase().includes(term)
+      (d.applicant_name || d.client?.name || '').toLowerCase().includes(term) ||
+      (d.applicant_email || d.client?.email || '').toLowerCase().includes(term)
     );
     return matchesName || matchesCode || matchesContact || matchesDossiers;
   });
@@ -399,8 +416,8 @@ export const AgencyVisasDashboardPage: React.FC = () => {
         </td>
 
         <td className="py-3.5 px-4">
-          <div className="font-medium text-slate-900 dark:text-slate-100">{dossier.client?.name || 'Sin nombre'}</div>
-          <div className="text-xs text-slate-500">{dossier.client?.email || dossier.client?.phone || 'Sin contacto'}</div>
+          <div className="font-medium text-slate-900 dark:text-slate-100">{dossier.applicant_name || dossier.client?.name || 'Solicitante'}</div>
+          <div className="text-xs text-slate-500">{dossier.applicant_email || dossier.client?.email || dossier.applicant_phone || dossier.client?.phone || 'Sin contacto'}</div>
         </td>
 
         <td className="py-3.5 px-4">
@@ -598,13 +615,13 @@ export const AgencyVisasDashboardPage: React.FC = () => {
             </>
           ) : (
             <>
-              <Link
-                href="/visas/grupos"
+              <button
+                onClick={handleOpenCreateGroup}
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10 backdrop-blur-md shadow-sm"
               >
-                <Users className="w-4 h-4" />
-                <span>Gestionar Grupos</span>
-              </Link>
+                <FolderPlus className="w-4 h-4 text-sky-300" />
+                <span>Nuevo Grupo</span>
+              </button>
               <Link
                 href="/visas/politicas"
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10 backdrop-blur-md shadow-sm"
@@ -639,8 +656,8 @@ export const AgencyVisasDashboardPage: React.FC = () => {
           <p className="text-2xl font-black text-sky-600 dark:text-sky-400 mt-1">{metrics.en_proceso || 0}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Individuales</p>
-          <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{unassignedDossiers.length}</p>
+          <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Trámites en Curso</p>
+          <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{(metrics.pendientes_cliente || 0) + (metrics.pendientes_revision || 0)}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Con Observación</p>
@@ -832,19 +849,19 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                 </h4>
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={handleOpenCreateGroup}
+                    className="text-xs font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-800 transition-colors"
+                  >
+                    <FolderPlus className="w-3.5 h-3.5" />
+                    <span>+ Crear Grupo</span>
+                  </button>
+                  <button
                     onClick={() => handleOpenCreateDossier(null)}
-                    className="text-xs font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400 flex items-center gap-1"
+                    className="text-xs font-bold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Nuevo Expediente</span>
+                    <span>+ Nuevo Expediente</span>
                   </button>
-                  <span className="text-slate-300 dark:text-slate-700">|</span>
-                  <Link
-                    href="/visas/grupos"
-                    className="text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1"
-                  >
-                    <span>Configurar Grupos</span>
-                  </Link>
                 </div>
               </div>
 
@@ -1003,13 +1020,6 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                               <FileText className="w-3.5 h-3.5" />
                               <span>Ver expedientes</span>
                             </button>
-                            <button
-                              onClick={() => handleOpenCreateDossier(null)}
-                              className="inline-flex items-center space-x-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition-all border border-slate-200 dark:border-slate-700"
-                            >
-                              <Plus className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                              <span>+ Individual</span>
-                            </button>
                           </td>
                         </tr>
 
@@ -1021,16 +1031,9 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                                   <div className="flex items-center gap-2">
                                     <FileText className="w-4 h-4 text-amber-600" />
                                     <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                      Expedientes Individuales ({unassignedDossiers.length})
+                                      Expedientes Anteriores Sin Grupo ({unassignedDossiers.length})
                                     </span>
                                   </div>
-                                  <button
-                                    onClick={() => handleOpenCreateDossier(null)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold shadow-xs transition-all"
-                                  >
-                                    <Plus className="w-3.5 h-3.5" />
-                                    <span>Crear Expediente Individual</span>
-                                  </button>
                                 </div>
                                 {renderDossiersTable(unassignedDossiers, null, false)}
                               </div>
@@ -1150,21 +1153,24 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                 </select>
               </div>
 
-              {/* Grupo (Opcional o Pre-asignado) */}
+              {/* Grupo (Obligatorio y Pre-asignado) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Grupo de Solicitantes (Familia / Corporativo)
+                    Grupo de Solicitantes (Familia / Corporativo / Individual) *
                   </label>
                   {!presetGroupForModal && (
-                    <Link
-                      href="/visas/grupos"
-                      target="_blank"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreateModalOpen(false);
+                        handleOpenCreateGroup();
+                      }}
                       className="text-xs font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400 flex items-center gap-1"
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      Gestionar grupos
-                    </Link>
+                      <FolderPlus className="w-3.5 h-3.5" />
+                      + Crear nuevo grupo
+                    </button>
                   )}
                 </div>
 
@@ -1195,105 +1201,35 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                         setNewDossierData((prev) => ({ ...prev, group_id: '' }));
                       }}
                       className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 transition-colors"
-                      title="Cambiar a solicitud individual o elegir otro grupo"
+                      title="Elegir otro grupo"
                     >
                       Cambiar
                     </button>
                   </div>
                 ) : (
-                  <select
-                    value={newDossierData.group_id}
-                    onChange={(e) => {
-                      const selId = e.target.value;
-                      const found = groups.find((g) => String(g.id) === selId) || null;
-                      setPresetGroupForModal(found);
-                      setNewDossierData({ ...newDossierData, group_id: selId });
-                    }}
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
-                  >
-                    <option value="">Ninguno (Solicitud individual)</option>
-                    {groups.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.name} ({g.code})
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              {/* Toggle Cliente Existente vs Nuevo */}
-              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 bg-slate-50/50 dark:bg-slate-800/30">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Cliente Solicitante
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setCreateNewClient(!createNewClient)}
-                    className="text-xs font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400"
-                  >
-                    {createNewClient ? '← Seleccionar cliente existente' : '+ Crear nuevo cliente rápido'}
-                  </button>
-                </div>
-
-                {!createNewClient ? (
-                  <select
-                    value={newDossierData.client_id}
-                    onChange={(e) => setNewDossierData({ ...newDossierData, client_id: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
-                  >
-                    <option value="">Seleccione un cliente registrado...</option>
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} {c.document_number ? `(${c.document_number})` : ''} - {c.email}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Nombre Completo *</label>
-                      <input
-                        type="text"
-                        required
-                        value={newDossierData.client_name}
-                        onChange={(e) => setNewDossierData({ ...newDossierData, client_name: e.target.value })}
-                        placeholder="Juan Pérez"
-                        className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-slate-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Correo Electrónico *</label>
-                      <input
-                        type="email"
-                        required
-                        value={newDossierData.client_email}
-                        onChange={(e) => setNewDossierData({ ...newDossierData, client_email: e.target.value })}
-                        placeholder="juan@ejemplo.com"
-                        className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-slate-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Teléfono / WhatsApp</label>
-                      <input
-                        type="tel"
-                        value={newDossierData.client_phone}
-                        onChange={(e) => setNewDossierData({ ...newDossierData, client_phone: e.target.value })}
-                        placeholder="+593 99 999 9999"
-                        className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-slate-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Cédula / Identificación</label>
-                      <input
-                        type="text"
-                        value={newDossierData.client_document_number}
-                        onChange={(e) => setNewDossierData({ ...newDossierData, client_document_number: e.target.value })}
-                        placeholder="1720000000"
-                        className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-slate-100"
-                      />
-                    </div>
-                  </div>
+                  <>
+                    <select
+                      required
+                      value={newDossierData.group_id}
+                      onChange={(e) => {
+                        const selId = e.target.value;
+                        const found = groups.find((g) => String(g.id) === selId) || null;
+                        setPresetGroupForModal(found);
+                        setNewDossierData({ ...newDossierData, group_id: selId });
+                      }}
+                      className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
+                    >
+                      <option value="">Seleccione un grupo obligatorio...</option>
+                      {groups.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name} ({g.code}) {g.group_type ? `[${g.group_type}]` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                      Todo expediente debe pertenecer a un grupo familiar, corporativo o individual.
+                    </p>
+                  </>
                 )}
               </div>
 
@@ -1354,6 +1290,134 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm transition-all shadow-md shadow-sky-600/20 disabled:opacity-50"
                 >
                   {isSubmitting ? 'Creando expediente...' : 'Generar Expediente y Link'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Crear Grupo / Familia (Flujo Integrado) */}
+      {isGroupModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-8">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+              <div className="flex items-center gap-2">
+                <FolderPlus className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg">Nuevo Grupo de Solicitantes</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGroupModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateGroup} className="p-6 space-y-4">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Organice los expedientes dentro de este grupo (familia, pareja, corporativo o individual). Podrá agregar de inmediato los expedientes requeridos.
+              </p>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Nombre del Grupo *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. Familia Rodríguez, Grupo Corporativo Tech o Solicitud Carlos M."
+                  value={groupFormData.name}
+                  onChange={(e) => setGroupFormData({ ...groupFormData, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Tipo de Grupo
+                </label>
+                <select
+                  value={groupFormData.group_type}
+                  onChange={(e) => setGroupFormData({ ...groupFormData, group_type: e.target.value as any })}
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
+                >
+                  <option value="familia">👨‍👩‍👧‍👦 Familia</option>
+                  <option value="pareja">👫 Pareja</option>
+                  <option value="corporativo">💼 Corporativo / Empresa</option>
+                  <option value="viaje">✈️ Grupo de Viaje / Delegación</option>
+                  <option value="otro">📄 Individual / Otro</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    Contacto Principal
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Juan Gómez"
+                    value={groupFormData.contact_name}
+                    onChange={(e) => setGroupFormData({ ...groupFormData, contact_name: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    Teléfono / WhatsApp
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+593 99 999 9999"
+                    value={groupFormData.contact_phone}
+                    onChange={(e) => setGroupFormData({ ...groupFormData, contact_phone: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Correo Electrónico de Contacto
+                </label>
+                <input
+                  type="email"
+                  placeholder="contacto@ejemplo.com"
+                  value={groupFormData.contact_email}
+                  onChange={(e) => setGroupFormData({ ...groupFormData, contact_email: e.target.value })}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Notas Internas del Grupo
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Observaciones de la familia o grupo..."
+                  value={groupFormData.notes}
+                  onChange={(e) => setGroupFormData({ ...groupFormData, notes: e.target.value })}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsGroupModalOpen(false)}
+                  className="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingGroup}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm transition-all shadow-md shadow-sky-600/20 disabled:opacity-50"
+                >
+                  {isSubmittingGroup ? 'Creando Grupo...' : 'Crear Grupo y Agregar Expedientes'}
                 </button>
               </div>
             </form>
