@@ -1,25 +1,14 @@
 import apiClient, { getApiBaseUrl } from './apiClient';
 
-export const formatPublicDossierLink = (accessToken?: string, serverLink?: string): string => {
-  const defaultDomain = 'https://santun.tedelpa.com';
-
-  if (serverLink && typeof serverLink === 'string') {
-    if (serverLink.includes('localhost') || serverLink.includes('127.0.0.1')) {
-      return serverLink.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, defaultDomain);
-    }
-    return serverLink;
-  }
-
+export const formatPublicDossierLink = (accessToken?: string, _serverLink?: string): string => {
   if (!accessToken) return '';
 
-  if (typeof window !== 'undefined' && window.location) {
-    const { hostname, origin } = window.location;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return `${origin}/visas/portal/${accessToken}`;
-    }
+  // Usar el dominio de la aplicación React (igual que en las tiendas Hunter)
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}/visas/portal/${accessToken}`;
   }
 
-  return `${defaultDomain}/visas/portal/${accessToken}`;
+  return `https://app.tedelpa.com/visas/portal/${accessToken}`;
 };
 
 export interface VisaProcessType {

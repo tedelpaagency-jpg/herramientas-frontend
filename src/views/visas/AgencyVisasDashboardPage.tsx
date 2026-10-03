@@ -51,6 +51,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newDossierData, setNewDossierData] = useState({
+    applicant_name: '',
     group_id: '',
     visa_process_type_id: '',
     priority: 'pendiente',
@@ -153,6 +154,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
       const grp = groups.find(g => String(g.id) === String(targetGroup.id)) || (targetGroup as VisaGroup);
       setPresetGroupForModal(grp);
       setNewDossierData({
+        applicant_name: '',
         group_id: String(grp.id),
         visa_process_type_id: '',
         priority: 'pendiente',
@@ -162,6 +164,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
     } else {
       setPresetGroupForModal(null);
       setNewDossierData({
+        applicant_name: '',
         group_id: '',
         visa_process_type_id: '',
         priority: 'pendiente',
@@ -246,6 +249,11 @@ export const AgencyVisasDashboardPage: React.FC = () => {
 
   const handleCreateDossier = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newDossierData.applicant_name?.trim()) {
+      toast.error('Ingrese el nombre específico del expediente o solicitante');
+      return;
+    }
+
     if (!newDossierData.visa_process_type_id) {
       toast.error('Seleccione el tipo de trámite migratorio');
       return;
@@ -259,6 +267,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const payload: any = {
+        applicant_name: newDossierData.applicant_name.trim(),
         visa_process_type_id: Number(newDossierData.visa_process_type_id),
         group_id: Number(newDossierData.group_id),
         priority: newDossierData.priority,
@@ -270,6 +279,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
       toast.success('¡Expediente creado correctamente con link generado!');
       setIsCreateModalOpen(false);
       setNewDossierData({
+        applicant_name: '',
         group_id: '',
         visa_process_type_id: '',
         priority: 'pendiente',
@@ -1133,6 +1143,24 @@ export const AgencyVisasDashboardPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateDossier} className="p-6 space-y-4">
+              {/* Nombre Específico del Expediente / Solicitante */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Nombre del Expediente / Solicitante *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. Carlos Mendoza, María López (Turismo), etc."
+                  value={newDossierData.applicant_name}
+                  onChange={(e) => setNewDossierData({ ...newDossierData, applicant_name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
+                />
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  Nombre específico que identifica a la persona o trámite de este expediente dentro del grupo.
+                </p>
+              </div>
+
               {/* Selección de Tipo de Proceso */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
