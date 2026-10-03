@@ -1,4 +1,5 @@
 import { Agency } from './index';
+import { Media } from './media';
 
 export interface HunterRequest {
   id: number;
@@ -30,6 +31,7 @@ export interface HunterStore {
   canton?: string;
   address?: string;
   photo?: string;
+  media_id?: number | null;
   media_type?: 'image' | 'video';
   media_url?: string;
   qr_code_url?: string;
@@ -37,6 +39,7 @@ export interface HunterStore {
   status: 'active' | 'suspended';
   agency?: Agency;
   user?: any;
+  media?: Media | null;
   requests?: HunterRequest[];
   created_at: string;
   updated_at: string;

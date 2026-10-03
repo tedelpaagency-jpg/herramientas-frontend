@@ -177,6 +177,43 @@ export const VisaProcessTimeline: React.FC<VisaProcessTimelineProps> = ({
             />
           </div>
         </div>
+
+        {/* Metric Badges: Completadas, Actual, Faltantes */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-700/60">
+          <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex items-center gap-2.5">
+            <span className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg">
+              <Check className="w-4 h-4 stroke-[3]" />
+            </span>
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wide text-emerald-300 block">Fases Completadas</span>
+              <span className="text-sm font-bold text-white">{completedCount} de {totalPhases}</span>
+            </div>
+          </div>
+
+          <div className="p-3 bg-sky-950/40 border border-sky-500/30 rounded-xl flex items-center gap-2.5">
+            <span className="p-2 bg-sky-500/20 text-sky-400 rounded-lg">
+              <Sparkles className="w-4 h-4" />
+            </span>
+            <div className="min-w-0">
+              <span className="text-[10px] font-extrabold uppercase tracking-wide text-sky-300 block">Estado / Fase Actual</span>
+              <span className="text-sm font-bold text-white truncate block">
+                {isProcessCompleted ? 'Completado' : `Fase ${currentPhaseOrder}: ${currentPhase?.name || ''}`}
+              </span>
+            </div>
+          </div>
+
+          <div className="p-3 bg-amber-950/40 border border-amber-500/30 rounded-xl flex items-center gap-2.5">
+            <span className="p-2 bg-amber-500/20 text-amber-400 rounded-lg">
+              <Clock className="w-4 h-4" />
+            </span>
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wide text-amber-300 block">Fases Faltantes</span>
+              <span className="text-sm font-bold text-white">
+                {isProcessCompleted ? 0 : Math.max(0, totalPhases - completedCount - (currentPhase ? 1 : 0))} pendientes
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 2. Vertical Timeline */}
@@ -273,8 +310,8 @@ export const VisaProcessTimeline: React.FC<VisaProcessTimelineProps> = ({
                           </span>
                         )}
                         {isPending && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500">
-                            Pendiente
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                            <Clock className="w-3 h-3" /> Fase Faltante (Pendiente)
                           </span>
                         )}
                       </div>
@@ -301,6 +338,16 @@ export const VisaProcessTimeline: React.FC<VisaProcessTimelineProps> = ({
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-2.5 leading-relaxed bg-white/70 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                       {phase.description}
                     </p>
+                  )}
+
+                  {/* Pending Phase Info */}
+                  {isPending && (
+                    <div className="mt-3 pt-2.5 border-t border-slate-200/50 dark:border-slate-800/50 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>
+                        Fase programada (por realizar). Se activará automáticamente una vez validada la <strong>Fase {phase.order - 1}</strong>.
+                      </span>
+                    </div>
                   )}
 
                   {/* History Details: Completed At / Validator / Notes */}

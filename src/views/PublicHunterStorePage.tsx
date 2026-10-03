@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { HunterStore } from '../types/hunter';
 import hunterService from '../services/hunterService';
+import { normalizeFileUrl } from '../services/apiClient';
 import toast from 'react-hot-toast';
 
 interface PublicHunterStorePageProps {
@@ -123,14 +124,18 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
 
   // Helper function to render media player / image preview on the left panel
   const renderMediaContent = () => {
-    if (store.media_type === 'video' && store.media_url) {
-      if (store.media_url.includes('youtube.com') || store.media_url.includes('youtu.be')) {
-        let embedUrl = store.media_url;
-        if (store.media_url.includes('watch?v=')) {
-          const videoId = store.media_url.split('watch?v=')[1]?.split('&')[0];
+    const rawMediaUrl = store.media?.url || store.media_url;
+    const isLinkedVideo = store.media?.mime_type?.startsWith('video/') || (rawMediaUrl && rawMediaUrl.match(/\.(mp4|webm|mov|ogg)($|\?)/i));
+    const effectiveMediaType = isLinkedVideo ? 'video' : (store.media_type || 'image');
+
+    if (effectiveMediaType === 'video' && rawMediaUrl) {
+      if (rawMediaUrl.includes('youtube.com') || rawMediaUrl.includes('youtu.be')) {
+        let embedUrl = rawMediaUrl;
+        if (rawMediaUrl.includes('watch?v=')) {
+          const videoId = rawMediaUrl.split('watch?v=')[1]?.split('&')[0];
           embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1`;
-        } else if (store.media_url.includes('youtu.be/')) {
-          const videoId = store.media_url.split('youtu.be/')[1]?.split('?')[0];
+        } else if (rawMediaUrl.includes('youtu.be/')) {
+          const videoId = rawMediaUrl.split('youtu.be/')[1]?.split('?')[0];
           embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1`;
         }
         return (
@@ -146,10 +151,11 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
         );
       }
 
+      const videoSource = normalizeFileUrl(rawMediaUrl);
       return (
         <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-xl border border-slate-200 bg-slate-900 relative">
           <video
-            src={store.media_url}
+            src={videoSource}
             autoPlay
             loop
             muted
@@ -162,7 +168,7 @@ export const PublicHunterStorePage: React.FC<PublicHunterStorePageProps> = ({ id
     }
 
     // Default Image Media Hero Card (Split Screen Left side - Light style card container)
-    const mediaImgSrc = store.media_url || agency?.banner || '/hunter_store_promo_hero_1788379001819.jpg';
+    const mediaImgSrc = normalizeFileUrl(rawMediaUrl) || normalizeFileUrl(agency?.banner) || '/hunter_store_promo_hero_1788379001819.jpg';
 
     return (
       <div className="w-full h-[340px] sm:h-[400px] lg:h-[460px] rounded-3xl overflow-hidden shadow-xl border border-slate-200 relative group">

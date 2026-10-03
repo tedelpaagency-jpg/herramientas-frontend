@@ -11,7 +11,7 @@ import {
   ShieldCheck, ArrowLeft, Download, Copy, Check, ExternalLink, 
   Clock, AlertTriangle, AlertCircle, CheckCircle2, User, Users, 
   Building2, Calendar, FileText, Send, Eye, RefreshCw, Upload, 
-  Lock, MessageSquare, History, CheckSquare, Sparkles, X, ChevronRight
+  Lock, MessageSquare, History, CheckSquare, Sparkles, X, ChevronRight, UserCheck
 } from 'lucide-react';
 import ConsularFormRenderer from '@/components/visas/forms/ConsularFormRenderer';
 import VisaProcessTimeline from '@/components/visas/VisaProcessTimeline';
@@ -50,10 +50,34 @@ export const VisaDossier360Page: React.FC = () => {
   const [messageVisibility, setMessageVisibility] = useState<'public' | 'internal'>('public');
 
   const [copiedLink, setCopiedLink] = useState(false);
+  const [operators, setOperators] = useState<any[]>([]);
+  const [isAssigningOperator, setIsAssigningOperator] = useState(false);
 
   const isMayorista = user?.role === 'super_admin' || 
     user?.role === 'white_label_admin' || 
     user?.roles?.some((r: any) => ['super_admin', 'white_label_admin', 'mayorista_supervisor', 'mayorista_operador'].includes(r.name));
+
+  useEffect(() => {
+    if (isMayorista) {
+      visaWholesaleService.getMayoristaOperators()
+        .then((ops) => setOperators(ops || []))
+        .catch(() => {});
+    }
+  }, [isMayorista]);
+
+  const handleAssignDossierOperator = async (operatorId: number | null) => {
+    if (!dossier) return;
+    setIsAssigningOperator(true);
+    try {
+      const res = await visaWholesaleService.assignDossierOperator(dossier.id, operatorId);
+      toast.success(res?.message || 'Operador asignado correctamente');
+      fetchDossier();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al asignar operador');
+    } finally {
+      setIsAssigningOperator(false);
+    }
+  };
 
   const fetchDossier = async () => {
     if (!dossierId) return;
@@ -225,7 +249,8 @@ export const VisaDossier360Page: React.FC = () => {
     );
   }
 
-  const stages = dossier.processType?.stages_schema || [];
+  const processType = dossier.processType || (dossier as any).process_type;
+  const stages = processType?.stages_schema || [];
   const requiredDocsCount = dossier.documents?.length || 0;
   const approvedDocsCount = dossier.documents?.filter(d => d.status === 'aprobado').length || 0;
 
@@ -275,7 +300,7 @@ export const VisaDossier360Page: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-500 flex items-center gap-2">
-              <span>{dossier.processType?.flag_icon} {dossier.processType?.name} ({dossier.processType?.country})</span>
+              <span>{processType?.flag_icon} {processType?.name} ({processType?.country})</span>
               <span>• Creado: {new Date(dossier.created_at).toLocaleDateString()}</span>
             </p>
           </div>
@@ -416,7 +441,7 @@ export const VisaDossier360Page: React.FC = () => {
               : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
-          <History className="w-4 h-4" /> Timeline ({dossier.timelineEvents?.length || 0})
+          <History className="w-4 h-4" /> Timeline & Trazabilidad
         </button>
       </div>
 
@@ -467,15 +492,46 @@ export const VisaDossier360Page: React.FC = () => {
                 <div className="text-xs space-y-2">
                   <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5">
                     <span className="text-slate-400">Tipo de Proceso:</span>
-                    <strong className="text-slate-800 dark:text-slate-200">{dossier.processType?.name}</strong>
+                    <strong className="text-slate-800 dark:text-slate-200">{processType?.name}</strong>
                   </div>
                   <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5">
                     <span className="text-slate-400">País de Destino:</span>
-                    <strong className="text-slate-800 dark:text-slate-200">{dossier.processType?.country}</strong>
+                    <strong className="text-slate-800 dark:text-slate-200">{processType?.country}</strong>
                   </div>
                   <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5">
                     <span className="text-slate-400">Agencia Afiliada:</span>
                     <strong className="text-slate-800 dark:text-slate-200">{dossier.agency?.name}</strong>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-2 gap-1.5">
+                    <span className="text-slate-400 flex items-center gap-1.5">
+                      <UserCheck className="w-3.5 h-3.5 text-sky-500" />
+                      Operador Mayorista:
+                    </span>
+                    {isMayorista ? (
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={dossier.assigned_operator_id || ''}
+                          onChange={(e) => {
+                            const val = e.target.value ? Number(e.target.value) : null;
+                            handleAssignDossierOperator(val);
+                          }}
+                          disabled={isAssigningOperator}
+                          className="py-1 px-2.5 text-xs font-semibold rounded-lg bg-sky-50/80 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200 focus:ring-2 focus:ring-sky-500"
+                        >
+                          <option value="">-- Sin Operador Asignado --</option>
+                          {operators.map((op) => (
+                            <option key={op.id} value={op.id}>
+                              {op.name} ({op.role === 'white_label_admin' ? 'Admin' : op.role === 'mayorista_supervisor' ? 'Supervisor' : 'Operador'})
+                            </option>
+                          ))}
+                        </select>
+                        {isAssigningOperator && <RefreshCw className="w-3 h-3 animate-spin text-sky-500" />}
+                      </div>
+                    ) : (
+                      <strong className="text-slate-800 dark:text-slate-200">
+                        {dossier.assignedOperator?.name || (dossier as any).assigned_operator?.name || 'Pendiente de asignación'}
+                      </strong>
+                    )}
                   </div>
                   <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-700/60 pb-1.5">
                     <span className="text-slate-400">Términos Aceptados por Cliente:</span>
@@ -485,23 +541,38 @@ export const VisaDossier360Page: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Duración Estimada:</span>
-                    <strong className="text-slate-800 dark:text-slate-200">{dossier.processType?.estimated_duration || '3-6 meses'}</strong>
+                    <strong className="text-slate-800 dark:text-slate-200">{processType?.estimated_duration || '3-6 meses'}</strong>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Sistema de Fases / Timeline del Trámite */}
-            <div className="pt-2">
-              <VisaProcessTimeline
-                dossierId={dossier.id}
-                dossierCode={dossier.code}
-                currentPhaseId={dossier.current_phase_id}
-                phases={dossier.phases || dossier.processType?.phases || []}
-                histories={dossier.phaseHistories || dossier.phase_histories || []}
-                isOperator={isMayorista}
-                onPhaseAdvanced={fetchDossier}
-              />
+            {/* Resumen de Fase Actual & Acceso a Trazabilidad */}
+            <div className="p-4 bg-gradient-to-r from-sky-50 via-indigo-50 to-slate-50 dark:from-sky-950/30 dark:via-indigo-950/30 dark:to-slate-900 border border-sky-200/80 dark:border-sky-800/80 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div className="space-y-1">
+                <span className="text-[11px] font-extrabold uppercase tracking-wide text-sky-700 dark:text-sky-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-500" />
+                  Estado del Trámite & Trazabilidad de Fases
+                </span>
+                <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">
+                  {(dossier.currentPhase || (dossier as any).current_phase)?.name
+                    ? `Fase ${(dossier.currentPhase || (dossier as any).current_phase)?.order}: ${(dossier.currentPhase || (dossier as any).current_phase)?.name}`
+                    : 'Fase Inicial en Curso'}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Progreso global: <strong className="text-slate-700 dark:text-slate-200">{dossier.progress}%</strong> • Consulte las fases completadas, la fase activa y las pendientes en la pestaña Timeline.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('timeline')}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all shrink-0 active:scale-95"
+              >
+                <History className="w-4 h-4" />
+                <span>Ver Trazabilidad y Fases</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Notas Internas */}
@@ -719,26 +790,65 @@ export const VisaDossier360Page: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 5: TIMELINE */}
+        {/* TAB 5: TIMELINE & TRAZABILIDAD COMPLETA */}
         {activeTab === 'timeline' && (
-          <div className="space-y-4">
-            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">Trazabilidad Histórica Completa</h3>
-            <div className="relative pl-6 border-l-2 border-slate-200 dark:border-slate-800 space-y-6">
-              {dossier.timelineEvents?.map((ev) => (
-                <div key={ev.id} className="relative">
-                  <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-sky-500 border-2 border-white dark:border-slate-900" />
-                  <div className="text-xs space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">{ev.title}</span>
-                      <span className="text-[10px] text-slate-400">• {new Date(ev.created_at).toLocaleString()}</span>
-                      <span className="text-[10px] uppercase font-bold text-sky-600 bg-sky-50 dark:bg-sky-950/60 px-1.5 py-0.2 rounded">
-                        {ev.actor_type}
-                      </span>
+          <div className="space-y-8">
+            {/* Trazabilidad de Fases: Estados completados, actual y faltantes */}
+            <div className="space-y-3">
+              <div>
+                <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-lg flex items-center gap-2">
+                  <History className="w-5 h-5 text-sky-500" />
+                  Trazabilidad de Fases del Proceso Migratorio
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Línea de tiempo del trámite: consulte las fases completadas con sus notas y validador, el estado y fase actual en curso, y todas las fases que faltan por realizar para completar el visado.
+                </p>
+              </div>
+
+              <VisaProcessTimeline
+                dossierId={dossier.id}
+                dossierCode={dossier.code}
+                currentPhaseId={dossier.current_phase_id}
+                phases={dossier.phases || processType?.phases || []}
+                histories={dossier.phaseHistories || (dossier as any).phase_histories || []}
+                isOperator={isMayorista}
+                onPhaseAdvanced={fetchDossier}
+              />
+            </div>
+
+            {/* Registro de Auditoría y Eventos del Sistema */}
+            <div className="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  Registro de Auditoría y Eventos del Expediente ({dossier.timelineEvents?.length || (dossier as any).timeline_events?.length || 0})
+                </h4>
+                <p className="text-xs text-slate-400">
+                  Historial cronológico de cambios de estado, notificaciones, interacciones y auditoría del sistema.
+                </p>
+              </div>
+
+              <div className="relative pl-6 border-l-2 border-slate-200 dark:border-slate-800 space-y-5">
+                {(dossier.timelineEvents || (dossier as any).timeline_events)?.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No hay eventos adicionales registrados en el historial.</p>
+                ) : (
+                  (dossier.timelineEvents || (dossier as any).timeline_events)?.map((ev: any) => (
+                    <div key={ev.id} className="relative">
+                      <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-sky-500 border-2 border-white dark:border-slate-900" />
+                      <div className="text-xs space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-800 dark:text-slate-200">{ev.title}</span>
+                          <span className="text-[10px] text-slate-400">• {new Date(ev.created_at).toLocaleString()}</span>
+                          <span className="text-[10px] uppercase font-bold text-sky-600 bg-sky-50 dark:bg-sky-950/60 px-1.5 py-0.2 rounded">
+                            {ev.actor_type}
+                          </span>
+                        </div>
+                        <p className="text-slate-600 dark:text-slate-400">{ev.description}</p>
+                      </div>
                     </div>
-                    <p className="text-slate-600 dark:text-slate-400">{ev.description}</p>
-                  </div>
-                </div>
-              ))}
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}

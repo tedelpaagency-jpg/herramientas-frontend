@@ -184,6 +184,9 @@ export interface VisaDossier {
   group?: VisaGroup;
   processType?: VisaProcessType;
   assignedUser?: any;
+  assigned_operator_id?: number | null;
+  assignedOperator?: any;
+  assigned_operator?: any;
   documents?: VisaDocument[];
   messages?: VisaMessage[];
   timelineEvents?: VisaTimelineEvent[];
@@ -310,6 +313,27 @@ class VisaWholesaleService {
   async getMayoristaAgencies(params?: Record<string, any>) {
     const res = await apiClient.get('/v1/visas/mayorista/agencies', { params });
     return res.data?.data;
+  }
+
+  async getMayoristaOperators(whiteLabelId?: number) {
+    const res = await apiClient.get('/v1/visas/mayorista/operators', {
+      params: whiteLabelId ? { white_label_id: whiteLabelId } : undefined,
+    });
+    return res.data?.data || [];
+  }
+
+  async assignAgencyOperator(agencyId: number, operatorId: number | null) {
+    const res = await apiClient.post(`/v1/visas/mayorista/agencies/${agencyId}/operator`, {
+      operator_id: operatorId,
+    });
+    return res.data;
+  }
+
+  async assignDossierOperator(dossierId: number, operatorId: number | null) {
+    const res = await apiClient.post(`/v1/visas/dossiers/${dossierId}/assign-operator`, {
+      operator_id: operatorId,
+    });
+    return res.data;
   }
 
   // ===================== TIPOS DE PROCESO =====================

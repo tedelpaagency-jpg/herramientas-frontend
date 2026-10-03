@@ -3,6 +3,8 @@ import { HunterStore, HunterProfileData, HunterRequest } from '../types/hunter';
 import hunterService from '../services/hunterService';
 import Portal from '../components/Portal';
 import { useAuth } from '../context/AuthContext';
+import MediaPicker from '../components/media/MediaPicker';
+import { normalizeFileUrl } from '../services/apiClient';
 import { 
   Store, Plus, Search, Mail, Phone, MapPin, QrCode, Copy, Check, 
   Trash2, Edit3, Eye, ShieldAlert, CheckCircle2, XCircle, Clock, 
@@ -61,11 +63,13 @@ export const HunterStoresPage: React.FC = () => {
     province: '',
     canton: '',
     address: '',
+    media_id: null as number | null,
     media_type: 'image' as 'image' | 'video',
     media_url: '',
     status: 'active' as 'active' | 'suspended',
   });
 
+  const [mediaInputMode, setMediaInputMode] = useState<'library' | 'external'>('library');
   const [copiedStoreId, setCopiedStoreId] = useState<number | null>(null);
 
   const fetchStores = async () => {
@@ -110,6 +114,7 @@ export const HunterStoresPage: React.FC = () => {
 
   const handleOpenCreateModal = () => {
     setEditingStore(null);
+    setMediaInputMode('library');
     setFormData({
       name: '',
       user_name: '',
@@ -122,6 +127,7 @@ export const HunterStoresPage: React.FC = () => {
       province: '',
       canton: '',
       address: '',
+      media_id: null,
       media_type: 'image',
       media_url: '',
       status: 'active',
@@ -131,6 +137,10 @@ export const HunterStoresPage: React.FC = () => {
 
   const handleOpenEditModal = (store: HunterStore) => {
     setEditingStore(store);
+    const hasMediaId = !!(store.media_id || store.media?.id);
+    const rawUrl = store.media?.url || store.media_url || '';
+    const isExternalUrl = !hasMediaId && rawUrl && (rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be') || rawUrl.startsWith('http://') || rawUrl.startsWith('https://'));
+    setMediaInputMode(isExternalUrl ? 'external' : 'library');
     setFormData({
       name: store.name || '',
       user_name: store.user?.name || store.name || '',
@@ -143,8 +153,9 @@ export const HunterStoresPage: React.FC = () => {
       province: store.province || '',
       canton: store.canton || '',
       address: store.address || '',
-      media_type: store.media_type || 'image',
-      media_url: store.media_url || '',
+      media_id: store.media_id || store.media?.id || null,
+      media_type: store.media_type || ((store.media?.file_type === 'video' || store.media?.mime_type?.startsWith('video/')) ? 'video' : 'image'),
+      media_url: rawUrl,
       status: store.status || 'active',
     });
     setIsCreateModalOpen(true);
@@ -548,9 +559,29 @@ export const HunterStoresPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center font-black text-2xl text-indigo-600 dark:text-indigo-400 shadow-inner">
-                  {profileData.store.name.substring(0, 2).toUpperCase()}
-                </div>
+                {profileData.store.media?.url || profileData.store.media_url ? (
+                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-inner shrink-0 group">
+                    {profileData.store.media_type === 'video' || profileData.store.media?.file_type === 'video' || profileData.store.media?.mime_type?.startsWith('video/') ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300">
+                        <Video className="w-6 h-6" />
+                        <span className="text-[9px] font-black uppercase mt-0.5">Video</span>
+                      </div>
+                    ) : (
+                      <img
+                        src={normalizeFileUrl(profileData.store.media?.url || profileData.store.media_url)}
+                        alt={profileData.store.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center font-black text-2xl text-indigo-600 dark:text-indigo-400 shadow-inner shrink-0">
+                    {profileData.store.name.substring(0, 2).toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-black text-slate-900 dark:text-white">
@@ -563,6 +594,11 @@ export const HunterStoresPage: React.FC = () => {
                     }`}>
                       {profileData.store.status === 'active' ? 'Activo' : 'Suspendido'}
                     </span>
+                    {(profileData.store.media_id || profileData.store.media?.id) && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1">
+                        <ImageIcon className="w-3 h-3" /> Mediateca
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-500 font-medium">
                     RUC / DNI: <span className="font-bold text-slate-700 dark:text-slate-300">{profileData.store.ruc_dni || 'N/A'}</span> • Username: <span className="font-bold text-slate-700 dark:text-slate-300">{profileData.store.username || 'N/A'}</span>
@@ -917,11 +953,37 @@ export const HunterStoresPage: React.FC = () => {
                       <tr key={store.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 font-black flex items-center justify-center text-sm border border-indigo-200 dark:border-indigo-800 shadow-2xs">
-                              {store.name.substring(0, 2).toUpperCase()}
-                            </div>
+                            {store.media?.url || store.media_url ? (
+                              <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
+                                {store.media_type === 'video' || store.media?.file_type === 'video' || store.media?.mime_type?.startsWith('video/') ? (
+                                  <div className="w-full h-full flex items-center justify-center bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300">
+                                    <Video className="w-5 h-5" />
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={normalizeFileUrl(store.media?.url || store.media_url)}
+                                    alt={store.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                )}
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 font-black flex items-center justify-center text-sm border border-indigo-200 dark:border-indigo-800 shadow-2xs shrink-0">
+                                {store.name.substring(0, 2).toUpperCase()}
+                              </div>
+                            )}
                             <div>
-                              <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">{store.name}</h4>
+                              <div className="flex items-center gap-1.5">
+                                <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">{store.name}</h4>
+                                {(store.media_id || store.media?.id) && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800" title="Recurso multimedia vinculado desde la mediateca">
+                                    Mediateca
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-[11px] text-slate-400">RUC/DNI: {store.ruc_dni || 'N/A'}</p>
                             </div>
                           </div>
@@ -1105,34 +1167,116 @@ export const HunterStoresPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Media Config for Public Landing */}
-                <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
-                  <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
-                    <Video className="w-3.5 h-3.5 text-purple-500" /> Contenido Multimedia para la Vista Pública (Split-Screen)
-                  </span>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo de Media</label>
-                      <select
-                        value={formData.media_type}
-                        onChange={(e) => setFormData({ ...formData, media_type: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none"
+                {/* Media Config for Public Landing - Biblioteca de Medios */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider flex items-center gap-1.5">
+                      <Video className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Recurso Multimedia del Formulario Público
+                    </span>
+                    <div className="inline-flex rounded-xl bg-slate-200/70 dark:bg-slate-850 p-0.5 text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setMediaInputMode('library')}
+                        className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
+                          mediaInputMode === 'library'
+                            ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                        }`}
                       >
-                        <option value="image">Imagen</option>
-                        <option value="video">Video</option>
-                      </select>
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">URL de Imagen o Video Promocional</label>
-                      <input
-                        type="url"
-                        value={formData.media_url}
-                        onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
-                        placeholder="https://ejemplo.com/video.mp4 o YouTube URL..."
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-medium focus:outline-none"
-                      />
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>Biblioteca de Medios</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMediaInputMode('external')}
+                        className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 ${
+                          mediaInputMode === 'external'
+                            ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Enlace / YouTube</span>
+                      </button>
                     </div>
                   </div>
+
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Este recurso (imagen o video) se muestra en el lado derecho de la pantalla dividida cuando los clientes acceden al enlace público de tu tienda.
+                  </p>
+
+                  {mediaInputMode === 'library' ? (
+                    <div className="space-y-2">
+                      <MediaPicker
+                        value={formData.media_url ? normalizeFileUrl(formData.media_url) : ''}
+                        onChange={(selected) => {
+                          const detectedType = (selected.media?.file_type === 'video' || selected.media?.mime_type?.startsWith('video/') || selected.file?.type?.startsWith('video/')) ? 'video' : 'image';
+                          setFormData({
+                            ...formData,
+                            media_id: selected.id || null,
+                            media_url: selected.url || '',
+                            media_type: detectedType,
+                          });
+                        }}
+                        onClear={() => {
+                          setFormData({
+                            ...formData,
+                            media_id: null,
+                            media_url: '',
+                            media_type: 'image',
+                          });
+                        }}
+                        type="all"
+                        label="Seleccionar o Subir desde Biblioteca"
+                        buttonLabel="Abrir Mediateca"
+                        placeholder="Sin archivo asignado. Selecciona una imagen o video para el formulario."
+                      />
+                      {formData.media_url && (
+                        <div className="flex items-center justify-between text-[11px] px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/50">
+                          <span className="font-medium flex items-center gap-1">
+                            Tipo asignado: <strong>{formData.media_type === 'video' ? 'Video' : 'Imagen'}</strong>
+                            {formData.media_id && <span className="text-slate-400 font-mono"> (ID #{formData.media_id})</span>}
+                          </span>
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Vinculado a Mediateca
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      <div>
+                        <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 text-xs">Tipo de Media</label>
+                        <select
+                          value={formData.media_type}
+                          onChange={(e) => setFormData({ ...formData, media_type: e.target.value as any })}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none text-xs"
+                        >
+                          <option value="image">Imagen</option>
+                          <option value="video">Video / YouTube</option>
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 text-xs">URL Externa o Enlace de YouTube</label>
+                        <input
+                          type="url"
+                          value={formData.media_url}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const isYt = val.includes('youtube.com') || val.includes('youtu.be');
+                            setFormData({
+                              ...formData,
+                              media_id: null,
+                              media_url: val,
+                              media_type: isYt ? 'video' : formData.media_type,
+                            });
+                          }}
+                          placeholder="https://www.youtube.com/watch?v=... o https://..."
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-medium focus:outline-none text-xs"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
