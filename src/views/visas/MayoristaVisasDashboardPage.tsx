@@ -6,7 +6,8 @@ import visaWholesaleService, { VisaDossier } from '@/services/visaWholesaleServi
 import { 
   Building2, ShieldCheck, Clock, AlertTriangle, AlertCircle, 
   CheckCircle2, RefreshCw, Eye, ArrowRight, Filter, Users, 
-  FileText, ExternalLink, Calendar, Search, Sparkles
+  FileText, ExternalLink, Calendar, Search, Sparkles,
+  DollarSign, Check, X, FileCheck
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -21,20 +22,28 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
     documentos_observados: 0,
     procesos_urgentes: 0,
     procesos_completados: 0,
+    pendientes_aprobacion_pago: 0,
   });
 
   const [miTrabajo, setMiTrabajo] = useState<{
     requieren_atencion: VisaDossier[];
     pendientes_revision: VisaDossier[];
+    pendientes_aprobacion_pago: VisaDossier[];
   }>({
     requieren_atencion: [],
     pendientes_revision: [],
+    pendientes_aprobacion_pago: [],
   });
 
   const [agencies, setAgencies] = useState<any[]>([]);
   const [selectedAgencyId, setSelectedAgencyId] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'atencion' | 'revision'>('atencion');
+  const [activeTab, setActiveTab] = useState<'atencion' | 'revision' | 'pagos'>('atencion');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Modal para rechazar comprobante con motivo
+  const [rejectionModalDossier, setRejectionModalDossier] = useState<VisaDossier | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [isProcessingApproval, setIsProcessingApproval] = useState(false);
 
   const fetchDashboard = async () => {
     setIsLoading(true);
@@ -51,6 +60,7 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
         setMiTrabajo({
           requieren_atencion: dashData.mi_trabajo.requieren_atencion || [],
           pendientes_revision: dashData.mi_trabajo.pendientes_revision || [],
+          pendientes_aprobacion_pago: dashData.mi_trabajo.pendientes_aprobacion_pago || [],
         });
       }
       setAgencies(agenciesData?.data || agenciesData || []);
@@ -59,6 +69,49 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
       toast.error('Error al cargar información operativa');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleApprovePayment = async (dossier: VisaDossier) => {
+    if (!confirm(`¿Aprobar solicitud y comprobante del expediente ${dossier.code}? Esto habilitará de inmediato el enlace público para el cliente final.`)) {
+      return;
+    }
+
+    setIsProcessingApproval(true);
+    try {
+      await visaWholesaleService.approveDossierPayment(dossier.id);
+      toast.success(`¡Solicitud ${dossier.code} aprobada! Enlace público habilitado.`);
+      fetchDashboard();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al aprobar solicitud');
+    } finally {
+      setIsProcessingApproval(false);
+    }
+  };
+
+  const handleOpenRejectModal = (dossier: VisaDossier) => {
+    setRejectionModalDossier(dossier);
+    setRejectionReason('');
+  };
+
+  const handleConfirmReject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectionModalDossier) return;
+    if (!rejectionReason.trim()) {
+      toast.error('Debe indicar el motivo del rechazo del comprobante');
+      return;
+    }
+
+    setIsProcessingApproval(true);
+    try {
+      await visaWholesaleService.rejectDossierPayment(rejectionModalDossier.id, rejectionReason.trim());
+      toast.success(`Comprobante rechazado para ${rejectionModalDossier.code}. La agencia ha sido notificada para actualizarlo.`);
+      setRejectionModalDossier(null);
+      fetchDashboard();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al rechazar comprobante');
+    } finally {
+      setIsProcessingApproval(false);
     }
   };
 
@@ -130,7 +183,7 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
       </div>
 
       {/* Métricas Operativas */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-sm text-center">
           <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Expedientes</p>
           <p className="text-xl font-black text-slate-800 dark:text-slate-100 mt-0.5">{metrics.total_expedientes}</p>
@@ -144,6 +197,13 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-sm text-center">
           <p className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase">Pend. Revisión</p>
           <p className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-0.5">{metrics.pendientes_revision}</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-sm text-center border-emerald-300 dark:border-emerald-800/80 bg-emerald-50/20">
+          <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase flex items-center justify-center gap-1">
+            <DollarSign className="w-3 h-3" /> Aprob. Pago
+          </p>
+          <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{metrics.pendientes_aprobacion_pago || 0}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-sm text-center">
@@ -180,10 +240,21 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
               <Clock className="w-5 h-5 text-indigo-500" />
               Bandeja: Mi Trabajo Hoy
             </h2>
-            <p className="text-xs text-slate-500">Expedientes prioritarios y pendientes que requieren la intervención del operador.</p>
+            <p className="text-xs text-slate-500">Expedientes prioritarios, revisión de pagos y tareas que requieren la intervención del operador.</p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveTab('pagos')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                activeTab === 'pagos'
+                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800'
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5" />
+              <span>Aprobación de Pagos B2B ({miTrabajo.pendientes_aprobacion_pago.length})</span>
+            </button>
             <button
               onClick={() => setActiveTab('atencion')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
@@ -213,6 +284,104 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
               <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
               Cargando bandeja de trabajo...
             </div>
+          ) : activeTab === 'pagos' ? (
+            /* TAB: BANDEJA DE APROBACIÓN DE PAGOS B2B */
+            miTrabajo.pendientes_aprobacion_pago.length === 0 ? (
+              <div className="p-12 text-center text-slate-400">
+                <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500 opacity-60" />
+                <p className="font-semibold text-slate-700 dark:text-slate-300">¡Bandeja de pagos al día!</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  No hay comprobantes bancarios pendientes de revisión. Las agencias exoneradas acceden directamente sin pasar por esta bandeja.
+                </p>
+              </div>
+            ) : (
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th className="py-3.5 px-4">Código Expediente</th>
+                    <th className="py-3.5 px-4">Solicitante</th>
+                    <th className="py-3.5 px-4">Agencia Afiliada</th>
+                    <th className="py-3.5 px-4">Trámite & Costo</th>
+                    <th className="py-3.5 px-4">Comprobante Subido</th>
+                    <th className="py-3.5 px-4">Fecha de Envío</th>
+                    <th className="py-3.5 px-4 text-right">Decisión del Operador</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                  {miTrabajo.pendientes_aprobacion_pago.map((dossier) => (
+                    <tr key={dossier.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <Link
+                          href={`/visas/expedientes/${dossier.id}`}
+                          className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-xs hover:underline"
+                        >
+                          {dossier.code}
+                        </Link>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap font-bold text-slate-900 dark:text-white">
+                        <div>{dossier.applicant_name || dossier.client?.name || 'Solicitante'}</div>
+                        <div className="text-[11px] font-normal text-slate-400">{dossier.applicant_email || dossier.client?.email || '—'}</div>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-semibold">
+                          {dossier.agency?.name || 'Agencia'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                          <span>{dossier.processType?.flag_icon || '🌐'}</span>
+                          <span>{dossier.processType?.name || 'Trámite'}</span>
+                        </div>
+                        <div className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          ${Number(dossier.cost || 150).toFixed(2)} USD
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {dossier.payment_receipt_url ? (
+                          <a
+                            href={dossier.payment_receipt_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900 border border-sky-200 dark:border-sky-800 text-xs font-semibold transition-colors"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-sky-600" />
+                            <span>Ver Comprobante</span>
+                            <ExternalLink className="w-3 h-3 opacity-60" />
+                          </a>
+                        ) : (
+                          <span className="text-slate-400 italic">No disponible</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-500 text-[11px]">
+                        {dossier.payment_receipt_uploaded_at
+                          ? new Date(dossier.payment_receipt_uploaded_at).toLocaleString()
+                          : new Date(dossier.updated_at).toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-2">
+                        <button
+                          disabled={isProcessingApproval}
+                          onClick={() => handleApprovePayment(dossier)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-xs disabled:opacity-50"
+                          title="Aprobar solicitud y habilitar enlace público"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Aprobar Solicitud</span>
+                        </button>
+                        <button
+                          disabled={isProcessingApproval}
+                          onClick={() => handleOpenRejectModal(dossier)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-bold text-xs transition-all disabled:opacity-50"
+                          title="Rechazar comprobante indicando motivo"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Rechazar</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
           ) : (
             (() => {
               const currentList = activeTab === 'atencion' ? miTrabajo.requieren_atencion : miTrabajo.pendientes_revision;
@@ -313,6 +482,60 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Modal: Motivo de Rechazo de Comprobante */}
+      {rejectionModalDossier && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <span className="p-2.5 bg-rose-50 dark:bg-rose-950/60 rounded-xl">
+                <AlertCircle className="w-6 h-6" />
+              </span>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg">Rechazar Comprobante de Pago</h3>
+                <p className="text-xs text-slate-500 font-mono">{rejectionModalDossier.code} — {rejectionModalDossier.agency?.name || 'Agencia'}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Indique detalladamente el motivo del rechazo (ej. monto incorrecto, comprobante ilegible, cuenta errónea). La agencia afiliada podrá corregir y subir un nuevo comprobante dentro del mismo expediente.
+            </p>
+
+            <form onSubmit={handleConfirmReject} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Motivo de Rechazo *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Ej. El monto depositado no coincide con el costo del trámite migratorio..."
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-rose-500 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRejectionModalDossier(null)}
+                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessingApproval}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-rose-600/20 disabled:opacity-50"
+                >
+                  {isProcessingApproval ? 'Procesando...' : 'Confirmar Rechazo'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

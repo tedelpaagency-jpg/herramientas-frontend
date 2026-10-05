@@ -13,6 +13,8 @@ import {
 import ConsularFormRenderer from '@/components/visas/forms/ConsularFormRenderer';
 import VisaProcessTimeline from '@/components/visas/VisaProcessTimeline';
 import toast from 'react-hot-toast';
+import { triggerConfetti } from '@/utils/confetti';
+import { SCHENGEN_SECTIONS, USA_CANADA_SECTIONS, calculateSectionProgress } from '@/components/visas/forms/visaSectionDefinitions';
 
 export const PublicClientVisaPortalPage: React.FC = () => {
   const params = useParams();
@@ -47,6 +49,11 @@ export const PublicClientVisaPortalPage: React.FC = () => {
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
+  // Section saving & completion state
+  const [savingSectionId, setSavingSectionId] = useState<string | null>(null);
+  const [savedSectionId, setSavedSectionId] = useState<string | null>(null);
+  const completedSectionsRef = useRef<Set<string>>(new Set());
+
   // Initialize Dark Mode from localStorage or system preference
   useEffect(() => {
     try {
@@ -79,14 +86,33 @@ export const PublicClientVisaPortalPage: React.FC = () => {
     try {
       const res = await visaWholesaleService.getPublicPortalData(token);
       if (res?.data) {
+        const initialFormData = res.data.dossier?.form_data || {};
         setPortalData(res.data);
-        setFormData(res.data.dossier?.form_data || {});
+        setFormData(initialFormData);
         setHasLogoError(false);
 
         const sections = res.data.process?.form_schema?.sections || [];
         if (sections.length > 0 && !activeSectionId) {
           setActiveSectionId(sections[0].id);
         }
+
+        // Initialize completed sections so we don't fire confetti for already completed sections on load
+        const isSchengen = res.data.process?.name?.includes('Schengen') || res.data.process?.name?.includes('Europa');
+        const activeSecs = isSchengen ? SCHENGEN_SECTIONS : USA_CANADA_SECTIONS;
+        const appName = res.data.dossier?.applicant_name || res.data.client?.name || '';
+        const passportNum = res.data.dossier?.passport_number || '';
+
+        completedSectionsRef.current.clear();
+        activeSecs.forEach((sec) => {
+          const prog = calculateSectionProgress(sec, initialFormData, {
+            applicant_name: appName,
+            name: appName,
+            passport_number: passportNum,
+          });
+          if (prog.percentage === 100) {
+            completedSectionsRef.current.add(sec.id);
+          }
+        });
 
         // Show policy modal if not accepted yet
         if (!res.data.dossier?.terms_accepted_at) {
@@ -104,23 +130,54 @@ export const PublicClientVisaPortalPage: React.FC = () => {
     fetchPortal();
   }, [token]);
 
-  // Handle Input Change with Progressive Auto-save
+  // Handle Input Change: update local form state and auto-save on section completion
   const handleInputChange = (fieldName: string, value: any) => {
     const updated = { ...formData, [fieldName]: value };
     setFormData(updated);
 
-    // Debounced progressive save
-    if ((window as any)._saveTimeout) {
-      clearTimeout((window as any)._saveTimeout);
-    }
-    (window as any)._saveTimeout = setTimeout(async () => {
-      try {
-        await visaWholesaleService.savePublicProgress(token, updated);
-        setLastSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-      } catch (err) {
-        console.error('Error auto-saving progress:', err);
+    // Auto-detect section completion (100%) and trigger celebration + section save
+    if (portalData) {
+      const isSchengen = portalData.process?.name?.includes('Schengen') || portalData.process?.name?.includes('Europa');
+      const activeSecs = isSchengen ? SCHENGEN_SECTIONS : USA_CANADA_SECTIONS;
+      const appName = portalData.dossier?.applicant_name || portalData.client?.name || '';
+      const passportNum = portalData.dossier?.passport_number || '';
+
+      for (const sec of activeSecs) {
+        if (completedSectionsRef.current.has(sec.id)) continue;
+        const prog = calculateSectionProgress(sec, updated, {
+          applicant_name: appName,
+          name: appName,
+          passport_number: passportNum,
+        });
+
+        if (prog.percentage === 100) {
+          completedSectionsRef.current.add(sec.id);
+          triggerConfetti();
+          toast.success(`¡Sección "${sec.title}" completada y guardada! 🎉`, { duration: 4500 });
+          handleSaveSection(sec.id, prog.sectionFieldsData);
+          break;
+        }
       }
-    }, 1000);
+    }
+  };
+
+  const handleSaveSection = async (sectionId: string, sectionFields?: Record<string, any>) => {
+    if (!token) return;
+    setSavingSectionId(sectionId);
+    try {
+      const fieldsToSave = sectionFields || formData;
+      await visaWholesaleService.savePublicSection(token, sectionId, fieldsToSave);
+      setSavedSectionId(sectionId);
+      setLastSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      setTimeout(() => {
+        setSavedSectionId((prev) => (prev === sectionId ? null : prev));
+      }, 2500);
+    } catch (err: any) {
+      console.error('Error saving section:', err);
+      toast.error('Error al guardar la sección.');
+    } finally {
+      setSavingSectionId(null);
+    }
   };
 
   const handleAcceptPolicies = async () => {
@@ -312,7 +369,7 @@ export const PublicClientVisaPortalPage: React.FC = () => {
                 </div>
 
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Por favor complete con veracidad todos los campos obligatorios requeridos por la autoridad consular. Sus respuestas se guardan automáticamente a medida que las escribe.
+                  Por favor complete con veracidad todos los campos requeridos por la autoridad consular. El progreso se actualiza en tiempo real por sección y sus respuestas se guardan automáticamente al completar cada sección.
                 </p>
               </div>
 
@@ -325,6 +382,10 @@ export const PublicClientVisaPortalPage: React.FC = () => {
                   formData={formData}
                   onFieldChange={handleInputChange}
                   applicantName={applicantDisplayName}
+                  passportNumber={dossier?.passport_number || ''}
+                  onSaveSection={handleSaveSection}
+                  savingSectionId={savingSectionId}
+                  savedSectionId={savedSectionId}
                 />
               </div>
 

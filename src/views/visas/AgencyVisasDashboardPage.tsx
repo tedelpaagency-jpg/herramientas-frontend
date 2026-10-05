@@ -11,9 +11,11 @@ import {
   ExternalLink, Copy, Check, AlertCircle, Clock, CheckCircle2, 
   AlertTriangle, Users, FolderPlus, Download, Trash2, Eye,
   ArrowRight, Sparkles, Send, FileSpreadsheet, Building2, Info,
-  Folder, ChevronDown, ChevronUp, ChevronRight, ArrowLeft
+  Folder, ChevronDown, ChevronUp, ChevronRight, ArrowLeft,
+  Lock, Upload, DollarSign
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { UploadPaymentReceiptModal } from '@/components/visas/modals/UploadPaymentReceiptModal';
 
 export const AgencyVisasDashboardPage: React.FC = () => {
   const router = useRouter();
@@ -49,6 +51,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
 
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [receiptModalDossier, setReceiptModalDossier] = useState<VisaDossier | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newDossierData, setNewDossierData] = useState({
     applicant_name: '',
@@ -276,7 +279,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
       };
 
       const res = await visaWholesaleService.createDossier(payload);
-      toast.success('¡Expediente creado correctamente con link generado!');
+      const created = res.data;
       setIsCreateModalOpen(false);
       setNewDossierData({
         applicant_name: '',
@@ -287,18 +290,25 @@ export const AgencyVisasDashboardPage: React.FC = () => {
         notes: '',
       });
 
-      // Show link modal directly
-      const created = res.data;
       if (created?.group_id) {
         setExpandedGroupIds((prev) => new Set([...prev, Number(created.group_id)]));
       }
-      if (created?.access_token) {
-        const publicUrl = formatPublicDossierLink(created.access_token, created.public_link);
-        setLinkModalData({
-          isOpen: true,
-          link: publicUrl,
-          code: created.code,
-        });
+
+      // FLUJO 1 vs FLUJO 2:
+      if (created?.is_exempt) {
+        toast.success('¡Expediente creado con éxito! (Agencia exonerada de pago: enlace habilitado de inmediato)');
+        if (created?.access_token) {
+          const publicUrl = formatPublicDossierLink(created.access_token, created.public_link);
+          setLinkModalData({
+            isOpen: true,
+            link: publicUrl,
+            code: created.code,
+          });
+        }
+      } else {
+        toast.success(`¡Expediente ${created?.code || ''} creado! Adjunte el comprobante de pago para que el operador mayorista apruebe el enlace.`);
+        // Open receipt upload modal directly
+        setReceiptModalDossier(created);
       }
 
       fetchData();
@@ -310,6 +320,18 @@ export const AgencyVisasDashboardPage: React.FC = () => {
   };
 
   const handleOpenLinkModal = async (dossier: VisaDossier) => {
+    // Si la agencia no está exonerada y el expediente no ha sido aprobado por el operador
+    if (!dossier.is_exempt && dossier.approval_status !== 'aprobado') {
+      const msg = dossier.payment_status === 'comprobante_rechazado'
+        ? `El enlace público está bloqueado. Su comprobante fue rechazado: ${dossier.rejection_reason || 'Por favor suba un nuevo comprobante.'}`
+        : dossier.payment_status === 'comprobante_enviado'
+        ? 'El enlace público está bloqueado. El comprobante de pago está pendiente de aprobación por el operador mayorista.'
+        : 'El enlace público está bloqueado. Debe subir el comprobante de pago para revisión y aprobación del operador mayorista.';
+      toast.error(msg, { duration: 6000 });
+      setReceiptModalDossier(dossier);
+      return;
+    }
+
     try {
       const res = await visaWholesaleService.getClientLink(dossier.id);
       const publicUrl = formatPublicDossierLink(dossier.access_token, res?.public_link);
@@ -319,8 +341,8 @@ export const AgencyVisasDashboardPage: React.FC = () => {
         code: dossier.code,
       });
       setCopied(false);
-    } catch (err) {
-      toast.error('Error al generar enlace seguro');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al generar enlace seguro');
     }
   };
 
@@ -451,6 +473,53 @@ export const AgencyVisasDashboardPage: React.FC = () => {
           </td>
         )}
 
+        {/* Costo, Pago & Aprobación B2B */}
+        <td className="py-3.5 px-4 whitespace-nowrap">
+          {dossier.is_exempt ? (
+            <div className="space-y-0.5">
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <Sparkles className="w-3 h-3 text-emerald-500" /> Exonerada
+              </span>
+              <p className="text-[10px] text-slate-400">Sin aprobación previa</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
+                  ${Number(dossier.cost || 150).toFixed(2)}
+                </span>
+                {dossier.approval_status === 'aprobado' ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
+                    <CheckCircle2 className="w-2.5 h-2.5" /> Aprobado
+                  </span>
+                ) : dossier.payment_status === 'comprobante_rechazado' ? (
+                  <span 
+                    className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300"
+                    title={dossier.rejection_reason || 'Comprobante rechazado por el operador'}
+                  >
+                    <AlertCircle className="w-2.5 h-2.5" /> Rechazado
+                  </span>
+                ) : dossier.payment_status === 'comprobante_enviado' ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
+                    <Clock className="w-2.5 h-2.5" /> Por Revisar
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    <DollarSign className="w-2.5 h-2.5" /> Pendiente Pago
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setReceiptModalDossier(dossier)}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 hover:underline"
+              >
+                <Upload className="w-3 h-3" />
+                <span>{dossier.payment_receipt_url ? 'Actualizar Comprobante' : 'Subir Comprobante'}</span>
+              </button>
+            </div>
+          )}
+        </td>
+
         <td className="py-3.5 px-4 min-w-[150px]">
           <div className="flex justify-between items-center text-xs mb-1">
             <span className="font-bold text-slate-700 dark:text-slate-300">{dossier.progress}%</span>
@@ -501,13 +570,23 @@ export const AgencyVisasDashboardPage: React.FC = () => {
               <Eye className="w-4 h-4" />
             </Link>
 
-            <button
-              onClick={() => handleOpenLinkModal(dossier)}
-              className="p-1.5 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-lg transition-colors"
-              title="Obtener Enlace de Cliente"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
+            {(!dossier.is_exempt && dossier.approval_status !== 'aprobado') ? (
+              <button
+                onClick={() => handleOpenLinkModal(dossier)}
+                className="p-1.5 text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/50 rounded-lg transition-colors"
+                title="Enlace Bloqueado (Requiere aprobación del comprobante)"
+              >
+                <Lock className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() => handleOpenLinkModal(dossier)}
+                className="p-1.5 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-lg transition-colors"
+                title="Obtener Enlace de Cliente"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            )}
 
             <button
               onClick={() => handleDownloadPdf(dossier)}
@@ -562,6 +641,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
               <th className="py-3.5 px-4">Cliente / Solicitante</th>
               <th className="py-3.5 px-4">Trámite Migratorio</th>
               {showGroupColumn && <th className="py-3.5 px-4">Grupo</th>}
+              <th className="py-3.5 px-4">Pago & Aprobación</th>
               <th className="py-3.5 px-4">Progreso / Etapa</th>
               <th className="py-3.5 px-4">Estado & Acción</th>
               <th className="py-3.5 px-4">Responsable</th>
@@ -1069,6 +1149,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                       <th className="py-3.5 px-4">Cliente / Solicitante</th>
                       <th className="py-3.5 px-4">Trámite Migratorio</th>
                       <th className="py-3.5 px-4">Grupo</th>
+                      <th className="py-3.5 px-4">Pago & Aprobación</th>
                       <th className="py-3.5 px-4">Progreso / Etapa</th>
                       <th className="py-3.5 px-4">Estado & Acción</th>
                       <th className="py-3.5 px-4">Responsable</th>
@@ -1078,14 +1159,14 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={8} className="py-12 text-center text-slate-400">
+                        <td colSpan={9} className="py-12 text-center text-slate-400">
                           <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-sky-500" />
                           Cargando expedientes...
                         </td>
                       </tr>
                     ) : dossiers.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-12 text-center text-slate-400">
+                        <td colSpan={9} className="py-12 text-center text-slate-400">
                           <ShieldCheck className="w-12 h-12 mx-auto mb-3 opacity-30 text-sky-500" />
                           <p className="font-semibold text-slate-700 dark:text-slate-300">No se encontraron expedientes</p>
                           <p className="text-xs text-slate-500 mt-1">Cree un nuevo proceso migratorio para comenzar.</p>
@@ -1179,6 +1260,44 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                     </option>
                   ))}
                 </select>
+
+                {/* Indicador de Costo y Flujo B2B */}
+                {(() => {
+                  const selectedPt = processTypes.find(pt => String(pt.id) === String(newDossierData.visa_process_type_id));
+                  if (!selectedPt) return null;
+                  const isAgencyExempt = Boolean((user as any)?.agency?.is_payment_exempt);
+
+                  if (isAgencyExempt) {
+                    return (
+                      <div className="mt-2.5 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+                        <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-bold">Agencia Exonerada de Pago</p>
+                          <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+                            Su agencia no requiere comprobante de pago ni aprobación previa del operador. El enlace único se habilitará inmediatamente al crear la solicitud.
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="mt-2.5 p-3 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 rounded-xl flex items-start gap-2.5 text-xs text-sky-900 dark:text-sky-200">
+                      <DollarSign className="w-4 h-4 text-sky-600 dark:text-sky-400 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold">Costo del Trámite:</p>
+                          <span className="font-black text-sm text-sky-700 dark:text-sky-300">
+                            ${Number(selectedPt.cost || 150).toFixed(2)} USD
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">
+                          Al crear el expediente se solicitará el comprobante de pago bancario. El enlace público para el cliente permanecerá bloqueado hasta que el operador mayorista apruebe el comprobante.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Grupo (Obligatorio y Pre-asignado) */}
@@ -1559,6 +1678,18 @@ export const AgencyVisasDashboardPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal: Subir o Actualizar Comprobante de Pago */}
+      {receiptModalDossier && (
+        <UploadPaymentReceiptModal
+          isOpen={true}
+          onClose={() => setReceiptModalDossier(null)}
+          dossier={receiptModalDossier}
+          onSuccess={() => {
+            fetchData();
+          }}
+        />
       )}
     </div>
   );

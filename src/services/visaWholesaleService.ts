@@ -18,6 +18,7 @@ export interface VisaProcessType {
   country: string;
   flag_icon?: string;
   description?: string;
+  cost?: number;
   estimated_duration?: string;
   is_active: boolean;
   stages_schema: Array<{
@@ -163,6 +164,11 @@ export interface VisaDossier {
   status: 
     | 'borrador'
     | 'link_enviado'
+    | 'pendiente_pago'
+    | 'comprobante_enviado'
+    | 'aprobada'
+    | 'comprobante_rechazado'
+    | 'exonerada'
     | 'informacion_pendiente'
     | 'informacion_recibida'
     | 'en_revision'
@@ -172,6 +178,16 @@ export interface VisaDossier {
     | 'completado'
     | 'cerrado'
     | 'cancelado';
+  is_exempt?: boolean;
+  cost?: number;
+  payment_status?: 'pendiente_pago' | 'comprobante_enviado' | 'aprobado' | 'comprobante_rechazado' | 'exonerado';
+  approval_status?: 'pendiente' | 'aprobado' | 'rechazado';
+  payment_receipt_url?: string | null;
+  payment_receipt_uploaded_at?: string | null;
+  rejection_reason?: string | null;
+  approved_by?: number | null;
+  approved_at?: string | null;
+  can_share_link?: boolean;
   external_result: 'pendiente' | 'aprobado' | 'rechazado' | 'otro';
   current_responsible: 'cliente' | 'agencia' | 'mayorista';
   priority: 'urgente' | 'requiere_atencion' | 'pendiente' | 'completado';
@@ -514,6 +530,16 @@ class VisaWholesaleService {
     return await res.json();
   }
 
+  async savePublicSection(token: string, sectionId: string, fields: Record<string, any>) {
+    const baseUrl = getApiBaseUrl();
+    const res = await fetch(`${baseUrl}/v1/visas/public/${token}/save-section`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section_id: sectionId, fields }),
+    });
+    return await res.json();
+  }
+
   async uploadPublicDocument(token: string, formData: FormData) {
     const baseUrl = getApiBaseUrl();
     const res = await fetch(`${baseUrl}/v1/visas/public/${token}/upload-document`, {
@@ -568,6 +594,34 @@ class VisaWholesaleService {
 
   async deleteRole(id: number) {
     const res = await apiClient.delete(`/v1/roles/${id}`);
+    return res.data;
+  }
+
+  // ===================== FLUJO DE PAGOS Y EXONERACIÓN B2B =====================
+
+  async uploadPaymentReceipt(dossierId: number, receiptFile: File) {
+    const form = new FormData();
+    form.append('receipt', receiptFile);
+    const res = await apiClient.post(`/v1/visas/dossiers/${dossierId}/upload-receipt`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  }
+
+  async approveDossierPayment(dossierId: number) {
+    const res = await apiClient.post(`/v1/visas/dossiers/${dossierId}/approve-payment`);
+    return res.data;
+  }
+
+  async rejectDossierPayment(dossierId: number, reason: string) {
+    const res = await apiClient.post(`/v1/visas/dossiers/${dossierId}/reject-payment`, { reason });
+    return res.data;
+  }
+
+  async setAgencyPaymentExemption(agencyId: number, isPaymentExempt: boolean) {
+    const res = await apiClient.post(`/v1/visas/mayorista/agencies/${agencyId}/exemption`, {
+      is_payment_exempt: isPaymentExempt,
+    });
     return res.data;
   }
 }

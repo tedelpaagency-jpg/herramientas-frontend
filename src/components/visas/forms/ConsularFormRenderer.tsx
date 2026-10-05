@@ -11,6 +11,9 @@ export interface ConsularFormRendererProps {
   formData: Record<string, any>;
   onFieldChange?: (fieldName: string, value: any) => void;
   onFieldBlur?: (fieldName: string, value: any) => void;
+  onSaveSection?: (sectionId: string, fields: Record<string, any>) => void;
+  savingSectionId?: string | null;
+  savedSectionId?: string | null;
   applicantName?: string;
   passportNumber?: string;
   readOnly?: boolean;
@@ -23,6 +26,9 @@ export const ConsularFormRenderer: React.FC<ConsularFormRendererProps> = ({
   formData = {},
   onFieldChange,
   onFieldBlur,
+  onSaveSection,
+  savingSectionId = null,
+  savedSectionId = null,
   applicantName = '',
   passportNumber = '',
   readOnly = false,
@@ -41,6 +47,9 @@ export const ConsularFormRenderer: React.FC<ConsularFormRendererProps> = ({
         formData={formData}
         onFieldChange={onFieldChange}
         onFieldBlur={onFieldBlur}
+        onSaveSection={onSaveSection}
+        savingSectionId={savingSectionId}
+        savedSectionId={savedSectionId}
         applicantName={applicantName}
         passportNumber={passportNumber}
         readOnly={readOnly}
@@ -53,6 +62,9 @@ export const ConsularFormRenderer: React.FC<ConsularFormRendererProps> = ({
       formData={formData}
       onFieldChange={onFieldChange}
       onFieldBlur={onFieldBlur}
+      onSaveSection={onSaveSection}
+      savingSectionId={savingSectionId}
+      savedSectionId={savedSectionId}
       applicantName={applicantName}
       passportNumber={passportNumber}
       countryName={countryName}

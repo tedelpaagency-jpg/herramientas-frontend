@@ -5,6 +5,8 @@ import {
   User, FileText, Globe, Home, Briefcase, Users, Building, HelpCircle 
 } from 'lucide-react';
 import { ConsularSubFormProps } from './SchengenConsularForm';
+import { SectionProgressBar } from './SectionProgressBar';
+import { USA_CANADA_SECTIONS, calculateSectionProgress } from './visaSectionDefinitions';
 
 export interface UsaCanadaConsularFormProps extends ConsularSubFormProps {
   countryName?: string;
@@ -15,6 +17,9 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
   formData = {},
   onFieldChange,
   onFieldBlur,
+  onSaveSection,
+  savingSectionId = null,
+  savedSectionId = null,
   applicantName = '',
   passportNumber = '',
   countryName = 'Estados Unidos',
@@ -29,6 +34,29 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
   const handleBlur = (name: string, value: any) => {
     if (readOnly) return;
     onFieldBlur?.(name, value);
+  };
+
+  const renderSectionProgress = (sectionId: string, title: string) => {
+    const sec = USA_CANADA_SECTIONS.find((s) => s.id === sectionId);
+    if (!sec) return null;
+    const prog = calculateSectionProgress(sec, formData, {
+      applicant_name: applicantName,
+      name: applicantName,
+      passport_number: passportNumber,
+    });
+
+    return (
+      <SectionProgressBar
+        sectionId={sectionId}
+        sectionTitle={title}
+        totalFields={prog.total}
+        filledFields={prog.filled}
+        isSaving={savingSectionId === sectionId}
+        isSaved={savedSectionId === sectionId}
+        onSaveSection={onSaveSection ? (id) => onSaveSection(id, prog.sectionFieldsData) : undefined}
+        readOnly={readOnly}
+      />
+    );
   };
 
   const getInputClass = (_fieldName: string) => {
@@ -46,6 +74,8 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
           <User className="w-4 h-4 text-sky-600" />
           <span>1. Información Personal</span>
         </h2>
+
+        {renderSectionProgress('personal_info', '1. Información Personal')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -279,6 +309,8 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
           <span>2. Información del Viaje 1</span>
         </h2>
 
+        {renderSectionProgress('trip_info_1', '2. Información del Viaje 1')}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <input
@@ -406,6 +438,8 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
           <span>3. Información del Viaje 2</span>
         </h2>
 
+        {renderSectionProgress('trip_info_2', '3. Información del Viaje 2')}
+
         <div className="space-y-4">
           <div>
             <select
@@ -485,6 +519,8 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
           <Globe className="w-4 h-4 text-sky-600" />
           <span>4. Información del Viaje 3</span>
         </h2>
+
+        {renderSectionProgress('trip_info_3', '4. Información del Viaje 3')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -800,6 +836,8 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
           <span>5. Domicilio e Información de Contacto</span>
         </h2>
 
+        {renderSectionProgress('contact_address', '5. Domicilio e Información de Contacto')}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <input
@@ -1110,6 +1148,8 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
           <span>6. Información del Pasaporte</span>
         </h2>
 
+        {renderSectionProgress('passport_info', '6. Información del Pasaporte')}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <input
@@ -1232,6 +1272,8 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
           <Building className="w-4 h-4 text-sky-600" />
           <span>7. Información de contacto en los {countryName}</span>
         </h2>
+
+        {renderSectionProgress('destination_contact', `7. Información de contacto en los ${countryName}`)}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -1368,6 +1410,8 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
           <Users className="w-4 h-4 text-sky-600" />
           <span>8. Información Familiar</span>
         </h2>
+
+        {renderSectionProgress('family_info', '8. Información Familiar')}
 
         <div className="space-y-4">
           {/* Padre */}
@@ -1897,6 +1941,8 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
           <span>9. Información Laboral / Educativa</span>
         </h2>
 
+        {renderSectionProgress('work_education', '9. Información Laboral / Educativa')}
+
         <div className="space-y-4">
           <p className="text-xs font-bold text-slate-800">1. Actual</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2212,6 +2258,8 @@ export const UsaCanadaConsularForm: React.FC<UsaCanadaConsularFormProps> = ({
           <HelpCircle className="w-4 h-4 text-sky-600" />
           <span>10. Información Adicional</span>
         </h2>
+
+        {renderSectionProgress('additional_info', '10. Información Adicional')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input

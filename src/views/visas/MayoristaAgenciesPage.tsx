@@ -165,7 +165,27 @@ export const MayoristaAgenciesPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error al asignar operador:', err);
-      toast.error(err.response?.data?.message || 'Error al asignar operador');
+    } finally {
+      setUpdatingAgencyId(null);
+    }
+  };
+
+  const handleToggleExemption = async (agencyId: number, isExempt: boolean) => {
+    setUpdatingAgencyId(agencyId);
+    try {
+      const res = await visaWholesaleService.setAgencyPaymentExemption(agencyId, isExempt);
+      toast.success(res?.message || 'Configuración de exoneración actualizada');
+      setAgencies((prev) =>
+        prev.map((a) => (a.id === agencyId ? { ...a, is_payment_exempt: isExempt } : a))
+      );
+      if (selectedAgency && selectedAgency.id === agencyId) {
+        setSelectedAgency((prev: any) => ({ ...prev, is_payment_exempt: isExempt }));
+      }
+      if (selectedAgencyForDashboard && selectedAgencyForDashboard.id === agencyId) {
+        setSelectedAgencyForDashboard((prev: any) => ({ ...prev, is_payment_exempt: isExempt }));
+      }
+    } catch (err: any) {
+      toast.error('Error al actualizar la exoneración');
     } finally {
       setUpdatingAgencyId(null);
     }
@@ -402,6 +422,15 @@ export const MayoristaAgenciesPage: React.FC = () => {
                     }`}
                   >
                     {selectedAgencyForDashboard.status == 1 ? 'Activa' : 'Inactiva'}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
+                      selectedAgencyForDashboard.is_payment_exempt
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                        : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                    }`}
+                  >
+                    {selectedAgencyForDashboard.is_payment_exempt ? '✨ Exonerada de Pago' : 'No Exonerada'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -1220,6 +1249,7 @@ export const MayoristaAgenciesPage: React.FC = () => {
               <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <th className="py-3.5 px-4">Agencia Afiliada</th>
                 <th className="py-3.5 px-4">Contacto & Ubicación</th>
+                <th className="py-3.5 px-4">Exonerada de Pago</th>
                 <th className="py-3.5 px-4 min-w-[220px]">Operador Mayorista Asignado</th>
                 <th className="py-3.5 px-4 text-center">Expedientes Migratorios</th>
                 <th className="py-3.5 px-4 text-right">Acciones</th>
@@ -1228,14 +1258,14 @@ export const MayoristaAgenciesPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="py-16 text-center text-slate-400">
+                  <td colSpan={6} className="py-16 text-center text-slate-400">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
                     Cargando listado de agencias...
                   </td>
                 </tr>
               ) : filteredAgencies.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-16 text-center text-slate-400">
+                  <td colSpan={6} className="py-16 text-center text-slate-400">
                     <Building2 className="w-10 h-10 mx-auto mb-2 opacity-30 text-indigo-500" />
                     <p className="font-semibold text-slate-700 dark:text-slate-300">No se encontraron agencias</p>
                     <p className="text-[11px] text-slate-400 mt-1">Pruebe ajustando los filtros de búsqueda o el estado de asignación.</p>
@@ -1307,6 +1337,33 @@ export const MayoristaAgenciesPage: React.FC = () => {
                             </div>
                           )}
                         </div>
+                      </td>
+
+                      {/* Exonerada de Pago */}
+                      <td className="py-4 px-4 align-middle">
+                        {isWhiteLabelAdmin ? (
+                          <select
+                            value={agency.is_payment_exempt ? 'yes' : 'no'}
+                            onChange={(e) => handleToggleExemption(agency.id, e.target.value === 'yes')}
+                            disabled={isUpdating}
+                            className={`py-1 px-2.5 text-[11px] font-bold rounded-lg border transition-all ${
+                              agency.is_payment_exempt
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                            } focus:ring-1 focus:ring-emerald-500`}
+                          >
+                            <option value="no">No (Requiere Pago)</option>
+                            <option value="yes">Sí (Exonerada)</option>
+                          </select>
+                        ) : (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                            agency.is_payment_exempt
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300'
+                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                          }`}>
+                            {agency.is_payment_exempt ? 'Exonerada' : 'No Exonerada'}
+                          </span>
+                        )}
                       </td>
 
                       {/* Operador Mayorista Asignado */}
@@ -1508,6 +1565,39 @@ export const MayoristaAgenciesPage: React.FC = () => {
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                   {selectedAgency.assigned_operator?.name || selectedAgency.assignedOperator?.name || 'Sin operador asignado'}
                 </p>
+              )}
+            </div>
+
+            {/* Configuración de Exoneración de Pago */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  Agencia Exonerada de Pago
+                </span>
+                <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                  selectedAgency.is_payment_exempt
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                    : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                }`}>
+                  {selectedAgency.is_payment_exempt ? 'Sí (Exonerada)' : 'No (Requiere Pago)'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Las agencias exoneradas pueden crear expedientes y compartir enlaces públicos directamente sin requerir comprobante ni aprobación del operador mayorista.
+              </p>
+              {isWhiteLabelAdmin && (
+                <div className="pt-1 flex items-center gap-3">
+                  <select
+                    value={selectedAgency.is_payment_exempt ? 'yes' : 'no'}
+                    onChange={(e) => handleToggleExemption(selectedAgency.id, e.target.value === 'yes')}
+                    disabled={updatingAgencyId === selectedAgency.id}
+                    className="py-1.5 px-3 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="no">No (Requiere Comprobante y Aprobación)</option>
+                    <option value="yes">Sí (Agencia Exonerada de Pago)</option>
+                  </select>
+                </div>
               )}
             </div>
 

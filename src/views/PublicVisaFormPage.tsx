@@ -1,12 +1,20 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import visaService from '../services/visaService';
 import { normalizeFileUrl } from '../services/apiClient';
 import { 
   FileCheck, Upload, Eye, RefreshCw, User, FileText, Globe, Home, Briefcase, Award, ShieldAlert, Users, PhoneCall, Building, HelpCircle, Compass, CreditCard, ExternalLink
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { triggerConfetti } from '../utils/confetti';
+import { SectionProgressBar } from '../components/visas/forms/SectionProgressBar';
+import {
+  SCHENGEN_SECTIONS,
+  USA_CANADA_SECTIONS,
+  calculateSectionProgress,
+  VisaSectionDef
+} from '../components/visas/forms/visaSectionDefinitions';
 
 interface PublicVisaFormPageProps {
   encodedId: string;
@@ -17,7 +25,9 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
   const [isLoading, setIsLoading] = useState(true);
   const [dynamicFields, setDynamicFields] = useState<Record<string, any>>({});
   const [fieldStatuses, setFieldStatuses] = useState<Record<string, 'valid' | 'invalid'>>({});
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [savingSections, setSavingSections] = useState<Record<string, boolean>>({});
+  const [savedSections, setSavedSections] = useState<Record<string, boolean>>({});
+  const celebratedSectionsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchPublicVisa = async () => {
@@ -39,28 +49,97 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
     }
   }, [encodedId]);
 
-  const handleFieldChange = (fieldName: string, value: any) => {
-    setDynamicFields((prev) => ({ ...prev, [fieldName]: value }));
+  const isSchengen = visaData?.visa_type === 'SCHENGEN';
+  const activeSections: VisaSectionDef[] = isSchengen ? SCHENGEN_SECTIONS : USA_CANADA_SECTIONS;
+
+  const getSectionProgress = (sectionId: string) => {
+    const sec = activeSections.find((s) => s.id === sectionId);
+    if (!sec) {
+      return { total: 0, filled: 0, missing: 0, percentage: 0, isComplete: false, sectionFieldsData: {} };
+    }
+    return calculateSectionProgress(sec, dynamicFields, {
+      applicant_name: visaData?.applicant_name,
+      passport_number: visaData?.passport_number,
+    });
   };
 
-  const handleFieldBlur = async (fieldName: string, value: any) => {
-    const isVal = String(value || '').trim() !== '';
-    setFieldStatuses((prev) => ({ ...prev, [fieldName]: isVal ? 'valid' : 'invalid' }));
+  const handleSaveSection = async (sectionId: string, customFields?: Record<string, any>) => {
+    const sec = activeSections.find((s) => s.id === sectionId);
+    if (!sec) return;
 
-    setAutoSaveStatus('saving');
+    const prog = getSectionProgress(sectionId);
+    const fieldsToSave = customFields || prog.sectionFieldsData;
+
+    setSavingSections((prev) => ({ ...prev, [sectionId]: true }));
     try {
       if (encodedId) {
-        await visaService.saveVisaFieldPublic(encodedId, fieldName, value);
-      } else {
-        await visaService.saveVisaField(visaData?.id || 0, fieldName, value);
+        await visaService.saveVisaSectionPublic(encodedId, sectionId, fieldsToSave);
+      } else if (visaData?.id) {
+        await visaService.saveVisaSectionPublic(String(visaData.id), sectionId, fieldsToSave);
       }
-      setAutoSaveStatus('saved');
-      toast.success('Guardado', { duration: 1500, id: 'autosave-toast' });
-      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+
+      setSavedSections((prev) => ({ ...prev, [sectionId]: true }));
+      toast.success(`Sección "${sec.title}" guardada exitosamente`, { id: `save-${sectionId}` });
+
+      setTimeout(() => {
+        setSavedSections((prev) => ({ ...prev, [sectionId]: false }));
+      }, 3000);
     } catch (err) {
-      console.error('Error auto-saving field:', err);
-      setAutoSaveStatus('idle');
+      console.error('Error saving section:', err);
+      toast.error('Error al guardar la sección. Intente nuevamente.');
+    } finally {
+      setSavingSections((prev) => ({ ...prev, [sectionId]: false }));
     }
+  };
+
+  const checkSectionCompletion = (updatedFields: Record<string, any>, fieldName?: string) => {
+    const targetSections = fieldName
+      ? activeSections.filter((s) => s.fields.includes(fieldName))
+      : activeSections;
+
+    for (const sec of targetSections) {
+      const prog = calculateSectionProgress(sec, updatedFields, {
+        applicant_name: visaData?.applicant_name,
+        passport_number: visaData?.passport_number,
+      });
+
+      if (prog.isComplete && !celebratedSectionsRef.current.has(sec.id)) {
+        celebratedSectionsRef.current.add(sec.id);
+        triggerConfetti();
+        toast.success(`¡Excelente! Has completado la sección "${sec.title}". Guardando datos... 🎉`, {
+          duration: 3500,
+          id: `celebrate-${sec.id}`,
+        });
+        handleSaveSection(sec.id, prog.sectionFieldsData);
+      }
+    }
+  };
+
+  const handleFieldChange = (fieldName: string, value: any) => {
+    const updated = { ...dynamicFields, [fieldName]: value };
+    setDynamicFields(updated);
+    checkSectionCompletion(updated, fieldName);
+  };
+
+  const handleFieldBlur = (fieldName: string, value: any) => {
+    const isVal = String(value || '').trim() !== '';
+    setFieldStatuses((prev) => ({ ...prev, [fieldName]: isVal ? 'valid' : 'invalid' }));
+    checkSectionCompletion(dynamicFields, fieldName);
+  };
+
+  const renderSectionProgress = (sectionId: string, sectionTitle: string) => {
+    const prog = getSectionProgress(sectionId);
+    return (
+      <SectionProgressBar
+        sectionId={sectionId}
+        sectionTitle={sectionTitle}
+        totalFields={prog.total}
+        filledFields={prog.filled}
+        isSaving={savingSections[sectionId]}
+        isSaved={savedSections[sectionId]}
+        onSaveSection={handleSaveSection}
+      />
+    );
   };
 
   const handleFileUpload = async (fieldName: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,7 +219,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
   const isUsa = visaData.visa_type === 'USA';
   const isCanada = visaData.visa_type === 'CANADA';
   const isUk = visaData.visa_type === 'UK' || visaData.visa_type === 'REINO_UNIDO';
-  const isSchengen = visaData.visa_type === 'SCHENGEN';
   const countryName = isUsa ? 'Estados Unidos' : isCanada ? 'Canadá' : isUk ? 'Reino Unido' : 'Espacio Schengen (Europa)';
 
   const getInputClass = (fieldName: string) => {
@@ -172,15 +250,18 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
           </div>
 
           <div className="flex items-center space-x-2">
-            {autoSaveStatus === 'saving' && (
+            {Object.values(savingSections).some(Boolean) ? (
               <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center space-x-1">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Guardando...</span>
+                <span>Guardando sección...</span>
               </span>
-            )}
-            {autoSaveStatus === 'saved' && (
+            ) : Object.values(savedSections).some(Boolean) ? (
               <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                Guardado en tiempo real ✓
+                Sección guardada ✓
+              </span>
+            ) : (
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                Progreso por sección activo
               </span>
             )}
           </div>
@@ -196,6 +277,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <User className="w-4 h-4 text-sky-600" />
                 <span>Casillas 1-11: Datos Personales e Identificación</span>
               </h2>
+
+              {renderSectionProgress('casillas_1_11', 'Casillas 1-11: Datos Personales e Identificación')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -406,6 +489,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>Casillas 12-16: Documento de Viaje / Pasaporte</span>
               </h2>
 
+              {renderSectionProgress('casillas_12_16', 'Casillas 12-16: Documento de Viaje / Pasaporte')}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">12. Tipo de documento de viaje *</label>
@@ -486,6 +571,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Users className="w-4 h-4 text-sky-600" />
                 <span>Casillas 17-18: Datos de Familiar Ciudadano UE / EEE / Suiza / RU</span>
               </h2>
+
+              {renderSectionProgress('casillas_17_18', 'Casillas 17-18: Datos de Familiar Ciudadano UE / EEE / Suiza / RU')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -594,6 +681,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>Casillas 19-20: Domicilio, Contacto y Residencia</span>
               </h2>
 
+              {renderSectionProgress('casillas_19_20', 'Casillas 19-20: Domicilio, Contacto y Residencia')}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">19. Domicilio postal y dirección de correo electrónico del solicitante *</label>
@@ -686,6 +775,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>Casillas 21-22: Profesión y Datos del Empleador / Centro de Estudios</span>
               </h2>
 
+              {renderSectionProgress('casillas_21_22', 'Casillas 21-22: Profesión y Datos del Empleador / Centro de Estudios')}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">21. Profesión actual *</label>
@@ -721,6 +812,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Globe className="w-4 h-4 text-sky-600" />
                 <span>Casillas 23-28: Motivos del Viaje y Datos de la Estancia</span>
               </h2>
+
+              {renderSectionProgress('casillas_23_28', 'Casillas 23-28: Motivos del Viaje y Datos de la Estancia')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -838,6 +931,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>Casillas 29-30: Impresiones Dactilares y Permisos de Entrada</span>
               </h2>
 
+              {renderSectionProgress('casillas_29_30', 'Casillas 29-30: Impresiones Dactilares y Permisos de Entrada')}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">29. Impresiones dactilares tomadas anteriormente para solicitudes de visado Schengen</label>
@@ -905,6 +1000,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>Casillas 31-32: Invitación, Hotel u Organización en el Estado Miembro</span>
               </h2>
 
+              {renderSectionProgress('casillas_31_32', 'Casillas 31-32: Invitación, Hotel u Organización')}
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">31. Apellido(s) y nombre(s) de la persona que invita / Nombre del hotel u hostal</label>
@@ -940,6 +1037,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <CreditCard className="w-4 h-4 text-sky-600" />
                 <span>Casilla 33: Gastos de Viaje y Medios de Subsistencia</span>
               </h2>
+
+              {renderSectionProgress('casilla_33', 'Casilla 33: Gastos de Viaje y Medios de Subsistencia')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -981,6 +1080,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>Casilla 34: Datos de la persona que cumplimenta el impreso (si difiere)</span>
               </h2>
 
+              {renderSectionProgress('casilla_34', 'Casilla 34: Datos de la persona que cumplimenta el impreso (si difiere)')}
+
               <div>
                 <textarea
                   rows={2}
@@ -1004,6 +1105,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <User className="w-4 h-4 text-sky-600" />
                 <span>1. Información Personal</span>
               </h2>
+
+              {renderSectionProgress('sec_personal', '1. Información Personal')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1215,6 +1318,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>2. Información del Viaje 1</span>
               </h2>
 
+              {renderSectionProgress('sec_travel_1', '2. Información del Viaje 1')}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <input
@@ -1326,6 +1431,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>3. Información del Viaje 2</span>
               </h2>
 
+              {renderSectionProgress('sec_travel_2', '3. Información del Viaje 2')}
+
               <div className="space-y-4">
                 <div>
                   <select
@@ -1399,6 +1506,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Globe className="w-4 h-4 text-sky-600" />
                 <span>4. Información del Viaje 3</span>
               </h2>
+
+              {renderSectionProgress('sec_travel_3', '4. Información del Viaje 3')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1684,6 +1793,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>5. Domicilio e Información de Contacto</span>
               </h2>
 
+              {renderSectionProgress('sec_contact', '5. Domicilio e Información de Contacto')}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <input
@@ -1959,6 +2070,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>6. Información del Pasaporte</span>
               </h2>
 
+              {renderSectionProgress('sec_passport', '6. Información del Pasaporte')}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <input
@@ -2066,6 +2179,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Building className="w-4 h-4 text-sky-600" />
                 <span>7. Información de contacto en los {countryName}</span>
               </h2>
+
+              {renderSectionProgress('sec_destination_contact', `7. Información de contacto en ${countryName}`)}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -2184,6 +2299,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Users className="w-4 h-4 text-sky-600" />
                 <span>8. Información Familiar</span>
               </h2>
+
+              {renderSectionProgress('sec_family', '8. Información Familiar')}
 
               <div className="space-y-4">
                 {/* 1. Padre */}
@@ -2649,6 +2766,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>9. Información Laboral / Educativa</span>
               </h2>
 
+              {renderSectionProgress('sec_work_education', '9. Información Laboral / Educativa')}
+
               <div className="space-y-4">
                 <p className="text-xs font-bold text-slate-800">1. Actual</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2917,6 +3036,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <span>10. Información Adicional</span>
               </h2>
 
+              {renderSectionProgress('sec_additional', '10. Información Adicional')}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input
                   type="text"
@@ -3053,6 +3174,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             <Upload className="w-4 h-4 text-sky-600" />
             <span>Subir Documentos</span>
           </h2>
+
+          {renderSectionProgress('sec_documents', 'Subir Documentos')}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             {/* Comprobante */}

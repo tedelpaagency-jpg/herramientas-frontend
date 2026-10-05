@@ -75,6 +75,15 @@ export const VisaDossier360Page: React.FC = () => {
 
   const handleCopyClientLink = async () => {
     if (!dossier) return;
+    if (!dossier.is_exempt && dossier.approval_status !== 'aprobado') {
+      const msg = dossier.payment_status === 'comprobante_rechazado'
+        ? `Enlace bloqueado: Comprobante rechazado (${dossier.rejection_reason || 'Favor subir uno nuevo'}).`
+        : dossier.payment_status === 'comprobante_enviado'
+        ? 'Enlace bloqueado: Comprobante en revisión por el operador mayorista.'
+        : 'Enlace bloqueado: Debe adjuntar el comprobante de pago y esperar aprobación del operador.';
+      toast.error(msg, { duration: 6000 });
+      return;
+    }
     try {
       const res = await visaWholesaleService.getClientLink(dossier.id);
       const url = formatPublicDossierLink(dossier.access_token, res?.public_link);
@@ -82,8 +91,8 @@ export const VisaDossier360Page: React.FC = () => {
       setCopiedLink(true);
       toast.success('¡Enlace único copiado al portapapeles!');
       setTimeout(() => setCopiedLink(false), 2500);
-    } catch (err) {
-      toast.error('Error al obtener enlace.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al obtener enlace.');
     }
   };
 
@@ -242,13 +251,24 @@ export const VisaDossier360Page: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleCopyClientLink}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-semibold transition-all border border-emerald-200 dark:border-emerald-800"
-          >
-            {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            {copiedLink ? 'Copiado' : 'Copiar Link del Cliente'}
-          </button>
+          {(!dossier.is_exempt && dossier.approval_status !== 'aprobado') ? (
+            <button
+              onClick={handleCopyClientLink}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-semibold transition-all border border-amber-200 dark:border-amber-800"
+              title="Enlace público bloqueado hasta la aprobación del comprobante de pago"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-600" />
+              <span>Link Bloqueado (Requiere Aprobación)</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleCopyClientLink}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-semibold transition-all border border-emerald-200 dark:border-emerald-800"
+            >
+              {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedLink ? 'Copiado' : 'Copiar Link del Cliente'}
+            </button>
+          )}
 
           <button
             onClick={handleDownloadPdf}
@@ -282,6 +302,32 @@ export const VisaDossier360Page: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {/* Estado de Pago & Aprobación B2B */}
+            <div className="text-right">
+              <span className="text-[11px] font-semibold text-slate-400 block uppercase">Pago & Aprobación</span>
+              {dossier.is_exempt ? (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  <Sparkles className="w-3.5 h-3.5" /> Exonerado
+                </span>
+              ) : dossier.approval_status === 'aprobado' ? (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Aprobado (${Number(dossier.cost || 150).toFixed(2)})
+                </span>
+              ) : dossier.payment_status === 'comprobante_rechazado' ? (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-lg bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300" title={dossier.rejection_reason || 'Rechazado'}>
+                  <AlertCircle className="w-3.5 h-3.5" /> Rechazado
+                </span>
+              ) : dossier.payment_status === 'comprobante_enviado' ? (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300">
+                  <Clock className="w-3.5 h-3.5" /> Por Revisar
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Pendiente Pago (${Number(dossier.cost || 150).toFixed(2)})
+                </span>
+              )}
+            </div>
+
             <div className="text-right">
               <span className="text-[11px] font-semibold text-slate-400 block uppercase">Estado del Servicio</span>
               <span className="inline-block text-xs font-bold px-3 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 capitalize border border-sky-200 dark:border-sky-800">
@@ -300,6 +346,22 @@ export const VisaDossier360Page: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Banner de Comprobante Rechazado */}
+        {!dossier.is_exempt && dossier.payment_status === 'comprobante_rechazado' && (
+          <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-rose-800 dark:text-rose-200">Comprobante de Pago Rechazado por el Operador Mayorista</p>
+              <p className="text-xs text-rose-700 dark:text-rose-300 mt-0.5">
+                Motivo: <strong>{dossier.rejection_reason || 'Monto o comprobante incorrecto.'}</strong>
+              </p>
+              <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
+                La agencia debe actualizar el comprobante desde su panel para volver a someterlo a revisión. El link público permanecerá bloqueado.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Progress Bar & Stages */}
         <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">

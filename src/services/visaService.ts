@@ -58,6 +58,11 @@ export const visaService = {
     return response.data?.data || response.data;
   },
 
+  saveVisaSectionPublic: async (encodedId: string, section: string, fields: Record<string, any>): Promise<any> => {
+    const response = await apiClient.post(`/v1/visas/public/${encodedId}/save-section`, { section, fields });
+    return response.data?.data || response.data;
+  },
+
   updateVisaStatus: async (id: number, status: string | number): Promise<Visa> => {
     const response = await apiClient.post(`/v1/visas/${id}/status`, { status });
     return response.data?.data || response.data;
