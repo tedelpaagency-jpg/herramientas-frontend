@@ -130,9 +130,9 @@ export const USA_CANADA_SECTIONS: VisaSectionDef[] = [
     id: 'sec_contact',
     title: '5. Domicilio e Información de Contacto',
     fields: [
-      'street_address',
-      'city',
-      'state_province',
+      'home_address',
+      'home_city',
+      'home_province',
       'phone_primary',
       'email_primary',
     ],
@@ -141,7 +141,6 @@ export const USA_CANADA_SECTIONS: VisaSectionDef[] = [
     id: 'sec_passport',
     title: '6. Información del Pasaporte',
     fields: [
-      'passport_type',
       'passport_number',
       'passport_country_city',
       'passport_issue_date',
@@ -151,32 +150,28 @@ export const USA_CANADA_SECTIONS: VisaSectionDef[] = [
   {
     id: 'sec_destination_contact',
     title: '7. Información de Contacto en Destino',
-    fields: ['contact_person_name', 'contact_phone'],
+    fields: ['us_contact_name', 'us_contact_phone'],
   },
   {
     id: 'sec_family',
     title: '8. Información Familiar',
     fields: [
-      'father_surname',
-      'father_first_names',
-      'mother_surname',
-      'mother_first_names',
+      'father_name',
+      'mother_name',
     ],
   },
   {
     id: 'sec_work_education',
     title: '9. Información Laboral / Educativa',
     fields: [
-      'primary_occupation',
+      'current_occupation',
       'employer_school_name',
-      'employer_phone',
-      'monthly_salary',
     ],
   },
   {
     id: 'sec_additional',
     title: '10. Información Adicional',
-    fields: ['languages_spoken', 'traveled_last_five_years'],
+    fields: ['clan_or_tribe'],
   },
   {
     id: 'sec_documents',
@@ -194,6 +189,68 @@ export interface SectionProgressResult {
   sectionFieldsData: Record<string, any>;
 }
 
+/**
+ * Resolver una sección por ID exacto o por sus alias conocidos (sec_personal <-> personal_info, etc.)
+ */
+export function resolveVisaSection(sections: VisaSectionDef[], sectionId: string): VisaSectionDef | undefined {
+  if (!sectionId) return undefined;
+  const direct = sections.find((s) => s.id === sectionId);
+  if (direct) return direct;
+
+  const clean = sectionId.toLowerCase().replace(/^sec_/, '');
+  return sections.find((s) => {
+    const sClean = s.id.toLowerCase().replace(/^sec_/, '');
+    return sClean === clean || 
+      (clean === 'personal_info' && sClean === 'personal') ||
+      (clean === 'trip_info_1' && sClean === 'travel_1') ||
+      (clean === 'trip_info_2' && sClean === 'travel_2') ||
+      (clean === 'trip_info_3' && sClean === 'travel_3') ||
+      (clean === 'contact_address' && sClean === 'contact') ||
+      (clean === 'passport_info' && sClean === 'passport') ||
+      (clean === 'destination_contact' && sClean === 'destination_contact') ||
+      (clean === 'family_info' && sClean === 'family') ||
+      (clean === 'work_education' && sClean === 'work_education') ||
+      (clean === 'additional_info' && sClean === 'additional');
+  });
+}
+
+/**
+ * Fallbacks inteligentes entre variantes de nombres de campos en formularios
+ */
+function getFieldValueWithFallback(merged: Record<string, any>, field: string): any {
+  if (merged[field] !== undefined && merged[field] !== null && String(merged[field]).trim() !== '') {
+    return merged[field];
+  }
+
+  // Alias y sinónimos comunes
+  const fallbacks: Record<string, string[]> = {
+    home_address: ['street_address', 'address'],
+    street_address: ['home_address', 'address'],
+    home_city: ['city'],
+    city: ['home_city'],
+    home_province: ['state_province', 'province', 'state'],
+    state_province: ['home_province', 'province', 'state'],
+    us_contact_name: ['contact_person_name', 'destination_contact_name'],
+    contact_person_name: ['us_contact_name', 'destination_contact_name'],
+    us_contact_phone: ['contact_phone'],
+    contact_phone: ['us_contact_phone'],
+    father_name: ['father_surname', 'father_first_names'],
+    mother_name: ['mother_surname', 'mother_first_names'],
+    employer_school_name: ['current_employer_school', 'employer_name', 'school_name'],
+    current_employer_school: ['employer_school_name', 'employer_name'],
+    clan_or_tribe: ['languages_spoken', 'has_other_clan'],
+  };
+
+  const aliases = fallbacks[field] || [];
+  for (const alt of aliases) {
+    if (merged[alt] !== undefined && merged[alt] !== null && String(merged[alt]).trim() !== '') {
+      return merged[alt];
+    }
+  }
+
+  return merged[field];
+}
+
 export function calculateSectionProgress(
   section: VisaSectionDef,
   formData: Record<string, any>,
@@ -205,7 +262,7 @@ export function calculateSectionProgress(
   const sectionFieldsData: Record<string, any> = {};
 
   for (const field of section.fields) {
-    const val = merged[field];
+    const val = getFieldValueWithFallback(merged, field);
     sectionFieldsData[field] = val ?? '';
     if (val !== undefined && val !== null && String(val).trim() !== '') {
       filled++;

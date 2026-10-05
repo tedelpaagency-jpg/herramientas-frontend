@@ -10,6 +10,7 @@ import {
   DollarSign, Check, X, FileCheck, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ViewPaymentReceiptModal } from '@/components/visas/modals/ViewPaymentReceiptModal';
 
 export const MayoristaVisasDashboardPage: React.FC = () => {
   const [metrics, setMetrics] = useState<any>({
@@ -52,6 +53,9 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
   const [rejectionModalDossier, setRejectionModalDossier] = useState<VisaDossier | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isProcessingApproval, setIsProcessingApproval] = useState(false);
+
+  // Modal para ver comprobante de pago
+  const [viewReceiptDossier, setViewReceiptDossier] = useState<VisaDossier | null>(null);
 
   const fetchDashboard = async () => {
     setIsLoading(true);
@@ -395,16 +399,14 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {dossier.payment_receipt_url ? (
-                          <a
-                            href={dossier.payment_receipt_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900 border border-sky-200 dark:border-sky-800 text-xs font-semibold transition-colors"
+                          <button
+                            type="button"
+                            onClick={() => setViewReceiptDossier(dossier)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900 border border-sky-200 dark:border-sky-800 text-xs font-semibold transition-colors cursor-pointer"
                           >
                             <FileText className="w-3.5 h-3.5 text-sky-600" />
                             <span>Ver Comprobante</span>
-                            <ExternalLink className="w-3 h-3 opacity-60" />
-                          </a>
+                          </button>
                         ) : (
                           <span className="text-slate-400 italic">No disponible</span>
                         )}
@@ -582,17 +584,15 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
                           </td>
                           <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-1.5">
                             {dossier.payment_receipt_url && (
-                              <a
-                                href={dossier.payment_receipt_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/60 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 font-bold text-xs transition-colors"
-                                title="Ver Comprobante de Pago Subido"
+                              <button
+                                type="button"
+                                onClick={() => setViewReceiptDossier(dossier)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/60 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 font-bold text-xs transition-colors cursor-pointer"
+                                title="Ver Comprobante de Pago en modal"
                               >
                                 <FileText className="w-3.5 h-3.5 text-sky-600" />
                                 <span>Comprobante</span>
-                                <ExternalLink className="w-3 h-3 opacity-60" />
-                              </a>
+                              </button>
                             )}
                             {!dossier.is_exempt && dossier.approval_status !== 'aprobado' && (
                               <>
@@ -740,17 +740,15 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
                         </td>
                         <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-1.5">
                           {dossier.payment_receipt_url && (
-                            <a
-                              href={dossier.payment_receipt_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/60 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 font-bold text-xs transition-colors"
-                              title="Ver Comprobante de Pago Subido"
+                            <button
+                              type="button"
+                              onClick={() => setViewReceiptDossier(dossier)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/60 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 font-bold text-xs transition-colors cursor-pointer"
+                              title="Ver Comprobante de Pago en modal"
                             >
                               <FileText className="w-3.5 h-3.5 text-sky-600" />
                               <span>Comprobante</span>
-                              <ExternalLink className="w-3 h-3 opacity-60" />
-                            </a>
+                            </button>
                           )}
                           {!dossier.is_exempt && dossier.approval_status !== 'aprobado' && (
                             <>
@@ -845,6 +843,28 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal para Ver Comprobante de Pago */}
+      <ViewPaymentReceiptModal
+        isOpen={!!viewReceiptDossier}
+        onClose={() => setViewReceiptDossier(null)}
+        receiptUrl={viewReceiptDossier?.payment_receipt_url}
+        applicantName={viewReceiptDossier?.applicant_name}
+        dossierCode={viewReceiptDossier?.code}
+        cost={viewReceiptDossier?.cost}
+        uploadedAt={viewReceiptDossier?.payment_receipt_uploaded_at || viewReceiptDossier?.updated_at}
+        onApprove={viewReceiptDossier?.approval_status === 'pendiente' ? () => {
+          const d = viewReceiptDossier;
+          setViewReceiptDossier(null);
+          handleApprovePayment(d);
+        } : undefined}
+        onReject={viewReceiptDossier?.approval_status === 'pendiente' ? () => {
+          const d = viewReceiptDossier;
+          setViewReceiptDossier(null);
+          handleOpenRejectModal(d);
+        } : undefined}
+        isProcessingAction={isProcessingApproval}
+      />
     </div>
   );
 };

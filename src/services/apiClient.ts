@@ -51,6 +51,12 @@ export const normalizeFileUrl = (url: string | undefined | null): string => {
     return `${apiBase}/api/v1/public/storage/signatures/${filename}`;
   }
 
+  // Bypass 403 Forbidden Hostinger/LiteSpeed block on direct /storage/uploads/visa_receipts/ URLs
+  if (cleanUrl.includes('/visa_receipts/')) {
+    const filename = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1);
+    return `${apiBase}/api/v1/public/storage/visa-receipts/${filename}`;
+  }
+
   if (cleanUrl.startsWith('/storage')) {
     return `${apiBase}${cleanUrl}`;
   }

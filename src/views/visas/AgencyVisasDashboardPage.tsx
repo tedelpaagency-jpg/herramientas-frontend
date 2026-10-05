@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { UploadPaymentReceiptModal } from '@/components/visas/modals/UploadPaymentReceiptModal';
+import { ViewPaymentReceiptModal } from '@/components/visas/modals/ViewPaymentReceiptModal';
 
 export const AgencyVisasDashboardPage: React.FC = () => {
   const router = useRouter();
@@ -52,6 +53,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [receiptModalDossier, setReceiptModalDossier] = useState<VisaDossier | null>(null);
+  const [viewReceiptDossier, setViewReceiptDossier] = useState<VisaDossier | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newDossierReceipt, setNewDossierReceipt] = useState<File | null>(null);
   const [newDossierData, setNewDossierData] = useState({
@@ -529,13 +531,25 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                   </span>
                 )}
               </div>
-              <button
-                onClick={() => setReceiptModalDossier(dossier)}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 hover:underline"
-              >
-                <Upload className="w-3 h-3" />
-                <span>{dossier.payment_receipt_url ? 'Actualizar Comprobante' : 'Subir Comprobante'}</span>
-              </button>
+              <div className="flex flex-col gap-1 items-start">
+                <button
+                  onClick={() => setReceiptModalDossier(dossier)}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 hover:underline cursor-pointer"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>{dossier.payment_receipt_url ? 'Actualizar Comprobante' : 'Subir Comprobante'}</span>
+                </button>
+                {dossier.payment_receipt_url && (
+                  <button
+                    type="button"
+                    onClick={() => setViewReceiptDossier(dossier)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:underline cursor-pointer"
+                  >
+                    <FileText className="w-3 h-3" />
+                    <span>Ver Comprobante</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </td>
@@ -1783,6 +1797,17 @@ export const AgencyVisasDashboardPage: React.FC = () => {
           }}
         />
       )}
+
+      {/* Modal: Ver Comprobante de Pago */}
+      <ViewPaymentReceiptModal
+        isOpen={!!viewReceiptDossier}
+        onClose={() => setViewReceiptDossier(null)}
+        receiptUrl={viewReceiptDossier?.payment_receipt_url}
+        applicantName={viewReceiptDossier?.applicant_name}
+        dossierCode={viewReceiptDossier?.code}
+        cost={viewReceiptDossier?.cost}
+        uploadedAt={viewReceiptDossier?.payment_receipt_uploaded_at || viewReceiptDossier?.updated_at}
+      />
     </div>
   );
 };

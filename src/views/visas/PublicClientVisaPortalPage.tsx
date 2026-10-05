@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import ConsularFormRenderer from '@/components/visas/forms/ConsularFormRenderer';
 import VisaProcessTimeline from '@/components/visas/VisaProcessTimeline';
+import { ViewPaymentReceiptModal } from '@/components/visas/modals/ViewPaymentReceiptModal';
 import toast from 'react-hot-toast';
 import { triggerConfetti } from '@/utils/confetti';
 import { SCHENGEN_SECTIONS, USA_CANADA_SECTIONS, calculateSectionProgress } from '@/components/visas/forms/visaSectionDefinitions';
@@ -40,6 +41,7 @@ export const PublicClientVisaPortalPage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedDocForUpload, setSelectedDocForUpload] = useState<VisaDocument | null>(null);
+  const [viewingDoc, setViewingDoc] = useState<VisaDocument | null>(null);
 
   // Messaging
   const [clientMessage, setClientMessage] = useState('');
@@ -432,14 +434,14 @@ export const PublicClientVisaPortalPage: React.FC = () => {
 
                         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                           {doc.file_url && (
-                            <a
-                              href={normalizeFileUrl(doc.file_url)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg inline-flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition-colors"
+                            <button
+                              type="button"
+                              onClick={() => setViewingDoc(doc)}
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg inline-flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+                              title="Ver documento en modal"
                             >
                               <Eye className="w-3.5 h-3.5" /> Ver
-                            </a>
+                            </button>
                           )}
 
                           <button
@@ -797,6 +799,16 @@ export const PublicClientVisaPortalPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Modal para ver documento / comprobante adjunto */}
+        <ViewPaymentReceiptModal
+          isOpen={!!viewingDoc}
+          onClose={() => setViewingDoc(null)}
+          receiptUrl={viewingDoc?.file_url}
+          title={viewingDoc?.name || 'Documento Adjunto'}
+          applicantName={portalData?.dossier?.applicant_name || portalData?.client?.name}
+          dossierCode={portalData?.dossier?.code}
+        />
       </div>
     </div>
   );

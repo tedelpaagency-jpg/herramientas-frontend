@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import visaWholesaleService, { VisaDossier } from '@/services/visaWholesaleService';
+import { ViewPaymentReceiptModal } from './ViewPaymentReceiptModal';
 
 interface UploadPaymentReceiptModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const UploadPaymentReceiptModal: React.FC<UploadPaymentReceiptModalProps>
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPreviousReceipt, setShowPreviousReceipt] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!isOpen) return null;
@@ -139,6 +141,18 @@ export const UploadPaymentReceiptModal: React.FC<UploadPaymentReceiptModalProps>
               <p className="text-[11px] text-rose-600 dark:text-rose-400">
                 Por favor adjunte un comprobante corregido con número de transacción legible.
               </p>
+              {dossier.payment_receipt_url && (
+                <div className="pt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreviousReceipt(true)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300 hover:underline cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Ver comprobante rechazado en modal</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -226,6 +240,20 @@ export const UploadPaymentReceiptModal: React.FC<UploadPaymentReceiptModalProps>
           </div>
         </form>
       </div>
+
+      {/* Modal para ver comprobante anterior */}
+      {dossier.payment_receipt_url && (
+        <ViewPaymentReceiptModal
+          isOpen={showPreviousReceipt}
+          onClose={() => setShowPreviousReceipt(false)}
+          receiptUrl={dossier.payment_receipt_url}
+          title="Comprobante Anterior"
+          applicantName={dossier.applicant_name}
+          dossierCode={dossier.code}
+          cost={dossier.cost}
+          uploadedAt={dossier.payment_receipt_uploaded_at}
+        />
+      )}
     </div>
   );
 };

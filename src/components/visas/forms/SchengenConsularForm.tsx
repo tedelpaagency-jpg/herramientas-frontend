@@ -49,16 +49,18 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
     });
 
     return (
-      <SectionProgressBar
-        sectionId={sectionId}
-        sectionTitle={title}
-        totalFields={prog.total}
-        filledFields={prog.filled}
-        isSaving={savingSectionId === sectionId}
-        isSaved={savedSectionId === sectionId}
-        onSaveSection={onSaveSection ? (id) => onSaveSection(id, prog.sectionFieldsData) : undefined}
-        readOnly={readOnly}
-      />
+      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
+        <SectionProgressBar
+          sectionId={sectionId}
+          sectionTitle={title}
+          totalFields={prog.total}
+          filledFields={prog.filled}
+          isSaving={savingSectionId === sectionId}
+          isSaved={savedSectionId === sectionId}
+          onSaveSection={onSaveSection ? (id) => onSaveSection(id, prog.sectionFieldsData) : undefined}
+          readOnly={readOnly}
+        />
+      </div>
     );
   };
 
@@ -77,8 +79,6 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
           <User className="w-4 h-4 text-sky-600" />
           <span>Casillas 1-11: Datos Personales e Identificación</span>
         </h2>
-
-        {renderSectionProgress('casillas_1_11', 'Casillas 1-11: Datos Personales e Identificación')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -305,6 +305,8 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
             </select>
           </div>
         </div>
+
+        {renderSectionProgress('casillas_1_11', 'Casillas 1-11: Datos Personales e Identificación')}
       </div>
 
       {/* SCHENGEN BLOQUE 2: DOCUMENTO DE VIAJE (CASILLAS 12 A 16) */}
@@ -313,8 +315,6 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
           <FileText className="w-4 h-4 text-sky-600" />
           <span>Casillas 12-16: Documento de Viaje / Pasaporte</span>
         </h2>
-
-        {renderSectionProgress('casillas_12_16', 'Casillas 12-16: Documento de Viaje / Pasaporte')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
@@ -397,6 +397,8 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
             />
           </div>
         </div>
+
+        {renderSectionProgress('casillas_12_16', 'Casillas 12-16: Documento de Viaje / Pasaporte')}
       </div>
 
       {/* SCHENGEN BLOQUE 3: FAMILIAR DE CIUDADANO UE/EEE/SUIZA/RU (CASILLAS 17 Y 18) */}
@@ -405,8 +407,6 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
           <Users className="w-4 h-4 text-sky-600" />
           <span>Casillas 17-18: Datos de Familiar Ciudadano UE / EEE / Suiza / RU</span>
         </h2>
-
-        {renderSectionProgress('casillas_17_18', 'Casillas 17-18: Datos de Familiar Ciudadano UE / EEE / Suiza / RU')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
@@ -518,6 +518,8 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
             </>
           )}
         </div>
+
+        {renderSectionProgress('casillas_17_18', 'Casillas 17-18: Datos de Familiar Ciudadano UE / EEE / Suiza / RU')}
       </div>
 
       {/* SCHENGEN BLOQUE 4: DOMICILIO, CONTACTO Y RESIDENCIA (CASILLAS 19 Y 20) */}
@@ -526,8 +528,6 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
           <Home className="w-4 h-4 text-sky-600" />
           <span>Casillas 19-20: Domicilio, Contacto y Residencia</span>
         </h2>
-
-        {renderSectionProgress('casillas_19_20', 'Casillas 19-20: Domicilio, Contacto y Residencia')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
@@ -623,6 +623,8 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
             </>
           )}
         </div>
+
+        {renderSectionProgress('casillas_19_20', 'Casillas 19-20: Domicilio, Contacto y Residencia')}
       </div>
 
       {/* SCHENGEN BLOQUE 5: PROFESIÓN Y EMPLEADOR / ESTUDIOS (CASILLAS 21 Y 22) */}
@@ -631,8 +633,6 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
           <Briefcase className="w-4 h-4 text-sky-600" />
           <span>Casillas 21-22: Profesión y Datos del Empleador / Centro de Estudios</span>
         </h2>
-
-        {renderSectionProgress('casillas_21_22', 'Casillas 21-22: Profesión y Datos del Empleador / Centro de Estudios')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -665,6 +665,8 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
             />
           </div>
         </div>
+
+        {renderSectionProgress('casillas_21_22', 'Casillas 21-22: Profesión y Datos del Empleador / Centro de Estudios')}
       </div>
 
       {/* SCHENGEN BLOQUE 6: MOTIVO Y DATOS DEL VIAJE (CASILLAS 23 A 28) */}
@@ -673,8 +675,6 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
           <Globe className="w-4 h-4 text-sky-600" />
           <span>Casillas 23-28: Motivos del Viaje y Datos de la Estancia</span>
         </h2>
-
-        {renderSectionProgress('casillas_23_28', 'Casillas 23-28: Motivos del Viaje y Datos de la Estancia')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
@@ -795,6 +795,8 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
             />
           </div>
         </div>
+
+        {renderSectionProgress('casillas_23_28', 'Casillas 23-28: Motivos del Viaje y Datos de la Estancia')}
       </div>
 
       {/* SCHENGEN BLOQUE 7: ANTECEDENTES Y PERMISOS (CASILLAS 29 Y 30) */}
@@ -803,8 +805,6 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
           <ShieldAlert className="w-4 h-4 text-sky-600" />
           <span>Casillas 29-30: Impresiones Dactilares y Permisos de Entrada</span>
         </h2>
-
-        {renderSectionProgress('casillas_29_30', 'Casillas 29-30: Impresiones Dactilares y Permisos de Entrada')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
@@ -871,6 +871,8 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
             />
           </div>
         </div>
+
+        {renderSectionProgress('casillas_29_30', 'Casillas 29-30: Impresiones Dactilares y Permisos de Entrada')}
       </div>
 
       {/* SCHENGEN BLOQUE 8: INVITACIÓN / ALOJAMIENTO / ORGANIZACIÓN (CASILLAS 31 Y 32) */}
@@ -879,8 +881,6 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
           <Building className="w-4 h-4 text-sky-600" />
           <span>Casillas 31-32: Invitación, Hotel u Organización en el Estado Miembro</span>
         </h2>
-
-        {renderSectionProgress('casillas_31_32', 'Casillas 31-32: Invitación, Hotel u Organización en el Estado Miembro')}
 
         <div className="space-y-4">
           <div>
@@ -913,6 +913,8 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
             />
           </div>
         </div>
+
+        {renderSectionProgress('casillas_31_32', 'Casillas 31-32: Invitación, Hotel u Organización en el Estado Miembro')}
       </div>
 
       {/* SCHENGEN BLOQUE 9: GASTOS DE VIAJE Y SUBSISTENCIA (CASILLA 33) */}
@@ -921,8 +923,6 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
           <CreditCard className="w-4 h-4 text-sky-600" />
           <span>Casilla 33: Gastos de Viaje y Medios de Subsistencia</span>
         </h2>
-
-        {renderSectionProgress('casilla_33', 'Casilla 33: Gastos de Viaje y Medios de Subsistencia')}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
@@ -958,6 +958,8 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
             />
           </div>
         </div>
+
+        {renderSectionProgress('casilla_33', 'Casilla 33: Gastos de Viaje y Medios de Subsistencia')}
       </div>
 
       {/* SCHENGEN BLOQUE 10: TERCERA PERSONA CUMPLIMENTADORA (CASILLA 34) */}
@@ -966,8 +968,6 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
           <HelpCircle className="w-4 h-4 text-sky-600" />
           <span>Casilla 34: Datos de la persona que cumplimenta el impreso (si difiere)</span>
         </h2>
-
-        {renderSectionProgress('casilla_34', 'Casilla 34: Datos de la persona que cumplimenta el impreso')}
 
         <div>
           <textarea
@@ -982,6 +982,8 @@ export const SchengenConsularForm: React.FC<ConsularSubFormProps> = ({
             className={getInputClass('third_party_filler')}
           />
         </div>
+
+        {renderSectionProgress('casilla_34', 'Casilla 34: Datos de la persona que cumplimenta el impreso')}
       </div>
     </div>
   );

@@ -9,10 +9,12 @@ import {
 import toast from 'react-hot-toast';
 import { triggerConfetti } from '../utils/confetti';
 import { SectionProgressBar } from '../components/visas/forms/SectionProgressBar';
+import { ViewPaymentReceiptModal } from '../components/visas/modals/ViewPaymentReceiptModal';
 import {
   SCHENGEN_SECTIONS,
   USA_CANADA_SECTIONS,
   calculateSectionProgress,
+  resolveVisaSection,
   VisaSectionDef
 } from '../components/visas/forms/visaSectionDefinitions';
 
@@ -27,6 +29,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
   const [fieldStatuses, setFieldStatuses] = useState<Record<string, 'valid' | 'invalid'>>({});
   const [savingSections, setSavingSections] = useState<Record<string, boolean>>({});
   const [savedSections, setSavedSections] = useState<Record<string, boolean>>({});
+  const [previewModalFile, setPreviewModalFile] = useState<{ url: string; label: string } | null>(null);
   const celebratedSectionsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -53,7 +56,7 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
   const activeSections: VisaSectionDef[] = isSchengen ? SCHENGEN_SECTIONS : USA_CANADA_SECTIONS;
 
   const getSectionProgress = (sectionId: string) => {
-    const sec = activeSections.find((s) => s.id === sectionId);
+    const sec = resolveVisaSection(activeSections, sectionId);
     if (!sec) {
       return { total: 0, filled: 0, missing: 0, percentage: 0, isComplete: false, sectionFieldsData: {} };
     }
@@ -128,17 +131,21 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
   };
 
   const renderSectionProgress = (sectionId: string, sectionTitle: string) => {
-    const prog = getSectionProgress(sectionId);
+    const sec = resolveVisaSection(activeSections, sectionId);
+    const resolvedId = sec?.id || sectionId;
+    const prog = getSectionProgress(resolvedId);
     return (
-      <SectionProgressBar
-        sectionId={sectionId}
-        sectionTitle={sectionTitle}
-        totalFields={prog.total}
-        filledFields={prog.filled}
-        isSaving={savingSections[sectionId]}
-        isSaved={savedSections[sectionId]}
-        onSaveSection={handleSaveSection}
-      />
+      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
+        <SectionProgressBar
+          sectionId={resolvedId}
+          sectionTitle={sectionTitle}
+          totalFields={prog.total}
+          filledFields={prog.filled}
+          isSaving={savingSections[resolvedId]}
+          isSaved={savedSections[resolvedId]}
+          onSaveSection={handleSaveSection}
+        />
+      </div>
     );
   };
 
@@ -169,27 +176,30 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
       return (
         <div className="flex flex-col items-center justify-center p-2 text-center space-y-1 w-full h-full">
           <FileText className="w-10 h-10 text-rose-500" />
-          <a
-            href={fileUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-[11px] font-bold text-sky-600 hover:underline flex items-center space-x-1"
+          <button
+            type="button"
+            onClick={() => setPreviewModalFile({ url: fileUrl, label })}
+            className="text-[11px] font-bold text-sky-600 hover:underline flex items-center space-x-1 cursor-pointer"
           >
             <span>Ver PDF adjunto</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
+            <Eye className="w-3 h-3" />
+          </button>
         </div>
       );
     }
 
     return (
-      <a href={fileUrl} target="_blank" rel="noreferrer" className="w-full h-full block group relative">
+      <button
+        type="button"
+        onClick={() => setPreviewModalFile({ url: fileUrl, label })}
+        className="w-full h-full block group relative cursor-pointer"
+      >
         <img src={fileUrl} alt={label} className="w-full h-full object-contain" />
         <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold space-x-1">
           <Eye className="w-4 h-4" />
-          <span>Ver archivo</span>
+          <span>Ver en modal</span>
         </div>
-      </a>
+      </button>
     );
   };
 
@@ -277,8 +287,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <User className="w-4 h-4 text-sky-600" />
                 <span>Casillas 1-11: Datos Personales e Identificación</span>
               </h2>
-
-              {renderSectionProgress('casillas_1_11', 'Casillas 1-11: Datos Personales e Identificación')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -480,6 +488,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   </select>
                 </div>
               </div>
+
+              {renderSectionProgress('casillas_1_11', 'Casillas 1-11: Datos Personales e Identificación')}
             </div>
 
             {/* SCHENGEN BLOQUE 2: DOCUMENTO DE VIAJE (CASILLAS 12 A 16) */}
@@ -488,8 +498,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <FileText className="w-4 h-4 text-sky-600" />
                 <span>Casillas 12-16: Documento de Viaje / Pasaporte</span>
               </h2>
-
-              {renderSectionProgress('casillas_12_16', 'Casillas 12-16: Documento de Viaje / Pasaporte')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -563,6 +571,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   />
                 </div>
               </div>
+
+              {renderSectionProgress('casillas_12_16', 'Casillas 12-16: Documento de Viaje / Pasaporte')}
             </div>
 
             {/* SCHENGEN BLOQUE 3: FAMILIAR DE CIUDADANO UE/EEE/SUIZA/RU (CASILLAS 17 Y 18) */}
@@ -571,8 +581,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Users className="w-4 h-4 text-sky-600" />
                 <span>Casillas 17-18: Datos de Familiar Ciudadano UE / EEE / Suiza / RU</span>
               </h2>
-
-              {renderSectionProgress('casillas_17_18', 'Casillas 17-18: Datos de Familiar Ciudadano UE / EEE / Suiza / RU')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -672,6 +680,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   </>
                 )}
               </div>
+
+              {renderSectionProgress('casillas_17_18', 'Casillas 17-18: Datos de Familiar Ciudadano UE / EEE / Suiza / RU')}
             </div>
 
             {/* SCHENGEN BLOQUE 4: DOMICILIO, CONTACTO Y RESIDENCIA (CASILLAS 19 Y 20) */}
@@ -680,8 +690,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Home className="w-4 h-4 text-sky-600" />
                 <span>Casillas 19-20: Domicilio, Contacto y Residencia</span>
               </h2>
-
-              {renderSectionProgress('casillas_19_20', 'Casillas 19-20: Domicilio, Contacto y Residencia')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -766,6 +774,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   </>
                 )}
               </div>
+
+              {renderSectionProgress('casillas_19_20', 'Casillas 19-20: Domicilio, Contacto y Residencia')}
             </div>
 
             {/* SCHENGEN BLOQUE 5: PROFESIÓN Y EMPLEADOR / ESTUDIOS (CASILLAS 21 Y 22) */}
@@ -774,8 +784,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Briefcase className="w-4 h-4 text-sky-600" />
                 <span>Casillas 21-22: Profesión y Datos del Empleador / Centro de Estudios</span>
               </h2>
-
-              {renderSectionProgress('casillas_21_22', 'Casillas 21-22: Profesión y Datos del Empleador / Centro de Estudios')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -804,6 +812,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   />
                 </div>
               </div>
+
+              {renderSectionProgress('casillas_21_22', 'Casillas 21-22: Profesión y Datos del Empleador / Centro de Estudios')}
             </div>
 
             {/* SCHENGEN BLOQUE 6: MOTIVO Y DATOS DEL VIAJE (CASILLAS 23 A 28) */}
@@ -812,8 +822,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Globe className="w-4 h-4 text-sky-600" />
                 <span>Casillas 23-28: Motivos del Viaje y Datos de la Estancia</span>
               </h2>
-
-              {renderSectionProgress('casillas_23_28', 'Casillas 23-28: Motivos del Viaje y Datos de la Estancia')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -922,6 +930,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   />
                 </div>
               </div>
+
+              {renderSectionProgress('casillas_23_28', 'Casillas 23-28: Motivos del Viaje y Datos de la Estancia')}
             </div>
 
             {/* SCHENGEN BLOQUE 7: ANTECEDENTES Y PERMISOS (CASILLAS 29 Y 30) */}
@@ -930,8 +940,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <ShieldAlert className="w-4 h-4 text-sky-600" />
                 <span>Casillas 29-30: Impresiones Dactilares y Permisos de Entrada</span>
               </h2>
-
-              {renderSectionProgress('casillas_29_30', 'Casillas 29-30: Impresiones Dactilares y Permisos de Entrada')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -991,6 +999,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   />
                 </div>
               </div>
+
+              {renderSectionProgress('casillas_29_30', 'Casillas 29-30: Impresiones Dactilares y Permisos de Entrada')}
             </div>
 
             {/* SCHENGEN BLOQUE 8: INVITACIÓN / ALOJAMIENTO / ORGANIZACIÓN (CASILLAS 31 Y 32) */}
@@ -999,8 +1009,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Building className="w-4 h-4 text-sky-600" />
                 <span>Casillas 31-32: Invitación, Hotel u Organización en el Estado Miembro</span>
               </h2>
-
-              {renderSectionProgress('casillas_31_32', 'Casillas 31-32: Invitación, Hotel u Organización')}
 
               <div className="space-y-4">
                 <div>
@@ -1029,6 +1037,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   />
                 </div>
               </div>
+
+              {renderSectionProgress('casillas_31_32', 'Casillas 31-32: Invitación, Hotel u Organización en el Estado Miembro')}
             </div>
 
             {/* SCHENGEN BLOQUE 9: GASTOS DE VIAJE Y SUBSISTENCIA (CASILLA 33) */}
@@ -1037,8 +1047,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <CreditCard className="w-4 h-4 text-sky-600" />
                 <span>Casilla 33: Gastos de Viaje y Medios de Subsistencia</span>
               </h2>
-
-              {renderSectionProgress('casilla_33', 'Casilla 33: Gastos de Viaje y Medios de Subsistencia')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -1071,6 +1079,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   />
                 </div>
               </div>
+
+              {renderSectionProgress('casilla_33', 'Casilla 33: Gastos de Viaje y Medios de Subsistencia')}
             </div>
 
             {/* SCHENGEN BLOQUE 10: TERCERA PERSONA CUMPLIMENTADORA (CASILLA 34) */}
@@ -1079,8 +1089,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <HelpCircle className="w-4 h-4 text-sky-600" />
                 <span>Casilla 34: Datos de la persona que cumplimenta el impreso (si difiere)</span>
               </h2>
-
-              {renderSectionProgress('casilla_34', 'Casilla 34: Datos de la persona que cumplimenta el impreso (si difiere)')}
 
               <div>
                 <textarea
@@ -1093,6 +1101,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   className={getInputClass('third_party_filler')}
                 />
               </div>
+
+              {renderSectionProgress('casilla_34', 'Casilla 34: Datos de la persona que cumplimenta el impreso (si difiere)')}
             </div>
           </div>
         ) : (
@@ -1105,8 +1115,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <User className="w-4 h-4 text-sky-600" />
                 <span>1. Información Personal</span>
               </h2>
-
-              {renderSectionProgress('sec_personal', '1. Información Personal')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1309,6 +1317,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   </select>
                 </div>
               </div>
+
+              {renderSectionProgress('sec_personal', '1. Información Personal')}
             </div>
 
             {/* 2. INFORMACIÓN DEL VIAJE 1 */}
@@ -1317,8 +1327,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Globe className="w-4 h-4 text-sky-600" />
                 <span>2. Información del Viaje 1</span>
               </h2>
-
-              {renderSectionProgress('sec_travel_1', '2. Información del Viaje 1')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1422,6 +1430,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   </div>
                 </div>
               </div>
+
+              {renderSectionProgress('sec_travel_1', '2. Información del Viaje 1')}
             </div>
 
             {/* 3. INFORMACIÓN DEL VIAJE 2 */}
@@ -1430,8 +1440,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Globe className="w-4 h-4 text-sky-600" />
                 <span>3. Información del Viaje 2</span>
               </h2>
-
-              {renderSectionProgress('sec_travel_2', '3. Información del Viaje 2')}
 
               <div className="space-y-4">
                 <div>
@@ -1498,6 +1506,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   </>
                 )}
               </div>
+
+              {renderSectionProgress('sec_travel_2', '3. Información del Viaje 2')}
             </div>
 
             {/* 4. INFORMACIÓN DEL VIAJE 3 */}
@@ -1506,8 +1516,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Globe className="w-4 h-4 text-sky-600" />
                 <span>4. Información del Viaje 3</span>
               </h2>
-
-              {renderSectionProgress('sec_travel_3', '4. Información del Viaje 3')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1784,6 +1792,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   </div>
                 )}
               </div>
+
+              {renderSectionProgress('sec_travel_3', '4. Información del Viaje 3')}
             </div>
 
             {/* 5. DOMICILIO E INFORMACIÓN DE CONTACTO */}
@@ -1792,8 +1802,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Home className="w-4 h-4 text-sky-600" />
                 <span>5. Domicilio e Información de Contacto</span>
               </h2>
-
-              {renderSectionProgress('sec_contact', '5. Domicilio e Información de Contacto')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -2061,6 +2069,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   </div>
                 )}
               </div>
+
+              {renderSectionProgress('sec_contact', '5. Domicilio e Información de Contacto')}
             </div>
 
             {/* 6. INFORMACIÓN DEL PASAPORTE */}
@@ -2069,8 +2079,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <FileText className="w-4 h-4 text-sky-600" />
                 <span>6. Información del Pasaporte</span>
               </h2>
-
-              {renderSectionProgress('sec_passport', '6. Información del Pasaporte')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -2171,6 +2179,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   </>
                 )}
               </div>
+
+              {renderSectionProgress('sec_passport', '6. Información del Pasaporte')}
             </div>
 
             {/* 7. INFORMACIÓN DE CONTACTO EN LOS ESTADOS UNIDOS / CANADÁ */}
@@ -2179,8 +2189,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Building className="w-4 h-4 text-sky-600" />
                 <span>7. Información de contacto en los {countryName}</span>
               </h2>
-
-              {renderSectionProgress('sec_destination_contact', `7. Información de contacto en ${countryName}`)}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -2291,6 +2299,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   />
                 </div>
               </div>
+
+              {renderSectionProgress('sec_destination_contact', `7. Información de contacto en ${countryName}`)}
             </div>
 
             {/* 8. INFORMACIÓN FAMILIAR */}
@@ -2299,8 +2309,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Users className="w-4 h-4 text-sky-600" />
                 <span>8. Información Familiar</span>
               </h2>
-
-              {renderSectionProgress('sec_family', '8. Información Familiar')}
 
               <div className="space-y-4">
                 {/* 1. Padre */}
@@ -2757,6 +2765,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   )}
                 </div>
               </div>
+
+              {renderSectionProgress('sec_family', '8. Información Familiar')}
             </div>
 
             {/* 9. INFORMACIÓN LABORAL / EDUCATIVA */}
@@ -2765,8 +2775,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <Briefcase className="w-4 h-4 text-sky-600" />
                 <span>9. Información Laboral / Educativa</span>
               </h2>
-
-              {renderSectionProgress('sec_work_education', '9. Información Laboral / Educativa')}
 
               <div className="space-y-4">
                 <p className="text-xs font-bold text-slate-800">1. Actual</p>
@@ -3027,6 +3035,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   )}
                 </div>
               </div>
+
+              {renderSectionProgress('sec_work_education', '9. Información Laboral / Educativa')}
             </div>
 
             {/* 10. INFORMACIÓN ADICIONAL */}
@@ -3035,8 +3045,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                 <HelpCircle className="w-4 h-4 text-sky-600" />
                 <span>10. Información Adicional</span>
               </h2>
-
-              {renderSectionProgress('sec_additional', '10. Información Adicional')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input
@@ -3164,6 +3172,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
                   </>
                 )}
               </div>
+
+              {renderSectionProgress('sec_additional', '10. Información Adicional')}
             </div>
           </div>
         )}
@@ -3174,8 +3184,6 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             <Upload className="w-4 h-4 text-sky-600" />
             <span>Subir Documentos</span>
           </h2>
-
-          {renderSectionProgress('sec_documents', 'Subir Documentos')}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             {/* Comprobante */}
@@ -3229,6 +3237,8 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
               </label>
             </div>
           </div>
+
+          {renderSectionProgress('sec_documents', 'Subir Documentos')}
         </div>
 
         {/* Disclaimer Card */}
@@ -3239,6 +3249,16 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
           <p className="text-[11px] text-slate-400 mt-2">© {new Date().getFullYear()} {visaData.agency_name}. Todos los derechos reservados.</p>
         </div>
       </div>
+
+      {/* Modal para ver comprobante o documento adjunto */}
+      <ViewPaymentReceiptModal
+        isOpen={!!previewModalFile}
+        onClose={() => setPreviewModalFile(null)}
+        receiptUrl={previewModalFile?.url}
+        title={previewModalFile?.label || 'Vista de Archivo'}
+        applicantName={dynamicFields['name'] || visaData.applicant_name}
+        dossierCode={visaData.code}
+      />
     </div>
   );
 };
