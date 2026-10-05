@@ -15,7 +15,7 @@ import VisaProcessTimeline from '@/components/visas/VisaProcessTimeline';
 import { ViewPaymentReceiptModal } from '@/components/visas/modals/ViewPaymentReceiptModal';
 import toast from 'react-hot-toast';
 import { triggerConfetti } from '@/utils/confetti';
-import { SCHENGEN_SECTIONS, USA_CANADA_SECTIONS, calculateSectionProgress } from '@/components/visas/forms/visaSectionDefinitions';
+import { SCHENGEN_SECTIONS, USA_CANADA_SECTIONS, calculateSectionProgress, resolveVisaSection } from '@/components/visas/forms/visaSectionDefinitions';
 
 export const PublicClientVisaPortalPage: React.FC = () => {
   const params = useParams();
@@ -49,6 +49,8 @@ export const PublicClientVisaPortalPage: React.FC = () => {
 
   // Auto-save feedback
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   // Section saving & completion state
@@ -144,6 +146,7 @@ export const PublicClientVisaPortalPage: React.FC = () => {
       const appName = portalData.dossier?.applicant_name || portalData.client?.name || '';
       const passportNum = portalData.dossier?.passport_number || '';
 
+      let sectionCompleted = false;
       for (const sec of activeSecs) {
         if (completedSectionsRef.current.has(sec.id)) continue;
         const prog = calculateSectionProgress(sec, updated, {
@@ -154,25 +157,72 @@ export const PublicClientVisaPortalPage: React.FC = () => {
 
         if (prog.percentage === 100) {
           completedSectionsRef.current.add(sec.id);
-          triggerConfetti();
-          toast.success(`¡Sección "${sec.title}" completada y guardada! 🎉`, { duration: 4500 });
+          triggerConfetti({ particleCount: 130, originY: 0.6 });
+          toast.success(`¡Sección "${sec.title}" completada y guardada al 100%! 🎉`, { duration: 4000 });
           handleSaveSection(sec.id, prog.sectionFieldsData);
+          sectionCompleted = true;
           break;
         }
+      }
+
+      // Auto-guardado con debounce de 1500ms para cambios parciales
+      if (!sectionCompleted && token) {
+        if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = setTimeout(async () => {
+          setIsAutoSaving(true);
+          try {
+            await visaWholesaleService.savePublicProgress(token, updated);
+            setLastSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+          } catch (e) {
+            console.error('Autosave error:', e);
+          } finally {
+            setIsAutoSaving(false);
+          }
+        }, 1500);
       }
     }
   };
 
+  const handleInputBlur = (fieldName: string, value: any) => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    if (token) {
+      setIsAutoSaving(true);
+      visaWholesaleService.savePublicProgress(token, { ...formData, [fieldName]: value })
+        .then(() => {
+          setLastSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        })
+        .catch((e) => console.error('Blur autosave error:', e))
+        .finally(() => setIsAutoSaving(false));
+    }
+  };
+
   const handleSaveSection = async (sectionId: string, sectionFields?: Record<string, any>) => {
+    const isSchengen = portalData?.process?.name?.includes('Schengen') || portalData?.process?.name?.includes('Europa');
+    const activeSecs = isSchengen ? SCHENGEN_SECTIONS : USA_CANADA_SECTIONS;
+    const sec = resolveVisaSection(activeSecs, sectionId);
+    const resolvedId = sec?.id || sectionId;
+
     if (!token) return;
-    setSavingSectionId(sectionId);
+    setSavingSectionId(resolvedId);
     try {
       const fieldsToSave = sectionFields || formData;
-      await visaWholesaleService.savePublicSection(token, sectionId, fieldsToSave);
-      setSavedSectionId(sectionId);
+      await visaWholesaleService.savePublicSection(token, resolvedId, fieldsToSave);
+      setSavedSectionId(resolvedId);
       setLastSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
+      // Disparar animación de confeti festivo para motivar al cliente
+      triggerConfetti({ particleCount: 110, originY: 0.65 });
+
+      toast.success(`¡Excelente avance! Sección "${sec?.title || 'Consular'}" guardada exitosamente. 🎉`, {
+        duration: 3500,
+        id: `save-${resolvedId}`,
+      });
+
       setTimeout(() => {
-        setSavedSectionId((prev) => (prev === sectionId ? null : prev));
+        setSavedSectionId((prev) => (prev === resolvedId ? null : prev));
       }, 2500);
     } catch (err: any) {
       console.error('Error saving section:', err);
@@ -363,11 +413,21 @@ export const PublicClientVisaPortalPage: React.FC = () => {
                     </h2>
                   </div>
 
-                  {lastSavedTime && (
-                    <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-2xs">
-                      <Check className="w-3.5 h-3.5" /> Guardado a las {lastSavedTime}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {isAutoSaving ? (
+                      <span className="px-3 py-1 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-2xs">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" /> Guardando automáticamente...
+                      </span>
+                    ) : lastSavedTime ? (
+                      <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-2xs">
+                        <Check className="w-3.5 h-3.5" /> Guardado a las {lastSavedTime}
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-full flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-sky-500" /> Guardado automático activo
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -383,6 +443,7 @@ export const PublicClientVisaPortalPage: React.FC = () => {
                   processSlug={process?.slug}
                   formData={formData}
                   onFieldChange={handleInputChange}
+                  onFieldBlur={handleInputBlur}
                   applicantName={applicantDisplayName}
                   passportNumber={dossier?.passport_number || ''}
                   onSaveSection={handleSaveSection}

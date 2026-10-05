@@ -77,8 +77,9 @@ export const SectionProgressBar: React.FC<SectionProgressBarProps> = ({
         {!readOnly && onSaveSection && (
           <div className="flex items-center gap-2 shrink-0">
             {isSaved && !isSaving && (
-              <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Sección guardada
+              <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-pulse">
+                <CheckCircle2 className="w-3.5 h-3.5" /> ¡Guardado con éxito!
+                <Sparkles className="w-3 h-3 text-amber-500" />
               </span>
             )}
 
@@ -86,16 +87,24 @@ export const SectionProgressBar: React.FC<SectionProgressBarProps> = ({
               type="button"
               onClick={() => onSaveSection(sectionId)}
               disabled={isSaving}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs ${
-                isComplete
+              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+                isSaved && !isSaving
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20'
+                  : isComplete
                   ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
                   : 'bg-sky-600 hover:bg-sky-500 text-white'
               } disabled:opacity-50 active:scale-95`}
+              title="Guardar datos de esta sección"
             >
               {isSaving ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   <span>Guardando...</span>
+                </>
+              ) : isSaved ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Guardado ✓</span>
                 </>
               ) : (
                 <>

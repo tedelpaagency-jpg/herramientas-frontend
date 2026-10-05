@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import visaService from '../services/visaService';
 import { normalizeFileUrl } from '../services/apiClient';
 import { 
-  FileCheck, Upload, Eye, RefreshCw, User, FileText, Globe, Home, Briefcase, Award, ShieldAlert, Users, PhoneCall, Building, HelpCircle, Compass, CreditCard, ExternalLink
+  FileCheck, Upload, Eye, RefreshCw, User, FileText, Globe, Home, Briefcase, Award, ShieldAlert, Users, PhoneCall, Building, HelpCircle, Compass, CreditCard, ExternalLink, CheckCircle2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { triggerConfetti } from '../utils/confetti';
@@ -31,6 +31,9 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
   const [savedSections, setSavedSections] = useState<Record<string, boolean>>({});
   const [previewModalFile, setPreviewModalFile] = useState<{ url: string; label: string } | null>(null);
   const celebratedSectionsRef = useRef<Set<string>>(new Set());
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPublicVisa = async () => {
@@ -67,31 +70,39 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
   };
 
   const handleSaveSection = async (sectionId: string, customFields?: Record<string, any>) => {
-    const sec = activeSections.find((s) => s.id === sectionId);
+    const sec = resolveVisaSection(activeSections, sectionId);
     if (!sec) return;
 
-    const prog = getSectionProgress(sectionId);
+    const prog = getSectionProgress(sec.id);
     const fieldsToSave = customFields || prog.sectionFieldsData;
 
-    setSavingSections((prev) => ({ ...prev, [sectionId]: true }));
+    setSavingSections((prev) => ({ ...prev, [sec.id]: true }));
     try {
       if (encodedId) {
-        await visaService.saveVisaSectionPublic(encodedId, sectionId, fieldsToSave);
+        await visaService.saveVisaSectionPublic(encodedId, sec.id, fieldsToSave);
       } else if (visaData?.id) {
-        await visaService.saveVisaSectionPublic(String(visaData.id), sectionId, fieldsToSave);
+        await visaService.saveVisaSectionPublic(String(visaData.id), sec.id, fieldsToSave);
       }
 
-      setSavedSections((prev) => ({ ...prev, [sectionId]: true }));
-      toast.success(`Sección "${sec.title}" guardada exitosamente`, { id: `save-${sectionId}` });
+      setSavedSections((prev) => ({ ...prev, [sec.id]: true }));
+      setLastSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
+      // Disparar confeti motivacional al guardar manualmente o por botón
+      triggerConfetti({ particleCount: 110, originY: 0.65 });
+
+      toast.success(`¡Excelente avance! Sección "${sec.title}" guardada exitosamente. 🎉`, {
+        id: `save-${sec.id}`,
+        duration: 3500,
+      });
 
       setTimeout(() => {
-        setSavedSections((prev) => ({ ...prev, [sectionId]: false }));
+        setSavedSections((prev) => ({ ...prev, [sec.id]: false }));
       }, 3000);
     } catch (err) {
       console.error('Error saving section:', err);
       toast.error('Error al guardar la sección. Intente nuevamente.');
     } finally {
-      setSavingSections((prev) => ({ ...prev, [sectionId]: false }));
+      setSavingSections((prev) => ({ ...prev, [sec.id]: false }));
     }
   };
 
@@ -108,9 +119,9 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
 
       if (prog.isComplete && !celebratedSectionsRef.current.has(sec.id)) {
         celebratedSectionsRef.current.add(sec.id);
-        triggerConfetti();
-        toast.success(`¡Excelente! Has completado la sección "${sec.title}". Guardando datos... 🎉`, {
-          duration: 3500,
+        triggerConfetti({ particleCount: 130, originY: 0.6 });
+        toast.success(`¡Felicitaciones! Has completado al 100% la sección "${sec.title}". Guardando respuestas... 🎉`, {
+          duration: 4000,
           id: `celebrate-${sec.id}`,
         });
         handleSaveSection(sec.id, prog.sectionFieldsData);
@@ -122,12 +133,42 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
     const updated = { ...dynamicFields, [fieldName]: value };
     setDynamicFields(updated);
     checkSectionCompletion(updated, fieldName);
+
+    // Auto-guardado inteligente debounced (1500ms) para garantizar persistencia sin pulsar botón
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(async () => {
+      if (!encodedId) return;
+      setIsAutoSaving(true);
+      try {
+        await visaService.saveVisaFieldPublic(encodedId, fieldName, value);
+        setLastSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      } catch (e) {
+        console.error('Autosave error:', e);
+      } finally {
+        setIsAutoSaving(false);
+      }
+    }, 1500);
   };
 
   const handleFieldBlur = (fieldName: string, value: any) => {
     const isVal = String(value || '').trim() !== '';
     setFieldStatuses((prev) => ({ ...prev, [fieldName]: isVal ? 'valid' : 'invalid' }));
     checkSectionCompletion(dynamicFields, fieldName);
+
+    // Al perder el foco (blur), persistir de inmediato el dato del campo
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    if (encodedId && value !== undefined && value !== null) {
+      setIsAutoSaving(true);
+      visaService.saveVisaFieldPublic(encodedId, fieldName, value)
+        .then(() => {
+          setLastSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        })
+        .catch((e) => console.error('Blur auto-save error:', e))
+        .finally(() => setIsAutoSaving(false));
+    }
   };
 
   const renderSectionProgress = (sectionId: string, sectionTitle: string) => {
@@ -259,19 +300,26 @@ export const PublicVisaFormPage: React.FC<PublicVisaFormPageProps> = ({ encodedI
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            {Object.values(savingSections).some(Boolean) ? (
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center space-x-1">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Guardando sección...</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {isAutoSaving || Object.values(savingSections).some(Boolean) ? (
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 shadow-2xs">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                <span>Guardando automáticamente...</span>
               </span>
             ) : Object.values(savedSections).some(Boolean) ? (
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                Sección guardada ✓
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 animate-pulse shadow-2xs">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>¡Sección guardada!</span>
+              </span>
+            ) : lastSavedAt ? (
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50/60 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Autoguardado {lastSavedAt}</span>
               </span>
             ) : (
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                Progreso por sección activo
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-sky-500" />
+                <span>Guardado automático activo</span>
               </span>
             )}
           </div>

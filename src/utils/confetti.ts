@@ -1,5 +1,6 @@
 /**
- * Lightweight, high-performance confetti animation using HTML5 Canvas.
+ * Lightweight, high-performance celebratory confetti animation using HTML5 Canvas.
+ * Supports multiple consecutive bursts without tearing down active particles.
  * No external dependencies required.
  */
 
@@ -14,7 +15,9 @@ interface Particle {
   rotation: number;
   vRot: number;
   opacity: number;
-  shape: 'rect' | 'circle' | 'ribbon';
+  bornAt: number;
+  lifeSpan: number;
+  shape: 'rect' | 'circle' | 'ribbon' | 'star';
 }
 
 const FESTIVE_COLORS = [
@@ -26,80 +29,115 @@ const FESTIVE_COLORS = [
   '#06b6d4', // Cyan
   '#f97316', // Orange
   '#14b8a6', // Teal
+  '#e11d48', // Rose
+  '#eab308', // Yellow
 ];
+
+let activeParticles: Particle[] = [];
+let animFrameId: number | null = null;
+let canvasEl: HTMLCanvasElement | null = null;
+
+const drawStar = (ctx: CanvasRenderingContext2D, cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number) => {
+  let rot = (Math.PI / 2) * 3;
+  let x = cx;
+  let y = cy;
+  const step = Math.PI / spikes;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - outerRadius);
+  for (let i = 0; i < spikes; i++) {
+    x = cx + Math.cos(rot) * outerRadius;
+    y = cy + Math.sin(rot) * outerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+
+    x = cx + Math.cos(rot) * innerRadius;
+    y = cy + Math.sin(rot) * innerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+  }
+  ctx.lineTo(cx, cy - outerRadius);
+  ctx.closePath();
+  ctx.fill();
+};
 
 export const triggerConfetti = (options?: { particleCount?: number; originY?: number }) => {
   if (typeof window === 'undefined') return;
 
-  const count = options?.particleCount || 90;
-  const originY = options?.originY ?? 0.6; // Start slightly below mid-screen
+  const count = options?.particleCount || 100;
+  const originY = options?.originY ?? 0.65;
 
-  let canvas = document.getElementById('visa-confetti-canvas') as HTMLCanvasElement | null;
-  if (!canvas) {
-    canvas = document.createElement('canvas');
-    canvas.id = 'visa-confetti-canvas';
-    canvas.style.position = 'fixed';
-    canvas.style.top = '0';
-    canvas.style.left = '0';
-    canvas.style.width = '100vw';
-    canvas.style.height = '100vh';
-    canvas.style.pointerEvents = 'none';
-    canvas.style.zIndex = '99999';
-    document.body.appendChild(canvas);
+  if (!canvasEl || !canvasEl.parentNode) {
+    canvasEl = document.getElementById('visa-confetti-canvas') as HTMLCanvasElement | null;
+    if (!canvasEl) {
+      canvasEl = document.createElement('canvas');
+      canvasEl.id = 'visa-confetti-canvas';
+      canvasEl.style.position = 'fixed';
+      canvasEl.style.top = '0';
+      canvasEl.style.left = '0';
+      canvasEl.style.width = '100vw';
+      canvasEl.style.height = '100vh';
+      canvasEl.style.pointerEvents = 'none';
+      canvasEl.style.zIndex = '99999';
+      document.body.appendChild(canvasEl);
+    }
   }
 
-  const ctx = canvas.getContext('2d');
+  const ctx = canvasEl.getContext('2d');
   if (!ctx) return;
 
-  const width = (canvas.width = window.innerWidth);
-  const height = (canvas.height = window.innerHeight);
+  const width = (canvasEl.width = window.innerWidth);
+  const height = (canvasEl.height = window.innerHeight);
 
-  const particles: Particle[] = [];
   const startX = width / 2;
   const startY = height * originY;
+  const now = Date.now();
+
+  const shapes: ('rect' | 'circle' | 'ribbon' | 'star')[] = ['rect', 'circle', 'ribbon', 'star', 'rect'];
 
   for (let i = 0; i < count; i++) {
     const angle = (Math.random() * Math.PI) + (Math.PI * 0.05); // Upward spray
-    const speed = Math.random() * 14 + 8;
-    const spread = (Math.random() - 0.5) * 16;
+    const speed = Math.random() * 16 + 9;
+    const spread = (Math.random() - 0.5) * 18;
     const color = FESTIVE_COLORS[Math.floor(Math.random() * FESTIVE_COLORS.length)];
-    const shapes: ('rect' | 'circle' | 'ribbon')[] = ['rect', 'circle', 'ribbon'];
     const shape = shapes[Math.floor(Math.random() * shapes.length)];
+    const lifeSpan = Math.random() * 1200 + 2400; // 2.4s to 3.6s life
 
-    particles.push({
-      x: startX + (Math.random() - 0.5) * 60,
+    activeParticles.push({
+      x: startX + (Math.random() - 0.5) * 100,
       y: startY,
       w: shape === 'ribbon' ? Math.random() * 5 + 3 : Math.random() * 9 + 6,
-      h: shape === 'ribbon' ? Math.random() * 16 + 10 : Math.random() * 9 + 6,
+      h: shape === 'ribbon' ? Math.random() * 18 + 10 : Math.random() * 9 + 6,
       color,
       vx: Math.cos(angle) * speed + spread,
-      vy: -Math.sin(angle) * speed - Math.random() * 4,
+      vy: -Math.sin(angle) * speed - Math.random() * 6,
       rotation: Math.random() * 360,
-      vRot: (Math.random() - 0.5) * 12,
+      vRot: (Math.random() - 0.5) * 14,
       opacity: 1,
+      bornAt: now,
+      lifeSpan,
       shape,
     });
   }
 
-  let animationFrameId: number;
-  const gravity = 0.42;
-  const drag = 0.985;
-  const startTime = Date.now();
-  const maxDuration = 3200; // 3.2 seconds total animation
+  if (animFrameId) return; // Loop already running
+
+  const gravity = 0.40;
+  const drag = 0.982;
 
   const render = () => {
-    const elapsed = Date.now() - startTime;
-    if (elapsed > maxDuration || particles.length === 0) {
-      if (canvas && canvas.parentNode) {
-        canvas.parentNode.removeChild(canvas);
-      }
+    if (!canvasEl || !ctx) {
+      animFrameId = null;
       return;
     }
 
-    ctx.clearRect(0, 0, width, height);
+    const currentNow = Date.now();
+    ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
-    for (let i = 0; i < particles.length; i++) {
-      const p = particles[i];
+    activeParticles = activeParticles.filter((p) => {
+      const age = currentNow - p.bornAt;
+      if (age > p.lifeSpan) return false;
+
       p.x += p.vx;
       p.y += p.vy;
       p.vy += gravity;
@@ -107,9 +145,9 @@ export const triggerConfetti = (options?: { particleCount?: number; originY?: nu
       p.vy *= drag;
       p.rotation += p.vRot;
 
-      // Start fading after 1.8 seconds
-      if (elapsed > 1800) {
-        p.opacity = Math.max(0, 1 - (elapsed - 1800) / 1400);
+      const fadeStart = p.lifeSpan * 0.6;
+      if (age > fadeStart) {
+        p.opacity = Math.max(0, 1 - (age - fadeStart) / (p.lifeSpan - fadeStart));
       }
 
       ctx.save();
@@ -122,15 +160,26 @@ export const triggerConfetti = (options?: { particleCount?: number; originY?: nu
         ctx.beginPath();
         ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
         ctx.fill();
+      } else if (p.shape === 'star') {
+        drawStar(ctx, 0, 0, 5, p.w, p.w / 2);
       } else {
         ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
       }
 
       ctx.restore();
-    }
+      return true;
+    });
 
-    animationFrameId = requestAnimationFrame(render);
+    if (activeParticles.length > 0) {
+      animFrameId = requestAnimationFrame(render);
+    } else {
+      if (canvasEl && canvasEl.parentNode) {
+        canvasEl.parentNode.removeChild(canvasEl);
+        canvasEl = null;
+      }
+      animFrameId = null;
+    }
   };
 
-  animationFrameId = requestAnimationFrame(render);
+  animFrameId = requestAnimationFrame(render);
 };
