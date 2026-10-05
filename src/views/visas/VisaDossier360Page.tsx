@@ -51,6 +51,11 @@ export const VisaDossier360Page: React.FC = () => {
 
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Modal y acciones de aprobación / rechazo de pago por operador mayorista
+  const [isRejectPaymentModalOpen, setIsRejectPaymentModalOpen] = useState(false);
+  const [paymentRejectionReason, setPaymentRejectionReason] = useState('');
+  const [isProcessingPaymentDecision, setIsProcessingPaymentDecision] = useState(false);
+
   const isMayorista = user?.role === 'super_admin' || 
     user?.role === 'white_label_admin' || 
     user?.roles?.some((r: any) => ['super_admin', 'white_label_admin', 'mayorista_supervisor', 'mayorista_operador'].includes(r.name));
@@ -104,6 +109,46 @@ export const VisaDossier360Page: React.FC = () => {
       toast.success('Expediente PDF descargado correctamente.', { id: 'pdf-toast' });
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Acceso denegado: no tiene permisos para descargar el PDF.', { id: 'pdf-toast' });
+    }
+  };
+
+  const handleApprovePayment = async () => {
+    if (!dossier) return;
+    if (!confirm(`¿Aprobar solicitud y comprobante del expediente ${dossier.code}? Esto habilitará de inmediato el enlace público para el cliente final.`)) {
+      return;
+    }
+
+    setIsProcessingPaymentDecision(true);
+    try {
+      await visaWholesaleService.approveDossierPayment(dossier.id);
+      toast.success(`¡Solicitud ${dossier.code} aprobada! Enlace público habilitado.`);
+      fetchDossier();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al aprobar solicitud');
+    } finally {
+      setIsProcessingPaymentDecision(false);
+    }
+  };
+
+  const handleConfirmRejectPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dossier) return;
+    if (!paymentRejectionReason.trim()) {
+      toast.error('Debe ingresar el motivo de rechazo del comprobante');
+      return;
+    }
+
+    setIsProcessingPaymentDecision(true);
+    try {
+      await visaWholesaleService.rejectDossierPayment(dossier.id, paymentRejectionReason.trim());
+      toast.success('Comprobante rechazado. La agencia ha sido notificada para actualizarlo.');
+      setIsRejectPaymentModalOpen(false);
+      setPaymentRejectionReason('');
+      fetchDossier();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al rechazar comprobante');
+    } finally {
+      setIsProcessingPaymentDecision(false);
     }
   };
 
@@ -250,7 +295,46 @@ export const VisaDossier360Page: React.FC = () => {
           <ArrowLeft className="w-4 h-4" /> Volver al listado
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {isMayorista && !dossier.is_exempt && dossier.approval_status !== 'aprobado' && (
+            <div className="flex items-center gap-2 mr-1 pr-2 border-r border-slate-200 dark:border-slate-700">
+              {dossier.payment_receipt_url && (
+                <a
+                  href={dossier.payment_receipt_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 rounded-xl text-xs font-bold border border-sky-200 dark:border-sky-800 transition-all"
+                  title="Ver Comprobante de Pago Subido"
+                >
+                  <FileText className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Comprobante</span>
+                  <ExternalLink className="w-3 h-3 opacity-60" />
+                </a>
+              )}
+              <button
+                disabled={isProcessingPaymentDecision}
+                onClick={handleApprovePayment}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-600/30 disabled:opacity-50"
+                title="Aprobar Solicitud y Pago (Habilita el Enlace Público)"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Aprobar Solicitud y Pago</span>
+              </button>
+              <button
+                disabled={isProcessingPaymentDecision}
+                onClick={() => {
+                  setPaymentRejectionReason('');
+                  setIsRejectPaymentModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 rounded-xl text-xs font-bold border border-rose-200 dark:border-rose-800 transition-all disabled:opacity-50"
+                title="Rechazar Comprobante indicando motivo"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Rechazar</span>
+              </button>
+            </div>
+          )}
+
           {(!dossier.is_exempt && dossier.approval_status !== 'aprobado') ? (
             <button
               onClick={handleCopyClientLink}
@@ -994,6 +1078,60 @@ export const VisaDossier360Page: React.FC = () => {
                   className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-sm font-semibold shadow-md shadow-sky-600/20 disabled:opacity-50"
                 >
                   {isSubmitting ? 'Cargando...' : 'Subir Archivo'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Rechazar Comprobante de Pago por Operador */}
+      {isRejectPaymentModalOpen && dossier && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <span className="p-2.5 bg-rose-50 dark:bg-rose-950/60 rounded-xl">
+                <AlertCircle className="w-6 h-6" />
+              </span>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg">Rechazar Comprobante de Pago</h3>
+                <p className="text-xs text-slate-500 font-mono">{dossier.code} — {dossier.agency?.name || 'Agencia'}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Indique el motivo del rechazo para que la agencia afiliada pueda corregir y cargar un nuevo comprobante dentro del mismo expediente. El link público permanecerá bloqueado.
+            </p>
+
+            <form onSubmit={handleConfirmRejectPayment} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Motivo del Rechazo *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={paymentRejectionReason}
+                  onChange={(e) => setPaymentRejectionReason(e.target.value)}
+                  placeholder="Ej. El monto transferido no coincide con el costo del servicio..."
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-rose-500 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsRejectPaymentModalOpen(false)}
+                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessingPaymentDecision}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-rose-600/20 disabled:opacity-50"
+                >
+                  {isProcessingPaymentDecision ? 'Procesando...' : 'Confirmar Rechazo'}
                 </button>
               </div>
             </form>

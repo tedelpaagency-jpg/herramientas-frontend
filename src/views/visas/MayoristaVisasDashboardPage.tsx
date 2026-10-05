@@ -7,7 +7,7 @@ import {
   Building2, ShieldCheck, Clock, AlertTriangle, AlertCircle, 
   CheckCircle2, RefreshCw, Eye, ArrowRight, Filter, Users, 
   FileText, ExternalLink, Calendar, Search, Sparkles,
-  DollarSign, Check, X, FileCheck
+  DollarSign, Check, X, FileCheck, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -37,8 +37,16 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
 
   const [agencies, setAgencies] = useState<any[]>([]);
   const [selectedAgencyId, setSelectedAgencyId] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<'atencion' | 'revision' | 'pagos'>('atencion');
+  const [activeTab, setActiveTab] = useState<'todos' | 'pagos' | 'atencion' | 'revision'>('todos');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Estado para la pestaña "Todas las Operaciones"
+  const [allDossiers, setAllDossiers] = useState<VisaDossier[]>([]);
+  const [allPage, setAllPage] = useState(1);
+  const [allTotalPages, setAllTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isLoadingAll, setIsLoadingAll] = useState(false);
 
   // Modal para rechazar comprobante con motivo
   const [rejectionModalDossier, setRejectionModalDossier] = useState<VisaDossier | null>(null);
@@ -72,6 +80,32 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
     }
   };
 
+  const fetchAllDossiers = async () => {
+    setIsLoadingAll(true);
+    try {
+      const res = await visaWholesaleService.getDossiers({
+        page: allPage,
+        per_page: 25,
+        agency_id: selectedAgencyId !== 'all' ? Number(selectedAgencyId) : undefined,
+        search: searchTerm || undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+      });
+      const data = res?.data?.data || res?.data || [];
+      setAllDossiers(Array.isArray(data) ? data : []);
+      setAllTotalPages(res?.data?.last_page || res?.last_page || 1);
+    } catch (err) {
+      console.error('Error al cargar operaciones:', err);
+    } finally {
+      setIsLoadingAll(false);
+    }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAllPage(1);
+    fetchAllDossiers();
+  };
+
   const handleApprovePayment = async (dossier: VisaDossier) => {
     if (!confirm(`¿Aprobar solicitud y comprobante del expediente ${dossier.code}? Esto habilitará de inmediato el enlace público para el cliente final.`)) {
       return;
@@ -82,6 +116,9 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
       await visaWholesaleService.approveDossierPayment(dossier.id);
       toast.success(`¡Solicitud ${dossier.code} aprobada! Enlace público habilitado.`);
       fetchDashboard();
+      if (activeTab === 'todos') {
+        fetchAllDossiers();
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al aprobar solicitud');
     } finally {
@@ -108,6 +145,9 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
       toast.success(`Comprobante rechazado para ${rejectionModalDossier.code}. La agencia ha sido notificada para actualizarlo.`);
       setRejectionModalDossier(null);
       fetchDashboard();
+      if (activeTab === 'todos') {
+        fetchAllDossiers();
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al rechazar comprobante');
     } finally {
@@ -118,6 +158,12 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
   useEffect(() => {
     fetchDashboard();
   }, [selectedAgencyId]);
+
+  useEffect(() => {
+    if (activeTab === 'todos') {
+      fetchAllDossiers();
+    }
+  }, [selectedAgencyId, activeTab, allPage, statusFilter]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -244,6 +290,17 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveTab('todos')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                activeTab === 'todos'
+                  ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+              }`}
+            >
+              <FileCheck className="w-3.5 h-3.5" />
+              <span>Todas las Operaciones ({metrics.total_expedientes})</span>
+            </button>
             <button
               onClick={() => setActiveTab('pagos')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
@@ -382,6 +439,223 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
                 </tbody>
               </table>
             )
+          ) : activeTab === 'todos' ? (
+            /* TAB: TODAS LAS OPERACIONES MAYORISTAS */
+            <div>
+              {/* Barra de Búsqueda y Filtros de la pestaña */}
+              <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+                <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 max-w-md">
+                  <div className="relative w-full">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Buscar por código, cliente, agencia..."
+                      className="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-slate-100"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold whitespace-nowrap transition-colors"
+                  >
+                    Buscar
+                  </button>
+                </form>
+
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-slate-500 font-medium whitespace-nowrap">Filtrar Estado:</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      setAllPage(1);
+                    }}
+                    className="px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 font-medium dark:text-slate-100"
+                  >
+                    <option value="all">Todos los estados</option>
+                    <option value="pendiente_pago">Pendiente Pago / Comprobante</option>
+                    <option value="pendiente_aprobacion">Pendiente Aprobación Operador</option>
+                    <option value="comprobante_rechazado">Comprobante Rechazado</option>
+                    <option value="aprobado">Aprobado / Activo</option>
+                    <option value="en_revision">En Revisión Operador</option>
+                    <option value="observado">Documentos Observados</option>
+                    <option value="completado">Completados</option>
+                  </select>
+                </div>
+              </div>
+
+              {isLoadingAll ? (
+                <div className="p-12 text-center text-slate-400">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
+                  Cargando operaciones mayoristas...
+                </div>
+              ) : allDossiers.length === 0 ? (
+                <div className="p-12 text-center text-slate-400">
+                  <FileText className="w-10 h-10 mx-auto mb-2 text-slate-400 opacity-60" />
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">No se encontraron expedientes</p>
+                  <p className="text-xs text-slate-500 mt-1">Ajuste los criterios de búsqueda o el filtro de agencia.</p>
+                </div>
+              ) : (
+                <>
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
+                      <tr>
+                        <th className="py-3.5 px-4">Código Expediente</th>
+                        <th className="py-3.5 px-4">Cliente / Solicitante</th>
+                        <th className="py-3.5 px-4">Agencia Afiliada</th>
+                        <th className="py-3.5 px-4">Trámite & Costo</th>
+                        <th className="py-3.5 px-4 text-center">Progreso</th>
+                        <th className="py-3.5 px-4">Pago & Aprobación</th>
+                        <th className="py-3.5 px-4 text-right">Acciones Operativas</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                      {allDossiers.map((dossier) => (
+                        <tr key={dossier.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <Link
+                              href={`/visas/expedientes/${dossier.id}`}
+                              className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-xs hover:underline"
+                            >
+                              {dossier.code}
+                            </Link>
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap font-bold text-slate-900 dark:text-white">
+                            <div>{dossier.applicant_name || dossier.client?.name || 'Solicitante'}</div>
+                            <div className="text-[11px] font-normal text-slate-400">{dossier.applicant_email || dossier.client?.email || '—'}</div>
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-semibold">
+                              {dossier.agency?.name || 'Agencia'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1 font-bold text-slate-800 dark:text-slate-200">
+                              <span>{dossier.processType?.flag_icon || '🌐'}</span>
+                              <span>{dossier.processType?.name || 'Trámite'}</span>
+                            </div>
+                            <div className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                              ${Number(dossier.cost || 150).toFixed(2)} USD
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            <div className="inline-flex flex-col items-center gap-1">
+                              <div className="inline-flex items-center gap-2">
+                                <div className="w-16 h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                  <div
+                                    className="h-full bg-indigo-600 rounded-full"
+                                    style={{ width: `${Math.min(100, Math.max(0, dossier.progress || 0))}%` }}
+                                  />
+                                </div>
+                                <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px]">
+                                  {dossier.progress || 0}%
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-medium capitalize">
+                                {dossier.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            {dossier.is_exempt ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                <Sparkles className="w-3 h-3" /> Exonerado
+                              </span>
+                            ) : dossier.approval_status === 'aprobado' ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300">
+                                <CheckCircle2 className="w-3 h-3" /> Aprobado
+                              </span>
+                            ) : dossier.payment_status === 'comprobante_rechazado' || dossier.approval_status === 'rechazado' ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300" title={dossier.rejection_reason || 'Rechazado'}>
+                                <AlertCircle className="w-3 h-3" /> Rechazado
+                              </span>
+                            ) : dossier.payment_receipt_url ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300">
+                                <Clock className="w-3 h-3" /> Pend. Aprobación
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                <AlertTriangle className="w-3 h-3" /> Pend. Comprobante
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-1.5">
+                            {dossier.payment_receipt_url && (
+                              <a
+                                href={dossier.payment_receipt_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/60 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 font-bold text-xs transition-colors"
+                                title="Ver Comprobante de Pago Subido"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-sky-600" />
+                                <span>Comprobante</span>
+                                <ExternalLink className="w-3 h-3 opacity-60" />
+                              </a>
+                            )}
+                            {!dossier.is_exempt && dossier.approval_status !== 'aprobado' && (
+                              <>
+                                <button
+                                  disabled={isProcessingApproval}
+                                  onClick={() => handleApprovePayment(dossier)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-xs disabled:opacity-50"
+                                  title="Aprobar Solicitud y Pago (Habilita Link Público)"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Aprobar</span>
+                                </button>
+                                <button
+                                  disabled={isProcessingApproval}
+                                  onClick={() => handleOpenRejectModal(dossier)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-bold text-xs transition-all disabled:opacity-50"
+                                  title="Rechazar comprobante indicando motivo"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>Rechazar</span>
+                                </button>
+                              </>
+                            )}
+                            <Link
+                              href={`/visas/expedientes/${dossier.id}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all shadow-xs"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>360°</span>
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Paginación */}
+                  <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20 text-xs">
+                    <span className="text-slate-500">
+                      Página <strong>{allPage}</strong> de <strong>{allTotalPages}</strong>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        disabled={allPage <= 1 || isLoadingAll}
+                        onClick={() => setAllPage((p) => Math.max(1, p - 1))}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        <span>Anterior</span>
+                      </button>
+                      <button
+                        disabled={allPage >= allTotalPages || isLoadingAll}
+                        onClick={() => setAllPage((p) => p + 1)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors"
+                      >
+                        <span>Siguiente</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           ) : (
             (() => {
               const currentList = activeTab === 'atencion' ? miTrabajo.requieren_atencion : miTrabajo.pendientes_revision;
@@ -405,7 +679,7 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
                       <th className="py-3.5 px-4">Trámite Migratorio</th>
                       <th className="py-3.5 px-4 text-center">Progreso</th>
                       <th className="py-3.5 px-4">Estado & Acción</th>
-                      <th className="py-3.5 px-4 text-right">Acción</th>
+                      <th className="py-3.5 px-4 text-right">Acciones Operativas</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
@@ -420,7 +694,7 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
                           </Link>
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap font-bold text-slate-900 dark:text-white">
-                          {dossier.client?.name || 'Cliente'}
+                          {dossier.client?.name || dossier.applicant_name || 'Cliente'}
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-semibold">
@@ -464,10 +738,45 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
                             )}
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-1.5">
+                          {dossier.payment_receipt_url && (
+                            <a
+                              href={dossier.payment_receipt_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/60 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 font-bold text-xs transition-colors"
+                              title="Ver Comprobante de Pago Subido"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-sky-600" />
+                              <span>Comprobante</span>
+                              <ExternalLink className="w-3 h-3 opacity-60" />
+                            </a>
+                          )}
+                          {!dossier.is_exempt && dossier.approval_status !== 'aprobado' && (
+                            <>
+                              <button
+                                disabled={isProcessingApproval}
+                                onClick={() => handleApprovePayment(dossier)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-xs disabled:opacity-50"
+                                title="Aprobar Solicitud y Pago"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Aprobar</span>
+                              </button>
+                              <button
+                                disabled={isProcessingApproval}
+                                onClick={() => handleOpenRejectModal(dossier)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-bold text-xs transition-all disabled:opacity-50"
+                                title="Rechazar comprobante"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                <span>Rechazar</span>
+                              </button>
+                            </>
+                          )}
                           <Link
                             href={`/visas/expedientes/${dossier.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all shadow-xs"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all shadow-xs"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>Revisar 360°</span>

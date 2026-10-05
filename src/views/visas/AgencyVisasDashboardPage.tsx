@@ -12,7 +12,7 @@ import {
   AlertTriangle, Users, FolderPlus, Download, Trash2, Eye,
   ArrowRight, Sparkles, Send, FileSpreadsheet, Building2, Info,
   Folder, ChevronDown, ChevronUp, ChevronRight, ArrowLeft,
-  Lock, Upload, DollarSign
+  Lock, Upload, DollarSign, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { UploadPaymentReceiptModal } from '@/components/visas/modals/UploadPaymentReceiptModal';
@@ -53,6 +53,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [receiptModalDossier, setReceiptModalDossier] = useState<VisaDossier | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newDossierReceipt, setNewDossierReceipt] = useState<File | null>(null);
   const [newDossierData, setNewDossierData] = useState({
     applicant_name: '',
     group_id: '',
@@ -175,6 +176,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
         notes: '',
       });
     }
+    setNewDossierReceipt(null);
     setIsCreateModalOpen(true);
   };
 
@@ -269,17 +271,32 @@ export const AgencyVisasDashboardPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const payload: any = {
-        applicant_name: newDossierData.applicant_name.trim(),
-        visa_process_type_id: Number(newDossierData.visa_process_type_id),
-        group_id: Number(newDossierData.group_id),
-        priority: newDossierData.priority,
-        deadline: newDossierData.deadline || undefined,
-        notes: newDossierData.notes || undefined,
-      };
+      let payload: any;
+      if (newDossierReceipt) {
+        const formData = new FormData();
+        formData.append('applicant_name', newDossierData.applicant_name.trim());
+        formData.append('visa_process_type_id', String(newDossierData.visa_process_type_id));
+        formData.append('group_id', String(newDossierData.group_id));
+        if (newDossierData.priority) formData.append('priority', newDossierData.priority);
+        if (newDossierData.deadline) formData.append('deadline', newDossierData.deadline);
+        if (newDossierData.notes) formData.append('notes', newDossierData.notes);
+        formData.append('receipt', newDossierReceipt);
+        payload = formData;
+      } else {
+        payload = {
+          applicant_name: newDossierData.applicant_name.trim(),
+          visa_process_type_id: Number(newDossierData.visa_process_type_id),
+          group_id: Number(newDossierData.group_id),
+          priority: newDossierData.priority,
+          deadline: newDossierData.deadline || undefined,
+          notes: newDossierData.notes || undefined,
+        };
+      }
 
       const res = await visaWholesaleService.createDossier(payload);
       const created = res.data;
+      const hadReceiptAttached = Boolean(newDossierReceipt);
+
       setIsCreateModalOpen(false);
       setNewDossierData({
         applicant_name: '',
@@ -289,6 +306,7 @@ export const AgencyVisasDashboardPage: React.FC = () => {
         deadline: '',
         notes: '',
       });
+      setNewDossierReceipt(null);
 
       if (created?.group_id) {
         setExpandedGroupIds((prev) => new Set([...prev, Number(created.group_id)]));
@@ -305,9 +323,11 @@ export const AgencyVisasDashboardPage: React.FC = () => {
             code: created.code,
           });
         }
+      } else if (hadReceiptAttached) {
+        toast.success(`¡Expediente ${created?.code || ''} creado y comprobante enviado! Pendiente de aprobación del operador mayorista.`, { duration: 6000 });
       } else {
-        toast.success(`¡Expediente ${created?.code || ''} creado! Adjunte el comprobante de pago para que el operador mayorista apruebe el enlace.`);
-        // Open receipt upload modal directly
+        toast.success(`¡Expediente ${created?.code || ''} creado! Puede adjuntar el comprobante de pago para habilitar el enlace público.`);
+        // Open receipt upload modal directly if not uploaded yet
         setReceiptModalDossier(created);
       }
 
@@ -1422,6 +1442,78 @@ export const AgencyVisasDashboardPage: React.FC = () => {
                   className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 dark:text-slate-100"
                 />
               </div>
+
+              {/* Comprobante de Pago Bancario (Solo si la agencia no es exonerada) */}
+              {!((user as any)?.agency?.is_payment_exempt) && (
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Comprobante de Pago Bancario</span>
+                    </label>
+                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
+                      Agiliza la aprobación
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Adjunte la transferencia o depósito bancario para que el operador mayorista revise y apruebe el enlace público directamente. (Si aún no lo tiene, puede subirlo más tarde).
+                  </p>
+
+                  {newDossierReceipt ? (
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                            {newDossierReceipt.name}
+                          </p>
+                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400">
+                            ✓ Comprobante listo para enviar ({(newDossierReceipt.size / 1024 / 1024).toFixed(2)} MB)
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setNewDossierReceipt(null)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                        title="Quitar comprobante"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-center hover:border-sky-500 transition-colors bg-white dark:bg-slate-900 group">
+                      <input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,.webp"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 15 * 1024 * 1024) {
+                              toast.error('El comprobante no debe superar los 15MB');
+                              return;
+                            }
+                            setNewDossierReceipt(file);
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="space-y-1">
+                        <Upload className="w-5 h-5 mx-auto text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform" />
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          Haga clic o arrastre el comprobante aquí
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          PDF, PNG, JPG o WEBP (máx. 15MB)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="pt-3 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-800">
                 <button

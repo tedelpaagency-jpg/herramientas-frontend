@@ -260,8 +260,11 @@ class VisaWholesaleService {
     return res.data?.data;
   }
 
-  async createDossier(data: Record<string, any>) {
-    const res = await apiClient.post('/v1/visas/dossiers', data);
+  async createDossier(data: FormData | Record<string, any>) {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const res = await apiClient.post('/v1/visas/dossiers', data, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    });
     return res.data;
   }
 
