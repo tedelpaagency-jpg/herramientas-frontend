@@ -8,7 +8,8 @@ import {
   ShieldCheck, CheckCircle2, Clock, AlertTriangle, AlertCircle, 
   Upload, FileText, Send, Eye, RefreshCw, Check, ArrowRight, Lock, 
   HelpCircle, ChevronDown, ChevronUp, User, Globe, Sun, Moon, 
-  Building2, Phone, Mail, MessageSquare, Calendar, Sparkles, History
+  Building2, Phone, Mail, MessageSquare, Calendar, Sparkles, History,
+  KeyRound, Download
 } from 'lucide-react';
 import ConsularFormRenderer from '@/components/visas/forms/ConsularFormRenderer';
 import VisaProcessTimeline from '@/components/visas/VisaProcessTimeline';
@@ -57,6 +58,21 @@ export const PublicClientVisaPortalPage: React.FC = () => {
   const [savingSectionId, setSavingSectionId] = useState<string | null>(null);
   const [savedSectionId, setSavedSectionId] = useState<string | null>(null);
   const completedSectionsRef = useRef<Set<string>>(new Set());
+
+  // Appointment Receipt Unlocking (Security Check with Cédula / Document Number)
+  const [enteredIdNumber, setEnteredIdNumber] = useState('');
+  const [isUnlockingAppointment, setIsUnlockingAppointment] = useState(false);
+  const [unlockedAppointmentData, setUnlockedAppointmentData] = useState<{
+    has_appointment_receipt?: boolean;
+    appointment_receipt_url?: string;
+    appointment_date?: string;
+    appointment_location?: string;
+    appointment_notes?: string;
+    applicant_name?: string;
+    passport_number?: string;
+  } | null>(null);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
+  const [viewingAppointmentModal, setViewingAppointmentModal] = useState(false);
 
   // Initialize Dark Mode from localStorage or system preference
   useEffect(() => {
@@ -314,6 +330,31 @@ export const PublicClientVisaPortalPage: React.FC = () => {
     }
   };
 
+  const handleUnlockAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!enteredIdNumber.trim()) {
+      setUnlockError('Por favor ingrese su número de cédula o pasaporte registrado.');
+      return;
+    }
+
+    setIsUnlockingAppointment(true);
+    setUnlockError(null);
+    try {
+      const res = await visaWholesaleService.unlockPublicAppointmentReceipt(token, enteredIdNumber.trim());
+      if (res?.data) {
+        setUnlockedAppointmentData(res.data);
+        toast.success('¡Identidad verificada exitosamente! Documento de cita desbloqueado.');
+      } else {
+        setUnlockError('No se encontró el documento de cita o la respuesta fue inválida.');
+      }
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.message || err?.message || 'El número de cédula o documento ingresado no coincide con el registrado en el expediente.';
+      setUnlockError(errMsg);
+    } finally {
+      setIsUnlockingAppointment(false);
+    }
+  };
+
   if (isLoading || !portalData) {
     return (
       <div className={isDarkMode ? 'dark' : ''}>
@@ -329,6 +370,413 @@ export const PublicClientVisaPortalPage: React.FC = () => {
 
   const { dossier, agency, client, process, documents, timeline, messages, policies } = portalData;
   const applicantDisplayName = dossier?.applicant_name || client?.name || 'Solicitante';
+  const isFormLocked = Boolean(dossier?.is_form_locked);
+  const hasAppointment = Boolean(
+    dossier?.has_appointment_receipt || 
+    dossier?.appointment_receipt_url || 
+    dossier?.appointment_date || 
+    unlockedAppointmentData?.appointment_receipt_url
+  );
+
+  // Reusable Messages Card Component
+  const renderMessagesCard = () => (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+            <span>Comunicación con su Asesor</span>
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Canal directo para aclaraciones sobre su documentación o requisitos consulares.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+        {messages?.length === 0 ? (
+          <p className="text-xs text-slate-400 dark:text-slate-500 italic py-4 text-center">
+            No hay mensajes previos. Escriba abajo si tiene alguna inquietud.
+          </p>
+        ) : (
+          messages?.map((msg: VisaMessage) => (
+            <div
+              key={msg.id}
+              className={`p-3.5 rounded-2xl text-xs space-y-1 transition-colors ${
+                msg.sender_type === 'cliente'
+                  ? 'bg-sky-50 dark:bg-sky-950/60 border border-sky-100 dark:border-sky-900/50 text-sky-900 dark:text-sky-100 ml-6 sm:ml-12'
+                  : 'bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 mr-6 sm:mr-12'
+              }`}
+            >
+              <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-400 font-bold">
+                <span>{msg.sender_name || (msg.sender_type === 'cliente' ? 'Usted' : 'Asesor Consular')}</span>
+                <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</span>
+              </div>
+              <p className="leading-relaxed">{msg.message}</p>
+            </div>
+          ))
+        )}
+      </div>
+
+      <form onSubmit={handleSendMessage} className="flex gap-2 pt-2">
+        <input
+          type="text"
+          value={clientMessage}
+          onChange={(e) => setClientMessage(e.target.value)}
+          placeholder="Escriba su consulta o respuesta sobre el trámite..."
+          className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors"
+        />
+        <button
+          type="submit"
+          disabled={isSendingMessage || !clientMessage.trim()}
+          className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 flex-shrink-0 shadow-sm disabled:opacity-50 transition-all active:scale-95 cursor-pointer"
+        >
+          <Send className="w-4 h-4" />
+          <span className="hidden sm:inline">Enviar</span>
+        </button>
+      </form>
+    </div>
+  );
+
+  // Reusable Tracking Column Cards
+  const renderTrackingCards = () => (
+    <>
+      {/* Executive Overview & Progress Card */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
+        <div className="flex justify-between items-start gap-3">
+          <div>
+            <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest block">
+              Solicitante Principal
+            </span>
+            <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
+              {applicantDisplayName}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Trámite de Visado {process?.name}
+            </p>
+          </div>
+
+          <div className="text-right">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Avance</span>
+            <div className="text-2xl font-black text-sky-600 dark:text-sky-400">{dossier?.progress ?? 0}%</div>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+          <div
+            className="bg-gradient-to-r from-sky-500 to-indigo-500 h-full rounded-full transition-all duration-700 ease-out"
+            style={{ width: `${dossier?.progress ?? 0}%` }}
+          />
+        </div>
+
+        {/* Quick Info Grid */}
+        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block">Código</span>
+            <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{dossier?.code}</span>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block">Destino</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+              {dossier?.country_destination || process?.country || 'Destino'}
+            </span>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block">Responsable</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 capitalize truncate block">
+              {dossier?.current_responsible === 'cliente' ? 'Cliente (Usted)' : 'Asesor Consular'}
+            </span>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block">Prioridad</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 capitalize truncate block">
+              {dossier?.priority || 'Normal'}
+            </span>
+          </div>
+        </div>
+
+        {/* Alerta de Acción Requerida */}
+        {dossier?.action_required && (
+          <div className="bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 rounded-xl p-3.5 flex items-start gap-2.5 text-rose-800 dark:text-rose-200">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+            <div className="text-xs">
+              <strong className="block font-bold text-rose-900 dark:text-rose-100">Acción Requerida para su Trámite</strong>
+              <p className="mt-0.5 text-rose-700 dark:text-rose-300">{dossier.action_required}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================================== */}
+      {/* TARJETA DE CITA CONSULAR / COMPROBANTE OFICIAL DE CITA         */}
+      {/* Con validación obligatoria de Cédula de Identidad para ver     */}
+      {/* (Área destacada en seguimiento según requerimiento oficial)    */}
+      {/* ============================================================== */}
+      <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/40 dark:border-emerald-500/30 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4 relative overflow-hidden">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-800/60">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block">
+                Documento Consular Oficial
+              </span>
+              <h4 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                Cita Consular Programada
+              </h4>
+            </div>
+          </div>
+
+          {hasAppointment ? (
+            unlockedAppointmentData?.appointment_receipt_url ? (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 text-[10px] font-extrabold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                Desbloqueado
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-[10px] font-extrabold flex items-center gap-1">
+                <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                Requiere Cédula
+              </span>
+            )
+          ) : (
+            <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-bold">
+              En Gestión
+            </span>
+          )}
+        </div>
+
+        {hasAppointment ? (
+          unlockedAppointmentData?.appointment_receipt_url ? (
+            // ESTADO DESBLOQUEADO: Visualizar y descargar el comprobante oficial
+            <div className="space-y-4 pt-1">
+              <div className="p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs space-y-2">
+                <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 font-bold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Identidad Verificada Correctamente</span>
+                </div>
+                <p className="text-emerald-800/90 dark:text-emerald-300/90 text-[11px] leading-relaxed">
+                  Su comprobante oficial de cita consular se encuentra disponible para su visualización e impresión.
+                </p>
+
+                {(unlockedAppointmentData?.appointment_date || unlockedAppointmentData?.appointment_location) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60 text-slate-800 dark:text-slate-200 font-medium">
+                    {unlockedAppointmentData?.appointment_date && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate">
+                          {new Date(unlockedAppointmentData.appointment_date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                        </span>
+                      </div>
+                    )}
+                    {unlockedAppointmentData?.appointment_location && (
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate">{unlockedAppointmentData.appointment_location}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {unlockedAppointmentData?.appointment_notes && (
+                  <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-emerald-200/60 dark:border-emerald-800/40 text-[11px] text-slate-700 dark:text-slate-300">
+                    <span className="font-bold">Indicaciones:</span> {unlockedAppointmentData.appointment_notes}
+                  </div>
+                )}
+              </div>
+
+              {/* Botones de acción */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setViewingAppointmentModal(true)}
+                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>Ver Documento</span>
+                </button>
+
+                <a
+                  href={normalizeFileUrl(unlockedAppointmentData.appointment_receipt_url)}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold text-xs sm:text-sm rounded-xl transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 cursor-pointer text-center"
+                >
+                  <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Descargar</span>
+                </a>
+              </div>
+            </div>
+          ) : (
+            // ESTADO BLOQUEADO: Requiere validación de Cédula de Identidad
+            <form onSubmit={handleUnlockAppointment} className="space-y-3.5 pt-1">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="flex items-start gap-2">
+                  <Lock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <span>
+                    Por protección y confidencialidad de sus datos personales, ingrese su <strong>número de cédula o pasaporte</strong> registrado para desbloquear y visualizar su cita consular oficial.
+                  </span>
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  Número de Cédula / Documento de Identidad Registrado
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={enteredIdNumber}
+                    onChange={(e) => {
+                      setEnteredIdNumber(e.target.value);
+                      if (unlockError) setUnlockError(null);
+                    }}
+                    placeholder="Ej. 0801199012345 o pasaporte..."
+                    disabled={isUnlockingAppointment}
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-mono"
+                  />
+                </div>
+              </div>
+
+              {unlockError && (
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <span>{unlockError}</span>
+                </div>
+              )}
+
+              {/* BOTÓN VERDE DESTACADO (Coincide con el recuadro verde del usuario) */}
+              <button
+                type="submit"
+                disabled={isUnlockingAppointment || !enteredIdNumber.trim()}
+                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 border-2 border-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isUnlockingAppointment ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Verificando Identidad...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Verificar y Desbloquear Documento de Cita</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )
+        ) : (
+          // EN ESPERA DE PROGRAMACIÓN DE CITA
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+            <p className="font-semibold text-slate-700 dark:text-slate-300">
+              En espera de programación consular
+            </p>
+            <p className="text-[11px] leading-relaxed">
+              Su asesor consular cargará el comprobante oficial cuando la embajada asigne la fecha. Podrá desbloquearlo ingresando su número de cédula en este apartado.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* LÍNEA DE FASES DEL PROCESO MIGRATORIO (TRAZABILIDAD OFICIAL) */}
+      {portalData?.phases && portalData.phases.length > 0 && (
+        <div className="rounded-2xl overflow-hidden shadow-sm">
+          <VisaProcessTimeline
+            dossierId={dossier?.id}
+            dossierCode={dossier?.code}
+            currentPhaseId={dossier?.current_phase_id}
+            phases={portalData.phases}
+            histories={portalData.phase_histories || []}
+            isOperator={false}
+            readOnly={true}
+          />
+        </div>
+      )}
+
+      {/* TIMELINE DE AUDITORÍA & EVENTOS PÚBLICOS */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base flex items-center gap-2">
+            <History className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            <span>Trazabilidad & Registro de Eventos</span>
+          </h3>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+            {timeline?.length || 0} registros
+          </span>
+        </div>
+
+        <div className="relative pl-5 sm:pl-6 border-l-2 border-slate-200 dark:border-slate-800 space-y-5">
+          {timeline?.length === 0 ? (
+            <p className="text-xs text-slate-400 dark:text-slate-500 italic py-2">
+              El expediente ha sido iniciado. Los eventos de trazabilidad se registrarán aquí en tiempo real.
+            </p>
+          ) : (
+            timeline?.map((ev: VisaTimelineEvent) => (
+              <div key={ev.id} className="relative">
+                <div className="absolute -left-[27px] sm:-left-[31px] top-0.5 w-3.5 h-3.5 rounded-full bg-sky-500 border-2 border-white dark:border-slate-900 shadow-xs" />
+                <div className="text-xs space-y-0.5">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 block">{ev.title}</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-mono">
+                    {new Date(ev.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                  </span>
+                  {ev.description && (
+                    <p className="text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">{ev.description}</p>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* AGENCIA EMISORA & CONTACTO CARD */}
+      <div className="bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-sky-600 dark:text-sky-400 shadow-2xs">
+            <Building2 className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+              Agencia Emisora
+            </span>
+            <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+              {agency?.name || 'Agencia de Viajes'}
+            </h4>
+          </div>
+        </div>
+
+        <div className="space-y-1.5 pt-1 text-xs text-slate-600 dark:text-slate-400">
+          {agency?.email && (
+            <div className="flex items-center gap-2">
+              <Mail className="w-3.5 h-3.5 text-slate-400" />
+              <a href={`mailto:${agency.email}`} className="hover:text-sky-600 dark:hover:text-sky-400 truncate">
+                {agency.email}
+              </a>
+            </div>
+          )}
+          {agency?.phone && (
+            <div className="flex items-center gap-2">
+              <Phone className="w-3.5 h-3.5 text-slate-400" />
+              <a href={`tel:${agency.phone}`} className="hover:text-sky-600 dark:hover:text-sky-400">
+                {agency.phone}
+              </a>
+            </div>
+          )}
+        </div>
+
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+          <span>Trámite protegido con cifrado SSL de extremo a extremo.</span>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
@@ -389,392 +837,211 @@ export const PublicClientVisaPortalPage: React.FC = () => {
           </div>
         </header>
 
-        {/* Main Content Layout: Form on Left, Traceability on Right */}
+        {/* Main Content Layout */}
         <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-32">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* ============================================================== */}
-            {/* COLUMNA IZQUIERDA: FORMULARIO CONSULAR, DOCUMENTOS & MENSAJES */}
-            {/* ============================================================== */}
-            <div className="lg:col-span-7 xl:col-span-7 space-y-6">
+          {isFormLocked ? (
+            /* ============================================================== */
+            /* VISTA DE SEGUIMIENTO EXCLUSIVA (FORMULARIO BLOQUEADO)          */
+            /* Protección de datos personales: sólo queda la derecha         */
+            /* ============================================================== */
+            <div className="max-w-2xl mx-auto space-y-6">
+              {/* Banner Informativo de Protección de Datos */}
+              <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-700/60 space-y-3">
+                <div className="flex items-start gap-3.5">
+                  <div className="p-2.5 bg-emerald-500/20 border border-emerald-400/30 rounded-xl text-emerald-300 shrink-0">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-extrabold text-base text-slate-100">Portal de Seguimiento de Expediente</h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        Datos Personales Protegidos
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Por protección de sus datos personales, la información detallada del formulario ha sido resguardada mientras su trámite avanza en los canales consulares oficiales.
+                    </p>
+                    <p className="text-[11px] text-sky-300">
+                      En caso de requerir una corrección o actualización en la información enviada, su asesor consular u operador mayorista puede habilitar nuevamente el formulario para su edición.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bloque de Seguimiento */}
+              {renderTrackingCards()}
+
+              {/* Canal de Comunicación en Vista Protegida */}
+              {renderMessagesCard()}
+            </div>
+          ) : (
+            /* ============================================================== */
+            /* VISTA COMPLETA DE 2 COLUMNAS (FORMULARIO HABILITADO)           */
+            /* ============================================================== */
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               
-              {/* Form Header Info Banner */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-3">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <div>
-                    <span className="text-xs font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <span>{process?.flag_icon || '🌐'}</span>
-                      <span>{process?.name || 'Solicitud de Visado'}</span>
-                      <span className="text-slate-400 dark:text-slate-600">•</span>
-                      <span>{dossier?.country_destination || process?.country || 'Destino'}</span>
-                    </span>
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
-                      Formulario Consular Oficial
-                    </h2>
+              {/* COLUMNA IZQUIERDA: FORMULARIO CONSULAR, DOCUMENTOS & MENSAJES */}
+              <div className="lg:col-span-7 xl:col-span-7 space-y-6">
+                
+                {/* Form Header Info Banner */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                      <span className="text-xs font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>{process?.flag_icon || '🌐'}</span>
+                        <span>{process?.name || 'Solicitud de Visado'}</span>
+                        <span className="text-slate-400 dark:text-slate-600">•</span>
+                        <span>{dossier?.country_destination || process?.country || 'Destino'}</span>
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
+                        Formulario Consular Oficial
+                      </h2>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {isAutoSaving ? (
+                        <span className="px-3 py-1 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-2xs">
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" /> Guardando automáticamente...
+                        </span>
+                      ) : lastSavedTime ? (
+                        <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-2xs">
+                          <Check className="w-3.5 h-3.5" /> Guardado a las {lastSavedTime}
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-full flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-sky-500" /> Guardado automático activo
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {isAutoSaving ? (
-                      <span className="px-3 py-1 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-2xs">
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" /> Guardando automáticamente...
-                      </span>
-                    ) : lastSavedTime ? (
-                      <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-2xs">
-                        <Check className="w-3.5 h-3.5" /> Guardado a las {lastSavedTime}
-                      </span>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Por favor complete con veracidad todos los campos requeridos por la autoridad consular. El progreso se actualiza en tiempo real por sección y sus respuestas se guardan automáticamente al completar cada sección.
+                  </p>
+                </div>
+
+                {/* Formulario Consular Renderizado */}
+                <div className="rounded-2xl overflow-hidden">
+                  <ConsularFormRenderer
+                    countryDestination={dossier?.country_destination}
+                    visaType={process?.name?.includes('Schengen') || process?.name?.includes('Europa') ? 'SCHENGEN' : process?.name?.includes('Canad') ? 'CANADA' : (process?.name?.includes('Reino Unido') || process?.name?.includes('UK')) ? 'UK' : 'USA'}
+                    processSlug={process?.slug}
+                    formData={formData}
+                    onFieldChange={handleInputChange}
+                    onFieldBlur={handleInputBlur}
+                    applicantName={applicantDisplayName}
+                    passportNumber={dossier?.passport_number || ''}
+                    onSaveSection={handleSaveSection}
+                    savingSectionId={savingSectionId}
+                    savedSectionId={savedSectionId}
+                  />
+                </div>
+
+                {/* CHECKLIST DE DOCUMENTOS DE SOPORTE */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                        <span>Checklist de Documentos de Soporte</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Adjunte los documentos solicitados en formato PDF o fotografía nítida (JPG, PNG, máx 15MB).
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-slate-950/40">
+                    {documents?.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-slate-400">
+                        No se han configurado documentos específicos para este trámite.
+                      </div>
                     ) : (
-                      <span className="px-3 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-full flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-sky-500" /> Guardado automático activo
-                      </span>
+                      documents?.map((doc: VisaDocument) => (
+                        <div key={doc.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-slate-900">
+                          <div className="space-y-1 max-w-md">
+                            <div className="flex items-center gap-2">
+                              <strong className="text-sm font-bold text-slate-800 dark:text-slate-200">{doc.name}</strong>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                                doc.status === 'aprobado' ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' :
+                                doc.status === 'observado' ? 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800' :
+                                doc.status === 'recibido' ? 'bg-sky-100 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                              }`}>
+                                {doc.status}
+                              </span>
+                            </div>
+
+                            {doc.observation && (
+                              <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300">
+                                <strong>Observación del especialista:</strong> {doc.observation}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                            {doc.file_url && (
+                              <button
+                                type="button"
+                                onClick={() => setViewingDoc(doc)}
+                                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg inline-flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+                                title="Ver documento en modal"
+                              >
+                                <Eye className="w-3.5 h-3.5" /> Ver
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleTriggerUpload(doc)}
+                              disabled={isUploading}
+                              className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                              {doc.file_url ? 'Reemplazar' : 'Subir Archivo'}
+                            </button>
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Por favor complete con veracidad todos los campos requeridos por la autoridad consular. El progreso se actualiza en tiempo real por sección y sus respuestas se guardan automáticamente al completar cada sección.
-                </p>
-              </div>
+                {/* MENSAJES & CONSULTAS CON EL ASESOR */}
+                {renderMessagesCard()}
 
-              {/* Formulario Consular Renderizado */}
-              <div className="rounded-2xl overflow-hidden">
-                <ConsularFormRenderer
-                  countryDestination={dossier?.country_destination}
-                  visaType={process?.name?.includes('Schengen') || process?.name?.includes('Europa') ? 'SCHENGEN' : process?.name?.includes('Canad') ? 'CANADA' : (process?.name?.includes('Reino Unido') || process?.name?.includes('UK')) ? 'UK' : 'USA'}
-                  processSlug={process?.slug}
-                  formData={formData}
-                  onFieldChange={handleInputChange}
-                  onFieldBlur={handleInputBlur}
-                  applicantName={applicantDisplayName}
-                  passportNumber={dossier?.passport_number || ''}
-                  onSaveSection={handleSaveSection}
-                  savingSectionId={savingSectionId}
-                  savedSectionId={savedSectionId}
-                />
-              </div>
-
-              {/* CHECKLIST DE DOCUMENTOS DE SOPORTE */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <div>
-                    <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-sky-600 dark:text-sky-400" />
-                      <span>Checklist de Documentos de Soporte</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Adjunte los documentos solicitados en formato PDF o fotografía nítida (JPG, PNG, máx 15MB).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-slate-950/40">
-                  {documents?.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-slate-400">
-                      No se han configurado documentos específicos para este trámite.
+                {/* SUBMIT FORM BUTTON CARD */}
+                <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-6 shadow-lg space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+                      <CheckCircle2 className="w-7 h-7 text-white" />
                     </div>
-                  ) : (
-                    documents?.map((doc: VisaDocument) => (
-                      <div key={doc.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-slate-900">
-                        <div className="space-y-1 max-w-md">
-                          <div className="flex items-center gap-2">
-                            <strong className="text-sm font-bold text-slate-800 dark:text-slate-200">{doc.name}</strong>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                              doc.status === 'aprobado' ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' :
-                              doc.status === 'observado' ? 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800' :
-                              doc.status === 'recibido' ? 'bg-sky-100 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                            }`}>
-                              {doc.status}
-                            </span>
-                          </div>
-
-                          {doc.observation && (
-                            <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300">
-                              <strong>Observación del especialista:</strong> {doc.observation}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                          {doc.file_url && (
-                            <button
-                              type="button"
-                              onClick={() => setViewingDoc(doc)}
-                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg inline-flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
-                              title="Ver documento en modal"
-                            >
-                              <Eye className="w-3.5 h-3.5" /> Ver
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => handleTriggerUpload(doc)}
-                            disabled={isUploading}
-                            className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50"
-                          >
-                            <Upload className="w-3.5 h-3.5" />
-                            {doc.file_url ? 'Reemplazar' : 'Subir Archivo'}
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* MENSAJES & CONSULTAS CON EL ASESOR */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <div>
-                    <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5 text-sky-600 dark:text-sky-400" />
-                      <span>Comunicación con su Asesor</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Canal directo para aclaraciones sobre su documentación o requisitos consulares.
-                    </p>
+                    <div>
+                      <h4 className="text-base font-black">¿Completó toda su información?</h4>
+                      <p className="text-xs text-emerald-100 mt-1 leading-relaxed">
+                        Al enviar el formulario, el equipo especializado procederá con la auditoría técnica y revisión consular de sus datos y documentos adjuntos.
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                  {messages?.length === 0 ? (
-                    <p className="text-xs text-slate-400 dark:text-slate-500 italic py-4 text-center">
-                      No hay mensajes previos. Escriba abajo si tiene alguna inquietud.
-                    </p>
-                  ) : (
-                    messages?.map((msg: VisaMessage) => (
-                      <div
-                        key={msg.id}
-                        className={`p-3.5 rounded-2xl text-xs space-y-1 transition-colors ${
-                          msg.sender_type === 'cliente'
-                            ? 'bg-sky-50 dark:bg-sky-950/60 border border-sky-100 dark:border-sky-900/50 text-sky-900 dark:text-sky-100 ml-6 sm:ml-12'
-                            : 'bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 mr-6 sm:mr-12'
-                        }`}
-                      >
-                        <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-400 font-bold">
-                          <span>{msg.sender_name || (msg.sender_type === 'cliente' ? 'Usted' : 'Asesor Consular')}</span>
-                          <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</span>
-                        </div>
-                        <p className="leading-relaxed">{msg.message}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <form onSubmit={handleSendMessage} className="flex gap-2 pt-2">
-                  <input
-                    type="text"
-                    value={clientMessage}
-                    onChange={(e) => setClientMessage(e.target.value)}
-                    placeholder="Escriba su consulta o respuesta sobre el trámite..."
-                    className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors"
-                  />
                   <button
-                    type="submit"
-                    disabled={isSendingMessage || !clientMessage.trim()}
-                    className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 flex-shrink-0 shadow-sm disabled:opacity-50 transition-all active:scale-95"
+                    type="button"
+                    onClick={handleSubmitFinalForm}
+                    disabled={isSubmittingForm}
+                    className="w-full py-3.5 px-6 bg-white hover:bg-emerald-50 text-emerald-800 font-extrabold text-sm rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Send className="w-4 h-4" />
-                    <span className="hidden sm:inline">Enviar</span>
+                    <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+                    <span>{isSubmittingForm ? 'Enviando formulario a revisión...' : 'Enviar Formulario a Revisión Consular Oficial'}</span>
                   </button>
-                </form>
-              </div>
-
-              {/* SUBMIT FORM BUTTON CARD */}
-              <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-6 shadow-lg space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
-                    <CheckCircle2 className="w-7 h-7 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-base font-black">¿Completó toda su información?</h4>
-                    <p className="text-xs text-emerald-100 mt-1 leading-relaxed">
-                      Al enviar el formulario, el equipo especializado procederá con la auditoría técnica y revisión consular de sus datos y documentos adjuntos.
-                    </p>
-                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleSubmitFinalForm}
-                  disabled={isSubmittingForm}
-                  className="w-full py-3.5 px-6 bg-white hover:bg-emerald-50 text-emerald-800 font-extrabold text-sm rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <CheckCircle2 className="w-5 h-5 text-emerald-700" />
-                  <span>{isSubmittingForm ? 'Enviando formulario a revisión...' : 'Enviar Formulario a Revisión Consular Oficial'}</span>
-                </button>
+              </div>
+
+              {/* COLUMNA DERECHA: TRAZABILIDAD, FASES, PROGRESO & AUDITORÍA */}
+              <div className="lg:col-span-5 xl:col-span-5 space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pr-1">
+                {renderTrackingCards()}
               </div>
 
             </div>
-
-            {/* ============================================================== */}
-            {/* COLUMNA DERECHA: TRAZABILIDAD, FASES, PROGRESO & AUDITORÍA     */}
-            {/* ============================================================== */}
-            <div className="lg:col-span-5 xl:col-span-5 space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto pr-1">
-              
-              {/* Executive Overview & Progress Card */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
-                <div className="flex justify-between items-start gap-3">
-                  <div>
-                    <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest block">
-                      Solicitante Principal
-                    </span>
-                    <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
-                      {applicantDisplayName}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Trámite de Visado {process?.name}
-                    </p>
-                  </div>
-
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Avance</span>
-                    <div className="text-2xl font-black text-sky-600 dark:text-sky-400">{dossier?.progress ?? 0}%</div>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-sky-500 to-indigo-500 h-full rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${dossier?.progress ?? 0}%` }}
-                  />
-                </div>
-
-                {/* Quick Info Grid */}
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block">Código</span>
-                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{dossier?.code}</span>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block">Destino</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
-                      {dossier?.country_destination || process?.country || 'Destino'}
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block">Responsable</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 capitalize truncate block">
-                      {dossier?.current_responsible === 'cliente' ? 'Cliente (Usted)' : 'Asesor Consular'}
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase block">Prioridad</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 capitalize truncate block">
-                      {dossier?.priority || 'Normal'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Alerta de Acción Requerida */}
-                {dossier?.action_required && (
-                  <div className="bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 rounded-xl p-3.5 flex items-start gap-2.5 text-rose-800 dark:text-rose-200">
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
-                    <div className="text-xs">
-                      <strong className="block font-bold text-rose-900 dark:text-rose-100">Acción Requerida para su Trámite</strong>
-                      <p className="mt-0.5 text-rose-700 dark:text-rose-300">{dossier.action_required}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* LÍNEA DE FASES DEL PROCESO MIGRATORIO (TRAZABILIDAD OFICIAL) */}
-              {portalData?.phases && portalData.phases.length > 0 && (
-                <div className="rounded-2xl overflow-hidden shadow-sm">
-                  <VisaProcessTimeline
-                    dossierId={dossier?.id}
-                    dossierCode={dossier?.code}
-                    currentPhaseId={dossier?.current_phase_id}
-                    phases={portalData.phases}
-                    histories={portalData.phase_histories || []}
-                    isOperator={false}
-                    readOnly={true}
-                  />
-                </div>
-              )}
-
-              {/* TIMELINE DE AUDITORÍA & EVENTOS PÚBLICOS */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base flex items-center gap-2">
-                    <History className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                    <span>Trazabilidad & Registro de Eventos</span>
-                  </h3>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                    {timeline?.length || 0} registros
-                  </span>
-                </div>
-
-                <div className="relative pl-5 sm:pl-6 border-l-2 border-slate-200 dark:border-slate-800 space-y-5">
-                  {timeline?.length === 0 ? (
-                    <p className="text-xs text-slate-400 dark:text-slate-500 italic py-2">
-                      El expediente ha sido iniciado. Los eventos de trazabilidad se registrarán aquí en tiempo real.
-                    </p>
-                  ) : (
-                    timeline?.map((ev: VisaTimelineEvent) => (
-                      <div key={ev.id} className="relative">
-                        <div className="absolute -left-[27px] sm:-left-[31px] top-0.5 w-3.5 h-3.5 rounded-full bg-sky-500 border-2 border-white dark:border-slate-900 shadow-xs" />
-                        <div className="text-xs space-y-0.5">
-                          <span className="font-bold text-slate-800 dark:text-slate-200 block">{ev.title}</span>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-mono">
-                            {new Date(ev.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                          </span>
-                          {ev.description && (
-                            <p className="text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">{ev.description}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* AGENCIA EMISORA & CONTACTO CARD */}
-              <div className="bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-sky-600 dark:text-sky-400 shadow-2xs">
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                      Agencia Emisora
-                    </span>
-                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
-                      {agency?.name || 'Agencia de Viajes'}
-                    </h4>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 pt-1 text-xs text-slate-600 dark:text-slate-400">
-                  {agency?.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-3.5 h-3.5 text-slate-400" />
-                      <a href={`mailto:${agency.email}`} className="hover:text-sky-600 dark:hover:text-sky-400 truncate">
-                        {agency.email}
-                      </a>
-                    </div>
-                  )}
-                  {agency?.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      <a href={`tel:${agency.phone}`} className="hover:text-sky-600 dark:hover:text-sky-400">
-                        {agency.phone}
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Trámite protegido con cifrado SSL de extremo a extremo.</span>
-                </div>
-              </div>
-
-            </div>
-
-          </div>
+          )}
         </main>
 
         {/* ============================================================== */}
@@ -861,12 +1128,15 @@ export const PublicClientVisaPortalPage: React.FC = () => {
           </div>
         )}
 
-        {/* Modal para ver documento / comprobante adjunto */}
+        {/* Modal para ver documento / comprobante adjunto o cita consular */}
         <ViewPaymentReceiptModal
-          isOpen={!!viewingDoc}
-          onClose={() => setViewingDoc(null)}
-          receiptUrl={viewingDoc?.file_url}
-          title={viewingDoc?.name || 'Documento Adjunto'}
+          isOpen={!!viewingDoc || viewingAppointmentModal}
+          onClose={() => {
+            setViewingDoc(null);
+            setViewingAppointmentModal(false);
+          }}
+          receiptUrl={viewingDoc ? viewingDoc.file_url : unlockedAppointmentData?.appointment_receipt_url}
+          title={viewingDoc ? viewingDoc.name : 'Comprobante Oficial de Cita Consular'}
           applicantName={portalData?.dossier?.applicant_name || portalData?.client?.name}
           dossierCode={portalData?.dossier?.code}
         />

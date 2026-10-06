@@ -182,8 +182,16 @@ export interface VisaDossier {
   cost?: number;
   payment_status?: 'pendiente_pago' | 'comprobante_enviado' | 'aprobado' | 'comprobante_rechazado' | 'exonerado';
   approval_status?: 'pendiente' | 'aprobado' | 'rechazado';
+  is_form_locked?: boolean;
+  form_locked_at?: string | null;
+  has_appointment_receipt?: boolean;
   payment_receipt_url?: string | null;
   payment_receipt_uploaded_at?: string | null;
+  appointment_receipt_url?: string | null;
+  appointment_receipt_uploaded_at?: string | null;
+  appointment_date?: string | null;
+  appointment_location?: string | null;
+  appointment_notes?: string | null;
   rejection_reason?: string | null;
   approved_by?: number | null;
   approved_at?: string | null;
@@ -332,6 +340,13 @@ class VisaWholesaleService {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+  }
+
+  async toggleFormLock(dossierId: number, isLocked?: boolean) {
+    const res = await apiClient.post(`/v1/visas/dossiers/${dossierId}/toggle-form-lock`, {
+      is_locked: isLocked,
+    });
+    return res.data;
   }
 
   // ===================== DASHBOARDS =====================
@@ -573,6 +588,20 @@ class VisaWholesaleService {
     return await res.json();
   }
 
+  async unlockPublicAppointmentReceipt(token: string, documentNumber: string) {
+    const baseUrl = getApiBaseUrl();
+    const res = await fetch(`${baseUrl}/v1/visas/public/${token}/unlock-appointment`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ document_number: documentNumber }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Error al verificar número de documento.');
+    }
+    return data;
+  }
+
   // ===================== ROLES DEL TENANT =====================
 
   async getRoles(params?: Record<string, any>) {
@@ -606,6 +635,23 @@ class VisaWholesaleService {
     const form = new FormData();
     form.append('receipt', receiptFile);
     const res = await apiClient.post(`/v1/visas/dossiers/${dossierId}/upload-receipt`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  }
+
+  async uploadAppointmentReceipt(
+    dossierId: number, 
+    file?: File | null, 
+    data?: { appointment_date?: string; appointment_location?: string; appointment_notes?: string }
+  ) {
+    const form = new FormData();
+    if (file) form.append('file', file);
+    if (data?.appointment_date) form.append('appointment_date', data.appointment_date);
+    if (data?.appointment_location) form.append('appointment_location', data.appointment_location);
+    if (data?.appointment_notes) form.append('appointment_notes', data.appointment_notes);
+
+    const res = await apiClient.post(`/v1/visas/dossiers/${dossierId}/upload-appointment`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return res.data;

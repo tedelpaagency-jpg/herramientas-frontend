@@ -11,7 +11,8 @@ import {
   ShieldCheck, ArrowLeft, Download, Copy, Check, ExternalLink, 
   Clock, AlertTriangle, AlertCircle, CheckCircle2, User, Users, 
   Building2, Calendar, FileText, Send, Eye, RefreshCw, Upload, 
-  Lock, MessageSquare, History, CheckSquare, Sparkles, X, ChevronRight, UserCheck
+  Lock, Unlock, MessageSquare, History, CheckSquare, Sparkles, X, ChevronRight, UserCheck, MapPin,
+  File, Edit2
 } from 'lucide-react';
 import ConsularFormRenderer from '@/components/visas/forms/ConsularFormRenderer';
 import VisaProcessTimeline from '@/components/visas/VisaProcessTimeline';
@@ -47,6 +48,14 @@ export const VisaDossier360Page: React.FC = () => {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Estados para Comprobante de Cita Consular (Operador / Marca Blanca)
+  const [appointmentFile, setAppointmentFile] = useState<File | null>(null);
+  const [appointmentDate, setAppointmentDate] = useState<string>('');
+  const [appointmentLocation, setAppointmentLocation] = useState<string>('');
+  const [appointmentNotes, setAppointmentNotes] = useState<string>('');
+  const [isUploadingAppointment, setIsUploadingAppointment] = useState(false);
+  const [isEditingAppointment, setIsEditingAppointment] = useState(false);
+
   const [newMessage, setNewMessage] = useState('');
   const [messageVisibility, setMessageVisibility] = useState<'public' | 'internal'>('public');
 
@@ -58,6 +67,7 @@ export const VisaDossier360Page: React.FC = () => {
   const [isProcessingPaymentDecision, setIsProcessingPaymentDecision] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<{ url?: string | null; title?: string } | null>(null);
+  const [isTogglingLock, setIsTogglingLock] = useState(false);
 
   const isMayorista = user?.role === 'super_admin' || 
     user?.role === 'white_label_admin' || 
@@ -80,6 +90,24 @@ export const VisaDossier360Page: React.FC = () => {
   useEffect(() => {
     fetchDossier();
   }, [dossierId]);
+
+  useEffect(() => {
+    if (dossier) {
+      if (dossier.appointment_date) {
+        try {
+          const d = new Date(dossier.appointment_date);
+          const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+          setAppointmentDate(iso);
+        } catch {
+          setAppointmentDate(dossier.appointment_date);
+        }
+      } else {
+        setAppointmentDate('');
+      }
+      setAppointmentLocation(dossier.appointment_location || '');
+      setAppointmentNotes(dossier.appointment_notes || '');
+    }
+  }, [dossier]);
 
   const handleCopyClientLink = async () => {
     if (!dossier) return;
@@ -259,6 +287,53 @@ export const VisaDossier360Page: React.FC = () => {
     }
   };
 
+  const handleUploadAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dossier) return;
+    if (!appointmentFile && !dossier.appointment_receipt_url) {
+      toast.error('Seleccione un archivo válido (PDF, PNG o JPG)');
+      return;
+    }
+
+    setIsUploadingAppointment(true);
+    try {
+      await visaWholesaleService.uploadAppointmentReceipt(dossier.id, appointmentFile || undefined, {
+        appointment_date: appointmentDate || undefined,
+        appointment_location: appointmentLocation || undefined,
+        appointment_notes: appointmentNotes || undefined,
+      });
+      toast.success(dossier.appointment_receipt_url ? '¡Datos y comprobante de cita actualizados exitosamente!' : '¡Comprobante de cita consular cargado exitosamente!');
+      setAppointmentFile(null);
+      setIsEditingAppointment(false);
+      fetchDossier();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al subir comprobante de cita');
+    } finally {
+      setIsUploadingAppointment(false);
+    }
+  };
+
+  const handleToggleFormLock = async () => {
+    if (!dossier) return;
+    const targetState = !dossier.is_form_locked;
+    const confirmMsg = targetState
+      ? `¿Bloquear el formulario público del expediente ${dossier.code}? Esto ocultará la sección de datos personales en el portal del cliente y dejará exclusivamente la columna de seguimiento.`
+      : `¿Habilitar nuevamente la edición del formulario para el cliente en el expediente ${dossier.code}? El cliente podrá actualizar y corregir su información.`;
+
+    if (!confirm(confirmMsg)) return;
+
+    setIsTogglingLock(true);
+    try {
+      await visaWholesaleService.toggleFormLock(dossier.id, targetState);
+      toast.success(targetState ? 'Formulario público bloqueado para protección de datos personales.' : 'Edición del formulario habilitada para el cliente.');
+      fetchDossier();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al modificar estado de bloqueo del formulario.');
+    } finally {
+      setIsTogglingLock(false);
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!dossier || !newMessage.trim()) return;
@@ -284,8 +359,9 @@ export const VisaDossier360Page: React.FC = () => {
 
   const processType = dossier.processType || (dossier as any).process_type;
   const stages = processType?.stages_schema || [];
-  const requiredDocsCount = dossier.documents?.length || 0;
-  const approvedDocsCount = dossier.documents?.filter(d => d.status === 'aprobado').length || 0;
+  const supportDocuments = dossier.documents?.filter(d => d.document_type !== 'cita_consular') || [];
+  const requiredDocsCount = supportDocuments.length;
+  const approvedDocsCount = supportDocuments.filter(d => d.status === 'aprobado').length;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -308,6 +384,39 @@ export const VisaDossier360Page: React.FC = () => {
             >
               <FileText className="w-3.5 h-3.5 text-sky-600" />
               <span>Ver Comprobante</span>
+            </button>
+          )}
+
+          {dossier.appointment_receipt_url && (
+            <button
+              type="button"
+              onClick={() => setViewingDoc({ url: dossier.appointment_receipt_url!, title: 'Comprobante de Cita Consular' })}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-bold border border-purple-200 dark:border-purple-800 transition-all cursor-pointer"
+              title="Ver Comprobante de Cita Consular en modal"
+            >
+              <Calendar className="w-3.5 h-3.5 text-purple-600" />
+              <span>Ver Cita</span>
+            </button>
+          )}
+
+          {isMayorista && (
+            <button
+              type="button"
+              disabled={isTogglingLock}
+              onClick={handleToggleFormLock}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                dossier.is_form_locked
+                  ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                  : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+              }`}
+              title={
+                dossier.is_form_locked
+                  ? 'Formulario bloqueado al cliente (Protección de datos). Clic para habilitar edición.'
+                  : 'Formulario editable para el cliente. Clic para bloquearlo y dejar solo seguimiento.'
+              }
+            >
+              {dossier.is_form_locked ? <Unlock className="w-3.5 h-3.5 text-amber-600" /> : <Lock className="w-3.5 h-3.5 text-slate-500" />}
+              <span>{dossier.is_form_locked ? 'Habilitar Edición' : 'Bloquear Formulario'}</span>
             </button>
           )}
 
@@ -703,7 +812,64 @@ export const VisaDossier360Page: React.FC = () => {
                   Visualización completa de las casillas y respuestas oficiales registradas para el expediente.
                 </p>
               </div>
+
+              {isMayorista && (
+                <button
+                  type="button"
+                  disabled={isTogglingLock}
+                  onClick={handleToggleFormLock}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                    dossier.is_form_locked
+                      ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                      : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  {dossier.is_form_locked ? <Unlock className="w-3.5 h-3.5 text-amber-600" /> : <Lock className="w-3.5 h-3.5 text-slate-500" />}
+                  <span>{dossier.is_form_locked ? 'Habilitar Edición al Cliente' : 'Bloquear Formulario Público'}</span>
+                </button>
+              )}
             </div>
+
+            {/* Banner de Estado de Protección de Datos */}
+            {dossier.is_form_locked ? (
+              <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 gap-3">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    <strong>Formulario Público Oculto y Bloqueado:</strong> Para resguardo de datos personales, el cliente final actualmente solo visualiza el panel de seguimiento.
+                  </span>
+                </div>
+                {isMayorista && (
+                  <button
+                    type="button"
+                    disabled={isTogglingLock}
+                    onClick={handleToggleFormLock}
+                    className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg shrink-0 cursor-pointer text-xs"
+                  >
+                    Habilitar Edición
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-xl flex items-center justify-between text-xs text-emerald-900 dark:text-emerald-200 gap-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    <strong>Edición Pública Habilitada:</strong> El cliente puede visualizar y editar sus respuestas en el enlace público.
+                  </span>
+                </div>
+                {isMayorista && (
+                  <button
+                    type="button"
+                    disabled={isTogglingLock}
+                    onClick={handleToggleFormLock}
+                    className="px-2.5 py-1 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-lg shrink-0 cursor-pointer text-xs"
+                  >
+                    Bloquear Formulario
+                  </button>
+                )}
+              </div>
+            )}
 
             <ConsularFormRenderer
               countryDestination={dossier.country_destination}
@@ -718,91 +884,399 @@ export const VisaDossier360Page: React.FC = () => {
 
         {/* TAB 3: DOCUMENTOS */}
         {activeTab === 'documentos' && (
-          <div className="space-y-5">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">Checklist de Documentos Soportes</h3>
-                <p className="text-xs text-slate-500">Documentos cargados desde el formulario del cliente o por la agencia.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* COLUMNA IZQUIERDA: ÁREA DE CITA CONSULAR (Operador Mayorista / Marca Blanca) */}
+            <div className="lg:col-span-5 bg-white dark:bg-slate-900 border-2 border-dashed border-sky-300/80 dark:border-sky-800/80 rounded-2xl p-5 shadow-sm space-y-4 relative">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                      Comprobante de Cita Consular
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Confirmación oficial de la cita (PDF, PNG o JPG)
+                    </p>
+                  </div>
+                </div>
+
+                {dossier.appointment_receipt_url ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Programada
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300">
+                    <Clock className="w-3.5 h-3.5" /> Pendiente
+                  </span>
+                )}
               </div>
 
-              <button
-                onClick={() => {
-                  setUploadDocType('general');
-                  setUploadDocName('');
-                  setUploadFile(null);
-                  setIsUploadModalOpen(true);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold"
-              >
-                <Upload className="w-3.5 h-3.5" /> Subir Documento
-              </button>
-            </div>
-
-            <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-              {dossier.documents?.map((doc) => {
-                const statusBadges = {
-                  pendiente: 'bg-slate-100 text-slate-600 border-slate-200',
-                  recibido: 'bg-sky-100 text-sky-700 border-sky-200',
-                  en_revision: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-                  observado: 'bg-rose-100 text-rose-700 border-rose-200',
-                  aprobado: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-                };
-
-                return (
-                  <div key={doc.id} className="p-4 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{doc.name}</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${statusBadges[doc.status] || statusBadges.pendiente}`}>
-                          {doc.status}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">v{doc.version}</span>
+              {/* Vista si YA hay comprobante y no se está editando */}
+              {dossier.appointment_receipt_url && !isEditingAppointment ? (
+                <div className="space-y-4">
+                  {/* Contenedor de Previsualización */}
+                  <div className="relative rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 overflow-hidden">
+                    {dossier.appointment_receipt_url.toLowerCase().includes('.pdf') ? (
+                      <div className="flex flex-col items-center justify-center py-5 text-center space-y-2.5">
+                        <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-xs">
+                          <FileText className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">Confirmación de Cita Consular</p>
+                          <span className="text-[10px] text-slate-500 font-mono">Documento PDF Oficial</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setViewingDoc({ url: dossier.appointment_receipt_url!, title: 'Comprobante de Cita Consular' })}
+                          className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5" /> Ver en Pantalla Completa
+                        </button>
                       </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="relative max-h-52 overflow-hidden rounded-lg bg-black/5 dark:bg-black/30 flex items-center justify-center">
+                          <img
+                            src={dossier.appointment_receipt_url}
+                            alt="Comprobante de Cita Consular"
+                            className="max-h-52 object-contain rounded-lg cursor-pointer hover:scale-102 transition-transform duration-200"
+                            onClick={() => setViewingDoc({ url: dossier.appointment_receipt_url!, title: 'Comprobante de Cita Consular' })}
+                          />
+                        </div>
+                        <div className="flex justify-between items-center text-[11px] text-slate-500 pt-1">
+                          <span>Imagen de confirmación</span>
+                          <button
+                            type="button"
+                            onClick={() => setViewingDoc({ url: dossier.appointment_receipt_url!, title: 'Comprobante de Cita Consular' })}
+                            className="text-sky-600 dark:text-sky-400 hover:underline font-bold inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Ampliar imagen
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                      {doc.observation && (
-                        <div className="text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 p-2 rounded-lg border border-rose-200 dark:border-rose-900 mt-1">
-                          <strong>Observación:</strong> {doc.observation}
-                          {doc.responsible_to_fix && <span className="ml-2 font-medium">(Responsable: {doc.responsible_to_fix})</span>}
+                  {/* Metadatos de la cita */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 rounded-xl space-y-2 text-xs">
+                    <div className="flex items-start gap-2">
+                      <Calendar className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">Fecha y Hora de la Cita:</span>
+                        <strong className="text-slate-800 dark:text-slate-200">
+                          {dossier.appointment_date
+                            ? new Date(dossier.appointment_date).toLocaleString('es-ES', {
+                                dateStyle: 'full',
+                                timeStyle: 'short',
+                              })
+                            : 'Fecha no especificada'}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {dossier.appointment_location && (
+                      <div className="flex items-start gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                        <MapPin className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Sede Consular / Embajada:</span>
+                          <strong className="text-slate-800 dark:text-slate-200">{dossier.appointment_location}</strong>
+                        </div>
+                      </div>
+                    )}
+
+                    {dossier.appointment_notes && (
+                      <div className="flex items-start gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                        <FileText className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Instrucciones / Notas:</span>
+                          <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{dossier.appointment_notes}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {dossier.appointment_receipt_uploaded_at && (
+                      <div className="text-[10px] text-slate-400 pt-1 text-right">
+                        Actualizado: {new Date(dossier.appointment_receipt_uploaded_at).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <a
+                      href={dossier.appointment_receipt_url}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Descargar
+                    </a>
+
+                    {isMayorista && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingAppointment(true)}
+                        className="flex-1 py-2 px-3 bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" /> Actualizar Cita
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : isMayorista ? (
+                /* FORMULARIO DE CARGA PARA OPERADOR / MARCA BLANCA */
+                <form onSubmit={handleUploadAppointment} className="space-y-3.5">
+                  {/* Dropzone del Archivo */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                      Archivo de Cita Consular <span className="text-rose-500">*</span>
+                    </label>
+
+                    <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-500 rounded-xl p-4 text-center transition-colors bg-slate-50/50 dark:bg-slate-800/30">
+                      <input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setAppointmentFile(e.target.files[0]);
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+
+                      {appointmentFile ? (
+                        <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-sky-200 dark:border-sky-800">
+                          <div className="flex items-center gap-2 overflow-hidden text-left">
+                            <File className="w-5 h-5 text-sky-600 shrink-0" />
+                            <div className="truncate">
+                              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                                {appointmentFile.name}
+                              </p>
+                              <p className="text-[10px] text-slate-400">
+                                {(appointmentFile.size / 1024 / 1024).toFixed(2)} MB • {appointmentFile.type || 'Archivo'}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAppointmentFile(null);
+                            }}
+                            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-rose-600 transition-colors"
+                            title="Quitar archivo"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-1 py-1">
+                          <div className="w-9 h-9 mx-auto rounded-full bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                            <Upload className="w-4 h-4" />
+                          </div>
+                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Haga clic o arrastre el archivo aquí
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            Admite <strong>PDF, PNG o JPG</strong> (Máx. 15 MB)
+                          </p>
+                          {dossier.appointment_receipt_url && (
+                            <p className="text-[10px] text-sky-600 dark:text-sky-400 font-medium pt-0.5">
+                              (Si no selecciona un archivo nuevo, se mantendrá el comprobante actual)
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      {doc.file_url ? (
-                        <button
-                          type="button"
-                          onClick={() => doc.file_url && setViewingDoc({ url: doc.file_url, title: doc.name })}
-                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer transition-colors"
-                          title="Ver documento en modal"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> Ver Archivo
-                        </button>
-                      ) : (
-                        <span className="text-xs text-slate-400 italic">Sin archivo adjunto</span>
-                      )}
+                  {/* Campos de datos de la cita */}
+                  <div className="space-y-2.5">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                        Fecha y Hora de la Cita
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={appointmentDate}
+                        onChange={(e) => setAppointmentDate(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                      />
+                    </div>
 
-                      {/* Botones de Mayorista para Revisión */}
-                      {isMayorista && (
-                        <>
-                          <button
-                            onClick={() => handleOpenObserveModal(doc)}
-                            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-xs font-semibold rounded-lg inline-flex items-center gap-1"
-                          >
-                            <AlertTriangle className="w-3.5 h-3.5" /> Observar
-                          </button>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                        Sede Consular / Embajada
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Embajada de EE.UU. / Centro de Atención CAS"
+                        value={appointmentLocation}
+                        onChange={(e) => setAppointmentLocation(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                      />
+                    </div>
 
-                          <button
-                            onClick={() => handleApproveDocument(doc)}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg inline-flex items-center gap-1"
-                          >
-                            <Check className="w-3.5 h-3.5" /> Aprobar
-                          </button>
-                        </>
-                      )}
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                        Instrucciones / Notas para el Solicitante
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Ej: Presentarse con 15 min de anticipación portando hoja de confirmación..."
+                        value={appointmentNotes}
+                        onChange={(e) => setAppointmentNotes(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                      />
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* BOTÓN INFERIOR DE ENVÍO (Rectángulo inferior resaltado en la imagen) */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                    <button
+                      type="submit"
+                      disabled={isUploadingAppointment || (!appointmentFile && !dossier.appointment_receipt_url)}
+                      className="flex-1 py-2.5 px-4 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-sky-600/25 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isUploadingAppointment ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Guardando cita...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          <span>{dossier.appointment_receipt_url ? 'Guardar Cambios de la Cita' : 'Subir Comprobante de Cita'}</span>
+                        </>
+                      )}
+                    </button>
+
+                    {isEditingAppointment && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingAppointment(false);
+                          setAppointmentFile(null);
+                        }}
+                        className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
+                </form>
+              ) : (
+                /* Estado para Agencias / Clientes cuando la cita aún no ha sido cargada */
+                <div className="py-8 px-4 text-center space-y-3">
+                  <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200 dark:border-amber-900">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs">Cita Consular Pendiente</h4>
+                    <p className="text-[11px] text-slate-500 mt-1 max-w-xs mx-auto">
+                      El operador mayorista o la marca blanca adjuntará el comprobante oficial en PDF, PNG o JPG tan pronto como la cita sea programada.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* COLUMNA DERECHA: CHECKLIST DE DOCUMENTOS SOPORTES */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">Checklist de Documentos Soportes</h3>
+                  <p className="text-xs text-slate-500">Documentos cargados desde el formulario del cliente o por la agencia.</p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setUploadDocType('general');
+                    setUploadDocName('');
+                    setUploadFile(null);
+                    setIsUploadModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-xs"
+                >
+                  <Upload className="w-3.5 h-3.5" /> Subir Documento
+                </button>
+              </div>
+
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+                {supportDocuments.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-400 italic">
+                    No hay documentos de soporte adicionales registrados.
+                  </div>
+                ) : (
+                  supportDocuments.map((doc) => {
+                    const statusBadges = {
+                      pendiente: 'bg-slate-100 text-slate-600 border-slate-200',
+                      recibido: 'bg-sky-100 text-sky-700 border-sky-200',
+                      en_revision: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+                      observado: 'bg-rose-100 text-rose-700 border-rose-200',
+                      aprobado: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                    };
+
+                    return (
+                      <div key={doc.id} className="p-4 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{doc.name}</span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${statusBadges[doc.status] || statusBadges.pendiente}`}>
+                              {doc.status}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">v{doc.version}</span>
+                          </div>
+
+                          {doc.observation && (
+                            <div className="text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 p-2 rounded-lg border border-rose-200 dark:border-rose-900 mt-1">
+                              <strong>Observación:</strong> {doc.observation}
+                              {doc.responsible_to_fix && <span className="ml-2 font-medium">(Responsable: {doc.responsible_to_fix})</span>}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {doc.file_url ? (
+                            <button
+                              type="button"
+                              onClick={() => doc.file_url && setViewingDoc({ url: doc.file_url, title: doc.name })}
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                              title="Ver documento en modal"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> Ver Archivo
+                            </button>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">Sin archivo adjunto</span>
+                          )}
+
+                          {/* Botones de Mayorista para Revisión */}
+                          {isMayorista && (
+                            <>
+                              <button
+                                onClick={() => handleOpenObserveModal(doc)}
+                                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-xs font-semibold rounded-lg inline-flex items-center gap-1 cursor-pointer"
+                              >
+                                <AlertTriangle className="w-3.5 h-3.5" /> Observar
+                              </button>
+
+                              <button
+                                onClick={() => handleApproveDocument(doc)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg inline-flex items-center gap-1 cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" /> Aprobar
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
         )}
