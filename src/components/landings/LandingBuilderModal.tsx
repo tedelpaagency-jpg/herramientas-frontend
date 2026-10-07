@@ -41,6 +41,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
   const [courseIds, setCourseIds] = useState<number[]>([]);
   const [termsAndConditions, setTermsAndConditions] = useState<string>('');
   const [privacyPolicy, setPrivacyPolicy] = useState<string>('');
+  const [sendCredentials, setSendCredentials] = useState<boolean>(true);
+  const [credentialTemplateId, setCredentialTemplateId] = useState<number | null>(null);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({
     enabled: false,
     currency: 'USD',
@@ -103,6 +105,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
         setCourseIds(landing.course_ids || []);
         setTermsAndConditions(landing.terms_and_conditions || '');
         setPrivacyPolicy(landing.privacy_policy || '');
+        setSendCredentials(landing.send_credentials !== undefined ? Boolean(landing.send_credentials) : ((landing.form_schema as any)?.send_credentials !== false));
+        setCredentialTemplateId(landing.credential_template_id || (landing.form_schema as any)?.credential_template_id || null);
 
         const initialPayment = landing.payment_config || { enabled: false, currency: 'USD', amount: 0, product_name: '' };
         const initialFormSchema = landing.form_schema || {
@@ -190,8 +194,14 @@ export const LandingBuilderModal: React.FC<Props> = ({
         privacy_policy: privacyPolicy,
         payment_config: paymentConfig,
         builder_schema: builderSchema,
-        form_schema: formSchema,
+        form_schema: {
+          ...formSchema,
+          send_credentials: sendCredentials,
+          credential_template_id: credentialTemplateId,
+        },
         stripe_appearance: activeStripeAppearance,
+        send_credentials: sendCredentials,
+        credential_template_id: credentialTemplateId,
       };
 
       if (landing && landing.id) {
@@ -443,6 +453,10 @@ export const LandingBuilderModal: React.FC<Props> = ({
               onTermsAndConditionsChange={setTermsAndConditions}
               privacyPolicy={privacyPolicy}
               onPrivacyPolicyChange={setPrivacyPolicy}
+              sendCredentials={sendCredentials}
+              onSendCredentialsChange={setSendCredentials}
+              credentialTemplateId={credentialTemplateId}
+              onCredentialTemplateIdChange={setCredentialTemplateId}
             />
           )}
 

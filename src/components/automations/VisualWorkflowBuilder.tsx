@@ -78,6 +78,9 @@ const SHORTCODES = [
   { tag: '{agent_name}', label: 'Asesor' },
   { tag: '{agency_name}', label: 'Agencia' },
   { tag: '{stage_name}', label: 'Etapa' },
+  { tag: '{user_email}', label: 'Usuario Creado' },
+  { tag: '{user_password}', label: 'Contraseña Acceso' },
+  { tag: '{login_url}', label: 'Enlace Login' },
 ];
 
 export default function VisualWorkflowBuilder({
@@ -1153,14 +1156,50 @@ export default function VisualWorkflowBuilder({
                             </div>
                           </div>
 
-                          <div className="space-y-1">
-                            <label className="block text-slate-700 dark:text-slate-300 font-bold uppercase">Cuerpo / Plantilla HTML del Correo:</label>
-                            <textarea
-                              rows={6}
-                              value={selectedNode.config.body || ''}
-                              onChange={(e) => updateSelectedNodeConfig('body', e.target.value)}
-                              className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-[11px] leading-relaxed"
-                            />
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label className="block text-slate-700 dark:text-slate-300 font-bold uppercase text-[11px]">
+                                Contenido del Correo:
+                              </label>
+                              <span className="text-[10px] text-slate-400 font-medium">Desde Plantillas / Email</span>
+                            </div>
+
+                            {selectedNode.config.templateId ? (
+                              <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                                    <span>Plantilla Oficial de Email Vinculada</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateSelectedNodeConfig('templateId', '')}
+                                    className="text-[10px] text-red-500 hover:text-red-700 font-semibold underline cursor-pointer"
+                                  >
+                                    Desvincular
+                                  </button>
+                                </div>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                  El diseño visual y maquetación HTML de este correo se administra exclusivamente desde el módulo de <strong>Email & Marketing</strong>. El workflow enviará el diseño oficial sustituyendo las variables dinámicas del lead.
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="space-y-1.5">
+                                <p className="text-[11px] text-slate-400">
+                                  Mensaje de texto (o vincula una plantilla prediseñada arriba):
+                                </p>
+                                <textarea
+                                  rows={5}
+                                  placeholder="Escribe el mensaje del correo aquí..."
+                                  value={selectedNode.config.body || ''}
+                                  onChange={(e) => updateSelectedNodeConfig('body', e.target.value)}
+                                  className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs leading-relaxed focus:outline-none focus:border-indigo-500"
+                                />
+                                <div className="text-[10px] text-slate-400 italic">
+                                  Nota: No se edita código HTML en el workflow. Para plantillas con diseño HTML profesional, selecciónalas desde el desplegable de Email & Marketing superior.
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

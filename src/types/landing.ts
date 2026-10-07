@@ -89,6 +89,8 @@ export interface FormSchema {
   steps?: FormStepSchema[];
   styles?: FormStyleConfig;
   stripe_appearance?: StripeAppearanceConfig;
+  send_credentials?: boolean;
+  credential_template_id?: number | null;
 }
 
 export interface BuilderSchemaBlock {
@@ -147,6 +149,8 @@ export interface LandingTemplate {
   form_schema?: FormSchema | null;
   terms_and_conditions?: string | null;
   privacy_policy?: string | null;
+  send_credentials?: boolean;
+  credential_template_id?: number | null;
   encoded_id?: string;
   public_url?: string;
   events?: any[];
@@ -182,5 +186,6 @@ export interface LandingAvailableResources {
     status?: boolean | number;
     white_label_id?: number | null;
   }>;
+  credential_templates?: Array<{ id: number; name: string; subject?: string }>;
 }
 

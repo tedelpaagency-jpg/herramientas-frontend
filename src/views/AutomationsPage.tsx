@@ -50,6 +50,9 @@ const AVAILABLE_SHORTCODES = [
   { tag: '{agent_name}', label: 'Asesor Asignado', example: 'Carlos Rodríguez' },
   { tag: '{agency_name}', label: 'Nombre de Agencia', example: 'Agencia Central' },
   { tag: '{stage_name}', label: 'Etapa Comercial', example: 'Negociación / Cotización' },
+  { tag: '{user_email}', label: 'Usuario / Email de Acceso', example: 'admin@nuevaagencia.com' },
+  { tag: '{user_password}', label: 'Contraseña de Acceso', example: 'Acceso@2026' },
+  { tag: '{login_url}', label: 'URL de Inicio de Sesión', example: 'https://app.plataforma.com/login' },
 ];
 
 export default function AutomationsPage() {
@@ -92,7 +95,7 @@ export default function AutomationsPage() {
   const [customRecipientEmail, setCustomRecipientEmail] = useState<string>('');
   const [emailSubject, setEmailSubject] = useState<string>('');
   const [emailBody, setEmailBody] = useState<string>('');
-  const [emailEditorMode, setEmailEditorMode] = useState<'wysiwyg' | 'html'>('wysiwyg');
+  const [selectedEmailTemplateId, setSelectedEmailTemplateId] = useState<number | ''>('');
 
   const handleTestWebhookInModal = async () => {
     if (!webhookUrl || !webhookUrl.startsWith('http')) {
@@ -259,14 +262,14 @@ export default function AutomationsPage() {
           const parsed = JSON.parse(auto.action_value);
           setEmailSubject(parsed.subject || '');
           setEmailBody(parsed.body || '');
-          setEmailEditorMode(parsed.editor_mode || 'wysiwyg');
+          setSelectedEmailTemplateId(parsed.template_id || parsed.email_template_id || auto.email_template_id || '');
           setRecipientType(parsed.recipient_type || (auto.action_type === 'send_lead_email' ? 'lead' : 'custom'));
           setCustomRecipientEmail(parsed.custom_email || auto.notification_email || '');
           setSelectedUserId(parsed.user_id || '');
         } else {
           setEmailSubject('Notificación de Automatización');
           setEmailBody(auto.action_value || '');
-          setEmailEditorMode('wysiwyg');
+          setSelectedEmailTemplateId(auto.email_template_id || '');
           setRecipientType(auto.action_type === 'send_lead_email' ? 'lead' : auto.notification_email ? 'custom' : 'lead');
           setCustomRecipientEmail(auto.notification_email || '');
           setSelectedUserId('');
@@ -274,7 +277,7 @@ export default function AutomationsPage() {
       } catch {
         setEmailSubject('Notificación de Automatización');
         setEmailBody(auto.action_value || '');
-        setEmailEditorMode('wysiwyg');
+        setSelectedEmailTemplateId(auto.email_template_id || '');
         setRecipientType('lead');
         setCustomRecipientEmail('');
         setSelectedUserId('');
@@ -303,7 +306,10 @@ export default function AutomationsPage() {
       .replace(/\{lead_company\}/g, testLead.company)
       .replace(/\{agent_name\}/g, testLead.agent)
       .replace(/\{agency_name\}/g, testLead.agency)
-      .replace(/\{stage_name\}/g, testLead.stage);
+      .replace(/\{stage_name\}/g, testLead.stage)
+      .replace(/\{user_email\}|\{usuario\}|\{email\}/g, testLead.email)
+      .replace(/\{user_password\}|\{password\}|\{contraseña\}|\{clave\}/g, 'Acceso@2026')
+      .replace(/\{login_url\}|\{url_login\}/g, typeof window !== 'undefined' ? `${window.location.origin}/login` : 'https://app.plataforma.com/login');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -327,7 +333,8 @@ export default function AutomationsPage() {
         const emailConfig = {
           subject: emailSubject,
           body: emailBody,
-          editor_mode: emailEditorMode,
+          template_id: selectedEmailTemplateId ? Number(selectedEmailTemplateId) : undefined,
+          email_template_id: selectedEmailTemplateId ? Number(selectedEmailTemplateId) : undefined,
           recipient_type: recipientType,
           custom_email: customRecipientEmail,
           user_id: selectedUserId,
@@ -357,6 +364,7 @@ export default function AutomationsPage() {
         action_type: actionType,
         action_value: finalActionValue || undefined,
         notification_email: finalNotificationEmail || undefined,
+        email_template_id: selectedEmailTemplateId ? Number(selectedEmailTemplateId) : undefined,
       };
 
       if (editingAutomation) {
@@ -920,19 +928,22 @@ export default function AutomationsPage() {
                           <span className="text-[10px] text-slate-400 font-medium">Plantillas de Marketing</span>
                         </div>
                         <select
-                          value=""
+                          value={selectedEmailTemplateId || ''}
                           onChange={(e) => {
                             const id = Number(e.target.value);
                             const tpl = meta.email_templates?.find((t) => t.id === id);
                             if (tpl) {
+                              setSelectedEmailTemplateId(tpl.id);
                               if (tpl.subject) setEmailSubject(tpl.subject);
                               if (tpl.body_html) setEmailBody(tpl.body_html);
-                              toast.success(`Plantilla "${tpl.name}" cargada correctamente`);
+                              toast.success(`Plantilla "${tpl.name}" vinculada correctamente`);
+                            } else {
+                              setSelectedEmailTemplateId('');
                             }
                           }}
                           className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
                         >
-                          <option value="">-- Seleccionar una Plantilla Guardada para Rellenar Asunto y Contenido --</option>
+                          <option value="">-- Seleccionar una Plantilla Guardada de Email --</option>
                           {meta.email_templates.map((tpl) => (
                             <option key={tpl.id} value={tpl.id}>
                               {tpl.name} {tpl.category ? `(${tpl.category})` : ''} - {tpl.subject?.slice(0, 40)}
@@ -1068,56 +1079,43 @@ export default function AutomationsPage() {
                       </div>
                     </div>
 
-                    {/* Editor Mode Switcher (Texto Enriquecido vs HTML) */}
+                    {/* Contenido del Mensaje */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="font-bold text-slate-700 dark:text-slate-300">Cuerpo del Mensaje *</label>
-                        <div className="flex items-center bg-slate-200 dark:bg-slate-800 p-0.5 rounded-xl text-[11px]">
-                          <button
-                            type="button"
-                            onClick={() => setEmailEditorMode('wysiwyg')}
-                            className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                              emailEditorMode === 'wysiwyg'
-                                ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-xs'
-                                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                            }`}
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>Texto Enriquecido</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEmailEditorMode('html')}
-                            className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                              emailEditorMode === 'html'
-                                ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-xs'
-                                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                            }`}
-                          >
-                            <Code className="w-3.5 h-3.5" />
-                            <span>HTML Puro</span>
-                          </button>
-                        </div>
+                        <span className="text-[11px] text-slate-400 font-medium">Desde Plantillas / Email</span>
                       </div>
 
-                      {emailEditorMode === 'wysiwyg' ? (
-                        <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
-                          <ReactQuill
-                            theme="snow"
-                            value={emailBody}
-                            onChange={setEmailBody}
-                            className="h-44 mb-12"
-                          />
+                      {selectedEmailTemplateId ? (
+                        <div className="p-3 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                              <Sparkles className="w-4 h-4 text-emerald-600" />
+                              <span>Plantilla Vinculada: {meta?.email_templates?.find((t) => t.id === Number(selectedEmailTemplateId))?.name || 'Plantilla de Email'}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedEmailTemplateId('')}
+                              className="text-[11px] text-red-500 hover:text-red-700 font-semibold underline cursor-pointer"
+                            >
+                              Desvincular
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                            ℹ️ El diseño visual y maquetación HTML de este correo se administra exclusivamente desde el módulo de <strong>Email & Marketing</strong>. La automatización aplicará el diseño oficial y sustituirá los shortcodes dinámicos.
+                          </p>
                         </div>
-                      ) : (
-                        <textarea
-                          rows={8}
+                      ) : null}
+
+                      <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
+                        <ReactQuill
+                          theme="snow"
                           value={emailBody}
-                          onChange={(e) => setEmailBody(e.target.value)}
-                          placeholder="<div style='font-family: Arial...'>Contenido HTML Puro aquí</div>"
-                          className="w-full p-3 font-mono text-xs bg-slate-900 text-emerald-400 border border-slate-800 rounded-xl focus:outline-none"
+                          onChange={setEmailBody}
+                          placeholder="Escribe el mensaje o selecciona una plantilla predeterminada arriba..."
+                          className="h-44 mb-12"
                         />
-                      )}
+                      </div>
                     </div>
                   </div>
                 )}

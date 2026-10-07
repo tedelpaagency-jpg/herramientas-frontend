@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { FormSchema, FormFieldSchema, FormStepSchema, FormStyleConfig, FormLayoutType, ActionType, LandingAvailableResources } from '../../types/landing';
-import { Plus, Trash2, MoveUp, MoveDown, Layers, CheckSquare, ListOrdered, BookOpen, GitBranch, Palette, Sparkles, Sliders, Code, FileText, CreditCard, Award, Key, Eye, EyeOff } from 'lucide-react';
+import { Plus, Trash2, MoveUp, MoveDown, Layers, CheckSquare, ListOrdered, BookOpen, GitBranch, Palette, Sparkles, Sliders, Code, FileText, CreditCard, Award, Key, Eye, EyeOff, Mail } from 'lucide-react';
 import 'react-quill/dist/quill.snow.css';
 import { StripeAppearanceEditor } from './StripeAppearanceEditor';
 
@@ -29,6 +29,10 @@ interface Props {
   onTermsAndConditionsChange?: (text: string) => void;
   privacyPolicy?: string;
   onPrivacyPolicyChange?: (text: string) => void;
+  sendCredentials?: boolean;
+  onSendCredentialsChange?: (send: boolean) => void;
+  credentialTemplateId?: number | null;
+  onCredentialTemplateIdChange?: (id: number | null) => void;
 }
 
 export const FormSchemaEditor: React.FC<Props> = ({
@@ -51,6 +55,10 @@ export const FormSchemaEditor: React.FC<Props> = ({
   onTermsAndConditionsChange,
   privacyPolicy,
   onPrivacyPolicyChange,
+  sendCredentials = true,
+  onSendCredentialsChange,
+  credentialTemplateId,
+  onCredentialTemplateIdChange,
 }) => {
   const [activeTab, setActiveTab] = useState<'fields' | 'steps' | 'styles' | 'stripe' | 'automation'>('fields');
   const [termsEditorMode, setTermsEditorMode] = useState<'rich' | 'code'>('rich');
@@ -945,6 +953,55 @@ export const FormSchemaEditor: React.FC<Props> = ({
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Enviar Credenciales del Usuario Creado */}
+          {actionType === 'register_agency' && (
+            <div className="p-4 bg-blue-950/20 border border-blue-800/50 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-blue-300 font-bold text-xs">
+                  <Mail className="w-4 h-4 text-blue-400" /> Envío Automático de Credenciales de Acceso
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendCredentials !== false}
+                    onChange={(e) => onSendCredentialsChange && onSendCredentialsChange(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                  <span className="ml-2 text-[11px] font-semibold text-slate-300">
+                    {sendCredentials !== false ? 'Habilitado' : 'Deshabilitado'}
+                  </span>
+                </label>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Al enviar el formulario y crearse la agencia en el lead, se enviará automáticamente un correo electrónico con las credenciales de acceso (usuario, contraseña y enlace de login) al nuevo administrador.
+              </p>
+
+              {sendCredentials !== false && (
+                <div className="space-y-1.5 pt-1">
+                  <label className="block text-[11px] font-bold text-slate-300">
+                    Plantilla de Correo para Credenciales:
+                  </label>
+                  <select
+                    value={credentialTemplateId || ''}
+                    onChange={(e) => onCredentialTemplateIdChange && onCredentialTemplateIdChange(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 transition"
+                  >
+                    <option value="">-- Plantilla Predeterminada de Bienvenida --</option>
+                    {(resources?.credential_templates || []).map((ct) => (
+                      <option key={ct.id} value={ct.id}>
+                        {ct.name} {ct.subject ? `(${ct.subject})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-slate-500 italic">
+                    Puedes diseñar y administrar tus plantillas de credenciales en el módulo de Marketing & Campañas.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
