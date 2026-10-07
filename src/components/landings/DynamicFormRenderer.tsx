@@ -132,6 +132,8 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       if (stripePublishableKey) {
         if (!isStripeLoaded) {
           newErrors['stripe_card'] = 'La pasarela de pago segura aún se está inicializando. Por favor espera un momento.';
+        } else if (!isCardComplete) {
+          newErrors['stripe_card'] = 'El número de tarjeta está incompleto. Recuerda que las tarjetas bancarias tienen 16 dígitos completos.';
         }
       } else {
         if (!formData['card_number'] || formData['card_number'].replace(/\s/g, '').length < 15) {
@@ -179,11 +181,16 @@ export const DynamicFormRenderer: React.FC<Props> = ({
     e.preventDefault();
     if (!validateCurrentFields()) return;
 
-    if (paymentConfig?.enabled && stripePublishableKey && stripeInstanceRef.current && cardElementRef.current) {
+    if (paymentConfig?.enabled && stripePublishableKey && stripeInstanceRef.current) {
+      const cardElement = elementsInstanceRef.current?.getElement('card') || cardElementRef.current;
+      if (!cardElement) {
+        setStripeElementError('El formulario de tarjeta no está listo aún. Por favor recarga la página.');
+        return;
+      }
       setIsProcessingPayment(true);
       setStripeElementError(null);
       try {
-        const { token, error } = await stripeInstanceRef.current.createToken(cardElementRef.current, {
+        const { token, error } = await stripeInstanceRef.current.createToken(cardElement, {
           name: formData['card_holder_name'] || formData['name'] || '',
         });
 
@@ -359,6 +366,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       }
     : {};
 
+  // Serialized key to avoid re-triggering effect on every render
+  const stripeAppearanceKey = JSON.stringify(effectiveStripeAppearance || {});
+
   // Lifecycle & mounting of official Stripe Elements (card iframe)
   useEffect(() => {
     if (!paymentConfig?.enabled || !stripePublishableKey || !isLastStep) return;
@@ -404,16 +414,16 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           },
         };
 
-        // Si el elemento ya existe, actualizamos sus estilos según las reglas de Stripe de forma dinámica
-        if (cardElementRef.current) {
+        // Si el elemento ya existe, actualizamos sus estilos según las reglas de Stripe de forma dinámica sin destruir el elemento
+        const existingCard = elementsInstanceRef.current.getElement('card') || cardElementRef.current;
+        if (existingCard) {
           try {
-            cardElementRef.current.update({ style: cardStyle });
+            existingCard.update({ style: cardStyle });
+            cardElementRef.current = existingCard;
+            setIsStripeLoaded(true);
             return;
           } catch (e) {
-            try {
-              cardElementRef.current.unmount();
-            } catch (_) {}
-            cardElementRef.current = null;
+            return;
           }
         }
 
@@ -431,6 +441,10 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               cardElementRef.current = card;
               setIsStripeLoaded(true);
 
+              card.on('ready', () => {
+                setIsStripeLoaded(true);
+              });
+
               card.on('change', (event: any) => {
                 setIsCardComplete(Boolean(event.complete));
                 if (event.error) {
@@ -438,12 +452,14 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 } else {
                   setStripeElementError(null);
                 }
-                setErrors((prev) => {
-                  if (!prev['stripe_card']) return prev;
-                  const updated = { ...prev };
-                  delete updated['stripe_card'];
-                  return updated;
-                });
+                if (event.complete) {
+                  setErrors((prev) => {
+                    if (!prev['stripe_card']) return prev;
+                    const updated = { ...prev };
+                    delete updated['stripe_card'];
+                    return updated;
+                  });
+                }
               });
 
               card.on('focus', () => setIsCardFocused(true));
@@ -466,7 +482,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       isMounted = false;
       if (timerId) clearTimeout(timerId);
     };
-  }, [paymentConfig?.enabled, stripePublishableKey, isLastStep, effectiveStripeAppearance, isDark]);
+  }, [paymentConfig?.enabled, stripePublishableKey, isLastStep, stripeAppearanceKey, isDark]);
 
   useEffect(() => {
     return () => {
