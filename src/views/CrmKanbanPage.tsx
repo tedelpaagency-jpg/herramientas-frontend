@@ -862,8 +862,14 @@ export const CrmKanbanPage: React.FC = () => {
         <div
           ref={boardRef}
           onWheel={(e) => {
-            if (boardRef.current && e.deltaY !== 0) {
-              boardRef.current.scrollLeft += e.deltaY * 1.3;
+            // Si el scroll proviene de la lista interna de leads o elementos con scroll vertical, no interceptar
+            const target = e.target as HTMLElement | null;
+            if (target?.closest('.overflow-y-auto')) {
+              return;
+            }
+            // Solo convertir desplazamiento de rueda a horizontal cuando se presiona Shift (estándar en web)
+            if (e.shiftKey && e.deltaY !== 0 && boardRef.current) {
+              boardRef.current.scrollLeft += e.deltaY;
             }
           }}
           className="flex gap-4 overflow-x-auto pb-6 custom-scrollbar min-h-[70vh]"
@@ -1081,7 +1087,15 @@ export const CrmKanbanPage: React.FC = () => {
                 </div>
 
                 {/* Pipeline Cards Scroll Container */}
-                <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+                <div
+                  className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar"
+                  style={{ overscrollBehaviorY: 'contain' }}
+                  onWheel={(e) => {
+                    // Detener propagación para que el scroll vertical de los leads
+                    // no mueva horizontalmente el tablero del embudo
+                    e.stopPropagation();
+                  }}
+                >
                   {itemsInStage.length === 0 ? (
                     <div className="p-6 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-slate-200/80 dark:border-slate-800 rounded-xl font-medium space-y-2 bg-white/40 dark:bg-slate-900/40">
                       <p>Sin oportunidades en esta etapa</p>

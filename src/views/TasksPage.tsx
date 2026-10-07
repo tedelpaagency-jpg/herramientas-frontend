@@ -942,7 +942,13 @@ export default function TasksPage() {
                     </div>
 
                     {/* Task Cards Container */}
-                    <div className="flex-1 space-y-3 overflow-y-auto max-h-[680px] pr-1">
+                    <div
+                      className="flex-1 space-y-3 overflow-y-auto max-h-[680px] pr-1"
+                      style={{ overscrollBehaviorY: 'contain' }}
+                      onWheel={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
                       {stageTasks.length === 0 ? (
                         <div className="p-6 text-center text-slate-400 font-medium text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white/50 dark:bg-slate-900/30">
                           Sin tareas en esta etapa
