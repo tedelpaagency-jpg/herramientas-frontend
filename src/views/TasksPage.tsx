@@ -684,6 +684,21 @@ export default function TasksPage() {
 
               <div className="h-6 w-px bg-slate-200 dark:bg-slate-700/80 mx-1 hidden sm:block" />
 
+              {/* Create Workspace Button directly in Kanban header */}
+              <button
+                onClick={() => {
+                  setWsName('');
+                  setWsDescription('');
+                  setWsColor('#3B82F6');
+                  setIsAddWorkspaceOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 active:scale-95 shadow-2xs"
+                title="Crear un nuevo workspace de tareas"
+              >
+                <FolderKanban className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>Nuevo Workspace</span>
+              </button>
+
               {/* Create Stage Button */}
               <button
                 onClick={() => setIsAddStageOpen(true)}
@@ -746,6 +761,21 @@ export default function TasksPage() {
                 </button>
               );
             })}
+
+            {/* Quick add workspace button directly in tabs */}
+            <button
+              onClick={() => {
+                setWsName('');
+                setWsDescription('');
+                setWsColor('#3B82F6');
+                setIsAddWorkspaceOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 border border-dashed border-blue-300 dark:border-blue-700 transition-all flex-shrink-0 active:scale-95 shadow-2xs"
+              title="Crear nuevo workspace de tareas"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nuevo Workspace</span>
+            </button>
           </div>
 
           {/* Filter Toolbar */}

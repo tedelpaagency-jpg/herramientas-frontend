@@ -130,8 +130,8 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       }
 
       if (stripePublishableKey) {
-        if (!isCardComplete) {
-          newErrors['stripe_card'] = 'Por favor completa todos los datos de tu tarjeta (número, fecha y CVC)';
+        if (!isStripeLoaded) {
+          newErrors['stripe_card'] = 'La pasarela de pago segura aún se está inicializando. Por favor espera un momento.';
         }
       } else {
         if (!formData['card_number'] || formData['card_number'].replace(/\s/g, '').length < 15) {
@@ -438,6 +438,12 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 } else {
                   setStripeElementError(null);
                 }
+                setErrors((prev) => {
+                  if (!prev['stripe_card']) return prev;
+                  const updated = { ...prev };
+                  delete updated['stripe_card'];
+                  return updated;
+                });
               });
 
               card.on('focus', () => setIsCardFocused(true));
@@ -792,7 +798,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                   className={`${labelClasses} block w-full text-left mb-1`}
                   style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
                 >
-                  Datos de la Tarjeta (Iframe Seguro Stripe) <span className="text-red-500">*</span>
+                  Tarjeta de Crédito o Débito (16 dígitos) <span className="text-red-500">*</span>
                 </label>
                 <div
                   className="w-full transition-all duration-200"
