@@ -3,26 +3,42 @@ import { FormSchema, FormFieldSchema, PaymentConfig, StripeAppearanceConfig } fr
 import { isColorDark } from '../../utils/stripeAppearance';
 import { ChevronRight, ChevronLeft, Check, Send, Loader2, CreditCard, Lock, ShieldCheck } from 'lucide-react';
 
-// Carga asíncrona del script oficial de Stripe.js v3
-const loadStripeJs = (): Promise<any> => {
+// Carga asíncrona del script oficial de Stripe.js v3 en el documento y ventana del contenedor
+const loadStripeJs = (targetDoc?: Document | null, targetWin?: any): Promise<any> => {
   return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined') return resolve(null);
-    if ((window as any).Stripe) {
-      return resolve((window as any).Stripe);
+    const win = targetWin || (typeof window !== 'undefined' ? window : null);
+    const doc = targetDoc || (win?.document || (typeof document !== 'undefined' ? document : null));
+    if (!win || !doc) return resolve(null);
+
+    if (win.Stripe) {
+      return resolve(win.Stripe);
     }
-    const existing = document.getElementById('stripe-js-script') as HTMLScriptElement | null;
+
+    // Fallback: si window global ya tiene Stripe cargado, enlazarlo a targetWin
+    if (typeof window !== 'undefined' && (window as any).Stripe && !win.Stripe) {
+      win.Stripe = (window as any).Stripe;
+      return resolve(win.Stripe);
+    }
+
+    const existing = (doc.querySelector('script[src*="js.stripe.com/v3"]') as HTMLScriptElement | null) ||
+      (doc.getElementById('stripe-js-script') as HTMLScriptElement | null);
     if (existing) {
-      existing.addEventListener('load', () => resolve((window as any).Stripe));
+      if (win.Stripe) return resolve(win.Stripe);
+      existing.addEventListener('load', () => resolve(win.Stripe));
       existing.addEventListener('error', (err) => reject(err));
+      setTimeout(() => {
+        if (win.Stripe) resolve(win.Stripe);
+      }, 300);
       return;
     }
-    const script = document.createElement('script');
+
+    const script = doc.createElement('script');
     script.id = 'stripe-js-script';
     script.src = 'https://js.stripe.com/v3/';
     script.async = true;
-    script.onload = () => resolve((window as any).Stripe);
+    script.onload = () => resolve(win.Stripe);
     script.onerror = (e) => reject(e);
-    document.body.appendChild(script);
+    (doc.head || doc.body).appendChild(script);
   });
 };
 
@@ -376,12 +392,19 @@ export const DynamicFormRenderer: React.FC<Props> = ({
     let isMounted = true;
     let timerId: any = null;
 
-    loadStripeJs()
+    const targetDoc = cardContainerRef.current?.ownerDocument || (typeof document !== 'undefined' ? document : null);
+    const targetWin = targetDoc?.defaultView || (typeof window !== 'undefined' ? window : null);
+
+    loadStripeJs(targetDoc, targetWin)
       .then((StripeClass) => {
         if (!isMounted || !StripeClass) return;
 
-        if (!stripeInstanceRef.current) {
+        // Inicializar Stripe en el contexto de la ventana donde reside el contenedor DOM
+        if (!stripeInstanceRef.current || (stripeInstanceRef.current as any)._targetWin !== targetWin) {
           stripeInstanceRef.current = StripeClass(stripePublishableKey);
+          (stripeInstanceRef.current as any)._targetWin = targetWin;
+          elementsInstanceRef.current = null;
+          cardElementRef.current = null;
         }
         const stripe = stripeInstanceRef.current;
 
@@ -439,7 +462,6 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               cardContainerRef.current.innerHTML = '';
               card.mount(cardContainerRef.current);
               cardElementRef.current = card;
-              setIsStripeLoaded(true);
 
               card.on('ready', () => {
                 setIsStripeLoaded(true);

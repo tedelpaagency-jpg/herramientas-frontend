@@ -108,6 +108,13 @@ function CustomHtmlIframeContainer({
       setIsStyleReady(true);
     }
 
+    // Ensure Stripe.js is loaded in the iframe if payment is enabled
+    if (paymentConfig?.enabled && !doc.querySelector('script[src*="js.stripe.com/v3"]')) {
+      const stripeScript = doc.createElement('script');
+      stripeScript.src = 'https://js.stripe.com/v3/';
+      doc.head.appendChild(stripeScript);
+    }
+
     const updateHeight = () => {
       if (!doc || !doc.body) return;
       const height = Math.max(
@@ -175,7 +182,6 @@ function CustomHtmlIframeContainer({
         title="Custom Landing Page"
         onLoad={setupIframe}
         className="w-full border-0 block overflow-hidden"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         style={{ height: `${iframeHeight}px`, minHeight: '100vh', width: '100%' }}
       />
       {mountTarget && createPortal(
