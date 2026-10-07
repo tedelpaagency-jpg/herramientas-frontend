@@ -284,9 +284,12 @@ export default function VisualWorkflowBuilder({
         total_steps: nodes.length,
       });
 
+      const selectedWs = workspaces.find((w) => w.id === Number(workspaceId));
+
       const payload = {
         name,
         workspace_id: workspaceId || null,
+        agency_id: selectedWs?.agency_id || undefined,
         stage_id: triggerNode.stageId || null,
         trigger_type: triggerNode.type,
         condition_type: triggerNode.conditionType,
