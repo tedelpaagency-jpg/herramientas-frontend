@@ -46,6 +46,7 @@ export interface PipelineAutomation {
   workspace_id?: number;
   stage_id?: number;
   email_template_id?: number | null;
+  credential_template_id?: number | null;
   name: string;
   trigger_type: string;
   condition_type: string;
@@ -77,6 +78,7 @@ export interface AutomationMeta {
   workspaces?: AutomationWorkspace[];
   agencies?: AutomationAgency[];
   email_templates?: AutomationEmailTemplate[];
+  credential_templates?: AutomationEmailTemplate[];
 }
 
 export const automationService = {

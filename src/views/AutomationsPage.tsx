@@ -41,20 +41,6 @@ import VisualWorkflowBuilder from '../components/automations/VisualWorkflowBuild
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
 
-// Shortcodes available for email automations
-const AVAILABLE_SHORTCODES = [
-  { tag: '{lead_name}', label: 'Nombre del Lead', example: 'Juan Pérez' },
-  { tag: '{lead_email}', label: 'Correo del Lead', example: 'juan.perez@ejemplo.com' },
-  { tag: '{lead_phone}', label: 'Teléfono', example: '+52 55 1234 5678' },
-  { tag: '{lead_company}', label: 'Empresa', example: 'Corporativo SANTUN' },
-  { tag: '{agent_name}', label: 'Asesor Asignado', example: 'Carlos Rodríguez' },
-  { tag: '{agency_name}', label: 'Nombre de Agencia', example: 'Agencia Central' },
-  { tag: '{stage_name}', label: 'Etapa Comercial', example: 'Negociación / Cotización' },
-  { tag: '{user_email}', label: 'Usuario / Email de Acceso', example: 'admin@nuevaagencia.com' },
-  { tag: '{user_password}', label: 'Contraseña de Acceso', example: 'Acceso@2026' },
-  { tag: '{login_url}', label: 'URL de Inicio de Sesión', example: 'https://app.plataforma.com/login' },
-];
-
 export default function AutomationsPage() {
   const [automations, setAutomations] = useState<PipelineAutomation[]>([]);
   const [meta, setMeta] = useState<AutomationMeta | null>(null);
@@ -96,6 +82,7 @@ export default function AutomationsPage() {
   const [emailSubject, setEmailSubject] = useState<string>('');
   const [emailBody, setEmailBody] = useState<string>('');
   const [selectedEmailTemplateId, setSelectedEmailTemplateId] = useState<number | ''>('');
+  const [selectedTemplateType, setSelectedTemplateType] = useState<'email' | 'credential' | ''>('');
 
   const handleTestWebhookInModal = async () => {
     if (!webhookUrl || !webhookUrl.startsWith('http')) {
@@ -262,14 +249,20 @@ export default function AutomationsPage() {
           const parsed = JSON.parse(auto.action_value);
           setEmailSubject(parsed.subject || '');
           setEmailBody(parsed.body || '');
-          setSelectedEmailTemplateId(parsed.template_id || parsed.email_template_id || auto.email_template_id || '');
+          const tType = parsed.template_type || (parsed.credential_template_id ? 'credential' : 'email');
+          const tId = parsed.credential_template_id || auto.credential_template_id || parsed.template_id || parsed.email_template_id || auto.email_template_id || '';
+          setSelectedEmailTemplateId(tId);
+          setSelectedTemplateType(tId ? (tType as 'credential' | 'email') : '');
           setRecipientType(parsed.recipient_type || (auto.action_type === 'send_lead_email' ? 'lead' : 'custom'));
           setCustomRecipientEmail(parsed.custom_email || auto.notification_email || '');
           setSelectedUserId(parsed.user_id || '');
         } else {
           setEmailSubject('Notificación de Automatización');
           setEmailBody(auto.action_value || '');
-          setSelectedEmailTemplateId(auto.email_template_id || '');
+          const tId = auto.credential_template_id || auto.email_template_id || '';
+          const tType = auto.credential_template_id ? 'credential' : 'email';
+          setSelectedEmailTemplateId(tId);
+          setSelectedTemplateType(tId ? tType : '');
           setRecipientType(auto.action_type === 'send_lead_email' ? 'lead' : auto.notification_email ? 'custom' : 'lead');
           setCustomRecipientEmail(auto.notification_email || '');
           setSelectedUserId('');
@@ -277,7 +270,10 @@ export default function AutomationsPage() {
       } catch {
         setEmailSubject('Notificación de Automatización');
         setEmailBody(auto.action_value || '');
-        setSelectedEmailTemplateId(auto.email_template_id || '');
+        const tId = auto.credential_template_id || auto.email_template_id || '';
+        const tType = auto.credential_template_id ? 'credential' : 'email';
+        setSelectedEmailTemplateId(tId);
+        setSelectedTemplateType(tId ? tType : '');
         setRecipientType('lead');
         setCustomRecipientEmail('');
         setSelectedUserId('');
@@ -287,14 +283,6 @@ export default function AutomationsPage() {
     }
 
     setIsModalOpen(true);
-  };
-
-  const handleInsertShortcode = (tag: string, field: 'subject' | 'body') => {
-    if (field === 'subject') {
-      setEmailSubject((prev) => prev + ` ${tag}`);
-    } else {
-      setEmailBody((prev) => prev + ` ${tag} `);
-    }
   };
 
   const getSubstitutedContent = (text: string) => {
@@ -334,7 +322,9 @@ export default function AutomationsPage() {
           subject: emailSubject,
           body: emailBody,
           template_id: selectedEmailTemplateId ? Number(selectedEmailTemplateId) : undefined,
-          email_template_id: selectedEmailTemplateId ? Number(selectedEmailTemplateId) : undefined,
+          template_type: selectedTemplateType || (selectedEmailTemplateId ? 'email' : undefined),
+          email_template_id: selectedTemplateType === 'email' ? Number(selectedEmailTemplateId) : undefined,
+          credential_template_id: selectedTemplateType === 'credential' ? Number(selectedEmailTemplateId) : undefined,
           recipient_type: recipientType,
           custom_email: customRecipientEmail,
           user_id: selectedUserId,
@@ -364,7 +354,8 @@ export default function AutomationsPage() {
         action_type: actionType,
         action_value: finalActionValue || undefined,
         notification_email: finalNotificationEmail || undefined,
-        email_template_id: selectedEmailTemplateId ? Number(selectedEmailTemplateId) : undefined,
+        email_template_id: selectedTemplateType === 'email' ? Number(selectedEmailTemplateId) : null,
+        credential_template_id: selectedTemplateType === 'credential' ? Number(selectedEmailTemplateId) : null,
       };
 
       if (editingAutomation) {
@@ -917,38 +908,68 @@ export default function AutomationsPage() {
                       </div>
                     </div>
 
-                    {/* Saved Email Templates Selector */}
-                    {meta?.email_templates && meta.email_templates.length > 0 && (
+                    {/* Saved Templates Selector (Email & Credentials) */}
+                    {((meta?.email_templates && meta.email_templates.length > 0) || (meta?.credential_templates && meta.credential_templates.length > 0)) && (
                       <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-xl space-y-1.5">
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
                             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Cargar desde Plantillas Guardadas de Email:</span>
+                            <span>Cargar Plantilla Guardada:</span>
                           </label>
-                          <span className="text-[10px] text-slate-400 font-medium">Plantillas de Marketing</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Plantillas de Email y Credenciales</span>
                         </div>
                         <select
-                          value={selectedEmailTemplateId || ''}
+                          value={selectedTemplateType && selectedEmailTemplateId ? `${selectedTemplateType}_${selectedEmailTemplateId}` : ''}
                           onChange={(e) => {
-                            const id = Number(e.target.value);
-                            const tpl = meta.email_templates?.find((t) => t.id === id);
-                            if (tpl) {
-                              setSelectedEmailTemplateId(tpl.id);
-                              if (tpl.subject) setEmailSubject(tpl.subject);
-                              if (tpl.body_html) setEmailBody(tpl.body_html);
-                              toast.success(`Plantilla "${tpl.name}" vinculada correctamente`);
-                            } else {
+                            const val = e.target.value;
+                            if (!val) {
                               setSelectedEmailTemplateId('');
+                              setSelectedTemplateType('');
+                              return;
+                            }
+                            if (val.startsWith('cred_')) {
+                              const id = Number(val.replace('cred_', ''));
+                              const tpl = meta?.credential_templates?.find((t) => t.id === id);
+                              if (tpl) {
+                                setSelectedEmailTemplateId(tpl.id);
+                                setSelectedTemplateType('credential');
+                                if (tpl.subject) setEmailSubject(tpl.subject);
+                                if (tpl.body_html) setEmailBody(tpl.body_html);
+                                toast.success(`Plantilla de credenciales "${tpl.name}" vinculada`);
+                              }
+                            } else if (val.startsWith('email_')) {
+                              const id = Number(val.replace('email_', ''));
+                              const tpl = meta?.email_templates?.find((t) => t.id === id);
+                              if (tpl) {
+                                setSelectedEmailTemplateId(tpl.id);
+                                setSelectedTemplateType('email');
+                                if (tpl.subject) setEmailSubject(tpl.subject);
+                                if (tpl.body_html) setEmailBody(tpl.body_html);
+                                toast.success(`Plantilla de email "${tpl.name}" vinculada`);
+                              }
                             }
                           }}
                           className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
                         >
-                          <option value="">-- Seleccionar una Plantilla Guardada de Email --</option>
-                          {meta.email_templates.map((tpl) => (
-                            <option key={tpl.id} value={tpl.id}>
-                              {tpl.name} {tpl.category ? `(${tpl.category})` : ''} - {tpl.subject?.slice(0, 40)}
-                            </option>
-                          ))}
+                          <option value="">-- Seleccionar una Plantilla Guardada --</option>
+                          {meta?.credential_templates && meta.credential_templates.length > 0 && (
+                            <optgroup label="Plantillas de Credenciales de Acceso">
+                              {meta.credential_templates.map((tpl) => (
+                                <option key={`cred_${tpl.id}`} value={`cred_${tpl.id}`}>
+                                  🔑 {tpl.name} - {tpl.subject?.slice(0, 40)}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                          {meta?.email_templates && meta.email_templates.length > 0 && (
+                            <optgroup label="Plantillas de Email & Marketing">
+                              {meta.email_templates.map((tpl) => (
+                                <option key={`email_${tpl.id}`} value={`email_${tpl.id}`}>
+                                  📧 {tpl.name} {tpl.category ? `(${tpl.category})` : ''} - {tpl.subject?.slice(0, 40)}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
                         </select>
                       </div>
                     )}
@@ -1044,39 +1065,15 @@ export default function AutomationsPage() {
 
                     {/* Email Subject */}
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">Asunto del Correo *</label>
-                        <span className="text-[10px] text-slate-400">Puedes usar shortcodes</span>
-                      </div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300">Asunto del Correo *</label>
                       <input
                         type="text"
                         required
                         value={emailSubject}
                         onChange={(e) => setEmailSubject(e.target.value)}
-                        placeholder="Ej: Notificación para {lead_name}"
+                        placeholder="Ej: Notificación para el cliente"
                         className="w-full px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none"
                       />
-                    </div>
-
-                    {/* Shortcodes Selector Bar */}
-                    <div className="space-y-1.5 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                      <div className="flex items-center gap-1 font-bold text-[11px] text-slate-600 dark:text-slate-400">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Insertar Shortcodes Dinámicos del Lead:</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {AVAILABLE_SHORTCODES.map((sc) => (
-                          <button
-                            key={sc.tag}
-                            type="button"
-                            onClick={() => handleInsertShortcode(sc.tag, 'body')}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-mono font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
-                            title={`Ejemplo: ${sc.example}`}
-                          >
-                            + {sc.tag}
-                          </button>
-                        ))}
-                      </div>
                     </div>
 
                     {/* Contenido del Mensaje */}
@@ -1091,18 +1088,28 @@ export default function AutomationsPage() {
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                               <Sparkles className="w-4 h-4 text-emerald-600" />
-                              <span>Plantilla Vinculada: {meta?.email_templates?.find((t) => t.id === Number(selectedEmailTemplateId))?.name || 'Plantilla de Email'}</span>
+                              <span>
+                                {selectedTemplateType === 'credential'
+                                  ? `Plantilla de Credenciales: ${meta?.credential_templates?.find((t) => t.id === Number(selectedEmailTemplateId))?.name || 'Credenciales'}`
+                                  : `Plantilla de Email: ${meta?.email_templates?.find((t) => t.id === Number(selectedEmailTemplateId))?.name || 'Email'}`}
+                              </span>
                             </span>
                             <button
                               type="button"
-                              onClick={() => setSelectedEmailTemplateId('')}
+                              onClick={() => {
+                                setSelectedEmailTemplateId('');
+                                setSelectedTemplateType('');
+                              }}
                               className="text-[11px] text-red-500 hover:text-red-700 font-semibold underline cursor-pointer"
                             >
                               Desvincular
                             </button>
                           </div>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                            ℹ️ El diseño visual y maquetación HTML de este correo se administra exclusivamente desde el módulo de <strong>Email & Marketing</strong>. La automatización aplicará el diseño oficial y sustituirá los shortcodes dinámicos.
+                            {selectedTemplateType === 'credential'
+                              ? 'El diseño de esta plantilla se administra desde Plantillas de Credenciales. La automatización aplicará el diseño oficial y enviará las credenciales del usuario.'
+                              : <>El diseño visual y maquetación HTML de este correo se administra exclusivamente desde el módulo de <strong>Email & Marketing</strong>. La automatización aplicará el diseño oficial.</>
+                            }
                           </p>
                         </div>
                       ) : null}

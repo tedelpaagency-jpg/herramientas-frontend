@@ -70,19 +70,6 @@ interface VisualWorkflowBuilderProps {
   onTestDispatch?: (data: any) => Promise<void>;
 }
 
-const SHORTCODES = [
-  { tag: '{lead_name}', label: 'Nombre Lead' },
-  { tag: '{lead_email}', label: 'Email' },
-  { tag: '{lead_phone}', label: 'Teléfono' },
-  { tag: '{lead_company}', label: 'Empresa' },
-  { tag: '{agent_name}', label: 'Asesor' },
-  { tag: '{agency_name}', label: 'Agencia' },
-  { tag: '{stage_name}', label: 'Etapa' },
-  { tag: '{user_email}', label: 'Usuario Creado' },
-  { tag: '{user_password}', label: 'Contraseña Acceso' },
-  { tag: '{login_url}', label: 'Enlace Login' },
-];
-
 export default function VisualWorkflowBuilder({
   isOpen,
   onClose,
@@ -1067,8 +1054,8 @@ export default function VisualWorkflowBuilder({
                       {/* EMAIL SPECIFIC FORM */}
                       {(selectedNode.actionType === 'send_email' || selectedNode.actionType === 'send_lead_email') && (
                         <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
-                          {/* Saved Email Templates Selector */}
-                          {meta?.email_templates && meta.email_templates.length > 0 && (
+                          {/* Saved Templates Selector (Email & Credentials) */}
+                          {((meta?.email_templates && meta.email_templates.length > 0) || (meta?.credential_templates && meta.credential_templates.length > 0)) && (
                             <div className="space-y-1 p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/50 dark:border-indigo-800/40 rounded-xl">
                               <div className="flex items-center justify-between">
                                 <label className="block text-[11px] font-bold text-indigo-700 dark:text-indigo-400 uppercase flex items-center gap-1.5">
@@ -1077,25 +1064,61 @@ export default function VisualWorkflowBuilder({
                                 <span className="text-[10px] text-slate-400 font-medium">Templates</span>
                               </div>
                               <select
-                                value=""
+                                value={
+                                  selectedNode.config.templateType && selectedNode.config.templateId
+                                    ? `${selectedNode.config.templateType}_${selectedNode.config.templateId}`
+                                    : (selectedNode.config.templateId ? `email_${selectedNode.config.templateId}` : '')
+                                }
                                 onChange={(e) => {
-                                  const tId = Number(e.target.value);
-                                  const tpl = meta.email_templates?.find(t => t.id === tId);
-                                  if (tpl) {
-                                    if (tpl.subject) updateSelectedNodeConfig('subject', tpl.subject);
-                                    if (tpl.body_html) updateSelectedNodeConfig('body', tpl.body_html);
-                                    updateSelectedNodeConfig('templateId', tpl.id);
-                                    toast.success(`Plantilla "${tpl.name}" aplicada al correo`);
+                                  const val = e.target.value;
+                                  if (!val) {
+                                    updateSelectedNodeConfig('templateId', '');
+                                    updateSelectedNodeConfig('templateType', '');
+                                    return;
+                                  }
+                                  if (val.startsWith('cred_')) {
+                                    const cId = Number(val.replace('cred_', ''));
+                                    const tpl = meta?.credential_templates?.find(t => t.id === cId);
+                                    if (tpl) {
+                                      if (tpl.subject) updateSelectedNodeConfig('subject', tpl.subject);
+                                      if (tpl.body_html) updateSelectedNodeConfig('body', tpl.body_html);
+                                      updateSelectedNodeConfig('templateId', tpl.id);
+                                      updateSelectedNodeConfig('templateType', 'credential');
+                                      toast.success(`Plantilla de credenciales "${tpl.name}" aplicada`);
+                                    }
+                                  } else if (val.startsWith('email_')) {
+                                    const eId = Number(val.replace('email_', ''));
+                                    const tpl = meta?.email_templates?.find(t => t.id === eId);
+                                    if (tpl) {
+                                      if (tpl.subject) updateSelectedNodeConfig('subject', tpl.subject);
+                                      if (tpl.body_html) updateSelectedNodeConfig('body', tpl.body_html);
+                                      updateSelectedNodeConfig('templateId', tpl.id);
+                                      updateSelectedNodeConfig('templateType', 'email');
+                                      toast.success(`Plantilla "${tpl.name}" aplicada al correo`);
+                                    }
                                   }
                                 }}
                                 className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700/60 rounded-xl text-slate-900 dark:text-white font-medium text-xs shadow-xs"
                               >
                                 <option value="">-- Seleccionar una Plantilla Guardada --</option>
-                                {meta.email_templates.map(tpl => (
-                                  <option key={tpl.id} value={tpl.id}>
-                                    {tpl.name} {tpl.category ? `[${tpl.category}]` : ''} - {tpl.subject?.slice(0, 35)}...
-                                  </option>
-                                ))}
+                                {meta?.credential_templates && meta.credential_templates.length > 0 && (
+                                  <optgroup label="Plantillas de Credenciales de Acceso">
+                                    {meta.credential_templates.map(tpl => (
+                                      <option key={`cred_${tpl.id}`} value={`cred_${tpl.id}`}>
+                                        🔑 {tpl.name} - {tpl.subject?.slice(0, 35)}...
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                                {meta?.email_templates && meta.email_templates.length > 0 && (
+                                  <optgroup label="Plantillas de Email & Marketing">
+                                    {meta.email_templates.map(tpl => (
+                                      <option key={`email_${tpl.id}`} value={`email_${tpl.id}`}>
+                                        📧 {tpl.name} {tpl.category ? `[${tpl.category}]` : ''} - {tpl.subject?.slice(0, 35)}...
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                )}
                               </select>
                             </div>
                           )}
@@ -1136,26 +1159,6 @@ export default function VisualWorkflowBuilder({
                             />
                           </div>
 
-                          {/* Shortcode Chips */}
-                          <div className="space-y-1">
-                            <label className="block text-slate-400 text-[10px] uppercase font-bold">Etiquetas Dinámicas Disponibles:</label>
-                            <div className="flex flex-wrap gap-1">
-                              {SHORTCODES.map(s => (
-                                <button
-                                  key={s.tag}
-                                  type="button"
-                                  onClick={() => {
-                                    const currentBody = selectedNode.config.body || '';
-                                    updateSelectedNodeConfig('body', currentBody + ` ${s.tag} `);
-                                  }}
-                                  className="px-2 py-0.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[10px] font-mono hover:bg-indigo-500/20 transition-all"
-                                >
-                                  {s.tag}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <label className="block text-slate-700 dark:text-slate-300 font-bold uppercase text-[11px]">
@@ -1169,18 +1172,28 @@ export default function VisualWorkflowBuilder({
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
                                     <Sparkles className="w-4 h-4 text-emerald-600" />
-                                    <span>Plantilla Oficial de Email Vinculada</span>
+                                    <span>
+                                      {selectedNode.config.templateType === 'credential'
+                                        ? `Plantilla de Credenciales: ${meta?.credential_templates?.find(t => t.id === Number(selectedNode.config.templateId))?.name || 'Credenciales'}`
+                                        : `Plantilla Oficial de Email: ${meta?.email_templates?.find(t => t.id === Number(selectedNode.config.templateId))?.name || 'Email'}`}
+                                    </span>
                                   </div>
                                   <button
                                     type="button"
-                                    onClick={() => updateSelectedNodeConfig('templateId', '')}
+                                    onClick={() => {
+                                      updateSelectedNodeConfig('templateId', '');
+                                      updateSelectedNodeConfig('templateType', '');
+                                    }}
                                     className="text-[10px] text-red-500 hover:text-red-700 font-semibold underline cursor-pointer"
                                   >
                                     Desvincular
                                   </button>
                                 </div>
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                                  El diseño visual y maquetación HTML de este correo se administra exclusivamente desde el módulo de <strong>Email & Marketing</strong>. El workflow enviará el diseño oficial sustituyendo las variables dinámicas del lead.
+                                  {selectedNode.config.templateType === 'credential'
+                                    ? 'El diseño visual de esta plantilla se administra desde Plantillas de Credenciales. El workflow enviará el acceso oficial con las credenciales del usuario.'
+                                    : <>El diseño visual y maquetación HTML de este correo se administra exclusivamente desde el módulo de <strong>Email & Marketing</strong>. El workflow enviará el diseño oficial.</>
+                                  }
                                 </p>
                               </div>
                             ) : (
