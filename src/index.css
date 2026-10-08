@@ -124,43 +124,43 @@ html.dark {
 }
 
 /* Custom Dark Mode Slate Border & Divide Overrides */
-.dark\:border-slate-800:is(.dark *),
-.dark .dark\:border-slate-800,
-html.dark .dark\:border-slate-800,
-html.dark [class*="dark:border-slate-800"] {
+.dark\:border-slate-800:is(.dark *):not(input):not(select):not(textarea),
+.dark .dark\:border-slate-800:not(input):not(select):not(textarea),
+html.dark .dark\:border-slate-800:not(input):not(select):not(textarea),
+html.dark [class*="dark:border-slate-800"]:not(input):not(select):not(textarea) {
   --tw-border-opacity: 1 !important;
-  border-color: rgb(22 26 27) !important;
+  border-color: rgb(36 41 43) !important;
 }
 
-.dark\:border-slate-800\/80:is(.dark *),
-.dark .dark\:border-slate-800\/80,
-html.dark .dark\:border-slate-800\/80 {
-  border-color: rgba(22, 26, 27, 0.8) !important;
+.dark\:border-slate-800\/80:is(.dark *):not(input):not(select):not(textarea),
+.dark .dark\:border-slate-800\/80:not(input):not(select):not(textarea),
+html.dark .dark\:border-slate-800\/80:not(input):not(select):not(textarea) {
+  border-color: rgba(36, 41, 43, 0.8) !important;
 }
 
-.dark\:border-slate-800\/60:is(.dark *),
-.dark .dark\:border-slate-800\/60,
-html.dark .dark\:border-slate-800\/60 {
-  border-color: rgba(22, 26, 27, 0.6) !important;
+.dark\:border-slate-800\/60:is(.dark *):not(input):not(select):not(textarea),
+.dark .dark\:border-slate-800\/60:not(input):not(select):not(textarea),
+html.dark .dark\:border-slate-800\/60:not(input):not(select):not(textarea) {
+  border-color: rgba(36, 41, 43, 0.6) !important;
 }
 
-.dark\:border-slate-800\/50:is(.dark *),
-.dark .dark\:border-slate-800\/50,
-html.dark .dark\:border-slate-800\/50 {
-  border-color: rgba(22, 26, 27, 0.5) !important;
+.dark\:border-slate-800\/50:is(.dark *):not(input):not(select):not(textarea),
+.dark .dark\:border-slate-800\/50:not(input):not(select):not(textarea),
+html.dark .dark\:border-slate-800\/50:not(input):not(select):not(textarea) {
+  border-color: rgba(36, 41, 43, 0.5) !important;
 }
 
 .dark\:divide-slate-800:is(.dark *) > :not([hidden]) ~ :not([hidden]),
 .dark .dark\:divide-slate-800 > :not([hidden]) ~ :not([hidden]),
 html.dark .dark\:divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1 !important;
-  border-color: rgb(22 26 27) !important;
+  border-color: rgb(36 41 43) !important;
 }
 
 .dark\:divide-slate-800\/60:is(.dark *) > :not([hidden]) ~ :not([hidden]),
 .dark .dark\:divide-slate-800\/60 > :not([hidden]) ~ :not([hidden]),
 html.dark .dark\:divide-slate-800\/60 > :not([hidden]) ~ :not([hidden]) {
-  border-color: rgba(22, 26, 27, 0.6) !important;
+  border-color: rgba(36, 41, 43, 0.6) !important;
 }
 
 /* Custom Dark Mode Slate Surface Background Overrides */
@@ -190,27 +190,115 @@ html.dark .dark\:bg-slate-900\/50 {
   background-color: rgba(22, 26, 27, 0.5) !important;
 }
 
-/* Global Dark Mode Input, Select, Textarea & Label Defaults */
-.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]):not([class*="bg-transparent"]),
-.dark select,
-.dark textarea {
-  background-color: #161a1b;
-  color: #f8fafc;
-  border-color: #2b3236;
+/* ============================================================
+   Global Dark Mode Forms & Inputs Design System
+   Ensures all form inputs, textareas, selects and controls
+   have clearly visible borders, distinct backgrounds, and
+   responsive focus states in Dark Mode.
+   ============================================================ */
+
+/* Enable dark color-scheme for native browser controls */
+html.dark, .dark {
+  color-scheme: dark;
 }
 
+/* Base styling for all form inputs, textareas, and selects */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]):not([type="hidden"]):not([type="image"]):not([class*="bg-transparent"]):not([class*="border-transparent"]):not([class*="border-none"]),
+.dark select:not([class*="border-transparent"]):not([class*="border-none"]),
+.dark textarea:not([class*="border-transparent"]):not([class*="border-none"]) {
+  background-color: #1a1e20 !important;
+  color: #f8fafc !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #475569 !important; /* Tailwind slate-600: high-contrast, clearly defined border */
+  border-radius: 0.75rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+/* Hover state on form inputs */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]):not([type="hidden"]):not([type="image"]):not([class*="bg-transparent"]):not([class*="border-transparent"]):not([class*="border-none"]):hover,
+.dark select:not([class*="border-transparent"]):not([class*="border-none"]):hover,
+.dark textarea:not([class*="border-transparent"]):not([class*="border-none"]):hover {
+  border-color: #64748b !important; /* Tailwind slate-500 */
+}
+
+/* Focus state on form inputs */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]):not([type="hidden"]):not([type="image"]):not([class*="bg-transparent"]):not([class*="border-transparent"]):not([class*="border-none"]):focus,
+.dark select:not([class*="border-transparent"]):not([class*="border-none"]):focus,
+.dark textarea:not([class*="border-transparent"]):not([class*="border-none"]):focus {
+  border-color: #3b82f6 !important; /* Primary Blue */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+  outline: none !important;
+}
+
+/* Maintain error/danger borders if specified */
+.dark input[class*="border-rose"],
+.dark input[class*="border-red"],
+.dark select[class*="border-rose"],
+.dark select[class*="border-red"],
+.dark textarea[class*="border-rose"],
+.dark textarea[class*="border-red"] {
+  border-color: #f43f5e !important;
+}
+
+/* Maintain success borders if specified */
+.dark input[class*="border-emerald"],
+.dark input[class*="border-green"],
+.dark select[class*="border-emerald"],
+.dark select[class*="border-green"],
+.dark textarea[class*="border-emerald"],
+.dark textarea[class*="border-green"] {
+  border-color: #10b981 !important;
+}
+
+/* Checkboxes and Radios in dark mode */
+.dark input[type="checkbox"],
+.dark input[type="radio"] {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #475569 !important;
+  background-color: #1a1e20 !important;
+  cursor: pointer;
+}
+
+.dark input[type="checkbox"]:checked,
+.dark input[type="radio"]:checked {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+/* Color picker in dark mode */
+.dark input[type="color"] {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #475569 !important;
+  background-color: transparent !important;
+  border-radius: 0.75rem;
+}
+
+/* Date / Time picker icons in dark mode */
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.9) brightness(1.1);
+  cursor: pointer;
+}
+
+/* Placeholders & Dropdown Options */
 .dark input::placeholder,
 .dark textarea::placeholder {
-  color: #64748b;
+  color: #64748b !important;
 }
 
+.dark select option,
 .dark option {
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: #161a1b !important;
+  color: #f8fafc !important;
+  padding: 8px 12px;
 }
 
 .dark label:not([class*="text-"]) {
-  color: #cbd5e1;
+  color: #cbd5e1 !important;
 }
 
 /* 3D Digital Credential Styles */
