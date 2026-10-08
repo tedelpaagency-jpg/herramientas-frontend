@@ -416,10 +416,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {(isHunter
             ? [
                 {
-                  title: 'MIS FORMULARIOS & LEADS',
+                  title: 'MIS FORMULARIOS',
                   items: [
-                    { label: 'Inicio', path: '/', icon: Home },
-                    { label: 'Mis Formularios & Leads', path: '/hunter', icon: Store },
+                    { label: 'Mis Formularios', path: '/hunter', icon: Store },
                   ],
                 },
               ]

@@ -66,6 +66,8 @@ export const lexvaultService = {
     title?: string;
     background_image?: string;
     agency_id?: number;
+    tokens_json?: string[];
+    custom_tokens?: string[];
     replacements: Record<string, string>;
   }): Promise<LexvaultDocument> => {
     const response = await apiClient.post('/v1/lexvault/generate-document', data);

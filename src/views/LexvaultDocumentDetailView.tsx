@@ -503,6 +503,12 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
         backgroundImageUrl={currentBg === 'none' ? 'none' : (currentBg || undefined)}
         editablePages={canEdit}
         showToolbar={true}
+        isContract={type === 'contract'}
+        tokens={
+          type === 'template'
+            ? (template?.tokens_json || [])
+            : (document?.tokens_json || (document?.field_values_json ? Object.keys(document.field_values_json) : []))
+        }
         fieldValues={document?.field_values_json || {}}
         signatureUrl={
           document?.pdf_path ||
@@ -511,7 +517,7 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
           (document as any)?.signature_path ||
           undefined
         }
-        onSave={async (updatedHtml, savedFieldValues) => {
+        onSave={async (updatedHtml, savedFieldValues, savedTokens) => {
           setIsSaving(true);
           const toastId = toast.loading('Guardando documento en el servidor...');
           try {
@@ -524,9 +530,10 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
                 description: template.description,
                 html_content: updatedHtml,
                 background_image: finalBgValue || undefined,
+                tokens_json: savedTokens,
               });
               setTemplate(res);
-              toast.success('¡Plantilla y fondo de hoja guardados exitosamente!', { id: toastId });
+              toast.success('¡Plantilla, shortcuts y fondo guardados exitosamente!', { id: toastId });
             } else if (document?.id) {
               const res = await lexvaultService.updateDocument(document.id, {
                 title: docTitle.trim() || document.title,
@@ -535,9 +542,10 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
                 filled_content: updatedHtml,
                 background_image: finalBgValue || undefined,
                 field_values_json: savedFieldValues,
+                tokens_json: savedTokens,
               });
               setDocument(res);
-              toast.success('¡Contrato y fondo de hoja guardados exitosamente!', { id: toastId });
+              toast.success('¡Contrato, campos y fondo guardados exitosamente!', { id: toastId });
             }
           } catch (err: any) {
             console.error('Error saving document:', err);

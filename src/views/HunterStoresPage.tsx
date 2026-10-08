@@ -164,11 +164,16 @@ export const HunterStoresPage: React.FC = () => {
   const handleSaveStore = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const payload: any = { ...formData };
+      if (editingStore && (!payload.password || payload.password.trim() === '')) {
+        delete payload.password;
+      }
+
       if (editingStore) {
-        await hunterService.updateStore(editingStore.id, formData);
-        toast.success('Tienda Hunter actualizada correctamente');
+        await hunterService.updateStore(editingStore.id, payload);
+        toast.success(payload.password ? 'Tienda y contraseña actualizadas correctamente' : 'Tienda Hunter actualizada correctamente');
       } else {
-        await hunterService.createStore(formData);
+        await hunterService.createStore(payload);
         toast.success('Nueva Tienda Hunter y usuario registrados correctamente');
       }
       setIsCreateModalOpen(false);
@@ -534,25 +539,44 @@ export const HunterStoresPage: React.FC = () => {
       {selectedProfileStoreId && profileData ? (
         /* ================= HUNTER PROFILE VIEW ================= */
         <div className="space-y-6 animate-in fade-in">
-          {/* Back button & Profile Header */}
-          <div className="flex items-center justify-between">
-            {!isHunter ? (
-              <button
-                onClick={() => setSelectedProfileStoreId(null)}
-                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-2 transition-all"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span>Volver al Listado de Tiendas</span>
-              </button>
-            ) : <div />}
-
+          {/* Back button & Form Filter Header */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <button
-              onClick={() => loadProfile(selectedProfileStoreId)}
-              className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 rounded-xl text-xs"
-              title="Recargar datos"
+              onClick={() => setSelectedProfileStoreId(null)}
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-2xs"
             >
-              <RefreshCw className={`w-4 h-4 ${loadingProfile ? 'animate-spin' : ''}`} />
+              <ChevronLeft className="w-4 h-4" />
+              <span>{isHunter ? 'Ver Todos Mis Formularios' : 'Volver al Listado de Tiendas'}</span>
             </button>
+
+            {/* Filter Counters by Form */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                Filtrar por Formulario:
+              </span>
+              <select
+                value={selectedProfileStoreId || ''}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val) loadProfile(val);
+                }}
+                className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none shadow-2xs"
+              >
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} {s.canton ? `(${s.canton})` : ''}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={() => selectedProfileStoreId && loadProfile(selectedProfileStoreId)}
+                className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 rounded-xl text-xs transition-colors"
+                title="Recargar datos del formulario"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingProfile ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
 
           {/* Profile Store Card Header */}
@@ -683,35 +707,33 @@ export const HunterStoresPage: React.FC = () => {
                 <span>Registros ({profileData.requests?.length || 0})</span>
               </button>
 
-              {!isHunter && (
-                <>
-                  <button
-                    onClick={() => {
-                      handleOpenEditModal(profileData.store);
-                      setActiveTab('edit');
-                    }}
-                    className={`px-4 py-2.5 font-extrabold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
-                      activeTab === 'edit'
-                        ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 border-indigo-600'
-                        : 'text-slate-500 border-transparent hover:text-slate-800 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    <span>Editar Tienda</span>
-                  </button>
+              <button
+                onClick={() => {
+                  handleOpenEditModal(profileData.store);
+                  setActiveTab('edit');
+                }}
+                className={`px-4 py-2.5 font-extrabold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+                  activeTab === 'edit'
+                    ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 border-indigo-600'
+                    : 'text-slate-500 border-transparent hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>{isHunter ? 'Editar Datos y Contraseña' : 'Editar Tienda'}</span>
+              </button>
 
-                  <button
-                    onClick={() => setActiveTab('delete')}
-                    className={`px-4 py-2.5 font-extrabold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
-                      activeTab === 'delete'
-                        ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 border-rose-600'
-                        : 'text-slate-500 border-transparent hover:text-slate-800 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <ShieldAlert className="w-4 h-4" />
-                    <span>Suspender / Eliminar</span>
-                  </button>
-                </>
+              {!isHunter && (
+                <button
+                  onClick={() => setActiveTab('delete')}
+                  className={`px-4 py-2.5 font-extrabold rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+                    activeTab === 'delete'
+                      ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 border-rose-600'
+                      : 'text-slate-500 border-transparent hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <ShieldAlert className="w-4 h-4" />
+                  <span>Suspender / Eliminar</span>
+                </button>
               )}
             </div>
 

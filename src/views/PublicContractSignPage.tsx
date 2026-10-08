@@ -17,6 +17,7 @@ import { LexvaultDocument } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import WordDocumentPaper from '../components/WordDocumentPaper';
 import toast from 'react-hot-toast';
+import { normalizeFileUrl } from '../services/apiClient';
 
 interface PublicContractSignPageProps {
   id: string;
@@ -29,7 +30,12 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
 
   // Signature state
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const mobileCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isMobileDrawing, setIsMobileDrawing] = useState(false);
+  const [isMobileSignModalOpen, setIsMobileSignModalOpen] = useState(false);
+  const [capturedSignatureDataUrl, setCapturedSignatureDataUrl] = useState<string | null>(null);
+  const [hasMobileDrawn, setHasMobileDrawn] = useState(false);
   const [signatureMode, setSignatureMode] = useState<'draw' | 'upload' | 'p12' | 'decline'>('draw');
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
   const [p12File, setP12File] = useState<File | null>(null);
@@ -112,7 +118,18 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
     }
   }, [id]);
 
-  // Canvas drawing handlers
+  // Prevent background scroll when mobile sign modal is open
+  useEffect(() => {
+    if (isMobileSignModalOpen && typeof window !== 'undefined') {
+      const prevOverflow = window.document.body.style.overflow;
+      window.document.body.style.overflow = 'hidden';
+      return () => {
+        window.document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isMobileSignModalOpen]);
+
+  // Canvas drawing handlers (Desktop inline)
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     setIsDrawing(true);
     draw(e);
@@ -139,10 +156,10 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
     let clientX = 0;
     let clientY = 0;
 
-    if ('touches' in e) {
+    if ('touches' in e && e.touches.length > 0) {
       clientX = e.touches[0].clientX;
       clientY = e.touches[0].clientY;
-    } else {
+    } else if ('clientX' in e) {
       clientX = e.clientX;
       clientY = e.clientY;
     }
@@ -168,6 +185,97 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
     }
+    setCapturedSignatureDataUrl(null);
+  };
+
+  // Mobile Modal Drawing Handlers (Fixed viewport, zero scrolling interference)
+  const startMobileDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    setIsMobileDrawing(true);
+    setHasMobileDrawn(true);
+    drawMobile(e);
+  };
+
+  const stopMobileDrawing = () => {
+    setIsMobileDrawing(false);
+    const canvas = mobileCanvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.beginPath();
+    }
+  };
+
+  const drawMobile = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isMobileDrawing) return;
+    const canvas = mobileCanvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    let clientX = 0;
+    let clientY = 0;
+
+    if ('touches' in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if ('clientX' in e) {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#0f172a';
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const clearMobileCanvas = () => {
+    const canvas = mobileCanvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+    setHasMobileDrawn(false);
+  };
+
+  const acceptMobileSignature = () => {
+    const canvas = mobileCanvasRef.current;
+    if (!canvas || !hasMobileDrawn) {
+      toast.error('Por favor dibuja tu firma antes de guardar');
+      return;
+    }
+    const dataUrl = canvas.toDataURL('image/png');
+    setCapturedSignatureDataUrl(dataUrl);
+
+    // Synchronize to main canvas preview if available
+    const mainCanvas = canvasRef.current;
+    if (mainCanvas) {
+      const mainCtx = mainCanvas.getContext('2d');
+      if (mainCtx) {
+        const img = new Image();
+        img.onload = () => {
+          mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+          mainCtx.drawImage(img, 0, 0, mainCanvas.width, mainCanvas.height);
+        };
+        img.src = dataUrl;
+      }
+    }
+
+    setIsMobileSignModalOpen(false);
+    toast.success('¡Firma capturada correctamente!');
   };
 
   const handleSign = async () => {
@@ -178,13 +286,12 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
     try {
       let updatedDoc: LexvaultDocument;
       if (signatureMode === 'draw') {
-        const canvas = canvasRef.current;
-        if (!canvas) {
-          toast.error('Ocurrió un problema con el lienzo de firma', { id: toastId });
+        const dataUrl = capturedSignatureDataUrl || canvasRef.current?.toDataURL('image/png');
+        if (!dataUrl) {
+          toast.error('Por favor dibuje su firma antes de enviar', { id: toastId });
           setIsSubmitting(false);
           return;
         }
-        const dataUrl = canvas.toDataURL('image/png');
         updatedDoc = await lexvaultService.signPublicDocument(document.id, dataUrl);
       } else if (signatureMode === 'upload' && signatureFile) {
         updatedDoc = await lexvaultService.signPublicDocument(document.id, signatureFile);
@@ -274,22 +381,65 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
 
   const watermarkText = isSigned ? 'FIRMADO DIGITALMENTE' : isDeclined ? 'RECHAZADO' : 'PENDIENTE DE FIRMA';
 
+  const contractBg = document?.background_image || document?.bg_image_url || document?.template?.background_image || undefined;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
-      {/* Public Header */}
+      {/* Public Header with Agency Logo & Branding */}
       <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black shadow-lg">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            {(() => {
+              const agency = document.agency;
+              const whiteLabel = (document as any).whiteLabel || (document as any).white_label;
+              const logoUrl = agency?.logo 
+                ? normalizeFileUrl(agency.logo) 
+                : agency?.logo_2 
+                ? normalizeFileUrl(agency.logo_2) 
+                : whiteLabel?.logo 
+                ? normalizeFileUrl(whiteLabel.logo) 
+                : null;
+              const agencyName = agency?.name || agency?.razon_social || whiteLabel?.name || 'Agencia Autorizada';
+
+              return logoUrl ? (
+                <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white/5 border border-slate-700/80 p-1 flex items-center justify-center shrink-0 shadow-md">
+                  <img
+                    src={logoUrl}
+                    alt={agencyName}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-black text-sm shadow-md shrink-0">
+                  {agencyName.substring(0, 2).toUpperCase()}
+                </div>
+              );
+            })()}
+
             <div>
               <h1 className="font-extrabold text-base text-white tracking-tight flex items-center gap-2">
-                LexVault • Portal de Firma Digital
+                {document.agency?.name || document.agency?.razon_social || (document as any).whiteLabel?.name || 'Agencia Autorizada'}
               </h1>
-              <p className="text-xs text-slate-400">
-                Ref: <span className="font-mono text-blue-400 font-bold">{document.document_number || `#LEX-${document.id}`}</span>
-              </p>
+              <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-1.5 font-medium mt-0.5">
+                <span className="font-mono text-blue-400 font-bold">{document.document_number || `#LEX-${document.id}`}</span>
+                {(() => {
+                  const parts = [
+                    document.agency?.phone ? `Tel: ${document.agency.phone}` : null,
+                    document.agency?.email,
+                    document.agency?.city ? `${document.agency.city}${document.agency.province ? `, ${document.agency.province}` : ''}` : document.agency?.address,
+                  ].filter(Boolean);
+                  if (parts.length === 0) return null;
+                  return (
+                    <>
+                      <span>•</span>
+                      <span>{parts.join(' • ')}</span>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
 
@@ -345,6 +495,7 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
           title={document.title}
           documentNumber={document.document_number || `#LEX-${document.id}`}
           watermarkText={watermarkText}
+          backgroundImageUrl={contractBg}
           editablePages={false}
           signatureUrl={
             document.pdf_path ||
@@ -441,40 +592,88 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
 
               {/* Mode: Draw Signature */}
               {signatureMode === 'draw' && (
-                <div className="space-y-3 max-w-xl mx-auto">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-extrabold text-slate-300 uppercase tracking-wider">
-                      Dibuje su firma dentro del recuadro
-                    </label>
+                <div className="space-y-4 max-w-xl mx-auto">
+                  {/* Mobile Direct Button */}
+                  <div className="p-4 bg-gradient-to-r from-blue-900/40 via-indigo-900/30 to-purple-900/30 rounded-2xl border border-blue-500/30 text-center space-y-2.5">
+                    <div className="text-xs text-blue-200 font-bold flex items-center justify-center gap-1.5">
+                      <PenTool className="w-4 h-4 text-blue-400" />
+                      <span>Firma Táctil Optimizada para Móviles y Tablets</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Evita que la pantalla se mueva mientras firmas. Abre el lienzo táctil a pantalla completa.
+                    </p>
                     <button
                       type="button"
-                      onClick={clearCanvas}
-                      className="text-[11px] font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                      onClick={() => setIsMobileSignModalOpen(true)}
+                      className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                     >
-                      <RefreshCw className="w-3 h-3" /> Limpiar Trazo
+                      <PenTool className="w-4 h-4" />
+                      <span>{capturedSignatureDataUrl ? 'Volver a Dibujar Firma en Pantalla Completa' : 'Abrir Modal de Firma Táctil (Móvil)'}</span>
                     </button>
                   </div>
 
-                  <div className="border-2 border-dashed border-slate-700 rounded-2xl bg-white overflow-hidden cursor-crosshair shadow-inner">
-                    <canvas
-                      ref={canvasRef}
-                      width={550}
-                      height={180}
-                      className="w-full h-44 touch-none"
-                      onMouseDown={startDrawing}
-                      onMouseUp={stopDrawing}
-                      onMouseLeave={stopDrawing}
-                      onMouseMove={draw}
-                      onTouchStart={startDrawing}
-                      onTouchEnd={stopDrawing}
-                      onTouchMove={draw}
-                    />
+                  {/* Captured Signature Preview (if signed via mobile modal) */}
+                  {capturedSignatureDataUrl && (
+                    <div className="p-3 bg-emerald-950/30 border border-emerald-500/40 rounded-2xl flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={capturedSignatureDataUrl}
+                          alt="Firma Capturada"
+                          className="h-12 w-28 object-contain bg-white rounded-lg p-1 border border-slate-300"
+                        />
+                        <div>
+                          <span className="block text-xs font-bold text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Firma Capturada
+                          </span>
+                          <span className="block text-[10px] text-slate-400">Lista para ser enviada</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearCanvas}
+                        className="text-xs text-rose-400 hover:text-rose-300 font-bold px-2 py-1"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Desktop Inline Canvas */}
+                  <div className="hidden sm:block space-y-2 pt-2 border-t border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-extrabold text-slate-300 uppercase tracking-wider">
+                        O dibuje directamente aquí (Computadora / Mouse)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={clearCanvas}
+                        className="text-[11px] font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                      >
+                        <RefreshCw className="w-3 h-3" /> Limpiar Trazo
+                      </button>
+                    </div>
+
+                    <div className="border-2 border-dashed border-slate-700 rounded-2xl bg-white overflow-hidden cursor-crosshair shadow-inner">
+                      <canvas
+                        ref={canvasRef}
+                        width={550}
+                        height={180}
+                        className="w-full h-44 touch-none"
+                        onMouseDown={startDrawing}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onMouseMove={draw}
+                        onTouchStart={startDrawing}
+                        onTouchEnd={stopDrawing}
+                        onTouchMove={draw}
+                      />
+                    </div>
                   </div>
 
                   <button
                     onClick={handleSign}
                     disabled={isSubmitting}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg hover:shadow-emerald-900/20 flex items-center justify-center gap-2"
+                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg hover:shadow-emerald-900/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                   >
                     <CheckCircle2 className="w-5 h-5" />
                     <span>{isSubmitting ? 'Registrando...' : 'Confirmar y Firmar Documento'}</span>
@@ -575,8 +774,93 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
 
       {/* Public Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 py-6 text-center text-xs text-slate-500">
-        <p>Garantía de Validez Legal e Inmutabilidad Electrónica • LexVault System</p>
+        <p>Garantía de Validez Legal e Inmutabilidad Electrónica • {document.agency?.name || 'Portal de Firma Digital'}</p>
       </footer>
+
+      {/* Dedicated Fullscreen Touch Modal for Mobile Signing */}
+      {isMobileSignModalOpen && (
+        <div className="fixed inset-0 z-[99999] bg-slate-950 flex flex-col justify-between p-3 sm:p-5 select-none overscroll-none touch-none">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-600/30 border border-blue-500/40 text-blue-400 flex items-center justify-center font-bold">
+                <PenTool className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white">Lienzo de Firma Táctil Móvil</h3>
+                <p className="text-[11px] text-slate-400">Dibuja con tu dedo dentro del recuadro blanco</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsMobileSignModalOpen(false)}
+              className="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-900 border border-slate-800"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Modal Canvas Box */}
+          <div className="my-3 flex-1 flex flex-col bg-white rounded-2xl overflow-hidden shadow-2xl relative border-2 border-indigo-500/40">
+            <div className="absolute top-2 left-3 pointer-events-none text-[10px] uppercase tracking-wider font-extrabold text-slate-400">
+              Área de Firma • Desliza el dedo
+            </div>
+            <canvas
+              ref={mobileCanvasRef}
+              width={600}
+              height={380}
+              className="w-full h-full touch-none cursor-crosshair"
+              onMouseDown={startMobileDrawing}
+              onMouseUp={stopMobileDrawing}
+              onMouseLeave={stopMobileDrawing}
+              onMouseMove={drawMobile}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                startMobileDrawing(e);
+              }}
+              onTouchMove={(e) => {
+                e.preventDefault();
+                drawMobile(e);
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                stopMobileDrawing();
+              }}
+            />
+          </div>
+
+          {/* Modal Bottom Actions */}
+          <div className="flex items-center justify-between gap-2.5 pt-2 border-t border-slate-800 flex-shrink-0">
+            <button
+              type="button"
+              onClick={clearMobileCanvas}
+              className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Limpiar Trazo</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsMobileSignModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-slate-400 hover:text-white font-bold text-xs"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={acceptMobileSignature}
+                disabled={!hasMobileDrawn}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-black text-xs shadow-lg flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Aceptar Firma</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

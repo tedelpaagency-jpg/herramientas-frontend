@@ -34,6 +34,8 @@ import {
   Save,
   Sliders,
   X,
+  Edit3,
+  Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getApiBaseUrl, normalizeFileUrl } from '../services/apiClient';
@@ -48,7 +50,9 @@ export interface WordDocumentPaperProps {
   onContentChange?: (newHtml: string) => void;
   fieldValues?: Record<string, string>;
   onFieldValuesChange?: (newFieldValues: Record<string, string>) => void;
-  onSave?: (savedHtml: string, savedFieldValues: Record<string, string>) => void | Promise<void>;
+  tokens?: string[];
+  onTokensChange?: (newTokens: string[]) => void;
+  onSave?: (savedHtml: string, savedFieldValues: Record<string, string>, savedTokens?: string[]) => void | Promise<void>;
   title?: string;
   documentNumber?: string;
   watermarkText?: string;
@@ -56,6 +60,7 @@ export interface WordDocumentPaperProps {
   signatureUrl?: string;
   showToolbar?: boolean;
   editablePages?: boolean;
+  isContract?: boolean;
   className?: string;
 }
 
@@ -66,6 +71,8 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
   onContentChange,
   fieldValues = {},
   onFieldValuesChange,
+  tokens = [],
+  onTokensChange,
   onSave,
   title = 'Documento Legal',
   documentNumber,
@@ -74,6 +81,7 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
   signatureUrl,
   showToolbar = true,
   editablePages = true,
+  isContract = false,
   className = '',
 }, ref) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -109,8 +117,25 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
   // Internal state for HTML content & Campos/Variables Values (Preserves tokens intact in editor)
   const [localHtml, setLocalHtml] = useState<string>(htmlContent);
   const [storedBgImage, setStoredBgImage] = useState<string | null>(backgroundImageUrl || null);
-  const [isFieldsModalOpen, setIsFieldsModalOpen] = useState(false);
   const [tokenValues, setTokenValues] = useState<Record<string, string>>(fieldValues);
+
+  // Managed Tokens State & Shortcuts modal
+  const [managedTokens, setManagedTokens] = useState<string[]>(() => {
+    const list: string[] = [];
+    if (tokens && Array.isArray(tokens)) {
+      tokens.forEach((t) => {
+        const u = String(t).replace(/[\{\}\[\]]/g, '').trim().toUpperCase();
+        if (u && !list.includes(u)) list.push(u);
+      });
+    }
+    return list;
+  });
+
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+  const [shortcutsModalTab, setShortcutsModalTab] = useState<'manage' | 'fill'>(isContract ? 'fill' : 'manage');
+  const [newShortcutName, setNewShortcutName] = useState('');
+  const [editingTokenOriginal, setEditingTokenOriginal] = useState<string | null>(null);
+  const [editingTokenName, setEditingTokenName] = useState<string>('');
 
   // Synchronize initial prop and extract background image URL to persistent state
   useEffect(() => {
@@ -146,6 +171,19 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
       setTokenValues(fieldValues);
     }
   }, [fieldValues]);
+
+  useEffect(() => {
+    if (tokens && Array.isArray(tokens) && tokens.length > 0) {
+      setManagedTokens((prev) => {
+        const set = new Set(prev);
+        tokens.forEach((t) => {
+          const u = String(t).replace(/[\{\}\[\]]/g, '').trim().toUpperCase();
+          if (u) set.add(u);
+        });
+        return Array.from(set);
+      });
+    }
+  }, [tokens]);
 
   // Update HTML content and ensure background image attribute is NEVER lost
   const updateHtml = (newBodyContent: string) => {
@@ -185,28 +223,181 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
   }, [localHtml, backgroundImageUrl, storedBgImage]);
 
   // Detect all variables / tokens in localHtml (e.g. {{CLIENTE_NOMBRE}}, [MONTO], etc.)
-  const detectedTokens = useMemo(() => {
+  const detectedTokensInHtml = useMemo(() => {
     if (!localHtml) return [];
     const regex = /(?:\{\{|\[)([A-Z0-9_]+)(?:\}\}|\])/gi;
     const found: string[] = [];
     let match;
     while ((match = regex.exec(localHtml)) !== null) {
       const tok = match[1].toUpperCase();
-      if (!found.includes(tok)) {
+      if (!['FIRMA', 'FIRMA_CLIENTE', 'FIRMA_USUARIO'].includes(tok) && !found.includes(tok)) {
         found.push(tok);
       }
     }
     return found;
   }, [localHtml]);
 
-  // Save values of defined fields for public view replacement WITHOUT modifying localHtml in editor mode
-  const handleApplyTokenSubstitutions = (e: React.FormEvent) => {
+  // Unified allTokens list
+  const allTokens = useMemo(() => {
+    const set = new Set<string>();
+    managedTokens.forEach((t) => set.add(t));
+    detectedTokensInHtml.forEach((t) => set.add(t));
+    if (tokenValues) {
+      Object.keys(tokenValues).forEach((t) => {
+        const u = t.replace(/[\{\}\[\]]/g, '').trim().toUpperCase();
+        if (u && !['FIRMA', 'FIRMA_CLIENTE', 'FIRMA_USUARIO'].includes(u)) {
+          set.add(u);
+        }
+      });
+    }
+    return Array.from(set);
+  }, [managedTokens, detectedTokensInHtml, tokenValues]);
+
+  // Insert token into active editor or page
+  const handleInsertToken = (tok: string) => {
+    const formatted = `{{${tok}}}`;
+    let inserted = false;
+    try {
+      inserted = document.execCommand('insertText', false, formatted);
+    } catch (e) {
+      inserted = false;
+    }
+    if (!inserted) {
+      const newPages = [...pages];
+      const pageIdx = Math.max(0, Math.min(currentPageIndex, newPages.length - 1));
+      newPages[pageIdx] = (newPages[pageIdx] || '') + ` ${formatted} `;
+      const updatedBody = newPages.join(`\n${PAGE_BREAK_MARKER}\n`);
+      updateHtml(updatedBody);
+    }
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(formatted).catch(() => {});
+    }
+    toast.success(`Shortcut ${formatted} insertado en el texto`);
+  };
+
+  // Add new shortcut
+  const handleAddShortcut = (rawName?: string, insert: boolean = false) => {
+    const target = (rawName !== undefined ? rawName : newShortcutName).trim();
+    if (!target) {
+      toast.error('Ingrese el nombre del shortcut');
+      return;
+    }
+    const formatted = target
+      .replace(/[\{\}\[\]]/g, '')
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^A-Z0-9_]/g, '');
+
+    if (!formatted) {
+      toast.error('Nombre de shortcut no válido');
+      return;
+    }
+
+    if (allTokens.includes(formatted)) {
+      toast.error(`El shortcut {{${formatted}}} ya existe`);
+      return;
+    }
+
+    const updated = [...managedTokens, formatted];
+    setManagedTokens(updated);
+    if (onTokensChange) onTokensChange(updated);
+
+    setTokenValues((prev) => ({ ...prev, [formatted]: '' }));
+    setNewShortcutName('');
+
+    if (insert) {
+      handleInsertToken(formatted);
+    } else {
+      toast.success(`Shortcut {{${formatted}}} registrado`);
+    }
+  };
+
+  // Start rename
+  const handleStartRenameToken = (tok: string) => {
+    setEditingTokenOriginal(tok);
+    setEditingTokenName(tok);
+  };
+
+  // Save rename
+  const handleSaveRenameToken = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTokenOriginal) return;
+
+    const formatted = editingTokenName
+      .replace(/[\{\}\[\]]/g, '')
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^A-Z0-9_]/g, '');
+
+    if (!formatted) {
+      toast.error('Nombre no válido');
+      return;
+    }
+
+    if (formatted === editingTokenOriginal) {
+      setEditingTokenOriginal(null);
+      return;
+    }
+
+    if (allTokens.includes(formatted)) {
+      toast.error(`El shortcut {{${formatted}}} ya existe`);
+      return;
+    }
+
+    const orig = editingTokenOriginal;
+    const updated = managedTokens.map((t) => (t === orig ? formatted : t));
+    if (!updated.includes(formatted)) updated.push(formatted);
+    setManagedTokens(updated);
+    if (onTokensChange) onTokensChange(updated);
+
+    // Transfer tokenValues
+    setTokenValues((prev) => {
+      const next = { ...prev };
+      if (orig in next) {
+        next[formatted] = next[orig];
+        delete next[orig];
+      }
+      return next;
+    });
+
+    // Replace in full HTML document
+    const currentHtml = getCurrentFullHtml();
+    const regex = new RegExp(`(?:\\{\\{|\\[)${orig}(?:\\}\\}|\\])`, 'g');
+    const replacedHtml = currentHtml.replace(regex, `{{${formatted}}}`);
+    updateHtml(replacedHtml);
+
+    setEditingTokenOriginal(null);
+    toast.success(`Shortcut renombrado de {{${orig}}} a {{${formatted}}} en la lista y texto`);
+  };
+
+  // Delete shortcut
+  const handleDeleteToken = (tok: string) => {
+    const updated = managedTokens.filter((t) => t !== tok);
+    setManagedTokens(updated);
+    if (onTokensChange) onTokensChange(updated);
+
+    setTokenValues((prev) => {
+      const next = { ...prev };
+      delete next[tok];
+      return next;
+    });
+
+    toast.success(`Shortcut {{${tok}}} eliminado de la lista`);
+  };
+
+  // Save values
+  const handleSaveTokenValues = (e: React.FormEvent) => {
     e.preventDefault();
     if (onFieldValuesChange) {
       onFieldValuesChange(tokenValues);
     }
-    setIsFieldsModalOpen(false);
-    toast.success('Valores de campos guardados. Se reemplazarán automáticamente en la vista pública.');
+    if (onTokensChange) {
+      onTokensChange(allTokens);
+    }
+    setIsShortcutsModalOpen(false);
+    toast.success('Valores de los shortcuts guardados exitosamente.');
   };
 
   // Clean inner inline background images & white backgrounds, normalize img src URLs and substitute signature tag if signatureUrl is present
@@ -319,14 +510,14 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
       onContentChange(finalHtml);
     }
     if (onSave) {
-      await onSave(finalHtml, tokenValues);
+      await onSave(finalHtml, tokenValues, allTokens);
     }
   };
 
   useImperativeHandle(ref, () => ({
     save: handleSave,
     getCurrentHtml: getCurrentFullHtml,
-  }), [pages, localHtml, storedBgImage, tokenValues, onSave, onContentChange]);
+  }), [pages, localHtml, storedBgImage, tokenValues, allTokens, onSave, onContentChange]);
 
   // Execute rich text formatting commands (Word Style Toolbar formatDoc as in inmosoft lexvault_edit)
   const formatDoc = (cmd: string, value: string | undefined = undefined) => {
@@ -717,16 +908,19 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-2">
-              {/* Substitute Defined Fields Button - ONLY in Edit Mode */}
+              {/* Manage & Fill Shortcuts Button - ONLY in Edit Mode */}
               {editablePages && (
                 <button
                   type="button"
-                  onClick={() => setIsFieldsModalOpen(true)}
-                  className="p-1.5 px-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-amber-300 font-bold transition-colors flex items-center gap-1.5 shadow-2xs text-xs"
-                  title="Valores de Campos para Vista Pública"
+                  onClick={() => {
+                    setShortcutsModalTab(isContract ? 'fill' : 'manage');
+                    setIsShortcutsModalOpen(true);
+                  }}
+                  className="p-1.5 px-2.5 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 text-indigo-300 font-bold transition-all flex items-center gap-1.5 shadow-2xs text-xs"
+                  title="Gestionar y Llenar Shortcuts / Variables"
                 >
-                  <Sliders className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Campos {detectedTokens.length > 0 ? `(${detectedTokens.length})` : ''}</span>
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Shortcuts {allTokens.length > 0 ? `(${allTokens.length})` : ''}</span>
                 </button>
               )}
 
@@ -1095,78 +1289,317 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
         )}
       </div>
 
-      {/* Modal / Panel para Valores de Campos y Variables (Valores guardados para reemplazo en la vista pública) */}
-      {isFieldsModalOpen && editablePages && (
+      {/* Modal / Panel para Gestión de Shortcuts y Variables (Agregar, Editar/Renombrar, Eliminar y Llenar Valores) */}
+      {isShortcutsModalOpen && editablePages && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div
-            onClick={() => setIsFieldsModalOpen(false)}
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs"
+            onClick={() => {
+              setIsShortcutsModalOpen(false);
+              setEditingTokenOriginal(null);
+            }}
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs"
           />
-          <div className="bg-slate-900 border border-slate-700 text-white rounded-3xl p-6 shadow-2xl relative z-10 max-w-lg w-full space-y-4 max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                  <Sliders className="w-4 h-4" />
+          <div className="bg-slate-900 border border-slate-700 text-white rounded-3xl p-6 shadow-2xl relative z-10 max-w-2xl w-full space-y-4 max-h-[88vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+                  <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-sm text-white">Valores de Campos (Para Vista Pública)</h4>
-                  <p className="text-[11px] text-slate-400">Los tokens se mantienen en la edición y se reemplazarán al abrir la vista pública</p>
+                  <h4 className="font-extrabold text-sm text-white">
+                    {isContract ? 'Shortcuts del Contrato' : 'Shortcuts de la Plantilla Legal'}
+                  </h4>
+                  <p className="text-[11px] text-slate-400">
+                    {isContract
+                      ? 'Gestiona shortcuts heredados, agrega campos propios y llena sus valores.'
+                      : 'Agrega, edita o elimina shortcuts reutilizables para tus documentos.'}
+                  </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsFieldsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            <form onSubmit={handleApplyTokenSubstitutions} className="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-1">
-              {detectedTokens.length === 0 ? (
-                <div className="p-6 text-center text-slate-400 text-xs italic bg-slate-800/50 rounded-2xl border border-slate-800">
-                  {"No se detectaron variables tipo {{NOMBRE}} o [CAMPO] en este documento."}
+              <div className="flex items-center gap-2">
+                {/* Tabs Switcher */}
+                <div className="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShortcutsModalTab('manage');
+                      setEditingTokenOriginal(null);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                      shortcutsModalTab === 'manage'
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>Gestionar ({allTokens.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShortcutsModalTab('fill');
+                      setEditingTokenOriginal(null);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                      shortcutsModalTab === 'fill'
+                        ? 'bg-amber-500 text-slate-950 font-black'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Llenar Valores</span>
+                  </button>
                 </div>
-              ) : (
-                detectedTokens.map((tok) => (
-                  <div key={tok} className="space-y-1">
-                    <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider font-mono">
-                      {`{{${tok}}}`} o {`[${tok}]`}
-                    </label>
-                    <input
-                      type="text"
-                      value={tokenValues[tok] || ''}
-                      onChange={(e) =>
-                        setTokenValues((prev) => ({
-                          ...prev,
-                          [tok]: e.target.value,
-                        }))
-                      }
-                      placeholder={`Ingrese valor para ${tok.replace(/_/g, ' ')}...`}
-                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:ring-2 focus:ring-amber-400/30 focus:outline-none font-medium"
-                    />
-                  </div>
-                ))
-              )}
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800 flex-shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIsFieldsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800"
+                  onClick={() => {
+                    setIsShortcutsModalOpen(false);
+                    setEditingTokenOriginal(null);
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={detectedTokens.length === 0}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-extrabold text-xs shadow-md transition-all flex items-center gap-1.5"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Guardar Valores de Campos</span>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-            </form>
+            </div>
+
+            {/* TAB 1: GESTIONAR SHORTCUTS (AGREGAR, EDITAR / RENOMBRAR, ELIMINAR, INSERTAR) */}
+            {shortcutsModalTab === 'manage' ? (
+              <div className="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-1">
+                {/* 1. Formulario Agregar Nuevo Shortcut */}
+                <div className="p-3.5 bg-slate-800/60 rounded-2xl border border-slate-700/80 space-y-2.5">
+                  <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Plus className="w-3.5 h-3.5 text-indigo-400" />
+                    {isContract ? 'Crear Nuevo Shortcut / Campo Propio para este Contrato' : 'Crear Nuevo Shortcut para esta Plantilla'}
+                  </label>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      value={newShortcutName}
+                      onChange={(e) => setNewShortcutName(e.target.value)}
+                      placeholder="Ej. NOTARIA, GARANTE, FORMA_PAGO, PLAZO_DIAS"
+                      className="flex-1 px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white focus:ring-2 focus:ring-indigo-500/30 focus:outline-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddShortcut();
+                        }
+                      }}
+                    />
+
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleAddShortcut(undefined, false)}
+                        className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Agregar</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAddShortcut(undefined, true)}
+                        className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-indigo-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                        title="Agregar a la lista e insertar de inmediato en el cursor del texto"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Agregar e Insertar</span>
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    Se creará en formato automático <code className="text-indigo-300 font-mono">{"{{NOMBRE}}"}</code>
+                  </p>
+                </div>
+
+                {/* 2. Listado de Shortcuts Existentes */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+                    <span className="font-bold uppercase tracking-wider text-[10px]">Shortcuts Registrados ({allTokens.length})</span>
+                    <span className="text-[10px]">Haz clic en &quot;Insertar&quot; para colocar en el documento</span>
+                  </div>
+
+                  {allTokens.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400 text-xs italic bg-slate-800/40 rounded-2xl border border-slate-800">
+                      No hay shortcuts registrados. Utiliza el formulario arriba para agregar uno nuevo.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {allTokens.map((tok) => {
+                        const inDoc = detectedTokensInHtml.includes(tok);
+                        const isEditingThis = editingTokenOriginal === tok;
+
+                        return (
+                          <div
+                            key={tok}
+                            className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-xl border border-slate-700/60 transition-all space-y-2"
+                          >
+                            {isEditingThis ? (
+                              /* Inline Rename Mode */
+                              <form onSubmit={handleSaveRenameToken} className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={editingTokenName}
+                                  onChange={(e) => setEditingTokenName(e.target.value)}
+                                  className="flex-1 px-3 py-1.5 bg-slate-950 border border-amber-500 rounded-lg text-xs font-mono text-white focus:outline-none"
+                                  autoFocus
+                                />
+                                <button
+                                  type="submit"
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Guardar y Reemplazar</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingTokenOriginal(null)}
+                                  className="px-3 py-1.5 bg-slate-700 text-slate-300 rounded-lg text-xs font-bold"
+                                >
+                                  Cancelar
+                                </button>
+                              </form>
+                            ) : (
+                              /* View Mode */
+                              <div className="flex items-center justify-between gap-3 flex-wrap">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="font-mono text-xs font-black text-amber-400 px-2 py-0.5 bg-amber-950/40 border border-amber-700/40 rounded-lg shrink-0">
+                                    {`{{${tok}}}`}
+                                  </span>
+
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                                      inDoc
+                                        ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+                                        : 'bg-slate-700/60 text-slate-400 border border-slate-700'
+                                    }`}
+                                  >
+                                    {inDoc ? 'En el texto' : 'Variable registrada'}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleInsertToken(tok)}
+                                    className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-indigo-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
+                                    title="Insertar {{...}} en el documento"
+                                  >
+                                    <PlusCircle className="w-3.5 h-3.5" />
+                                    <span>Insertar</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartRenameToken(tok)}
+                                    className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-amber-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
+                                    title="Editar / Renombrar este shortcut en todo el documento"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    <span>Renombrar</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteToken(tok)}
+                                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors"
+                                    title="Eliminar de la lista de shortcuts"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* TAB 2: LLENAR VALORES DE LOS SHORTCUTS */
+              <form onSubmit={handleSaveTokenValues} className="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-1">
+                {/* Fast Custom Field Adder in Fill tab */}
+                <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-2">
+                  <span className="text-[11px] text-slate-300 font-medium">
+                    {isContract
+                      ? '¿Necesitas un campo propio adicional para este contrato?'
+                      : '¿Deseas agregar una variable propia a esta plantilla?'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = prompt('Nombre del nuevo campo propio (ej. NOTARIA, GARANTE):');
+                      if (name) handleAddShortcut(name, false);
+                    }}
+                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shrink-0 transition-colors flex items-center gap-1 shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Agregar Campo Propio</span>
+                  </button>
+                </div>
+
+                {allTokens.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 text-xs italic bg-slate-800/40 rounded-2xl border border-slate-800">
+                    No hay variables detectadas ni registradas. Agrega shortcuts en la pestaña &quot;Gestionar&quot;.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {allTokens.map((tok) => (
+                      <div key={tok} className="space-y-1 p-2.5 bg-slate-800/40 rounded-xl border border-slate-700/60">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider font-mono truncate">
+                            {`{{${tok}}}`}
+                          </label>
+                          {tokenValues[tok] ? (
+                            <span className="text-[9px] font-bold text-emerald-400">Lleno</span>
+                          ) : (
+                            <span className="text-[9px] text-slate-500">Vacío</span>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={tokenValues[tok] || ''}
+                          onChange={(e) =>
+                            setTokenValues((prev) => ({
+                              ...prev,
+                              [tok]: e.target.value,
+                            }))
+                          }
+                          placeholder={`Valor para ${tok.replace(/_/g, ' ')}...`}
+                          className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:ring-2 focus:ring-amber-400/30 focus:outline-none font-medium"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-800 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsShortcutsModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={allTokens.length === 0}
+                    className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-extrabold text-xs shadow-md transition-all flex items-center gap-1.5"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Guardar y Aplicar Valores</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

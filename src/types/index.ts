@@ -580,6 +580,7 @@ export interface LexvaultDocument {
   content?: string;
   field_values_json?: Record<string, any>;
   fields_json?: Record<string, any>;
+  tokens_json?: string[];
   replacements?: Record<string, any>;
   pdf_path?: string;
   pdf_url?: string;

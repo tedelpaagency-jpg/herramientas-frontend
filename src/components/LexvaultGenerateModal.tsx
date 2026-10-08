@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, UserCheck, Sparkles, Eye, Download, FileCode, Image as ImageIcon } from 'lucide-react';
+import { X, FileText, UserCheck, Sparkles, Eye, Download, FileCode, Image as ImageIcon, Plus, Trash2, Sliders, Check } from 'lucide-react';
 import { LexvaultTemplate, Client } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import clientService from '../services/clientService';
@@ -31,6 +31,9 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [docTitle, setDocTitle] = useState('');
   const [tokens, setTokens] = useState<string[]>([]);
+  const [customTokens, setCustomTokens] = useState<string[]>([]);
+  const [newCustomTokenInput, setNewCustomTokenInput] = useState('');
+  const [isAddingCustomToken, setIsAddingCustomToken] = useState(false);
   const [replacements, setReplacements] = useState<Record<string, string>>({});
   const [customBg, setCustomBg] = useState<string | null>(template?.background_image || null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,6 +59,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
   useEffect(() => {
     if (!activeTemplate) {
       setTokens([]);
+      setCustomTokens([]);
       setReplacements({});
       setCustomBg(null);
       return;
@@ -94,6 +98,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
     }
 
     setTokens(extracted);
+    setCustomTokens([]);
 
     // Default replacement values
     const initialReplacements: Record<string, string> = {};
@@ -161,6 +166,48 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
     setReplacements((prev) => ({ ...prev, [tokenName]: value }));
   };
 
+  const handleAddCustomToken = (e: React.FormEvent) => {
+    e.preventDefault();
+    const raw = newCustomTokenInput.trim();
+    if (!raw) return;
+
+    // Normalize token name to UPPERCASE_SNAKE_CASE without brackets
+    const formattedToken = raw
+      .replace(/[\{\}\[\]]/g, '')
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^A-Z0-9_]/g, '');
+
+    if (!formattedToken) {
+      toast.error('Nombre de shortcut no válido');
+      return;
+    }
+
+    if (tokens.includes(formattedToken)) {
+      toast.error(`El shortcut {{${formattedToken}}} ya existe`);
+      return;
+    }
+
+    setTokens((prev) => [...prev, formattedToken]);
+    setCustomTokens((prev) => [...prev, formattedToken]);
+    setReplacements((prev) => ({ ...prev, [formattedToken]: '' }));
+    setNewCustomTokenInput('');
+    setIsAddingCustomToken(false);
+    toast.success(`Campo {{${formattedToken}}} agregado al contrato`);
+  };
+
+  const handleRemoveCustomToken = (tokenToRemove: string) => {
+    setTokens((prev) => prev.filter((t) => t !== tokenToRemove));
+    setCustomTokens((prev) => prev.filter((t) => t !== tokenToRemove));
+    setReplacements((prev) => {
+      const next = { ...prev };
+      delete next[tokenToRemove];
+      return next;
+    });
+    toast.success(`Campo {{${tokenToRemove}}} removido`);
+  };
+
   const getRenderedPreviewHtml = (): string => {
     if (!activeTemplate) return '';
     let html = activeTemplate.html_content || activeTemplate.template_body || '';
@@ -186,6 +233,8 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
         client_id: selectedClientId ? parseInt(selectedClientId) : null,
         title: docTitle,
         background_image: customBg === 'none' ? 'none' : (customBg || undefined),
+        tokens_json: tokens,
+        custom_tokens: customTokens,
         replacements,
       });
 
@@ -383,33 +432,121 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
                   </div>
                 </div>
 
-                {/* 3. Tokens Input Fields */}
-                <div>
-                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-3">Campos de la Plantilla Seleccionada</h4>
+                {/* 3. Tokens & Custom Contract Shortcuts */}
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <Sliders className="w-4 h-4 text-purple-600" />
+                        Shortcuts y Campos del Contrato ({tokens.length})
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Los shortcuts de la plantilla se copiaron para este contrato. Puedes llenarlos o agregar campos propios adicionales.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingCustomToken((prev) => !prev)}
+                      className="px-3 py-1.5 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-bold border border-purple-200 dark:border-purple-800 flex items-center gap-1.5 transition-all shadow-2xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Agregar Campo Propio</span>
+                    </button>
+                  </div>
+
+                  {/* Add Custom Token Inline Form */}
+                  {isAddingCustomToken && (
+                    <div className="p-3 bg-purple-50/80 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-800 space-y-2 animate-in fade-in">
+                      <label className="block text-[11px] font-bold text-purple-900 dark:text-purple-200 uppercase">
+                        Nuevo Campo Propio para este Contrato (ej. GARANTE, NOTARIA, FORMA_PAGO)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newCustomTokenInput}
+                          onChange={(e) => setNewCustomTokenInput(e.target.value)}
+                          placeholder="Nombre del campo (se usará como {{CAMPO}})"
+                          className="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-purple-300 dark:border-purple-700 rounded-xl text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600/30"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddCustomToken(e);
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddCustomToken}
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Agregar</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingCustomToken(false);
+                            setNewCustomTokenInput('');
+                          }}
+                          className="px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 rounded-xl text-xs font-bold transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {!activeTemplate ? (
                     <p className="text-xs text-slate-500 italic bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                       Selecciona una plantilla legal arriba para mostrar sus campos editables.
                     </p>
                   ) : tokens.length === 0 ? (
                     <p className="text-xs text-slate-500 italic bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                      No se detectaron variables adicionales en esta plantilla. Puede proceder directamente a la emisión.
+                      No hay shortcuts registrados en esta plantilla. Puedes hacer clic en &quot;+ Agregar Campo Propio&quot; para definir variables personalizadas.
                     </p>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {tokens.map((tok) => (
-                        <div key={tok}>
-                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                            {activeTemplate.fields_json?.[tok] || tok.replace(/_/g, ' ')}
-                          </label>
-                          <input
-                            type="text"
-                            value={replacements[tok] || ''}
-                            onChange={(e) => handleInputChange(tok, e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
-                            placeholder={`Ingrese ${tok.toLowerCase().replace(/_/g, ' ')}`}
-                          />
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-1 custom-scrollbar">
+                      {tokens.map((tok) => {
+                        const isCustom = customTokens.includes(tok);
+                        return (
+                          <div key={tok} className="relative p-2.5 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 font-mono truncate">
+                                {`{{${tok}}}`}
+                              </label>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {isCustom ? (
+                                  <>
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                      Propio
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveCustomToken(tok)}
+                                      className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors"
+                                      title="Eliminar campo propio"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-medium text-slate-400 dark:text-slate-500">
+                                    De plantilla
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <input
+                              type="text"
+                              value={replacements[tok] || ''}
+                              onChange={(e) => handleInputChange(tok, e.target.value)}
+                              className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
+                              placeholder={`Valor para ${tok}...`}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
