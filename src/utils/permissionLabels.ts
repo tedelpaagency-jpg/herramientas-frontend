@@ -279,6 +279,31 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     description: 'Acceso completo para crear, editar y eliminar páginas de aterrizaje',
     module: 'Landing Pages',
   },
+  'permission_groups.view': {
+    label: 'Ver Grupos de Permisos',
+    description: 'Permite consultar y visualizar los grupos de permisos configurables del tenant',
+    module: 'Roles & Permisos',
+  },
+  'permission_groups.create': {
+    label: 'Crear Grupos de Permisos',
+    description: 'Permite registrar nuevos grupos de permisos personalizados',
+    module: 'Roles & Permisos',
+  },
+  'permission_groups.edit': {
+    label: 'Editar Grupos de Permisos',
+    description: 'Permite actualizar el nombre, descripción y estado de grupos de permisos',
+    module: 'Roles & Permisos',
+  },
+  'permission_groups.delete': {
+    label: 'Eliminar Grupos de Permisos',
+    description: 'Permite eliminar grupos de permisos no utilizados mediante baja segura',
+    module: 'Roles & Permisos',
+  },
+  'permission_groups.manage': {
+    label: 'Administrar Permisos de Grupo',
+    description: 'Permite configurar, agregar y remover permisos asociados a un grupo',
+    module: 'Roles & Permisos',
+  },
 };
 
 const ACTION_MAP: Record<string, { verb: string; desc: string }> = {
@@ -318,6 +343,7 @@ const DOMAIN_MAP: Record<string, string> = {
   task: 'Tareas',
   landings: 'Landing Pages',
   landing: 'Landing Pages',
+  permission_groups: 'Grupos de Permisos',
 };
 
 export function getPermissionLabel(key: string): string {

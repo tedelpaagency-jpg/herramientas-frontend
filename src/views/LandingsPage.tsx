@@ -188,6 +188,7 @@ export const LandingsPage: React.FC = () => {
         l.name?.toLowerCase().includes(term) ||
         l.plantilla?.toLowerCase().includes(term) ||
         l.agency_name?.toLowerCase().includes(term) ||
+        l.custom_domain?.toLowerCase().includes(term) ||
         (l as any).white_label?.name?.toLowerCase().includes(term)
     );
   }, [landings, search]);
@@ -338,20 +339,43 @@ export const LandingsPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="p-4">
-                        <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 max-w-xs">
-                          <input
-                            type="text"
-                            readOnly
-                            value={publicUrl}
-                            className="flex-1 bg-transparent font-mono text-[10px] text-slate-600 dark:text-slate-300 outline-none px-1 truncate"
-                          />
-                          <button
-                            onClick={() => handleCopyUrl(publicUrl, landing.id)}
-                            className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 hover:text-teal-600 transition-colors"
-                            title="Copiar Enlace"
-                          >
-                            {copiedId === landing.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
+                        <div className="space-y-1.5 max-w-xs">
+                          {landing.custom_domain && (
+                            <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 p-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                              <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 ml-1" />
+                              <a
+                                href={`https://${landing.custom_domain}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex-1 font-mono text-[10px] text-emerald-700 dark:text-emerald-300 font-bold truncate hover:underline"
+                                title={`Dominio: https://${landing.custom_domain} (Redirige al portal)`}
+                              >
+                                {landing.custom_domain}
+                              </a>
+                              <button
+                                onClick={() => handleCopyUrl(`https://${landing.custom_domain}`, landing.id * 1000)}
+                                className="p-1 rounded-lg bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 text-emerald-600 hover:text-emerald-800 transition-colors shrink-0"
+                                title="Copiar Dominio"
+                              >
+                                {copiedId === landing.id * 1000 ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                              </button>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <input
+                              type="text"
+                              readOnly
+                              value={publicUrl}
+                              className="flex-1 bg-transparent font-mono text-[10px] text-slate-600 dark:text-slate-300 outline-none px-1 truncate"
+                            />
+                            <button
+                              onClick={() => handleCopyUrl(publicUrl, landing.id)}
+                              className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 hover:text-teal-600 transition-colors"
+                              title="Copiar Enlace"
+                            >
+                              {copiedId === landing.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
                         </div>
                       </td>
                       <td className="p-4 text-right">
@@ -468,6 +492,22 @@ export const LandingsPage: React.FC = () => {
                     <span className="font-extrabold text-slate-800 dark:text-slate-200">{landing.agency_name || 'Global'}</span>
                   </div>
 
+                  {landing.custom_domain && (
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <span className="text-slate-500 font-medium">Dominio Propio:</span>
+                      <a
+                        href={`https://${landing.custom_domain}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                        title={`Visitar https://${landing.custom_domain}`}
+                      >
+                        <Globe className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>{landing.custom_domain}</span>
+                      </a>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
                     <span className="text-slate-500 font-medium">Prospectos Capturados:</span>
                     <span className="px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 font-black border border-teal-100 flex items-center gap-1">
@@ -582,8 +622,46 @@ export const LandingsPage: React.FC = () => {
               {/* TAB: Info & QR */}
               {activeTab === 'info' && (
                 <div className="space-y-6 text-xs">
+                  {selectedLanding.custom_domain && (
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-emerald-900 dark:text-emerald-200 block text-sm flex items-center gap-1.5">
+                          <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          Dominio Web Personalizado:
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                          Redirección Activa
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                        <span className="flex-1 font-mono text-xs font-bold text-emerald-800 dark:text-emerald-200">
+                          https://{selectedLanding.custom_domain}
+                        </span>
+                        <button
+                          onClick={() => handleCopyUrl(`https://${selectedLanding.custom_domain}`, selectedLanding.id * 1000)}
+                          className="px-3.5 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 flex items-center gap-1 shadow-xs"
+                        >
+                          {copiedId === selectedLanding.id * 1000 ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4" />}
+                          <span>Copiar</span>
+                        </button>
+                        <a
+                          href={`https://${selectedLanding.custom_domain}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3.5 py-2 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 flex items-center gap-1 shadow-xs"
+                        >
+                          <span>Visitar</span>
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                        Los visitantes que ingresen a este dominio son redirigidos automáticamente a la landing oficial en tu portal.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="p-4 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 rounded-2xl space-y-2">
-                    <span className="font-extrabold text-teal-900 dark:text-teal-200 block text-sm">Enlace Directo en Laravel:</span>
+                    <span className="font-extrabold text-teal-900 dark:text-teal-200 block text-sm">Enlace Directo en Portal:</span>
                     <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-3 rounded-xl border border-teal-200 dark:border-teal-800">
                       <input
                         type="text"

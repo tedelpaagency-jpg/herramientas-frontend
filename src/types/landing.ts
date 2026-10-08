@@ -151,6 +151,8 @@ export interface LandingTemplate {
   privacy_policy?: string | null;
   send_credentials?: boolean;
   credential_template_id?: number | null;
+  custom_domain?: string | null;
+  target_portal_url?: string | null;
   encoded_id?: string;
   public_url?: string;
   events?: any[];

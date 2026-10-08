@@ -92,6 +92,11 @@ export const landingService = {
     const response = await apiClient.post('/v1/public/landings/lead', payload);
     return response.data;
   },
+
+  lookupDomain: async (domain: string): Promise<any> => {
+    const response = await apiClient.get(`/v1/public/landing-domain-lookup?domain=${encodeURIComponent(domain)}`);
+    return response.data?.data || response.data;
+  },
 };
 
 export default landingService;

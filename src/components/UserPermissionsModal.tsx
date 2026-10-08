@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { User } from '../types';
+import { User, PermissionGroup } from '../types';
 import userService from '../services/userService';
+import permissionGroupService from '../services/permissionGroupService';
 import Portal from './Portal';
-import { Key, Shield, Check, X, Sparkles, CheckSquare, Square, RefreshCw } from 'lucide-react';
+import { Key, Shield, Check, X, Sparkles, CheckSquare, Square, RefreshCw, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { useAuth } from '../context/AuthContext';
@@ -24,6 +25,7 @@ export const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
 }) => {
   const { refreshUser } = useAuth();
   const [catalog, setCatalog] = useState<Record<string, { name: string; permissions: Record<string, string> }>>({});
+  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -37,17 +39,27 @@ export const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
   const loadPermissionsData = async () => {
     setLoading(true);
     try {
-      const [catData, userData] = await Promise.all([
+      const [catData, userData, groupsData] = await Promise.all([
         userService.getPermissionCatalog(),
         userService.getUserPermissions(user.id),
+        permissionGroupService.getGroups({ status: 'active' }).catch(() => []),
       ]);
       setCatalog(catData || {});
       setSelectedPermissions(userData.permissions || []);
+      setPermissionGroups(groupsData || []);
     } catch (err) {
       toast.error('Error al cargar permisos del usuario');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApplyGroup = (groupId: number) => {
+    const group = permissionGroups.find((g) => g.id === groupId);
+    if (!group) return;
+    const groupPermKeys = (group.permissions || []).map((p) => p.name);
+    setSelectedPermissions(groupPermKeys);
+    toast.success(`Grupo "${group.name}" aplicado (${groupPermKeys.length} permisos)`);
   };
 
   const handleTogglePermission = (permKey: string) => {
@@ -139,6 +151,26 @@ export const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs">
             <span className="font-extrabold text-slate-500 uppercase text-[10px]">Configuración Rápida (Presets):</span>
             <div className="flex flex-wrap items-center gap-2">
+              {permissionGroups.length > 0 && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60 shadow-2xs">
+                  <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <select
+                    defaultValue=""
+                    onChange={(e) => {
+                      if (e.target.value) handleApplyGroup(Number(e.target.value));
+                    }}
+                    className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+                  >
+                    <option value="" disabled>Aplicar Grupo...</option>
+                    {permissionGroups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name} ({g.permissions?.length || 0} perms)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={handleApplyPresetCloser}

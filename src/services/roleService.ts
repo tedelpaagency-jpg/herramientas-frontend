@@ -8,12 +8,14 @@ export interface CreateRolePayload {
   permissions?: string[];
   agency_id?: number;
   white_label_id?: number;
+  permission_group_id?: number | null;
 }
 
 export interface UpdateRolePayload {
   display_name?: string;
   description?: string;
   permissions?: string[];
+  permission_group_id?: number | null;
 }
 
 export const roleService = {

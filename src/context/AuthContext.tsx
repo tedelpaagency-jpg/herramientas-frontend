@@ -213,6 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setImpersonatingFrom(null);
       localStorage.removeItem('santun_auth_token');
       localStorage.removeItem('santun_user');
+      localStorage.removeItem('santun_white_label');
       localStorage.removeItem('santun_impersonator');
       localStorage.removeItem('santun_original_token');
       localStorage.removeItem('santun_original_user');
@@ -298,7 +299,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isSuperAdmin) return ['*'];
 
     let basePerms: string[] = [];
-    if (Array.isArray((user as any)?.effective_permissions) && (user as any).effective_permissions.length > 0) {
+    if (Array.isArray((user as any)?.effective_permissions)) {
       basePerms = (user as any).effective_permissions;
     } else {
       // Fallback extraction from agency plan or direct permissions
@@ -309,11 +310,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         : [];
       const extracted = planPerms.map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase()).filter(Boolean);
       
-      if (dashboardType === 'agency_admin' || dashboardType === 'agent') {
+      if (dashboardType === 'agency_admin') {
         basePerms = extracted;
       } else {
         const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase());
-        basePerms = Array.from(new Set([...extracted, ...directPerms]));
+        basePerms = Array.from(new Set(directPerms));
       }
     }
 

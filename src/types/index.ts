@@ -99,6 +99,8 @@ export interface Role {
   white_label_id?: number | null;
   agency_id?: number | null;
   permissions?: Permission[];
+  permission_group_id?: number | null;
+  permission_group?: PermissionGroup;
   users_count?: number;
   created_at?: string;
   updated_at?: string;
@@ -109,6 +111,49 @@ export interface Permission {
   name: string;
   guard_name?: string;
   created_at?: string;
+}
+
+export interface PermissionGroup {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string | null;
+  is_active: boolean;
+  is_system: boolean;
+  white_label_id?: number | null;
+  agency_id?: number | null;
+  created_by?: number | null;
+  permissions?: Permission[];
+  permissions_count?: number;
+  roles_count?: number;
+  users_count?: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
+  roles?: Array<{ id: number; name: string; display_name: string }>;
+}
+
+export interface PermissionGroupUsage {
+  is_used: boolean;
+  roles_count: number;
+  users_count: number;
+  roles: Array<{ id: number; name: string; display_name: string }>;
+}
+
+export interface CreatePermissionGroupPayload {
+  name: string;
+  description?: string;
+  is_active?: boolean;
+  permissions?: string[];
+  white_label_id?: number | null;
+  agency_id?: number | null;
+}
+
+export interface UpdatePermissionGroupPayload {
+  name?: string;
+  description?: string;
+  is_active?: boolean;
+  permissions?: string[];
 }
 
 export interface User {

@@ -3,16 +3,29 @@ import { LoginVideo, LoginLogo, PublicLoginConfiguration, LoginTexts } from '../
 
 export const loginMediaService = {
   // === CONFIGURACIÓN PÚBLICA (Consumida por /login) ===
-  getPublicConfiguration: async (domain?: string): Promise<PublicLoginConfiguration> => {
+  getPublicConfiguration: async (domain?: string, customParams?: Record<string, string>): Promise<PublicLoginConfiguration> => {
     try {
-      const currentDomain = domain || (typeof window !== 'undefined' ? window.location.hostname : '');
-      const params = currentDomain ? { domain: currentDomain } : {};
+      const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const paramDomain = searchParams?.get('domain') || searchParams?.get('host');
+      const paramSlug = searchParams?.get('slug') || searchParams?.get('wl') || searchParams?.get('white_label');
+      const paramWlId = searchParams?.get('white_label_id');
+
+      const currentDomain = domain || paramDomain || (typeof window !== 'undefined' ? window.location.hostname : '');
+      const params: Record<string, string> = { ...customParams };
+      
+      if (currentDomain) params.domain = currentDomain;
+      if (paramSlug) params.slug = paramSlug;
+      if (paramWlId) params.white_label_id = paramWlId;
+
       const res = await apiClient.get('/v1/login/configuration', { params });
       return res.data || { videos: [], logos: [] };
     } catch {
       try {
-        const currentDomain = domain || (typeof window !== 'undefined' ? window.location.hostname : '');
-        const params = currentDomain ? { domain: currentDomain } : {};
+        const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const currentDomain = domain || searchParams?.get('domain') || (typeof window !== 'undefined' ? window.location.hostname : '');
+        const params: Record<string, string> = { ...customParams };
+        if (currentDomain) params.domain = currentDomain;
+
         const res = await apiClient.get('/login/configuration', { params });
         return res.data || { videos: [], logos: [] };
       } catch (err) {

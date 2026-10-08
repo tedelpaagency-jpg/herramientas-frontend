@@ -134,6 +134,7 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
@@ -151,6 +152,7 @@ export const LoginPage: React.FC = () => {
   const brandLogoRaw = activeWl?.logo || activeWl?.logo_2 || activeWl?.logo_icon || currentAgency?.logo || null;
   const brandLogo = brandLogoRaw ? normalizeFileUrl(brandLogoRaw) : null;
   const customLoginBg = activeWl?.login_background ? normalizeFileUrl(activeWl.login_background) : (currentAgency?.login_background || (typeof window !== 'undefined' ? localStorage.getItem('santun_login_background') : null));
+  const primaryBrandColor = activeWl?.button_color || activeWl?.primary_color;
 
   // Carga de configuración pública del login con resolución por dominio
   useEffect(() => {
@@ -161,19 +163,47 @@ export const LoginPage: React.FC = () => {
         if (isMounted && config) {
           if (config.white_label) {
             setDynamicWhiteLabel(config.white_label);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('santun_white_label', JSON.stringify(config.white_label));
+            }
+          } else {
+            setDynamicWhiteLabel(null);
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('santun_white_label');
+            }
           }
           if (config.texts) {
             setDynamicTexts(config.texts);
           }
-          if (Array.isArray(config.videos) && config.videos.length > 0) {
+          if (Array.isArray(config.videos)) {
             setDynamicVideos(config.videos);
           }
-          if (Array.isArray(config.logos) && config.logos.length > 0) {
+          if (Array.isArray(config.logos)) {
             setDynamicLogos(config.logos);
+          }
+
+          // Precarga en memoria de la imagen del logo y fondo para evitar parpadeos visuales
+          const logoToPreload = config.white_label?.logo || config.white_label?.logo_2 || config.white_label?.logo_icon;
+          if (logoToPreload) {
+            const img = new Image();
+            img.src = normalizeFileUrl(logoToPreload);
+          }
+          if (config.white_label?.login_background && !isMp4Video(config.white_label.login_background)) {
+            const bgImg = new Image();
+            bgImg.src = normalizeFileUrl(config.white_label.login_background);
           }
         }
       } catch (e) {
-        // En caso de error, el fallback asegura que la pantalla continúe operando normalmente
+        console.warn('Error al cargar configuración de login:', e);
+      } finally {
+        if (isMounted) {
+          // Breve transición suave para garantizar sincronía visual perfecta
+          setTimeout(() => {
+            if (isMounted) {
+              setIsLoadingConfig(false);
+            }
+          }, 200);
+        }
       }
     };
 
@@ -275,8 +305,37 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  // Pantalla de carga ultra-pulida para prevenir parpadeo o visualización prematura de recursos
+  if (isLoadingConfig) {
+    return (
+      <div className="min-h-screen bg-[#FDFDFE] dark:bg-[#121413] flex flex-col items-center justify-center font-sans text-slate-900 dark:text-slate-100 relative overflow-hidden transition-colors">
+        {/* Luces difuminadas ambientales */}
+        <div className="absolute top-1/3 -left-20 w-80 h-80 bg-blue-500/10 dark:bg-blue-600/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+        <div className="absolute bottom-1/3 -right-20 w-80 h-80 bg-indigo-500/10 dark:bg-indigo-600/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+
+        <div className="flex flex-col items-center gap-5 z-10 max-w-xs text-center px-4 animate-in fade-in zoom-in-95 duration-300">
+          <div className="relative flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/25">
+              <Building2 className="w-7 h-7 text-white animate-pulse" />
+            </div>
+            <div className="absolute -inset-1.5 rounded-3xl border-2 border-blue-500/30 animate-spin border-t-transparent" />
+          </div>
+
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="text-[11px] font-bold tracking-widest uppercase text-blue-600 dark:text-blue-400">
+              Acceso Seguro
+            </span>
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+              Sincronizando identidad del portal...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#FDFDFE] dark:bg-[#121413] flex flex-col font-sans text-slate-900 dark:text-slate-100 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden transition-colors">
+    <div className="min-h-screen bg-[#FDFDFE] dark:bg-[#121413] flex flex-col font-sans text-slate-900 dark:text-slate-100 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden transition-colors animate-in fade-in duration-500">
       
       <main className="flex-1 w-full flex items-center justify-center p-4 sm:p-6 md:p-12 relative z-10">
         <div className="w-full max-w-[1140px] flex flex-col lg:flex-row gap-10 lg:gap-24 items-center justify-center z-10">
@@ -330,8 +389,16 @@ export const LoginPage: React.FC = () => {
               {effectiveVideos.length === 0 ? (
                 <div className="w-[230px] sm:w-[270px] h-[360px] sm:h-[420px] rounded-[24px] z-40 scale-100 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)]">
                   <div className="w-full h-full rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden border border-white/20 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white shadow-2xl">
-                    {customLoginBg && isMp4Video(customLoginBg) && (
-                      <CardVideoPlayer src={customLoginBg} />
+                    {customLoginBg && (
+                      isMp4Video(customLoginBg) ? (
+                        <CardVideoPlayer src={customLoginBg} />
+                      ) : (
+                        <img 
+                          src={customLoginBg} 
+                          alt="Fondo" 
+                          className="absolute inset-0 w-full h-full object-cover z-0 filter brightness-[0.75] contrast-[1.05]" 
+                        />
+                      )
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-slate-950/20 z-10 pointer-events-none" />
 
@@ -510,13 +577,21 @@ export const LoginPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className={`w-full h-11 rounded-xl mt-3 text-[14px] font-semibold text-white transition-all duration-300 flex items-center justify-center ${
+                    style={primaryBrandColor && !isSubmitting ? { backgroundColor: primaryBrandColor } : undefined}
+                    className={`w-full h-11 rounded-xl mt-3 text-[14px] font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2 ${
                       !isSubmitting
-                        ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-600/20 active:scale-[0.98]' 
-                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        ? 'bg-blue-600 hover:opacity-90 hover:shadow-md active:scale-[0.98]' 
+                        : 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed'
                     }`}
                   >
-                    {isSubmitting ? 'Ingresando...' : 'Iniciar Sesión'}
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Ingresando...</span>
+                      </>
+                    ) : (
+                      'Iniciar Sesión'
+                    )}
                   </button>
                 </form>
               </div>

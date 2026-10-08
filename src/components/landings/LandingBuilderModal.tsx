@@ -7,7 +7,7 @@ import FormSchemaEditor from './FormSchemaEditor';
 import CustomHtmlEditor from './CustomHtmlEditor';
 import WorkflowPaymentSettings from './WorkflowPaymentSettings';
 import DynamicFormRenderer from './DynamicFormRenderer';
-import { X, Save, Layout, Layers, Zap, Code, Eye, Plus, Trash2, Loader2, Globe } from 'lucide-react';
+import { X, Save, Layout, Layers, Zap, Code, Eye, Plus, Trash2, Loader2, Globe, ExternalLink, Copy, Check, ArrowRight } from 'lucide-react';
 import { prepareLandingHtml } from '@/utils/landingHtmlHelper';
 
 interface Props {
@@ -23,7 +23,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
   landing,
   onSaved,
 }) => {
-  const [activeTab, setActiveTab] = useState<'blocks' | 'form' | 'html' | 'automation' | 'preview'>('blocks');
+  const [activeTab, setActiveTab] = useState<'blocks' | 'form' | 'html' | 'automation' | 'domain' | 'preview'>('blocks');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [resources, setResources] = useState<LandingAvailableResources | undefined>();
@@ -32,6 +32,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
   const [title, setTitle] = useState('');
   const [mode, setMode] = useState<'visual' | 'custom_html'>('visual');
   const [customHtml, setCustomHtml] = useState('');
+  const [customDomain, setCustomDomain] = useState('');
+  const [copiedRedirect, setCopiedRedirect] = useState(false);
   const [actionType, setActionType] = useState<ActionType>('lead');
   const [planId, setPlanId] = useState<number | null>(null);
   const [defaultPassword, setDefaultPassword] = useState<string>('Acceso@2026');
@@ -107,6 +109,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
         setPrivacyPolicy(landing.privacy_policy || '');
         setSendCredentials(landing.send_credentials !== undefined ? Boolean(landing.send_credentials) : ((landing.form_schema as any)?.send_credentials !== false));
         setCredentialTemplateId(landing.credential_template_id || (landing.form_schema as any)?.credential_template_id || null);
+        setCustomDomain(landing.custom_domain || '');
 
         const initialPayment = landing.payment_config || { enabled: false, currency: 'USD', amount: 0, product_name: '' };
         const initialFormSchema = landing.form_schema || {
@@ -177,12 +180,16 @@ export const LandingBuilderModal: React.FC<Props> = ({
       const activeStripeAppearance = formSchema?.stripe_appearance || paymentConfig?.stripe_appearance;
 
       const finalMode = (mode === 'custom_html' || (customHtml && customHtml.trim().length > 50)) ? 'custom_html' : mode;
+      const cleanCustomDomain = customDomain.trim()
+        ? customDomain.trim().toLowerCase().replace(/^https?:\/\//i, '').replace(/\/+$/, '')
+        : null;
 
       const payload: Partial<LandingTemplate> = {
         title: title.trim(),
         name: title.trim(),
         mode: finalMode,
         custom_html: safeCustomHtml,
+        custom_domain: cleanCustomDomain,
         action_type: actionType,
         plan_id: planId,
         default_password: defaultPassword,
@@ -338,6 +345,16 @@ export const LandingBuilderModal: React.FC<Props> = ({
 
           <button
             type="button"
+            onClick={() => setActiveTab('domain')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
+              activeTab === 'domain' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Globe className="w-4 h-4 text-emerald-300" /> Dominio Web
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('preview')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
               activeTab === 'preview' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
@@ -470,6 +487,117 @@ export const LandingBuilderModal: React.FC<Props> = ({
               resources={resources}
             />
           )}
+
+          {/* TAB: CUSTOM DOMAIN & REDIRECTION */}
+          {activeTab === 'domain' && (() => {
+            const encodedId = landing?.encoded_id || (landing?.id ? btoa(String(landing.id)) : '');
+            const targetPortalBase = (landing?.white_label as any)?.custom_domain
+              ? `https://${(landing?.white_label as any).custom_domain.replace(/^https?:\/\//i, '').replace(/\/+$/, '')}`
+              : (typeof window !== 'undefined' ? window.location.origin : 'https://santun.tedelpa.com');
+            const targetRedirectUrl = encodedId ? `${targetPortalBase}/landing?id=${encodedId}` : `${targetPortalBase}/landing`;
+
+            return (
+              <div className="max-w-3xl mx-auto space-y-6 py-2">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                      <Globe className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white">Dominio Web Personalizado</h3>
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                        Asigna un dominio o subdominio propio a esta Landing Page. Cuando cualquier visitante ingrese a este dominio (ej. <span className="font-mono text-emerald-400 font-bold">yes360.academy</span>), será redirigido automáticamente a la landing oficial de tu portal.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                      Dominio o Subdominio (sin http:// ni https://)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Globe className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <input
+                        type="text"
+                        value={customDomain}
+                        onChange={(e) => setCustomDomain(e.target.value)}
+                        placeholder="ej. yes360.academy o promo.yes360.academy"
+                        className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-mono text-emerald-300 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Puedes ingresar dominios raíz como <span className="text-slate-400 font-mono">yes360.academy</span> o subdominios como <span className="text-slate-400 font-mono">certificacion.yes360.academy</span>.
+                    </p>
+                  </div>
+
+                  {/* Destino de Redirección Automática */}
+                  <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <ArrowRight className="w-4 h-4 text-emerald-400" />
+                        Destino de Redirección Automática
+                      </span>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Redirección 302 Activa
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-xs font-mono text-slate-300 break-all">
+                      <span className="truncate flex-1 select-all text-indigo-300">
+                        {targetRedirectUrl}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(targetRedirectUrl);
+                          setCopiedRedirect(true);
+                          setTimeout(() => setCopiedRedirect(false), 2000);
+                        }}
+                        className="p-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition shrink-0"
+                        title="Copiar URL de destino"
+                      >
+                        {copiedRedirect ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                      <a
+                        href={targetRedirectUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded-md bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 transition shrink-0"
+                        title="Abrir destino en nueva pestaña"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Cualquier parámetro de seguimiento o campaña (ej. <span className="text-slate-400 font-mono">?utm_source=...</span>) será reenviado automáticamente al portal.
+                    </p>
+                  </div>
+
+                  {/* DNS Setup Card */}
+                  <div className="bg-slate-950/60 border border-slate-800/60 rounded-xl p-4 space-y-2 text-xs">
+                    <span className="font-bold text-slate-200">Guía de Configuración DNS:</span>
+                    <p className="text-slate-400 leading-relaxed text-[11px]">
+                      En el proveedor donde gestionas el DNS de tu dominio (GoDaddy, Namecheap, Cloudflare, etc.), añade los registros según corresponda:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+                      <div className="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1">
+                        <span className="text-slate-400 block text-[10px] uppercase font-sans font-semibold">Registro A (Dominio Raíz)</span>
+                        <div><span className="text-indigo-400 font-bold">Host / Nombre:</span> @</div>
+                        <div><span className="text-indigo-400 font-bold">Apunta a:</span> IP de tu servidor</div>
+                      </div>
+                      <div className="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1">
+                        <span className="text-slate-400 block text-[10px] uppercase font-sans font-semibold">Registro CNAME (Subdominio / WWW)</span>
+                        <div><span className="text-indigo-400 font-bold">Host / Nombre:</span> www o subdominio</div>
+                        <div><span className="text-indigo-400 font-bold">Apunta a:</span> portal de tu marca blanca</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* TAB: PREVIEW */}
           {activeTab === 'preview' && (
