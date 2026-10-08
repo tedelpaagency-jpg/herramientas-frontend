@@ -19,12 +19,14 @@ import {
   Check,
   Save,
   Layers,
-  FileCheck
+  FileCheck,
+  Info,
 } from 'lucide-react';
 import { LexvaultDocument, LexvaultTemplate } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import WordDocumentPaper, { WordDocumentPaperRef } from '../components/WordDocumentPaper';
 import toast from 'react-hot-toast';
+import LetterheadGuideModal, { downloadLetterheadGuideTemplate } from '../components/LetterheadGuideModal';
 
 interface LexvaultDocumentDetailViewProps {
   id: string;
@@ -45,6 +47,7 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
   const [isBgModalOpen, setIsBgModalOpen] = useState(false);
   const [isUploadingBg, setIsUploadingBg] = useState(false);
   const [urlInput, setUrlInput] = useState('');
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -393,6 +396,38 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
                 />
               </label>
 
+              {/* Guide Template Download Banner */}
+              <div className="p-3 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 rounded-xl flex items-center justify-between gap-3 text-xs">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-300 font-bold text-xs">
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Medidas Carta: 2550 × 3300 px</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Descarga nuestra plantilla guía para diseñar tu membrete en Canva o Photoshop.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsGuideModalOpen(true)}
+                    className="p-1.5 text-blue-600 hover:text-blue-800 dark:text-blue-400 hover:bg-blue-100/60 rounded-lg transition-colors"
+                    title="Ver especificaciones y zonas seguras"
+                  >
+                    <Info className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => downloadLetterheadGuideTemplate()}
+                    className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-[10px] flex items-center gap-1 transition-all shadow-2xs active:scale-95"
+                    title="Descargar imagen PNG base tamaño carta"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Descargar Guía</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Option 3: Image URL input */}
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                 <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
@@ -452,6 +487,11 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
           </div>
         </div>
       )}
+
+      <LetterheadGuideModal
+        isOpen={isGuideModalOpen}
+        onClose={() => setIsGuideModalOpen(false)}
+      />
 
       {/* Word Document Paper Workspace */}
       <WordDocumentPaper

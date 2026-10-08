@@ -28,6 +28,7 @@ import { TableSkeleton } from '@/components/Skeleton';
 import { LexvaultTemplateModal } from '@/components/LexvaultTemplateModal';
 import { LexvaultGenerateModal } from '@/components/LexvaultGenerateModal';
 import { LexvaultSignModal } from '@/components/LexvaultSignModal';
+import { LetterheadGuideModal } from '@/components/LetterheadGuideModal';
 import toast from 'react-hot-toast';
 
 export const LexvaultPage: React.FC = () => {
@@ -42,6 +43,7 @@ export const LexvaultPage: React.FC = () => {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [selectedTemplateForGen, setSelectedTemplateForGen] = useState<LexvaultTemplate | null>(null);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
   const [isSignModalOpen, setIsSignModalOpen] = useState(false);
   const [selectedDocForSign, setSelectedDocForSign] = useState<LexvaultDocument | null>(null);
@@ -165,6 +167,16 @@ export const LexvaultPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsGuideModalOpen(true)}
+            className="bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 rounded-xl font-bold text-sm shadow-2xs transition-all flex items-center gap-2"
+            title="Ver guía y descargar plantilla base tamaño carta para Canva o Photoshop"
+          >
+            <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="hidden sm:inline">Plantilla Guía Carta</span>
+          </button>
+
           <button
             onClick={() => setIsTemplateModalOpen(true)}
             className="bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 px-4 py-2.5 rounded-xl font-bold text-sm shadow-2xs transition-all flex items-center gap-2"
@@ -550,6 +562,12 @@ export const LexvaultPage: React.FC = () => {
         onClose={() => setIsSignModalOpen(false)}
         onSuccess={fetchData}
         document={selectedDocForSign}
+      />
+
+      {/* Modal de guía y descarga de plantilla tamaño carta */}
+      <LetterheadGuideModal
+        isOpen={isGuideModalOpen}
+        onClose={() => setIsGuideModalOpen(false)}
       />
     </div>
   );

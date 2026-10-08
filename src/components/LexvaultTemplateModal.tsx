@@ -13,11 +13,14 @@ import {
   Loader2, 
   Sparkles,
   Layers,
-  FileCheck
+  FileCheck,
+  Download,
+  Info,
 } from 'lucide-react';
 import { LexvaultTemplate } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import toast from 'react-hot-toast';
+import LetterheadGuideModal, { downloadLetterheadGuideTemplate } from './LetterheadGuideModal';
 
 interface LexvaultTemplateModalProps {
   isOpen: boolean;
@@ -39,6 +42,7 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
   const [bgUrl, setBgUrl] = useState('');
   const [isUploadingBg, setIsUploadingBg] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -195,7 +199,14 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   Fondo de Hoja / Membrete Individual
                 </label>
-                <span className="text-[10px] text-slate-400 font-medium">Personalizable por plantilla</span>
+                <button
+                  type="button"
+                  onClick={() => setIsGuideModalOpen(true)}
+                  className="text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 hover:underline"
+                >
+                  <Info className="w-3.5 h-3.5" />
+                  <span>Ver medidas y guía Carta</span>
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
@@ -244,6 +255,25 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
                     disabled={isUploadingBg}
                   />
                 </label>
+              </div>
+
+              {/* Guide Template Download Banner */}
+              <div className="mt-2.5 p-2.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 rounded-xl flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span className="text-[11px] text-slate-700 dark:text-slate-300 font-medium">
+                    Carta recomendado: <strong>2550 × 3300 px</strong> (300 DPI)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => downloadLetterheadGuideTemplate()}
+                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-[10px] shrink-0 flex items-center gap-1 transition-all shadow-2xs active:scale-95"
+                  title="Descargar plantilla guía base tamaño carta para Canva o Photoshop"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Descargar Plantilla PNG</span>
+                </button>
               </div>
 
               {/* Show uploaded image preview or URL input */}
@@ -301,6 +331,11 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
           </form>
         </motion.div>
       </div>
+
+      <LetterheadGuideModal
+        isOpen={isGuideModalOpen}
+        onClose={() => setIsGuideModalOpen(false)}
+      />
     </AnimatePresence>
   );
 };

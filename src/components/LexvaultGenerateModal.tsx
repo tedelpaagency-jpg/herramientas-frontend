@@ -8,6 +8,7 @@ import lexvaultService from '../services/lexvaultService';
 import clientService from '../services/clientService';
 import WordDocumentPaper from './WordDocumentPaper';
 import toast from 'react-hot-toast';
+import { downloadLetterheadGuideTemplate } from './LetterheadGuideModal';
 
 interface LexvaultGenerateModalProps {
   isOpen: boolean;
@@ -367,6 +368,18 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
                         className="hidden"
                       />
                     </label>
+                  </div>
+
+                  <div className="pt-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <span>Tamaño Carta recomendado: 2550 × 3300 px (300 DPI)</span>
+                    <button
+                      type="button"
+                      onClick={() => downloadLetterheadGuideTemplate()}
+                      className="font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 hover:underline"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Descargar Plantilla Guía Carta</span>
+                    </button>
                   </div>
                 </div>
 
