@@ -19,7 +19,19 @@ export const HunterStoresPage: React.FC = () => {
     user?.role === 'hunter' ||
     user?.role === 'comercio' ||
     user?.role === 'store' ||
-    user?.roles?.some((r: any) => ['hunter', 'comercio', 'store'].includes(r.name));
+    user?.roles?.some((r: any) => ['hunter', 'comercio', 'store', 'hunter_user'].includes(r.name));
+
+  const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
+  const isWhiteLabelAdmin = user?.role === 'white_label_admin' || user?.roles?.some((r: any) => r.name === 'white_label_admin');
+  const isAgencyAdmin = !isSuperAdmin && !isWhiteLabelAdmin && (
+    ['admin', 'agency_admin', 'gerente', 'gerente_comercial', 'agency', 'agencia'].includes(user?.role || '') ||
+    user?.roles?.some((r: any) => ['admin', 'agency_admin', 'gerente', 'gerente_comercial', 'agency', 'agencia', 'Agencia Administrador'].includes(r.name)) ||
+    Boolean(user?.agency_id)
+  );
+
+  // Solo la agencia o el admin de marca blanca (o super admin) pueden aprobar/rechazar solicitudes y asignar comisión.
+  // El usuario Hunter nunca puede realizar estas acciones.
+  const canManageRequests = !isHunter && (isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin);
 
   const [stores, setStores] = useState<HunterStore[]>([]);
   const [loading, setLoading] = useState(true);
@@ -473,6 +485,11 @@ export const HunterStoresPage: React.FC = () => {
 
   const handleConfirmApprove = async () => {
     if (!approvingRequest) return;
+    if (!canManageRequests) {
+      toast.error('Solo la agencia o el administrador de marca blanca pueden aprobar solicitudes y asignar comisiones');
+      setApprovingRequest(null);
+      return;
+    }
     const comm = parseFloat(commissionPercentage) || 0;
     const commAmt = parseFloat(commissionAmount) || 0;
 
@@ -483,13 +500,18 @@ export const HunterStoresPage: React.FC = () => {
       if (selectedProfileStoreId) {
         loadProfile(selectedProfileStoreId);
       }
-    } catch (err) {
-      toast.error('Error al aprobar la solicitud');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al aprobar la solicitud');
     }
   };
 
   const handleConfirmReject = async () => {
     if (!rejectingRequest) return;
+    if (!canManageRequests) {
+      toast.error('Solo la agencia o el administrador de marca blanca pueden rechazar solicitudes');
+      setRejectingRequest(null);
+      return;
+    }
     if (!rejectionReason.trim()) {
       toast.error('Debe ingresar un motivo para el rechazo');
       return;
@@ -503,8 +525,8 @@ export const HunterStoresPage: React.FC = () => {
       if (selectedProfileStoreId) {
         loadProfile(selectedProfileStoreId);
       }
-    } catch (err) {
-      toast.error('Error al rechazar la solicitud');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al rechazar la solicitud');
     }
   };
 
@@ -860,15 +882,17 @@ export const HunterStoresPage: React.FC = () => {
                                 </span>
                               )}
                             </td>
-                            <td className="p-3 text-right space-x-1">
-                              {req.status === 1 && (
+                            <td className="p-3 text-right space-x-1 whitespace-nowrap">
+                              {canManageRequests && req.status === 1 ? (
                                 <>
                                   <button
                                     onClick={() => {
                                       setApprovingRequest(req);
                                       setCommissionPercentage('10');
+                                      setCommissionAmount('0');
                                     }}
-                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] transition-all"
+                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] transition-all shadow-xs"
+                                    title="Aprobar solicitud y asignar comisión"
                                   >
                                     Aprobar
                                   </button>
@@ -877,11 +901,35 @@ export const HunterStoresPage: React.FC = () => {
                                       setRejectingRequest(req);
                                       setRejectionReason('');
                                     }}
-                                    className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] transition-all"
+                                    className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] transition-all shadow-xs"
+                                    title="Rechazar solicitud"
                                   >
                                     Rechazar
                                   </button>
                                 </>
+                              ) : canManageRequests && req.status === 2 ? (
+                                <button
+                                  onClick={() => {
+                                    setApprovingRequest(req);
+                                    setCommissionPercentage(String(req.commission_percentage || '10'));
+                                    setCommissionAmount(String(req.commission_amount || '0'));
+                                  }}
+                                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-bold text-[11px] transition-all inline-flex items-center gap-1 shadow-2xs"
+                                  title="Ajustar comisión asignada"
+                                >
+                                  <Edit3 className="w-3 h-3 text-indigo-500" />
+                                  <span>Editar Comisión</span>
+                                </button>
+                              ) : (
+                                <span className="text-[11px] font-semibold text-slate-400">
+                                  {req.status === 1 ? (
+                                    <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 text-[10px]">
+                                      <Clock className="w-2.5 h-2.5" /> En revisión por agencia
+                                    </span>
+                                  ) : (
+                                    '—'
+                                  )}
+                                </span>
                               )}
                             </td>
                           </tr>
@@ -1546,7 +1594,7 @@ export const HunterStoresPage: React.FC = () => {
       })()}
 
       {/* APPROVE REQUEST MODAL */}
-      {approvingRequest && (
+      {canManageRequests && approvingRequest && (
         <Portal>
           <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4">
@@ -1620,7 +1668,7 @@ export const HunterStoresPage: React.FC = () => {
       )}
 
       {/* REJECT REQUEST MODAL */}
-      {rejectingRequest && (
+      {canManageRequests && rejectingRequest && (
         <Portal>
           <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4">
