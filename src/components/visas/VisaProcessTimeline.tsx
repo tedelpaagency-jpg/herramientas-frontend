@@ -22,6 +22,9 @@ interface VisaProcessTimelineProps {
   readOnly?: boolean;
   onPhaseAdvanced?: (result: any) => void;
   className?: string;
+  dossierStatus?: string;
+  currentStageKey?: string;
+  progress?: number;
 }
 
 export const VisaProcessTimeline: React.FC<VisaProcessTimelineProps> = ({
@@ -34,43 +37,78 @@ export const VisaProcessTimeline: React.FC<VisaProcessTimelineProps> = ({
   readOnly = false,
   onPhaseAdvanced,
   className = '',
+  dossierStatus,
+  currentStageKey,
+  progress,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
   const [validationNotes, setValidationNotes] = useState('');
   const [expandedPhaseIds, setExpandedPhaseIds] = useState<Set<number>>(new Set());
 
+  const isHistoryCompleted = (h?: VisaProcessPhaseHistory | null): boolean => {
+    if (!h) return false;
+    const s = String(h.status || '').toLowerCase().trim();
+    return s === 'completed' || s === 'completada' || Boolean(h.completed_at);
+  };
+
   // Sort phases by order
   const sortedPhases = [...phases].sort((a, b) => a.order - b.order);
   const totalPhases = sortedPhases.length;
 
-  // Determine current phase
-  const currentPhase = sortedPhases.find((p) => p.id === currentPhaseId) || 
-    (totalPhases > 0 && !currentPhaseId ? sortedPhases[0] : null);
-
-  const currentPhaseOrder = currentPhase ? currentPhase.order : (totalPhases > 0 ? 1 : 0);
-
-  // Map histories by phase_id
+  // Map histories by phase_id (prioritizing completed ones if duplicate entries exist)
   const historyByPhaseId = new Map<number, VisaProcessPhaseHistory>();
   histories.forEach((h) => {
-    historyByPhaseId.set(h.phase_id, h);
+    const pId = Number(h.phase_id);
+    const existing = historyByPhaseId.get(pId);
+    if (!existing) {
+      historyByPhaseId.set(pId, h);
+    } else if (isHistoryCompleted(h) && !isHistoryCompleted(existing)) {
+      historyByPhaseId.set(pId, h);
+    } else if (!isHistoryCompleted(existing) && (h.id || 0) > (existing.id || 0)) {
+      historyByPhaseId.set(pId, h);
+    }
   });
+
+  // Determine if process is marked completed globally by status or progress
+  const isStatusCompleted = dossierStatus === 'completado' || dossierStatus === 'cerrado' || (typeof progress === 'number' && progress >= 100);
+
+  // Determine current phase
+  let currentPhase = sortedPhases.find((p) => Number(p.id) === Number(currentPhaseId));
+  if (!currentPhase && totalPhases > 0) {
+    if (isStatusCompleted) {
+      currentPhase = sortedPhases[totalPhases - 1];
+    } else {
+      currentPhase = sortedPhases[0];
+    }
+  }
+
+  const currentPhaseOrder = isStatusCompleted 
+    ? totalPhases 
+    : (currentPhase ? currentPhase.order : (totalPhases > 0 ? 1 : 0));
 
   // Determine if all completed
   const isProcessCompleted = Boolean(
-    totalPhases > 0 &&
-    currentPhase &&
-    currentPhase.order === totalPhases &&
-    historyByPhaseId.get(currentPhase.id)?.status === 'completada'
+    isStatusCompleted ||
+    (
+      totalPhases > 0 &&
+      currentPhase &&
+      currentPhase.order === totalPhases &&
+      isHistoryCompleted(historyByPhaseId.get(Number(currentPhase.id)))
+    )
   );
 
   // Compute progress percentage based on completed phases
-  const completedCount = sortedPhases.filter((p) => {
-    const h = historyByPhaseId.get(p.id);
-    return h?.status === 'completada';
-  }).length;
+  const completedCount = isProcessCompleted
+    ? totalPhases
+    : sortedPhases.filter((p) => {
+        const h = historyByPhaseId.get(Number(p.id));
+        return isHistoryCompleted(h) || (currentPhase ? p.order < currentPhaseOrder : false);
+      }).length;
 
-  const progressPercent = totalPhases > 0 ? Math.round((completedCount / totalPhases) * 100) : 0;
+  const progressPercent = isProcessCompleted
+    ? 100
+    : (totalPhases > 0 ? Math.round((completedCount / totalPhases) * 100) : (progress || 0));
 
   const toggleExpand = (phaseId: number) => {
     setExpandedPhaseIds((prev) => {
@@ -123,7 +161,7 @@ export const VisaProcessTimeline: React.FC<VisaProcessTimelineProps> = ({
   }
 
   // Next phase name preview
-  const nextPhase = sortedPhases.find((p) => p.order === (currentPhase ? currentPhase.order + 1 : 1));
+  const nextPhase = sortedPhases.find((p) => p.order === currentPhaseOrder + 1);
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -244,9 +282,11 @@ export const VisaProcessTimeline: React.FC<VisaProcessTimelineProps> = ({
 
         <div className="relative pl-3 sm:pl-6 space-y-8">
           {sortedPhases.map((phase, index) => {
-            const history = historyByPhaseId.get(phase.id);
-            const isCompleted = history?.status === 'completada';
-            const isCurrent = !isProcessCompleted && (currentPhase?.id === phase.id);
+            const history = historyByPhaseId.get(Number(phase.id));
+            const hasCompletedHistory = isHistoryCompleted(history);
+            const isBeforeCurrent = currentPhase ? phase.order < currentPhaseOrder : false;
+            const isCompleted = isProcessCompleted || hasCompletedHistory || isBeforeCurrent;
+            const isCurrent = !isProcessCompleted && (Number(currentPhase?.id) === Number(phase.id) || phase.order === currentPhaseOrder);
             const isPending = !isCompleted && !isCurrent;
             const isExpanded = expandedPhaseIds.has(phase.id) || isCurrent;
             const isLast = index === sortedPhases.length - 1;
@@ -345,33 +385,33 @@ export const VisaProcessTimeline: React.FC<VisaProcessTimelineProps> = ({
                     <div className="mt-3 pt-2.5 border-t border-slate-200/50 dark:border-slate-800/50 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
                       <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       <span>
-                        Fase programada (por realizar). Se activará automáticamente una vez validada la <strong>Fase {phase.order - 1}</strong>.
+                        Fase programada (por realizar). Se activará automáticamente una vez validada la <strong>Fase {phase.order > 1 ? phase.order - 1 : 1}</strong>.
                       </span>
                     </div>
                   )}
 
                   {/* History Details: Completed At / Validator / Notes */}
-                  {isCompleted && history && (
+                  {isCompleted && (
                     <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                       <div className="flex items-center gap-1.5 text-slate-500">
                         <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                        <span>Completada el: </span>
+                        <span>Completada: </span>
                         <strong className="text-slate-800 dark:text-slate-200 font-semibold">
-                          {history.completed_at ? new Date(history.completed_at).toLocaleString() : 'Fecha no registrada'}
+                          {history?.completed_at ? new Date(history.completed_at).toLocaleString() : 'Fase previa completada'}
                         </strong>
                       </div>
 
-                      {(history.completedByUser || history.completed_by_user) && (
+                      {(history?.completedByUser || history?.completed_by_user) && (
                         <div className="flex items-center gap-1.5 text-slate-500">
                           <UserCheck className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
                           <span>Validada por: </span>
                           <strong className="text-slate-800 dark:text-slate-200 font-semibold">
-                            {(history.completedByUser || history.completed_by_user)?.name}
+                            {(history?.completedByUser || history?.completed_by_user)?.name}
                           </strong>
                         </div>
                       )}
 
-                      {history.notes && (
+                      {history?.notes && (
                         <div className="sm:col-span-2 mt-1 p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-300">
                           <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wide text-emerald-800 dark:text-emerald-400 mb-1">
                             <MessageSquare className="w-3 h-3" /> Observaciones de Validación:

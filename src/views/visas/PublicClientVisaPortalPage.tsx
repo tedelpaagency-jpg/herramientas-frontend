@@ -695,6 +695,9 @@ export const PublicClientVisaPortalPage: React.FC = () => {
             histories={portalData.phase_histories || []}
             isOperator={false}
             readOnly={true}
+            dossierStatus={dossier?.status}
+            currentStageKey={dossier?.current_stage_key}
+            progress={dossier?.progress}
           />
         </div>
       )}

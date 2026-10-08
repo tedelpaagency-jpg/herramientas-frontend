@@ -66,7 +66,7 @@ export interface VisaProcessPhaseHistory {
   id: number;
   dossier_id: number;
   phase_id: number;
-  status: 'en_proceso' | 'completada' | 'cancelada';
+  status: 'en_proceso' | 'completada' | 'completed' | 'in_progress' | 'cancelada' | 'cancelled' | string;
   started_at: string;
   completed_at?: string | null;
   completed_by?: number | null;

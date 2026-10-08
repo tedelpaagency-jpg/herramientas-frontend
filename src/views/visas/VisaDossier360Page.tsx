@@ -186,8 +186,18 @@ export const VisaDossier360Page: React.FC = () => {
   const handleStageChange = async (newStageKey: string) => {
     if (!dossier) return;
     try {
-      await visaWholesaleService.updateDossier(dossier.id, { current_stage_key: newStageKey });
-      toast.success('Etapa actualizada exitosamente.');
+      const payload: Record<string, any> = { current_stage_key: newStageKey };
+      const phasesList = dossier.phases || processType?.phases || [];
+      const sortedPh = [...phasesList].sort((a: any, b: any) => a.order - b.order);
+      const stIndex = stages.findIndex((s: any) => s.key === newStageKey);
+      if (stIndex >= 0 && sortedPh.length > 0) {
+        const matchingPhase = sortedPh[Math.min(stIndex, sortedPh.length - 1)];
+        if (matchingPhase) {
+          payload.current_phase_id = matchingPhase.id;
+        }
+      }
+      await visaWholesaleService.updateDossier(dossier.id, payload);
+      toast.success('Etapa y trazabilidad actualizadas exitosamente.');
       fetchDossier();
     } catch (err) {
       toast.error('Error al actualizar etapa.');
@@ -525,9 +535,29 @@ export const VisaDossier360Page: React.FC = () => {
 
             <div className="text-right">
               <span className="text-[11px] font-semibold text-slate-400 block uppercase">Estado del Servicio</span>
-              <span className="inline-block text-xs font-bold px-3 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 capitalize border border-sky-200 dark:border-sky-800">
-                {dossier.status.replace('_', ' ')}
-              </span>
+              {isMayorista ? (
+                <select
+                  value={dossier.status}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  className="px-2 py-1 text-xs font-bold rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700 cursor-pointer"
+                >
+                  <option value="borrador">Borrador</option>
+                  <option value="link_enviado">Link Enviado</option>
+                  <option value="informacion_pendiente">Información Pendiente</option>
+                  <option value="informacion_recibida">Información Recibida</option>
+                  <option value="en_revision">En Revisión</option>
+                  <option value="correccion_solicitada">Corrección Solicitada</option>
+                  <option value="en_gestion">En Gestión</option>
+                  <option value="revision_final">Revisión Final</option>
+                  <option value="completado">Completado</option>
+                  <option value="cerrado">Cerrado</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              ) : (
+                <span className="inline-block text-xs font-bold px-3 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 capitalize border border-sky-200 dark:border-sky-800">
+                  {dossier.status.replace('_', ' ')}
+                </span>
+              )}
             </div>
 
             <div className="text-right">
@@ -567,9 +597,16 @@ export const VisaDossier360Page: React.FC = () => {
               </span>
               <span className="text-slate-400">• Fase / Etapa:</span>
               <strong className="text-sky-600 dark:text-sky-400 font-semibold capitalize">
-                {(dossier.currentPhase || dossier.current_phase)?.name 
-                  ? `Fase ${(dossier.currentPhase || dossier.current_phase)?.order}: ${(dossier.currentPhase || dossier.current_phase)?.name}`
-                  : dossier.current_stage_key.replace('_', ' ')}
+                {(() => {
+                  const phasesList = dossier.phases || processType?.phases || [];
+                  const activePh = dossier.currentPhase || 
+                    (dossier as any).current_phase || 
+                    phasesList.find((p: any) => Number(p.id) === Number(dossier.current_phase_id)) ||
+                    (phasesList.length > 0 ? phasesList[0] : null);
+                  return activePh?.name 
+                    ? `Fase ${activePh.order}: ${activePh.name}` 
+                    : dossier.current_stage_key?.replace('_', ' ');
+                })()}
               </strong>
             </div>
 
@@ -766,9 +803,16 @@ export const VisaDossier360Page: React.FC = () => {
                   Estado del Trámite & Trazabilidad de Fases
                 </span>
                 <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">
-                  {(dossier.currentPhase || (dossier as any).current_phase)?.name
-                    ? `Fase ${(dossier.currentPhase || (dossier as any).current_phase)?.order}: ${(dossier.currentPhase || (dossier as any).current_phase)?.name}`
-                    : 'Fase Inicial en Curso'}
+                  {(() => {
+                    const phasesList = dossier.phases || processType?.phases || [];
+                    const activePh = dossier.currentPhase || 
+                      (dossier as any).current_phase || 
+                      phasesList.find((p: any) => Number(p.id) === Number(dossier.current_phase_id)) ||
+                      (phasesList.length > 0 ? phasesList[0] : null);
+                    return activePh?.name
+                      ? `Fase ${activePh.order}: ${activePh.name}`
+                      : 'Fase Inicial en Curso';
+                  })()}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Progreso global: <strong className="text-slate-700 dark:text-slate-200">{dossier.progress}%</strong> • Consulte las fases completadas, la fase activa y las pendientes en la pestaña Timeline.
@@ -1389,6 +1433,9 @@ export const VisaDossier360Page: React.FC = () => {
                 histories={dossier.phaseHistories || (dossier as any).phase_histories || []}
                 isOperator={isMayorista}
                 onPhaseAdvanced={fetchDossier}
+                dossierStatus={dossier.status}
+                currentStageKey={dossier.current_stage_key}
+                progress={dossier.progress}
               />
             </div>
 
