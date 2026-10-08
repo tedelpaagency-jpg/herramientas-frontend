@@ -10,6 +10,7 @@ export interface UserFilterParams {
   with_trashed?: boolean;
   page?: number;
   per_page?: number;
+  all?: boolean | number;
 }
 
 export interface PasswordOptions {
