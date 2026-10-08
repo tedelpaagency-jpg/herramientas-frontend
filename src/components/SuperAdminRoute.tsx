@@ -36,11 +36,14 @@ export const SuperAdminRoute: React.FC<{ children: React.ReactNode; allowWhiteLa
 
   const isSuperAdmin =
     user?.role === 'super_admin' ||
-    user?.roles?.some((r) => r.name === 'super_admin');
+    user?.roles?.some((r) => r.name === 'super_admin') ||
+    (user as any)?.dashboard_type === 'super_admin';
 
   const isWhiteLabelAdmin =
     user?.role === 'white_label_admin' ||
-    user?.roles?.some((r) => r.name === 'white_label_admin');
+    (user as any)?.dashboard_type === 'white_label_admin' ||
+    user?.roles?.some((r) => r.name === 'white_label_admin') ||
+    Boolean((user as any)?.white_labels && (user as any).white_labels.length > 0 && !isSuperAdmin);
 
   const isAuthorized = isSuperAdmin || (allowWhiteLabelAdmin && isWhiteLabelAdmin);
 

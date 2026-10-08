@@ -2,8 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import adminService from '../../services/adminService';
 import whiteLabelService from '../../services/whiteLabelService';
+import permissionGroupService from '../../services/permissionGroupService';
+import { useAuth } from '../../context/AuthContext';
 import { Plan, Permission } from '../../types';
 import { WhiteLabel } from '../../types/whiteLabel';
 import { 
@@ -14,27 +17,58 @@ import {
   CheckCircle2, 
   XCircle, 
   Shield, 
+  ShieldCheck,
   Search, 
   X,
   AlertCircle,
   Globe,
   Building2,
-  Filter
+  Filter,
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
+import { PermissionGroupsTab } from '@/components/permissions/PermissionGroupsTab';
 
 export const AdminPlansPage: React.FC = () => {
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+
+  const isSuperAdmin =
+    user?.role === 'super_admin' ||
+    user?.roles?.some((r: any) => r.name === 'super_admin') ||
+    (user as any)?.dashboard_type === 'super_admin';
+
+  const isWhiteLabelAdmin =
+    !isSuperAdmin &&
+    (user?.role === 'white_label_admin' ||
+      (user as any)?.dashboard_type === 'white_label_admin' ||
+      user?.roles?.some((r: any) => r.name === 'white_label_admin') ||
+      Boolean((user as any)?.white_labels && (user as any).white_labels.length > 0));
+
+  const userWl = (user as any)?.white_labels?.[0] || (user as any)?.white_label;
+
   const [plans, setPlans] = useState<Plan[]>([]);
   const [whiteLabels, setWhiteLabels] = useState<WhiteLabel[]>([]);
   const [systemPermissions, setSystemPermissions] = useState<Permission[]>([]);
+  const [permissionGroupsCount, setPermissionGroupsCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Filter & Tab state
-  const [activeTab, setActiveTab] = useState<'all' | 'global' | 'white_label'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'global' | 'white_label' | 'permission_groups'>('all');
   const [selectedWlId, setSelectedWlId] = useState<string | number>('all');
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'permission_groups' || tabParam === 'permissions' || tabParam === 'grupos') {
+      setActiveTab('permission_groups');
+    } else if (tabParam === 'global' || tabParam === 'white_label' || tabParam === 'all') {
+      setActiveTab(tabParam as any);
+    }
+  }, [searchParams]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -62,16 +96,18 @@ export const AdminPlansPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [plansData, permsData, wlData] = await Promise.all([
+      const [plansData, permsData, wlData, groupsData] = await Promise.all([
         adminService.getPlans(),
         adminService.getPermissions(),
         whiteLabelService.getWhiteLabels().catch(() => []),
+        permissionGroupService.getGroups().catch(() => []),
       ]);
       setPlans(plansData || []);
       setSystemPermissions(permsData || []);
 
       const wlList = Array.isArray(wlData) ? wlData : (wlData?.data || []);
       setWhiteLabels(wlList);
+      setPermissionGroupsCount(Array.isArray(groupsData) ? groupsData.length : 0);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cargar los planes.');
     } finally {
@@ -89,7 +125,7 @@ export const AdminPlansPage: React.FC = () => {
       name: '',
       description: '',
       type: 'agency',
-      white_label_id: '',
+      white_label_id: isWhiteLabelAdmin ? (userWl?.id || '') : '',
       price: 0,
       billing_type: 'fixed',
       commission_percentage: 0,
@@ -217,27 +253,54 @@ export const AdminPlansPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold">
               <Layers className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                Gestión de Planes
+                {isWhiteLabelAdmin ? 'Planes de mi Marca & Permisos' : 'Gestión de Planes'}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                Administra los planes de suscripción globales del sistema y de Marcas Blancas
+                {isWhiteLabelAdmin
+                  ? 'Administra los planes de suscripción para tus agencias y los grupos de permisos de acceso'
+                  : 'Administra los planes de suscripción globales del sistema y de Marcas Blancas'}
               </p>
             </div>
           </div>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors shadow-md shadow-amber-600/20"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nuevo Plan</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setActiveTab(activeTab === 'permission_groups' ? 'all' : 'permission_groups')}
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-xs ${
+              activeTab === 'permission_groups'
+                ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-md'
+                : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/60'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <span>{activeTab === 'permission_groups' ? 'Ver Lista de Planes' : 'Grupos de Permisos'}</span>
+            {permissionGroupsCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-200 dark:bg-indigo-800 text-indigo-900 dark:text-indigo-100 font-extrabold">
+                {permissionGroupsCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => {
+              if (activeTab === 'permission_groups') {
+                setActiveTab('all');
+              }
+              openCreateModal();
+            }}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors shadow-md shadow-amber-600/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Plan</span>
+          </button>
+        </div>
       </div>
 
       {/* Notifications */}
@@ -264,45 +327,130 @@ export const AdminPlansPage: React.FC = () => {
               : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
           }`}
         >
-          <span>Todos los Planes</span>
+          <span>{isWhiteLabelAdmin ? 'Planes de mi Marca' : 'Todos los Planes'}</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
             {plans.length}
           </span>
         </button>
 
-        <button
-          onClick={() => { setActiveTab('global'); setSelectedWlId('all'); }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all ${
-            activeTab === 'global'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Globe className="w-3.5 h-3.5" />
-          <span>Planes Globales (Sistema)</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'global' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
-            {globalPlansCount}
-          </span>
-        </button>
+        {(!isWhiteLabelAdmin || globalPlansCount > 0) && (
+          <button
+            onClick={() => { setActiveTab('global'); setSelectedWlId('all'); }}
+            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all ${
+              activeTab === 'global'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Planes Globales (Sistema)</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'global' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
+              {globalPlansCount}
+            </span>
+          </button>
+        )}
+
+        {!isWhiteLabelAdmin && (
+          <button
+            onClick={() => setActiveTab('white_label')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all ${
+              activeTab === 'white_label'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Building2 className="w-3.5 h-3.5" />
+            <span>Planes de Marcas Blancas</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'white_label' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
+              {whiteLabelPlansCount}
+            </span>
+          </button>
+        )}
 
         <button
-          onClick={() => setActiveTab('white_label')}
+          onClick={() => setActiveTab('permission_groups')}
           className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all ${
-            activeTab === 'white_label'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+            activeTab === 'permission_groups'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
               : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
           }`}
         >
-          <Building2 className="w-3.5 h-3.5" />
-          <span>Planes de Marcas Blancas</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'white_label' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
-            {whiteLabelPlansCount}
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>Grupos de Permisos</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'permission_groups' ? 'bg-white/20 text-white' : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300'}`}>
+            {permissionGroupsCount}
           </span>
         </button>
       </div>
 
-      {/* Filter Controls: Search & Marca Blanca Select Dropdown */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between">
+      {activeTab === 'permission_groups' ? (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 text-white p-6 rounded-3xl shadow-xl border border-indigo-800/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-500/30 text-indigo-200 px-2.5 py-0.5 rounded-full border border-indigo-400/30">
+                    {isWhiteLabelAdmin ? 'Gestión de mi Marca' : 'Gestión Modular de Permisos'}
+                  </span>
+                </div>
+                <h2 className="text-lg font-black text-white">
+                  Grupos de Permisos
+                </h2>
+                <p className="text-xs text-indigo-200/80 mt-0.5">
+                  Crea y configura paquetes de permisos reutilizables para asignarlos a tus planes y roles de usuario.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('all')}
+              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/20 inline-flex items-center gap-2 shrink-0 cursor-pointer"
+            >
+              <Layers className="w-4 h-4" />
+              <span>Ver Planes</span>
+            </button>
+          </div>
+
+          <PermissionGroupsTab
+            canManage={true}
+            canCreate={true}
+            canEdit={true}
+            canDelete={true}
+            onRefreshParent={loadPlans}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Quick Helper Banner */}
+          <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/70 dark:border-indigo-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-extrabold text-indigo-950 dark:text-indigo-200">
+                  ¿Sabías que puedes organizar permisos en paquetes modulares?
+                </span>
+                <p className="text-[11px] text-indigo-700 dark:text-indigo-300 mt-0.5">
+                  Gestiona Grupos de Permisos para agrupar módulos y asignarlos rápidamente a cada plan de suscripción.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab('permission_groups')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-colors shrink-0 shadow-xs shadow-indigo-600/20 cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Gestionar Grupos ({permissionGroupsCount})</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Filter Controls: Search & Marca Blanca Select Dropdown */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between">
         {/* Search */}
         <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 flex-1 max-w-md">
           <Search className="w-4 h-4 text-slate-400" />
@@ -519,6 +667,8 @@ export const AdminPlansPage: React.FC = () => {
           </div>
         )}
       </div>
+    </>
+  )}
 
       {/* Create / Edit Plan Modal */}
       {isModalOpen && (
@@ -567,9 +717,12 @@ export const AdminPlansPage: React.FC = () => {
                   <select
                     value={formData.white_label_id}
                     onChange={(e) => setFormData({ ...formData, white_label_id: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                    disabled={isWhiteLabelAdmin}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold disabled:opacity-75 disabled:bg-slate-100 dark:disabled:bg-slate-800/60"
                   >
-                    <option value="">🌐 Plan Global (Sistema / Sin Marca Blanca)</option>
+                    {!isWhiteLabelAdmin && (
+                      <option value="">🌐 Plan Global (Sistema / Sin Marca Blanca)</option>
+                    )}
                     {whiteLabels.map((wl) => (
                       <option key={wl.id} value={wl.id}>
                         🏢 {wl.name}

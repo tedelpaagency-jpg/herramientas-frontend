@@ -22,14 +22,42 @@ import {
   Edit2,
   Type,
   Save,
-  RotateCcw
+  RotateCcw,
+  Building2,
+  ExternalLink,
+  Globe
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+import { whiteLabelService } from '../../services/whiteLabelService';
 import { loginMediaService } from '../../services/loginMediaService';
 import { LoginVideo, LoginLogo, LoginTexts } from '../../types/loginMedia';
 import { normalizeFileUrl } from '../../services/apiClient';
 
 export const LoginSettingsPage: React.FC = () => {
+  // === CONTEXTO DE AUTENTICACIÓN Y MULTI-TENANT ===
+  const { user, currentWhiteLabel, setCurrentWhiteLabel } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
+
+  // Lista de Marcas Blancas para Super Admin
+  const [whiteLabels, setWhiteLabels] = useState<any[]>([]);
+
+  // White Label ID actualmente seleccionado para configuración
+  const [selectedWhiteLabelId, setSelectedWhiteLabelId] = useState<number | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('santun_white_label');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed?.id) return Number(parsed.id);
+        } catch {}
+      }
+    }
+    return currentWhiteLabel?.id ?? (user as any)?.white_labels?.[0]?.id ?? (user as any)?.agency?.white_label_id ?? null;
+  });
+
+  const [activeWhiteLabel, setActiveWhiteLabel] = useState<any>(currentWhiteLabel || null);
+
   // === NAVEGACIÓN POR PESTAÑAS ===
   const [activeTab, setActiveTab] = useState<'videos' | 'logos' | 'texts'>('videos');
 
@@ -76,12 +104,26 @@ export const LoginSettingsPage: React.FC = () => {
   const [isLoadingTexts, setIsLoadingTexts] = useState(true);
   const [isSavingTexts, setIsSavingTexts] = useState(false);
 
-  // Carga inicial de datos
+  // Cargar lista de marcas blancas si es Super Admin
   useEffect(() => {
-    fetchVideos();
-    fetchLogos();
-    fetchTexts();
-  }, []);
+    if (isSuperAdmin) {
+      whiteLabelService.getWhiteLabels().then((res: any) => {
+        const list = Array.isArray(res) ? res : (res?.data || []);
+        setWhiteLabels(list);
+        if (selectedWhiteLabelId) {
+          const match = list.find((w: any) => w.id === selectedWhiteLabelId);
+          if (match) setActiveWhiteLabel(match);
+        }
+      }).catch(() => {});
+    }
+  }, [isSuperAdmin]);
+
+  // Carga reactiva de datos al cambiar el White Label seleccionado
+  useEffect(() => {
+    fetchVideos(selectedWhiteLabelId);
+    fetchLogos(selectedWhiteLabelId);
+    fetchTexts(selectedWhiteLabelId);
+  }, [selectedWhiteLabelId]);
 
   // Cleanup de URLs locales de preview
   useEffect(() => {
@@ -91,14 +133,35 @@ export const LoginSettingsPage: React.FC = () => {
     };
   }, [videoLocalPreview, logoLocalPreview]);
 
+  // Manejo de cambio de Marca Blanca por Super Admin
+  const handleWhiteLabelChange = (newWlId: number | null) => {
+    setSelectedWhiteLabelId(newWlId);
+    if (newWlId === null) {
+      setActiveWhiteLabel(null);
+      if (isSuperAdmin) {
+        localStorage.removeItem('santun_white_label');
+        setCurrentWhiteLabel(null);
+      }
+    } else {
+      const match = whiteLabels.find((w: any) => w.id === newWlId);
+      if (match) {
+        setActiveWhiteLabel(match);
+        if (isSuperAdmin) {
+          localStorage.setItem('santun_white_label', JSON.stringify(match));
+          setCurrentWhiteLabel(match);
+        }
+      }
+    }
+  };
+
   // =========================================================================
   // GESTIÓN DE VIDEOS
   // =========================================================================
 
-  const fetchVideos = async () => {
+  const fetchVideos = async (wlId = selectedWhiteLabelId) => {
     setIsLoadingVideos(true);
     try {
-      const data = await loginMediaService.getVideos();
+      const data = await loginMediaService.getVideos(wlId);
       setVideos(data);
     } catch (err: any) {
       toast.error('No se pudieron cargar los videos configurados.');
@@ -153,6 +216,9 @@ export const LoginSettingsPage: React.FC = () => {
       }
       formData.append('video', selectedVideoFile);
       formData.append('is_active', '1');
+      if (selectedWhiteLabelId !== null && selectedWhiteLabelId !== undefined) {
+        formData.append('white_label_id', String(selectedWhiteLabelId));
+      }
 
       await loginMediaService.createVideo(formData, (progressEvent) => {
         if (progressEvent.total) {
@@ -167,7 +233,7 @@ export const LoginSettingsPage: React.FC = () => {
       setVideoSubtitle('');
       setSelectedVideoFile(null);
       setVideoLocalPreview(null);
-      await fetchVideos();
+      await fetchVideos(selectedWhiteLabelId);
     } catch (err: any) {
       const msg = err.response?.data?.message || err.response?.data?.errors?.video?.[0] || 'No se pudo subir el video. Verifica tu conexión o intenta nuevamente.';
       toast.error(msg);
@@ -226,7 +292,7 @@ export const LoginSettingsPage: React.FC = () => {
         }
       });
       toast.success('Video reemplazado exitosamente.');
-      await fetchVideos();
+      await fetchVideos(selectedWhiteLabelId);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'No se pudo reemplazar el archivo. Intenta de nuevo.');
     } finally {
@@ -260,11 +326,11 @@ export const LoginSettingsPage: React.FC = () => {
     setVideos(newVideos);
 
     try {
-      await loginMediaService.reorderVideos(newVideos.map(v => v.id));
+      await loginMediaService.reorderVideos(newVideos.map(v => v.id), selectedWhiteLabelId);
       toast.success('Orden de videos actualizado.');
     } catch {
       toast.error('Error al guardar el nuevo orden.');
-      await fetchVideos();
+      await fetchVideos(selectedWhiteLabelId);
     }
   };
 
@@ -272,10 +338,10 @@ export const LoginSettingsPage: React.FC = () => {
   // GESTIÓN DE LOGOS
   // =========================================================================
 
-  const fetchLogos = async () => {
+  const fetchLogos = async (wlId = selectedWhiteLabelId) => {
     setIsLoadingLogos(true);
     try {
-      const data = await loginMediaService.getLogos();
+      const data = await loginMediaService.getLogos(wlId);
       setLogos(data);
     } catch (err: any) {
       toast.error('No se pudieron cargar los logos del login.');
@@ -345,12 +411,15 @@ export const LoginSettingsPage: React.FC = () => {
         toast.success('Logo actualizado exitosamente.');
       } else {
         formData.append('is_active', '1');
+        if (selectedWhiteLabelId !== null && selectedWhiteLabelId !== undefined) {
+          formData.append('white_label_id', String(selectedWhiteLabelId));
+        }
         await loginMediaService.createLogo(formData);
         toast.success('Logo agregado exitosamente.');
       }
 
       setIsLogoModalOpen(false);
-      await fetchLogos();
+      await fetchLogos(selectedWhiteLabelId);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'No se pudo guardar el logo.');
     } finally {
@@ -395,11 +464,11 @@ export const LoginSettingsPage: React.FC = () => {
     setLogos(newLogos);
 
     try {
-      await loginMediaService.reorderLogos(newLogos.map(l => l.id));
+      await loginMediaService.reorderLogos(newLogos.map(l => l.id), selectedWhiteLabelId);
       toast.success('Orden de logos actualizado.');
     } catch {
       toast.error('Error al guardar el nuevo orden.');
-      await fetchLogos();
+      await fetchLogos(selectedWhiteLabelId);
     }
   };
 
@@ -407,12 +476,24 @@ export const LoginSettingsPage: React.FC = () => {
   // GESTIÓN DE TEXTOS DEL LOGIN
   // =========================================================================
 
-  const fetchTexts = async () => {
+  const fetchTexts = async (wlId = selectedWhiteLabelId) => {
     setIsLoadingTexts(true);
     try {
-      const data = await loginMediaService.getLoginTexts();
+      const data = await loginMediaService.getLoginTexts(wlId);
       if (data) {
-        setLoginTexts(data);
+        setLoginTexts({
+          portal_badge: data.portal_badge || '',
+          main_title: data.main_title || '',
+          main_subtitle: data.main_subtitle || '',
+          form_title: data.form_title || '',
+          form_subtitle: data.form_subtitle || '',
+          footer_text: data.footer_text || '',
+          card_badge: data.card_badge || '',
+          card_button_text: data.card_button_text || '',
+        });
+        if (data.white_label) {
+          setActiveWhiteLabel(data.white_label);
+        }
       }
     } catch {
       // Usar valores por defecto ya cargados
@@ -425,7 +506,10 @@ export const LoginSettingsPage: React.FC = () => {
     if (e) e.preventDefault();
     setIsSavingTexts(true);
     try {
-      await loginMediaService.updateLoginTexts(loginTexts);
+      await loginMediaService.updateLoginTexts({
+        ...loginTexts,
+        white_label_id: selectedWhiteLabelId,
+      });
       toast.success('Textos del login guardados exitosamente.');
     } catch {
       toast.error('Error al guardar los textos del login.');
@@ -435,14 +519,16 @@ export const LoginSettingsPage: React.FC = () => {
   };
 
   const handleResetDefaultTexts = () => {
+    const brand = activeWhiteLabel?.name || (selectedWhiteLabelId ? `Marca #${selectedWhiteLabelId}` : 'SANTUN');
+    const isCustomWl = !!(selectedWhiteLabelId || activeWhiteLabel);
     setLoginTexts({
-      portal_badge: 'Provider Portal',
-      main_title: 'Plataforma de gestión empresarial conectada a Laravel.',
+      portal_badge: isCustomWl ? `Portal ${brand}` : 'Provider Portal',
+      main_title: isCustomWl ? `Plataforma empresarial ${brand}` : 'Plataforma de gestión empresarial conectada a Laravel.',
       main_subtitle: 'Accede a tu panel centralizado para inmuebles, CRM, POS y documentos legales.',
-      form_title: 'Bienvenido',
+      form_title: `Bienvenido a ${brand}`,
       form_subtitle: 'Ingresa tus credenciales para acceder al panel de control.',
-      footer_text: 'Con el respaldo de la arquitectura Laravel 12 & Next.js',
-      card_badge: 'Premium',
+      footer_text: isCustomWl ? `Con el respaldo del ecosistema ${brand}` : 'Con el respaldo de la arquitectura Laravel 12 & Next.js',
+      card_badge: `${brand} Premium`,
       card_button_text: 'Explorar módulo',
     });
     toast('Valores por defecto restablecidos. Haz clic en "Guardar Textos" para aplicar los cambios.', {
@@ -453,6 +539,13 @@ export const LoginSettingsPage: React.FC = () => {
   // Contadores y restricciones
   const activeVideosCount = videos.filter(v => v.is_active).length;
   const canAddMoreVideos = true;
+
+  // URL del Login en Vivo según la marca seleccionada
+  const liveLoginUrl = (activeWhiteLabel || currentWhiteLabel)?.custom_domain
+    ? `https://${(activeWhiteLabel || currentWhiteLabel).custom_domain}/login`
+    : (activeWhiteLabel || currentWhiteLabel)?.slug
+    ? `/login?wl=${(activeWhiteLabel || currentWhiteLabel).slug}`
+    : '/login';
 
   return (
     <div className="space-y-10 pb-16 animate-fade-in text-slate-800 dark:text-slate-100">
@@ -469,33 +562,114 @@ export const LoginSettingsPage: React.FC = () => {
       {/* ========================================================================= */}
       {/* ENCABEZADO DE PÁGINA */}
       {/* ========================================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2.5 mb-1">
             <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
               <Film className="w-5 h-5" />
             </span>
             <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
               Configuración del Login
             </h1>
+
+            {/* Badge de Marca Blanca para usuarios No-SuperAdmin */}
+            {!isSuperAdmin && (activeWhiteLabel || currentWhiteLabel) && (
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/80 flex items-center gap-1.5 shadow-xs">
+                <Building2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Marca Blanca: {(activeWhiteLabel || currentWhiteLabel)?.name}</span>
+              </span>
+            )}
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-            Administra los videos MP4 dinámicos del carrusel y la cinta inferior de logos que se visualizan en la pantalla de inicio de sesión.
+            Administra los videos MP4 dinámicos del carrusel, textos institucionales y logos de aliados que se visualizan en la pantalla de inicio de sesión.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Selector de Marca Blanca para Super Admin */}
+          {isSuperAdmin && (
+            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
+              <Building2 className="w-4 h-4 text-slate-500" />
+              <label htmlFor="wl-login-selector" className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                Marca Blanca:
+              </label>
+              <select
+                id="wl-login-selector"
+                value={selectedWhiteLabelId !== null ? String(selectedWhiteLabelId) : 'global'}
+                onChange={(e) => handleWhiteLabelChange(e.target.value === 'global' ? null : Number(e.target.value))}
+                className="text-xs font-bold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-600 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              >
+                <option value="global">🌐 Configuración Global (SANTUN)</option>
+                {whiteLabels.map((wl) => (
+                  <option key={wl.id} value={wl.id}>
+                    🏷️ {wl.name} {wl.custom_domain ? `(${wl.custom_domain})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Botón Ver Login en Vivo */}
           <a
-            href="/login"
+            href={liveLoginUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700"
+            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 shadow-xs"
+            title="Abrir la pantalla de login en una nueva pestaña"
           >
             <Eye className="w-4 h-4" />
             <span>Ver Login en Vivo</span>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
           </a>
         </div>
       </div>
+
+      {/* Banner Informativo de Marca Blanca Activa */}
+      {selectedWhiteLabelId !== null && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 border border-blue-200/80 dark:border-blue-800/60 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+              {activeWhiteLabel?.name?.charAt(0)?.toUpperCase() || 'M'}
+            </div>
+            <div>
+              <p className="font-extrabold text-slate-900 dark:text-white">
+                Personalizando pantalla de login para: <span className="text-blue-600 dark:text-blue-400 underline decoration-blue-300 dark:decoration-blue-700">{activeWhiteLabel?.name || `Marca #${selectedWhiteLabelId}`}</span>
+              </p>
+              <p className="text-slate-500 dark:text-slate-400 mt-0.5">
+                {activeWhiteLabel?.custom_domain 
+                  ? `Dominio principal vinculado: ${activeWhiteLabel.custom_domain}` 
+                  : 'Los videos, logos y textos guardados aquí se aplicarán a este entorno exclusivo.'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 font-extrabold text-[11px] whitespace-nowrap">
+              ID: {selectedWhiteLabelId}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {selectedWhiteLabelId === null && isSuperAdmin && (
+        <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-slate-700 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+              🌐
+            </div>
+            <div>
+              <p className="font-extrabold text-slate-900 dark:text-white">
+                Configuración Global Predeterminada (SANTUN)
+              </p>
+              <p className="text-slate-500 dark:text-slate-400 mt-0.5">
+                Estos textos, videos y logos se muestran en el login base cuando el usuario no accede a través del dominio de una marca blanca personalizada.
+              </p>
+            </div>
+          </div>
+          <span className="px-2.5 py-1 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold text-[11px] whitespace-nowrap">
+            Base Global
+          </span>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* TABS DE NAVEGACIÓN */}

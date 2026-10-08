@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import adminService from '../../services/adminService';
-import { Plan, Permission, PlanPermission } from '../../types';
+import permissionGroupService from '../../services/permissionGroupService';
+import { Plan, Permission, PlanPermission, PermissionGroup } from '../../types';
 import { getPermissionLabel, getPermissionDescription } from '../../utils/permissionLabels';
 import { 
   ArrowLeft, Layers, Shield, Check, Plus, Trash2, Search, 
@@ -183,11 +184,12 @@ export const PlanPermissionsPage: React.FC = () => {
 
   const [plan, setPlan] = useState<Plan | null>(null);
   const [systemPermissions, setSystemPermissions] = useState<Permission[]>([]);
+  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [newPermission, setNewPermission] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'modules' | 'advanced'>('modules');
+  const [viewMode, setViewMode] = useState<'modules' | 'groups' | 'advanced'>('modules');
 
   useEffect(() => {
     if (planId) {
@@ -200,9 +202,10 @@ export const PlanPermissionsPage: React.FC = () => {
   const loadData = async (id: number) => {
     setLoading(true);
     try {
-      const [plansData, permsData] = await Promise.all([
+      const [plansData, permsData, groupsData] = await Promise.all([
         adminService.getPlans(),
         adminService.getPermissions(),
+        permissionGroupService.getGroups().catch(() => []),
       ]);
 
       const foundPlan = plansData.find((p: Plan) => p.id === id);
@@ -210,6 +213,7 @@ export const PlanPermissionsPage: React.FC = () => {
         setPlan(foundPlan);
       }
       setSystemPermissions(permsData || []);
+      setPermissionGroups(groupsData || []);
     } catch (err) {
       toast.error('Error al cargar la información del plan');
     } finally {
@@ -324,6 +328,61 @@ export const PlanPermissionsPage: React.FC = () => {
     }
   };
 
+  const handleTogglePermissionGroup = async (group: PermissionGroup) => {
+    if (!planId || !plan) return;
+    setSaving(true);
+    const activeKeys = getActivePermissionKeys();
+    const groupPerms = (group.permissions || []).map((p: any) =>
+      typeof p === 'string' ? p : p.name
+    );
+
+    const isFullyApplied = groupPerms.length > 0 && groupPerms.every((p) => activeKeys.includes(p.toLowerCase()));
+
+    try {
+      if (isFullyApplied) {
+        const permissionsToDelete = (plan.plan_permissions || []).filter((p) =>
+          groupPerms.some((gp) => gp.toLowerCase() === p.permission.toLowerCase())
+        );
+
+        for (const pToDelete of permissionsToDelete) {
+          await adminService.deletePlanPermission(planId, pToDelete.id);
+        }
+        toast.success(`Permisos del grupo "${group.name}" removidos del plan`);
+      } else {
+        let addedCount = 0;
+        let blockedCount = 0;
+        for (const permKey of groupPerms) {
+          if (!activeKeys.includes(permKey.toLowerCase())) {
+            if (isRestrictionActive && !isSinglePermAllowedForWhiteLabel(permKey)) {
+              blockedCount++;
+              continue;
+            }
+            await adminService.addPlanPermission(planId, permKey);
+            addedCount++;
+          }
+        }
+        if (blockedCount > 0) {
+          toast(`Se asignaron ${addedCount} permisos. ${blockedCount} permisos omitidos por restricción de Marca Blanca.`, { icon: '⚠️' });
+        } else {
+          toast.success(`Grupo "${group.name}" aplicado al plan exitosamente (${addedCount} permisos agregados)`);
+        }
+      }
+
+      const updatedPermissions = await adminService.getPlanPermissions(planId);
+      setPlan({
+        ...plan,
+        plan_permissions: updatedPermissions,
+      });
+      if (refreshUser) {
+        try { await refreshUser(); } catch (e) {}
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al actualizar permisos del grupo');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const filteredModules = SYSTEM_MODULES.filter((m) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
@@ -389,7 +448,15 @@ export const PlanPermissionsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <Link
+            href="/admin/plans?tab=permission_groups"
+            className="px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs transition-all shadow-xs inline-flex items-center gap-1.5"
+          >
+            <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <span>Gestionar Grupos de Permisos</span>
+          </Link>
+
           <Link
             href="/admin/plans"
             className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs transition-all shadow-md shadow-amber-600/20 inline-flex items-center gap-1.5"
@@ -470,7 +537,7 @@ export const PlanPermissionsPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+        <div className="flex flex-wrap items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
           <button
             type="button"
             onClick={() => setViewMode('modules')}
@@ -482,6 +549,18 @@ export const PlanPermissionsPage: React.FC = () => {
           >
             <LayoutGrid className="w-3.5 h-3.5" />
             <span>Vista Módulos Principales</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('groups')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              viewMode === 'groups'
+                ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-400 shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Grupos de Permisos ({permissionGroups.length})</span>
           </button>
           <button
             type="button"
@@ -591,7 +670,205 @@ export const PlanPermissionsPage: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW MODE 2: ADVANCED SYSTEM PERMISSIONS */}
+      {/* VIEW MODE 2: PERMISSION GROUPS ASSIGNMENT */}
+      {viewMode === 'groups' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-indigo-50/70 dark:bg-indigo-950/30 p-5 rounded-2xl border border-indigo-200/80 dark:border-indigo-900/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-sm text-indigo-950 dark:text-indigo-100">
+                  Asignación Rápida por Grupos de Permisos
+                </h3>
+                <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-0.5">
+                  Aplica paquetes completos de permisos a este plan con 1 solo clic. También puedes crear nuevos grupos en la sección de Planes.
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/admin/plans?tab=permission_groups"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs shrink-0 inline-flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Crear / Editar Grupos</span>
+            </Link>
+          </div>
+
+          {permissionGroups.length === 0 ? (
+            <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3">
+              <ShieldCheck className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                No hay grupos de permisos configurados
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                Crea grupos de permisos modulares para asignarlos rápidamente a cualquier plan de suscripción.
+              </p>
+              <Link
+                href="/admin/plans?tab=permission_groups"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-indigo-700"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Crear Primer Grupo</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {permissionGroups
+                .filter((g) => {
+                  if (!searchQuery.trim()) return true;
+                  const q = searchQuery.toLowerCase();
+                  return (
+                    (g.name || '').toLowerCase().includes(q) ||
+                    (g.description || '').toLowerCase().includes(q) ||
+                    (g.slug || '').toLowerCase().includes(q)
+                  );
+                })
+                .map((group) => {
+                  const activeKeys = getActivePermissionKeys();
+                  const groupPerms = (group.permissions || []).map((p: any) =>
+                    typeof p === 'string' ? p : p.name
+                  );
+                  const activeCount = groupPerms.filter((p) =>
+                    activeKeys.includes(p.toLowerCase())
+                  ).length;
+                  const isFullyApplied =
+                    groupPerms.length > 0 && activeCount === groupPerms.length;
+                  const isPartiallyApplied =
+                    activeCount > 0 && activeCount < groupPerms.length;
+
+                  return (
+                    <div
+                      key={group.id}
+                      className={`bg-white dark:bg-slate-900 rounded-3xl border shadow-xs p-6 flex flex-col justify-between space-y-4 transition-all ${
+                        isFullyApplied
+                          ? 'border-indigo-300 dark:border-indigo-600/50 ring-2 ring-indigo-500/10 bg-indigo-50/20 dark:bg-indigo-950/20'
+                          : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-3">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`p-2.5 rounded-2xl ${
+                                isFullyApplied
+                                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                              }`}
+                            >
+                              <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                                  {group.is_system ? 'Sistema' : 'Personalizado'}
+                                </span>
+                                {!group.is_active && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] bg-slate-100 text-slate-500">
+                                    Inactivo
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="font-black text-sm text-slate-900 dark:text-slate-100 leading-snug">
+                                {group.name}
+                              </h3>
+                            </div>
+                          </div>
+
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${
+                              isFullyApplied
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
+                                : isPartiallyApplied
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800'
+                                : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                            }`}
+                          >
+                            {isFullyApplied
+                              ? 'Asignado'
+                              : isPartiallyApplied
+                              ? `${activeCount}/${groupPerms.length} activos`
+                              : 'No Asignado'}
+                          </span>
+                        </div>
+
+                        {group.description && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-3 line-clamp-2">
+                            {group.description}
+                          </p>
+                        )}
+
+                        <div className="space-y-1.5 mb-2">
+                          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                            <span>Permisos incluidos:</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300">
+                              {groupPerms.length}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto custom-scrollbar p-1 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+                            {groupPerms.slice(0, 5).map((pKey: string) => {
+                              const isActive = activeKeys.includes(pKey.toLowerCase());
+                              return (
+                                <span
+                                  key={pKey}
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold ${
+                                    isActive
+                                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                                  }`}
+                                >
+                                  {pKey}
+                                </span>
+                              );
+                            })}
+                            {groupPerms.length > 5 && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold">
+                                +{groupPerms.length - 5} más
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 pt-2">
+                        <button
+                          type="button"
+                          disabled={saving || groupPerms.length === 0}
+                          onClick={() => handleTogglePermissionGroup(group)}
+                          className={`w-full py-2.5 px-4 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer ${
+                            isFullyApplied
+                              ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/30 dark:hover:bg-rose-900/40 dark:text-rose-300 dark:border-rose-800'
+                              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
+                          }`}
+                        >
+                          {isFullyApplied ? (
+                            <>
+                              <Trash2 className="w-4 h-4 text-rose-600" />
+                              <span>Remover Permisos del Grupo</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-4 h-4" />
+                              <span>
+                                {isPartiallyApplied
+                                  ? 'Completar Asignación del Grupo'
+                                  : 'Aplicar Grupo al Plan'}
+                              </span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* VIEW MODE 3: ADVANCED SYSTEM PERMISSIONS */}
       {viewMode === 'advanced' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {systemPermissions.map((sysPerm) => {

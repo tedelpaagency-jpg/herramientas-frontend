@@ -36,12 +36,13 @@ export const loginMediaService = {
   },
 
   // === GESTIÓN DE VIDEOS (ADMIN) ===
-  getVideos: async (): Promise<LoginVideo[]> => {
+  getVideos: async (whiteLabelId?: number | string | null): Promise<LoginVideo[]> => {
+    const params = whiteLabelId !== undefined && whiteLabelId !== null ? { white_label_id: whiteLabelId } : {};
     try {
-      const res = await apiClient.get('/v1/admin/login/videos');
+      const res = await apiClient.get('/v1/admin/login/videos', { params });
       return res.data?.data || res.data || [];
     } catch {
-      const res = await apiClient.get('/admin/login/videos');
+      const res = await apiClient.get('/admin/login/videos', { params });
       return res.data?.data || res.data || [];
     }
   },
@@ -68,17 +69,21 @@ export const loginMediaService = {
     await apiClient.delete(`/v1/admin/login/videos/${id}`);
   },
 
-  reorderVideos: async (orderedIds: number[]): Promise<void> => {
-    await apiClient.post('/v1/admin/login/videos/reorder', { ordered_ids: orderedIds });
+  reorderVideos: async (orderedIds: number[], whiteLabelId?: number | string | null): Promise<void> => {
+    await apiClient.post('/v1/admin/login/videos/reorder', { 
+      ordered_ids: orderedIds,
+      ...(whiteLabelId !== undefined && whiteLabelId !== null ? { white_label_id: whiteLabelId } : {})
+    });
   },
 
   // === GESTIÓN DE LOGOS (ADMIN) ===
-  getLogos: async (): Promise<LoginLogo[]> => {
+  getLogos: async (whiteLabelId?: number | string | null): Promise<LoginLogo[]> => {
+    const params = whiteLabelId !== undefined && whiteLabelId !== null ? { white_label_id: whiteLabelId } : {};
     try {
-      const res = await apiClient.get('/v1/admin/login/logos');
+      const res = await apiClient.get('/v1/admin/login/logos', { params });
       return res.data?.data || res.data || [];
     } catch {
-      const res = await apiClient.get('/admin/login/logos');
+      const res = await apiClient.get('/admin/login/logos', { params });
       return res.data?.data || res.data || [];
     }
   },
@@ -101,22 +106,26 @@ export const loginMediaService = {
     await apiClient.delete(`/v1/admin/login/logos/${id}`);
   },
 
-  reorderLogos: async (orderedIds: number[]): Promise<void> => {
-    await apiClient.post('/v1/admin/login/logos/reorder', { ordered_ids: orderedIds });
+  reorderLogos: async (orderedIds: number[], whiteLabelId?: number | string | null): Promise<void> => {
+    await apiClient.post('/v1/admin/login/logos/reorder', { 
+      ordered_ids: orderedIds,
+      ...(whiteLabelId !== undefined && whiteLabelId !== null ? { white_label_id: whiteLabelId } : {})
+    });
   },
 
   // === CONFIGURACIÓN DE TEXTOS DEL LOGIN (ADMIN) ===
-  getLoginTexts: async (): Promise<LoginTexts> => {
+  getLoginTexts: async (whiteLabelId?: number | string | null): Promise<LoginTexts & { white_label_id?: number | null; white_label?: any }> => {
+    const params = whiteLabelId !== undefined && whiteLabelId !== null ? { white_label_id: whiteLabelId } : {};
     try {
-      const res = await apiClient.get('/v1/admin/login/texts');
+      const res = await apiClient.get('/v1/admin/login/texts', { params });
       return res.data?.data || res.data;
     } catch {
-      const res = await apiClient.get('/admin/login/texts');
+      const res = await apiClient.get('/admin/login/texts', { params });
       return res.data?.data || res.data;
     }
   },
 
-  updateLoginTexts: async (texts: Partial<LoginTexts>): Promise<LoginTexts> => {
+  updateLoginTexts: async (texts: Partial<LoginTexts> & { white_label_id?: number | string | null }): Promise<LoginTexts> => {
     try {
       const res = await apiClient.post('/v1/admin/login/texts', texts);
       return res.data?.data || res.data;
