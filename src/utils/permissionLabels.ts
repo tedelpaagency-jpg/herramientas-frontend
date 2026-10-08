@@ -165,8 +165,8 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     module: 'CRM & Clientes',
   },
   'tasks.view': {
-    label: 'Módulo de Tareas & Workspaces',
-    description: 'Acceso al organizador de tareas y secuencias de trabajo',
+    label: 'Módulo de Tareas',
+    description: 'Acceso al organizador y gestor de tareas',
     module: 'General & Tareas',
   },
   'courses.view': {
@@ -314,8 +314,8 @@ const DOMAIN_MAP: Record<string, string> = {
   automation: 'Reglas de Automatización',
   users: 'Usuarios y Equipo',
   user: 'Usuarios y Equipo',
-  tasks: 'Tareas y Secuencias',
-  task: 'Tareas y Secuencias',
+  tasks: 'Tareas',
+  task: 'Tareas',
   landings: 'Landing Pages',
   landing: 'Landing Pages',
 };

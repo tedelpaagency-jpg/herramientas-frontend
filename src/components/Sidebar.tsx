@@ -250,7 +250,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Inicio', path: '/', icon: Home },
         { label: 'Workspaces', path: '/workspaces', icon: Briefcase, permission: ['view_crm', 'manage_crm'] },
         { label: 'Directorio de Clientes', path: '/clients', icon: Users, permission: ['view_clients', 'view_crm'] },
-        { label: 'Gestión de Tareas', path: '/tasks', icon: CheckSquare, permission: ['tasks.view', 'view_tasks'] },
+        { label: 'Tareas', path: '/tasks', icon: CheckSquare, permission: ['tasks.view', 'view_tasks'] },
         { label: 'Calendario', path: '/calendar', icon: Calendar, permission: ['view_crm', 'tasks.view'] },
       ],
     },

@@ -123,7 +123,7 @@ export default function TasksPage() {
   const handleCreateWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wsName.trim()) {
-      toast.error('El nombre del workspace es requerido');
+      toast.error('El nombre del tablero es requerido');
       return;
     }
     setSubmittingWorkspace(true);
@@ -137,12 +137,12 @@ export default function TasksPage() {
       setWsName('');
       setWsDescription('');
       setWsColor('#3B82F6');
-      toast.success(`Workspace "${created.name}" creado exitosamente`);
+      toast.success(`Tablero "${created.name}" creado exitosamente`);
       loadKanbanData(created.id);
       setViewMode('kanban');
     } catch (err) {
       console.error(err);
-      toast.error('Error al crear workspace');
+      toast.error('Error al crear tablero');
     } finally {
       setSubmittingWorkspace(false);
     }
@@ -163,10 +163,10 @@ export default function TasksPage() {
         setActiveWorkspace(updated);
       }
       setEditingWorkspace(null);
-      toast.success('Workspace actualizado');
+      toast.success('Tablero actualizado');
     } catch (err) {
       console.error(err);
-      toast.error('Error al actualizar el workspace');
+      toast.error('Error al actualizar el tablero');
     } finally {
       setSubmittingWorkspace(false);
     }
@@ -175,13 +175,13 @@ export default function TasksPage() {
   const handleDeleteWorkspace = async (wsId: number) => {
     const wsToDelete = workspaces.find((w) => w.id === wsId);
     const confirmed = window.confirm(
-      `¿Estás seguro de eliminar el workspace "${wsToDelete?.name || ''}"?\n\nSe eliminarán todas sus etapas y tareas asociadas.`
+      `¿Estás seguro de eliminar el tablero "${wsToDelete?.name || ''}"?\n\nSe eliminarán todas sus etapas y tareas asociadas.`
     );
     if (!confirmed) return;
 
     try {
       await taskService.deleteWorkspace(wsId);
-      toast.success('Workspace eliminado');
+      toast.success('Tablero eliminado');
       setEditingWorkspace(null);
       if (activeWorkspace?.id === wsId) {
         setViewMode('workspaces');
@@ -189,7 +189,7 @@ export default function TasksPage() {
       loadKanbanData();
     } catch (err) {
       console.error(err);
-      toast.error('Error al eliminar workspace');
+      toast.error('Error al eliminar tablero');
     }
   };
 
@@ -197,7 +197,7 @@ export default function TasksPage() {
   const handleCreateStage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeWorkspace) {
-      toast.error('Selecciona un workspace válido');
+      toast.error('Selecciona un tablero válido');
       return;
     }
     if (!newStageName.trim()) {
@@ -448,18 +448,18 @@ export default function TasksPage() {
       {/* ---------------------------------------------------- */}
       {viewMode === 'workspaces' ? (
         <div className="space-y-6">
-          {/* Header Bar for Workspaces View */}
+          {/* Header Bar for Tasks View */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-black border border-blue-200 dark:border-blue-800">
-                <FolderKanban className="w-6 h-6" />
+                <CheckSquare className="w-6 h-6" />
               </div>
               <div>
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                  Workspaces de Tareas & Secuencias
+                  Tareas
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  Selecciona un workspace para acceder a sus secuencias de tareas y etapas dinámicas.
+                  Organiza y gestiona tus actividades, etapas y flujos de trabajo.
                 </p>
               </div>
             </div>
@@ -474,29 +474,29 @@ export default function TasksPage() {
               className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
             >
               <Plus className="w-4 h-4" />
-              <span>Nuevo Workspace</span>
+              <span>Nuevo Tablero</span>
             </button>
           </div>
 
-          {/* Workspaces Table */}
+          {/* Tasks Table */}
           {loading ? (
             <div className="p-12 text-center text-slate-500 font-medium text-sm flex justify-center items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl">
               <Clock className="w-5 h-5 animate-spin text-blue-600" />
-              <span>Cargando tabla de workspaces...</span>
+              <span>Cargando tareas...</span>
             </div>
           ) : workspaces.length === 0 ? (
             <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-3 shadow-xs">
               <AlertCircle className="w-10 h-10 text-slate-400 mx-auto" />
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">No hay workspaces creados</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">No hay tableros de tareas creados</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Crea tu primer workspace de tareas para estructurar tus secuencias de trabajo.
+                Crea tu primer tablero de tareas para estructurar tus actividades y etapas.
               </p>
               <button
                 onClick={() => setIsAddWorkspaceOpen(true)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-sm hover:bg-blue-700"
               >
                 <Plus className="w-4 h-4" />
-                <span>Crear Workspace</span>
+                <span>Crear Tablero</span>
               </button>
             </div>
           ) : (
@@ -505,10 +505,10 @@ export default function TasksPage() {
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 text-[11px] font-black uppercase text-slate-500 tracking-wider">
-                      <th className="py-4 px-6">Workspace</th>
+                      <th className="py-4 px-6">Tablero</th>
                       <th className="py-4 px-6">Descripción</th>
-                      <th className="py-4 px-6 text-center">Color Identificador</th>
-                      <th className="py-4 px-6 text-center">Secuencia / Etapas</th>
+                      <th className="py-4 px-6 text-center">Color</th>
+                      <th className="py-4 px-6 text-center">Etapas</th>
                       <th className="py-4 px-6 text-right">Acciones</th>
                     </tr>
                   </thead>
@@ -545,7 +545,7 @@ export default function TasksPage() {
                         {/* Description */}
                         <td className="py-4 px-6 text-slate-600 dark:text-slate-300 max-w-md">
                           <p className="line-clamp-2">
-                            {ws.description || 'Sin descripción adicional para este workspace.'}
+                            {ws.description || 'Sin descripción adicional para este tablero.'}
                           </p>
                         </td>
 
@@ -577,7 +577,7 @@ export default function TasksPage() {
                               onClick={() => handleOpenWorkspaceSequences(ws.id)}
                               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 active:scale-95"
                             >
-                              <span>Acceder a Secuencias</span>
+                              <span>Ver Tareas</span>
                               <ArrowRight className="w-4 h-4" />
                             </button>
 
@@ -589,7 +589,7 @@ export default function TasksPage() {
                                 setEditWsColor(ws.color || '#3B82F6');
                               }}
                               className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-                              title="Configuración de Workspace"
+                              title="Configuración del Tablero"
                             >
                               <Settings className="w-4 h-4" />
                             </button>
@@ -597,7 +597,7 @@ export default function TasksPage() {
                             <button
                               onClick={() => handleDeleteWorkspace(ws.id)}
                               className="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors border border-transparent hover:border-rose-200 dark:hover:border-rose-900"
-                              title="Eliminar Workspace"
+                              title="Eliminar Tablero"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -628,10 +628,10 @@ export default function TasksPage() {
               <button
                 onClick={() => setViewMode('workspaces')}
                 className="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 active:scale-95 shadow-2xs"
-                title="Volver al Listado de Workspaces"
+                title="Volver al Listado de Tareas"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Workspaces</span>
+                <span>Volver</span>
               </button>
 
               <div
@@ -647,7 +647,7 @@ export default function TasksPage() {
 
               <div>
                 <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                  {activeWorkspace ? activeWorkspace.name : 'Secuencia de Tareas'}
+                  {activeWorkspace ? activeWorkspace.name : 'Tablero de Tareas'}
                   <span
                     className="text-xs px-2.5 py-0.5 rounded-full font-bold border"
                     style={{
@@ -656,11 +656,11 @@ export default function TasksPage() {
                       borderColor: `${activeWorkspace?.color || '#3B82F6'}30`,
                     }}
                   >
-                    Secuencia Activa
+                    Tablero Activo
                   </span>
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  {activeWorkspace?.description || 'Gestiona las etapas dinámicas y tareas de este workspace'}
+                  {activeWorkspace?.description || 'Gestiona las etapas y tareas de este tablero'}
                 </p>
               </div>
             </div>
@@ -675,7 +675,7 @@ export default function TasksPage() {
                     setEditWsDescription(activeWorkspace.description || '');
                     setEditWsColor(activeWorkspace.color || '#3B82F6');
                   }}
-                  title="Configurar Workspace Activo"
+                  title="Configurar Tablero"
                   className="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 active:scale-95 shadow-2xs"
                 >
                   <Settings className="w-4 h-4" />
@@ -693,10 +693,10 @@ export default function TasksPage() {
                   setIsAddWorkspaceOpen(true);
                 }}
                 className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 active:scale-95 shadow-2xs"
-                title="Crear un nuevo workspace de tareas"
+                title="Crear un nuevo tablero de tareas"
               >
                 <FolderKanban className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span>Nuevo Workspace</span>
+                <span>Nuevo Tablero</span>
               </button>
 
               {/* Create Stage Button */}
@@ -733,7 +733,7 @@ export default function TasksPage() {
           <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-2 overflow-x-auto shadow-2xs">
             <span className="text-[11px] font-extrabold uppercase text-slate-400 px-3 flex items-center gap-1 flex-shrink-0 tracking-wider">
               <Layers className="w-3.5 h-3.5 text-blue-600" />
-              Cambiar Workspace:
+              Cambiar Tablero:
             </span>
             {workspaces.map((ws) => {
               const isActive = activeWorkspace?.id === ws.id;
@@ -771,10 +771,10 @@ export default function TasksPage() {
                 setIsAddWorkspaceOpen(true);
               }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 border border-dashed border-blue-300 dark:border-blue-700 transition-all flex-shrink-0 active:scale-95 shadow-2xs"
-              title="Crear nuevo workspace de tareas"
+              title="Crear nuevo tablero de tareas"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Nuevo Workspace</span>
+              <span>Nuevo Tablero</span>
             </button>
           </div>
 
@@ -810,13 +810,13 @@ export default function TasksPage() {
           {loading ? (
             <div className="p-12 text-center text-slate-500 font-medium text-sm flex justify-center items-center gap-2">
               <Clock className="w-5 h-5 animate-spin text-blue-600" />
-              <span>Cargando secuencia de tareas...</span>
+              <span>Cargando tareas...</span>
             </div>
           ) : stages.length === 0 ? (
             <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-3 shadow-2xs">
               <AlertCircle className="w-10 h-10 text-slate-400 mx-auto" />
               <h3 className="text-base font-bold text-slate-900 dark:text-white">No hay etapas configuradas en "{activeWorkspace?.name}"</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Crea etapas para comenzar la secuencia de trabajo en este workspace.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Crea etapas para comenzar a organizar las tareas en este tablero.</p>
               <button
                 onClick={() => setIsAddStageOpen(true)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-sm hover:bg-blue-700"
@@ -1093,7 +1093,7 @@ export default function TasksPage() {
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <FolderKanban className="w-5 h-5 text-blue-600" />
-                  Nuevo Workspace de Tareas
+                  Nuevo Tablero de Tareas
                 </h3>
                 <button
                   onClick={() => setIsAddWorkspaceOpen(false)}
@@ -1105,7 +1105,7 @@ export default function TasksPage() {
 
               <form onSubmit={handleCreateWorkspace} className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Nombre del Workspace *</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Nombre del Tablero *</label>
                   <input
                     type="text"
                     required
@@ -1122,7 +1122,7 @@ export default function TasksPage() {
                     rows={2}
                     value={wsDescription}
                     onChange={(e) => setWsDescription(e.target.value)}
-                    placeholder="Propósito de este workspace..."
+                    placeholder="Propósito de este tablero..."
                     className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -1153,7 +1153,7 @@ export default function TasksPage() {
                     disabled={submittingWorkspace}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm"
                   >
-                    {submittingWorkspace ? 'Guardando...' : 'Crear Workspace'}
+                    {submittingWorkspace ? 'Guardando...' : 'Crear Tablero'}
                   </button>
                 </div>
               </form>
@@ -1170,7 +1170,7 @@ export default function TasksPage() {
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <Settings className="w-5 h-5 text-blue-600" />
-                  Editar Workspace
+                  Editar Tablero
                 </h3>
                 <button onClick={() => setEditingWorkspace(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
                   <X className="w-5 h-5" />
@@ -1179,7 +1179,7 @@ export default function TasksPage() {
 
               <form onSubmit={handleUpdateWorkspace} className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Nombre del Workspace *</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Nombre del Tablero *</label>
                   <input
                     type="text"
                     required
@@ -1218,7 +1218,7 @@ export default function TasksPage() {
                     onClick={() => handleDeleteWorkspace(editingWorkspace.id)}
                     className="px-3 py-2 bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold hover:bg-rose-100"
                   >
-                    Eliminar Workspace
+                    Eliminar Tablero
                   </button>
 
                   <div className="flex items-center gap-2">
