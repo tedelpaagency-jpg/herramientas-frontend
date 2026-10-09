@@ -299,24 +299,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isSuperAdmin) return ['*'];
 
     let basePerms: string[] = [];
-    if (Array.isArray((user as any)?.effective_permissions)) {
-      basePerms = (user as any).effective_permissions;
-    } else {
-      // Fallback extraction from agency plan or direct permissions
-      const agency = (user as any)?.agency || currentAgency;
-      const plan = agency?.current_subscription?.plan || agency?.currentSubscription?.plan || agency?.plan;
-      const planPerms = Array.isArray(plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
-        ? (plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
-        : [];
-      const extracted = planPerms.map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase()).filter(Boolean);
-      
-      if (dashboardType === 'agency_admin') {
-        basePerms = extracted;
-      } else {
-        const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase());
-        basePerms = Array.from(new Set(directPerms));
-      }
+    if (Array.isArray((user as any)?.effective_permissions) && (user as any).effective_permissions.length > 0) {
+      basePerms = [...(user as any).effective_permissions];
     }
+
+    // Always merge current agency plan permissions if available
+    const agency = (user as any)?.agency || (user as any)?.agency_data || currentAgency;
+    const plan = agency?.current_subscription?.plan || agency?.currentSubscription?.plan || agency?.plan;
+    const planPerms = Array.isArray(plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
+      ? (plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
+      : [];
+    const extractedPlanPerms = planPerms.map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim()).filter(Boolean);
+
+    if (dashboardType === 'agency_admin' || !basePerms.length) {
+      basePerms = Array.from(new Set([...basePerms, ...extractedPlanPerms]));
+    } else {
+      const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase().trim());
+      basePerms = Array.from(new Set([...basePerms, ...directPerms]));
+    }
+
+    // Macro expansions for fast client-side rendering
+    const macroExpanded = [...basePerms];
+    if (basePerms.some((p) => p.startsWith('landings') || p === 'view_landings' || p === 'manage_landings')) {
+      macroExpanded.push('landings.view', 'landings.create', 'landings.edit', 'landings.delete', 'landings', 'view_landings', 'manage_landings');
+    }
+    if (basePerms.some((p) => p.startsWith('workspaces') || p === 'view_crm' || p === 'manage_crm')) {
+      macroExpanded.push('workspaces.view', 'workspaces.create', 'workspaces.edit', 'workspaces.delete', 'workspaces', 'crm.view', 'view_crm', 'manage_crm');
+    }
+    if (basePerms.some((p) => p.startsWith('estates') || p === 'view_estates' || p === 'manage_estates')) {
+      macroExpanded.push('estates.view', 'estates.create', 'estates.edit', 'estates.delete', 'view_estates', 'manage_estates');
+    }
+    if (basePerms.some((p) => p.startsWith('lexvault') || p === 'view_lexvault' || p === 'manage_lexvault' || p.startsWith('contracts'))) {
+      macroExpanded.push('lexvault.view', 'lexvault.create', 'lexvault.edit', 'lexvault.delete', 'view_lexvault', 'manage_lexvault', 'view_contracts', 'contracts.view');
+    }
+    if (basePerms.some((p) => p === 'custom_agency_branding' || p.startsWith('branding'))) {
+      macroExpanded.push('custom_agency_branding', 'branding.view', 'branding.manage');
+    }
+    if (basePerms.some((p) => p.startsWith('campaigns') || p.startsWith('marketing') || p === 'email_marketing' || p === 'view_email_marketing')) {
+      macroExpanded.push('email_marketing', 'view_email_marketing', 'campaigns.view', 'campaigns.create', 'campaigns.edit', 'campaigns.delete', 'marketing.view', 'marketing.create', 'marketing.edit', 'marketing.delete');
+    }
+    if (basePerms.some((p) => p.startsWith('pos') || p === 'view_pos' || p === 'manage_pos')) {
+      macroExpanded.push('view_pos', 'manage_pos', 'pos.view', 'view_products');
+    }
+    if (basePerms.some((p) => p.startsWith('hunter') || p === 'view_hunter')) {
+      macroExpanded.push('view_hunter', 'hunter.view', 'hunter');
+    }
+    if (basePerms.some((p) => p.startsWith('courses') || p.startsWith('activities'))) {
+      macroExpanded.push('activities.view', 'activities.create', 'activities.update', 'activities.delete', 'activities.assign', 'activities.resources', 'activities.progress');
+    }
+    basePerms = Array.from(new Set(macroExpanded));
 
     if (isWhiteLabelAdmin) {
       const wlAdminDefaults = [
@@ -336,7 +367,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return basePerms;
-  }, [isSuperAdmin, user, currentAgency, isWhiteLabelAdmin]);
+  }, [isSuperAdmin, user, currentAgency, isWhiteLabelAdmin, dashboardType]);
 
   // Pre-compiled Set for instant O(1) lookup performance
   const permissionsSet = useMemo(() => {

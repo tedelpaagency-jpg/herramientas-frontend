@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
+import GroupPermissionsEditorView from './GroupPermissionsEditorView';
 import { 
   getPermissionLabel, 
   getPermissionDescription, 
@@ -346,6 +347,59 @@ export const PermissionGroupsTab: React.FC<PermissionGroupsTabProps> = ({
     }
   };
 
+  // Render Full View Editor when Creating or Editing a Permission Group (No Modal)
+  if (isModalOpen) {
+    return (
+      <GroupPermissionsEditorView
+        group={
+          editingGroup
+            ? {
+                id: editingGroup.id,
+                name: editingGroup.name,
+                slug: editingGroup.slug,
+                category: editingGroup.category || undefined,
+                description: editingGroup.description || undefined,
+                is_active: editingGroup.is_active,
+                is_system: editingGroup.is_system,
+                permissions: (editingGroup.permissions || []).map((p: any) =>
+                  typeof p === 'string' ? p : p.name
+                ),
+              }
+            : {
+                name: '',
+                permissions: [],
+                is_active: true,
+              }
+        }
+        availablePermissions={availablePermissions}
+        title={editingGroup ? `Editar Grupo: ${editingGroup.name}` : 'Crear Nuevo Grupo de Permisos'}
+        backLabel="Volver a Grupos de Permisos"
+        onCancel={() => {
+          setIsModalOpen(false);
+          setEditingGroup(null);
+        }}
+        onSave={async (payload) => {
+          try {
+            if (editingGroup) {
+              await permissionGroupService.updateGroup(editingGroup.id, payload);
+              toast.success(`Grupo "${payload.name}" actualizado exitosamente`);
+            } else {
+              await permissionGroupService.createGroup(payload);
+              toast.success(`Grupo "${payload.name}" creado exitosamente`);
+            }
+            setIsModalOpen(false);
+            setEditingGroup(null);
+            loadData();
+            if (onRefreshParent) onRefreshParent();
+          } catch (err: any) {
+            toast.error(err?.response?.data?.message || 'Error al guardar grupo');
+            throw err;
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* KPI Stats Cards */}
@@ -637,272 +691,6 @@ export const PermissionGroupsTab: React.FC<PermissionGroupsTabProps> = ({
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* ================= MODAL DE CREACIÓN / EDICIÓN ================= */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
-            
-            {/* Header Modal */}
-            <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold shrink-0 shadow-sm">
-                  {editingGroup ? <Edit3 className="w-5 h-5" /> : <Plus className="w-5 h-5 stroke-[3]" />}
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
-                    {editingGroup ? `Editar Grupo: ${editingGroup.name}` : 'Crear Nuevo Grupo de Permisos'}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Define la configuración y selecciona los permisos asignados a este grupo.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Form & Permissions Selector Body */}
-            <form onSubmit={handleSaveGroup} className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-6 space-y-6">
-              {/* Basic Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                <div className="sm:col-span-8 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Nombre del Grupo *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Ej. Supervisores, Ventas, Asesores de Operaciones..."
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-amber-400 transition-colors"
-                  />
-                </div>
-
-                <div className="sm:col-span-4 space-y-1.5 flex flex-col justify-end">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Estado del Grupo
-                  </label>
-                  <label className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_active}
-                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                      className="w-4 h-4 text-amber-500 rounded focus:ring-amber-400"
-                    />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {formData.is_active ? 'Grupo Activo' : 'Grupo Inactivo'}
-                    </span>
-                  </label>
-                </div>
-
-                <div className="sm:col-span-12 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Descripción (Opcional)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Describe el objetivo y alcance de los permisos de este grupo..."
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-amber-400 transition-colors resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* Advanced Permissions Selection Section */}
-              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                      <KeyRound className="w-4 h-4 text-amber-500" />
-                      <span>Selección de Permisos</span>
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-900">
-                        {formData.permissions.length} seleccionados
-                      </span>
-                    </h4>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Selecciona individualmente o por módulo los permisos que pertenecerán a este grupo.
-                    </p>
-                  </div>
-
-                  {/* Mass Actions Buttons */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleSelectAllPerms}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-colors"
-                    >
-                      <CheckCheck className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>Seleccionar Todos</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleDeselectAllPerms}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-colors"
-                    >
-                      <Undo2 className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Deseleccionar Todos</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Filter and Search Bar for Permissions */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
-                  <div className="relative w-full sm:max-w-sm">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={modalPermSearch}
-                      onChange={(e) => setModalPermSearch(e.target.value)}
-                      placeholder="Buscar permiso por nombre o módulo..."
-                      className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-amber-400"
-                    />
-                  </div>
-
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300 self-start sm:self-auto">
-                    <input
-                      type="checkbox"
-                      checked={onlySelectedPerms}
-                      onChange={(e) => setOnlySelectedPerms(e.target.checked)}
-                      className="w-4 h-4 text-amber-500 rounded focus:ring-amber-400"
-                    />
-                    <span>Mostrar únicamente permisos seleccionados</span>
-                  </label>
-                </div>
-
-                {/* Module-Grouped Accordions / Lists */}
-                <div className="space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar p-1">
-                  {Object.keys(availableGroupedPermissions).length === 0 ? (
-                    <div className="p-8 text-center text-xs text-slate-400 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-200/60 dark:border-slate-800">
-                      No se encontraron permisos que coincidan con la búsqueda.
-                    </div>
-                  ) : (
-                    Object.entries(availableGroupedPermissions).map(([moduleName, modulePerms]) => {
-                      const allModuleSelected = modulePerms.every((p) =>
-                        formData.permissions.includes(p.name)
-                      );
-                      const selectedCount = modulePerms.filter((p) =>
-                        formData.permissions.includes(p.name)
-                      ).length;
-
-                      return (
-                        <div
-                          key={moduleName}
-                          className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden shadow-2xs"
-                        >
-                          {/* Module Header Bar */}
-                          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold text-xs">
-                                <FolderKanban className="w-3.5 h-3.5" />
-                              </div>
-                              <span className="text-xs font-black text-slate-900 dark:text-white">
-                                {moduleName}
-                              </span>
-                              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                                selectedCount > 0
-                                  ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 font-black'
-                                  : 'bg-slate-200/60 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-                              }`}>
-                                {selectedCount} de {modulePerms.length}
-                              </span>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handleToggleModuleAll(modulePerms)}
-                              className={`text-[11px] font-extrabold px-3 py-1 rounded-lg transition-colors ${
-                                allModuleSelected
-                                  ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/50 dark:text-rose-300'
-                                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-300'
-                              }`}
-                            >
-                              {allModuleSelected ? 'Deseleccionar Módulo' : 'Seleccionar Todo el Módulo'}
-                            </button>
-                          </div>
-
-                          {/* Individual Permissions Grid */}
-                          <div className="p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {modulePerms.map((perm) => {
-                              const isChecked = formData.permissions.includes(perm.name);
-                              const label = getPermissionLabel(perm.name);
-                              const desc = getPermissionDescription(perm.name);
-
-                              return (
-                                <label
-                                  key={perm.id}
-                                  onClick={() => handleTogglePerm(perm.name)}
-                                  className={`flex items-start gap-3 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                                    isChecked
-                                      ? 'bg-amber-50/60 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700/60 shadow-2xs'
-                                      : 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-200/60 dark:border-slate-700/60 hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={() => handleTogglePerm(perm.name)}
-                                    className="mt-0.5 w-4 h-4 text-amber-500 rounded focus:ring-amber-400 shrink-0"
-                                  />
-                                  <div className="min-w-0">
-                                    <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
-                                      {label}
-                                    </p>
-                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                                      {desc}
-                                    </p>
-                                    <span className="text-[9px] font-mono text-slate-400 mt-0.5 inline-block">
-                                      {perm.name}
-                                    </span>
-                                  </div>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* Modal Actions Footer */}
-              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 bg-white dark:bg-slate-900">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-500 active:scale-95 text-slate-950 font-black text-xs shadow-md shadow-amber-400/20 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
-                >
-                  {saving ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Guardando Grupo...</span>
-                    </>
-                  ) : (
-                    <span>{editingGroup ? 'Guardar Cambios' : 'Crear Grupo'}</span>
-                  )}
-                </button>
-              </div>
-            </form>
-
-          </div>
         </div>
       )}
 

@@ -248,23 +248,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'PRINCIPAL & CRM',
       items: [
         { label: 'Inicio', path: '/', icon: Home },
-        { label: 'Workspaces', path: '/workspaces', icon: Briefcase, permission: ['view_crm', 'manage_crm'] },
-        { label: 'Directorio de Clientes', path: '/clients', icon: Users, permission: ['view_clients', 'view_crm'] },
-        { label: 'Tareas', path: '/tasks', icon: CheckSquare, permission: ['tasks.view', 'view_tasks'] },
-        { label: 'Calendario', path: '/calendar', icon: Calendar, permission: ['view_crm', 'tasks.view'] },
+        { label: 'Workspaces', path: '/workspaces', icon: Briefcase, permission: ['view_crm', 'manage_crm', 'workspaces.view', 'workspaces', 'crm.view'] },
+        { label: 'Directorio de Clientes', path: '/clients', icon: Users, permission: ['view_clients', 'clients.view', 'view_crm', 'manage_crm'] },
+        { label: 'Tareas', path: '/tasks', icon: CheckSquare, permission: ['tasks.view', 'view_tasks', 'tasks.manage'] },
+        { label: 'Calendario', path: '/calendar', icon: Calendar, permission: ['view_crm', 'manage_crm', 'tasks.view', 'calendar.view'] },
       ],
     },
     {
       title: 'MODULO INMOBILIARIO',
       items: [
-        { label: 'ACM (Avalúo Comercial)', path: '/acm', icon: Calculator, permission: ['view_estates', 'manage_estates'] },
-        { label: 'Propiedades e Inmuebles', path: '/estates', icon: Building2, permission: ['view_estates', 'manage_estates'] },
+        { label: 'ACM (Avalúo Comercial)', path: '/acm', icon: Calculator, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage', 'acm.view'] },
+        { label: 'Propiedades e Inmuebles', path: '/estates', icon: Building2, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage'] },
       ],
     },
     {
       title: 'VISAS MINORISTAS',
       items: [
-        { label: 'Visas Minoristas (Formularios)', path: '/visas', icon: FileCheck, permission: ['view_visas', 'visas.view'] },
+        { label: 'Visas Minoristas (Formularios)', path: '/visas', icon: FileCheck, permission: ['view_visas', 'visas.view', 'manage_visas'] },
       ],
     },
     {
@@ -272,43 +272,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         ...(isWhiteLabelAdmin || isSuperAdmin
           ? [
-              { label: 'Operaciones Mayorista B2B', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view'] },
-              { label: 'Agencias Afiliadas B2B', path: '/visas/mayorista/agencias', icon: Building2, permission: ['view_visas', 'visas.view'] },
-              { label: 'Configurar Visas B2B', path: '/visas/tipos', icon: Layers, permission: ['view_visas', 'visas.view', 'visas.processes.manage'] },
+              { label: 'Operaciones Mayorista B2B', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view', 'manage_visas'] },
+              { label: 'Agencias Afiliadas B2B', path: '/visas/mayorista/agencias', icon: Building2, permission: ['view_visas', 'visas.view', 'manage_visas'] },
+              { label: 'Configurar Visas B2B', path: '/visas/tipos', icon: Layers, permission: ['view_visas', 'visas.view', 'visas.processes.manage', 'manage_visas'] },
             ]
           : [
-              { label: 'Portal Mayorista (B2B)', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view'] },
-              { label: 'Políticas de Visados B2B', path: '/visas/politicas', icon: FileText, permission: ['view_visas', 'visas.settings.manage'] },
+              { label: 'Portal Mayorista (B2B)', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view', 'manage_visas'] },
+              { label: 'Políticas de Visados B2B', path: '/visas/politicas', icon: FileText, permission: ['view_visas', 'visas.view', 'visas.settings.manage', 'manage_visas'] },
             ]),
       ],
     },
     {
       title: 'MODULO VIAJES & PAQUETES',
       items: [
-        { label: 'Paquetes Turísticos', path: '/travel-packages', icon: Plane, permission: 'packages.view' },
-        { label: 'Reportes de Viaje', path: '/travel-reports', icon: FileText, permission: ['view_travel_reports', 'travel_reports.view'] },
-        { label: 'Punto de Venta POS', path: '/pos', icon: ShoppingCart, permission: ['view_pos', 'manage_pos'] },
-        { label: 'Gestión de Comisiones', path: '/commissions', icon: CreditCard, permission: 'commissions.view' },
-        { label: 'Directorio de Proveedores', path: '/supplier', icon: Store, permission: ['view_products', 'packages.view'] },
-        { label: 'Productos e Insumos', path: '/products', icon: Package, permission: ['view_products'] },
+        { label: 'Paquetes Turísticos', path: '/travel-packages', icon: Plane, permission: ['packages.view', 'packages.catalog', 'packages.manage'] },
+        { label: 'Reportes de Viaje', path: '/travel-reports', icon: FileText, permission: ['view_travel_reports', 'travel_reports.view', 'approve_travel_reports'] },
+        { label: 'Punto de Venta POS', path: '/pos', icon: ShoppingCart, permission: ['view_pos', 'manage_pos', 'pos.view'] },
+        { label: 'Gestión de Comisiones', path: '/commissions', icon: CreditCard, permission: ['commissions.view', 'commissions.manage'] },
+        { label: 'Directorio de Proveedores', path: '/supplier', icon: Store, permission: ['view_products', 'packages.view', 'suppliers.view'] },
+        { label: 'Productos e Insumos', path: '/products', icon: Package, permission: ['view_products', 'products.view'] },
       ],
     },
     {
       title: 'MARKETING & LEGAL',
       items: [
-        { label: 'LexVault (Contratos)', path: '/lexvault', icon: FileText, permission: ['view_lexvault', 'manage_lexvault', 'view_contracts', 'contracts.view'] },
-        { label: 'Hunter Stores', path: '/hunter', icon: Store, permission: ['view_hunter'] },
-        { label: 'Landings', path: '/landings', icon: Globe, permission: ['landings.view', 'view_landings', 'landings', 'landings.create', 'manage_landings'] },
-        { label: 'Marketing & Campañas', path: '/marketing', icon: Zap, permission: ['email_marketing', 'view_email_marketing', 'campaigns.view'] },
-        { label: 'Automatizaciones', path: '/automations', icon: Wrench, permission: ['automations', 'view_automations'] },
+        { label: 'LexVault (Contratos)', path: '/lexvault', icon: FileText, permission: ['view_lexvault', 'manage_lexvault', 'lexvault.view', 'lexvault', 'view_contracts', 'contracts.view'] },
+        { label: 'Hunter Stores', path: '/hunter', icon: Store, permission: ['view_hunter', 'hunter.view', 'hunter'] },
+        { label: 'Landings', path: '/landings', icon: Globe, permission: ['landings.view', 'view_landings', 'landings', 'landings.create', 'landings.edit', 'landings.delete', 'manage_landings'] },
+        { label: 'Marketing & Campañas', path: '/marketing', icon: Zap, permission: ['email_marketing', 'view_email_marketing', 'campaigns.view', 'marketing.view', 'marketing'] },
+        { label: 'Automatizaciones', path: '/automations', icon: Wrench, permission: ['automations', 'view_automations', 'automations.view'] },
       ],
     },
     {
       title: 'CURSOS & CAPACITACIÓN',
       items: [
-        { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap, permission: 'courses.view' },
-        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: 'courses.view' },
-        { label: 'Gamificación & Puntos', path: '/gamification', icon: Trophy, permission: ['view_spin_wheel', 'view_gamification'] },
+        { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap, permission: ['courses.view', 'courses.create', 'courses.manage'] },
+        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: ['courses.view'] },
+        { label: 'Gamificación & Puntos', path: '/gamification', icon: Trophy, permission: ['view_spin_wheel', 'view_gamification', 'spin_wheel.view', 'gamification.view'] },
       ],
     },
     {
@@ -329,7 +329,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           : []),
         { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
         { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck, permission: ['roles.manage', 'manage_roles'] },
-        { label: 'Biblioteca de Medios', path: '/media', icon: ImageIcon, permission: ['courses.view', 'activities.view', 'agencies.view'] },
+        { label: 'Personalizar Marca', path: '/branding', icon: Palette, permission: ['custom_agency_branding', 'branding.view', 'branding.manage'] },
+        { label: 'Biblioteca de Medios', path: '/media', icon: ImageIcon, permission: ['courses.view', 'activities.view', 'agencies.view', 'media.view'] },
         ...(isSuperAdmin || isWhiteLabelAdmin
           ? [
               { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_plans', 'manage_agencies'] },
