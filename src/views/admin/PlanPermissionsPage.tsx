@@ -211,9 +211,25 @@ const SYSTEM_MODULES: ModuleDefinition[] = [
     id: 'users',
     name: 'Módulo Gestión de Usuarios & Equipos',
     category: 'GESTIÓN',
-    description: 'Permite a la agencia crear y gestionar sus miembros (administradores y asesores/closers) y equipos.',
+    description: 'Permite a la agencia registrar, invitar y gestionar las cuentas de sus miembros y asesores.',
     icon: UserCheck,
-    permissions: ['manage_users', 'manage_agencies', 'roles.manage'],
+    permissions: ['manage_users', 'users.view', 'view_users'],
+  },
+  {
+    id: 'roles',
+    name: 'Módulo Roles & Permisos',
+    category: 'GESTIÓN',
+    description: 'Permite a la agencia crear, personalizar y administrar los roles y permisos de los miembros de su equipo.',
+    icon: ShieldCheck,
+    permissions: [
+      'roles.manage',
+      'roles.view',
+      'permission_groups.view',
+      'permission_groups.create',
+      'permission_groups.edit',
+      'permission_groups.delete',
+      'permission_groups.manage',
+    ],
   },
   {
     id: 'branding',
@@ -237,7 +253,10 @@ export const PlanPermissionsPage: React.FC = () => {
   const params = useParams();
   const searchParams = useSearchParams();
   const { user, refreshUser } = useAuth();
-  const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
+  const isSuperAdmin =
+    user?.role === 'super_admin' ||
+    user?.roles?.some((r: any) => r.name === 'super_admin') ||
+    (user as any)?.dashboard_type === 'super_admin';
   const isWhiteLabelAdmin = !isSuperAdmin && (user?.role === 'white_label_admin' || user?.roles?.some((r: any) => r.name === 'white_label_admin'));
 
   const userWL = (user as any)?.white_labels?.[0] || (user as any)?.whiteLabels?.[0] || (user as any)?.white_label;
@@ -287,6 +306,11 @@ export const PlanPermissionsPage: React.FC = () => {
         (p) => p.startsWith('pos') || p === 'view_pos' || p === 'manage_pos'
       );
     }
+    if (lower.startsWith('roles.') || lower === 'manage_roles' || lower.startsWith('permission_groups.')) {
+      return whiteLabelPlanPermissions.some(
+        (p) => p.startsWith('roles') || p === 'manage_roles' || p === 'manage_users' || p.startsWith('permission_groups')
+      );
+    }
     return whiteLabelPlanPermissions.includes(lower);
   };
 
@@ -305,11 +329,11 @@ export const PlanPermissionsPage: React.FC = () => {
   // Full screen group permissions editing state
   const [editingGroupMod, setEditingGroupMod] = useState<ModuleDefinition | null>(null);
 
+  const canEditPlanPermissions = isSuperAdmin || (isWhiteLabelAdmin && plan?.type === 'agency');
+
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
-  const [newPermission, setNewPermission] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'modules' | 'advanced'>('modules');
 
   useEffect(() => {
     if (planId) {
@@ -388,7 +412,12 @@ export const PlanPermissionsPage: React.FC = () => {
   }, [permissionGroups, customModulePermissions]);
 
   // Toggle a single permission for this plan
+  // Toggle a single permission for this plan
   const handleTogglePermissionForPlan = async (permKey: string) => {
+    if (!canEditPlanPermissions) {
+      toast.error('No tiene autorización para modificar los permisos de este plan.');
+      return;
+    }
     if (!planId || !plan) return;
     const lowerKey = permKey.toLowerCase();
     const activeKeys = getActivePermissionKeys();
@@ -443,6 +472,14 @@ export const PlanPermissionsPage: React.FC = () => {
 
   // Toggle all permissions within a module/group
   const handleToggleAllInModule = async (mod: ModuleDefinition, enable: boolean) => {
+    if (!canEditPlanPermissions) {
+      toast.error('No tiene autorización para modificar los permisos de este plan.');
+      return;
+    }
+    if (isWhiteLabelAdmin && !isModuleAllowedForWhiteLabel(mod)) {
+      toast.error('Este módulo no está contratado en el plan de su Marca Blanca.');
+      return;
+    }
     if (!planId || !plan) return;
     const activeKeys = getActivePermissionKeys();
 
@@ -506,6 +543,10 @@ export const PlanPermissionsPage: React.FC = () => {
     is_active: boolean;
     permissions: string[];
   }) => {
+    if (!isSuperAdmin) {
+      toast.error('Solo el Super Administrador tiene autorización para modificar la definición de los grupos de permisos.');
+      return;
+    }
     if (!editingGroupMod) return;
 
     try {
@@ -559,46 +600,32 @@ export const PlanPermissionsPage: React.FC = () => {
     }
   };
 
-  // Add custom permission directly to plan
-  const handleAddCustomPermission = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!planId || !plan || !newPermission.trim()) return;
-    setSaving(true);
-    try {
-      await adminService.addPlanPermission(planId, newPermission.trim().toLowerCase());
-      toast.success(`Permiso personalizado "${newPermission.trim()}" agregado`);
-      setNewPermission('');
-      const updatedPermissions = await adminService.getPlanPermissions(planId);
-      setPlan({
-        ...plan,
-        plan_permissions: updatedPermissions,
-      });
-      if (refreshUser) {
-        try { await refreshUser(); } catch (e) {}
-      }
-    } catch (err: any) {
-      toast.error('Error al agregar permiso personalizado al plan');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const activeKeys = getActivePermissionKeys();
 
-  // Filter modules based on search query
-  const filteredModules = mergedModules.filter((m) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    const nameMatch = m.name.toLowerCase().includes(q);
-    const descMatch = m.description.toLowerCase().includes(q);
-    const catMatch = m.category.toLowerCase().includes(q);
-    const permMatch = m.permissions.some(
-      (p) => p.toLowerCase().includes(q) || getPermissionLabel(p).toLowerCase().includes(q)
-    );
-    return nameMatch || descMatch || catMatch || permMatch;
-  });
+  // For White Labels: ONLY show groups that are enabled in their White Label master plan!
+  const visibleModules = useMemo(() => {
+    if (isRestrictionActive) {
+      return mergedModules.filter((m) => isModuleAllowedForWhiteLabel(m));
+    }
+    return mergedModules;
+  }, [mergedModules, isRestrictionActive]);
 
-  const activeModulesCount = mergedModules.filter((m) => {
+  // Filter modules based on search query
+  const filteredModules = useMemo(() => {
+    if (!searchQuery.trim()) return visibleModules;
+    const q = searchQuery.toLowerCase();
+    return visibleModules.filter((m) => {
+      const nameMatch = m.name.toLowerCase().includes(q);
+      const descMatch = m.description.toLowerCase().includes(q);
+      const catMatch = m.category.toLowerCase().includes(q);
+      const permMatch = m.permissions.some(
+        (p) => p.toLowerCase().includes(q) || getPermissionLabel(p).toLowerCase().includes(q)
+      );
+      return nameMatch || descMatch || catMatch || permMatch;
+    });
+  }, [visibleModules, searchQuery]);
+
+  const activeModulesCount = visibleModules.filter((m) => {
     const totalCount = m.permissions.length;
     const activeCount = m.permissions.filter((p) => activeKeys.includes(p.toLowerCase())).length;
     return totalCount > 0 && activeCount === totalCount;
@@ -683,8 +710,14 @@ export const PlanPermissionsPage: React.FC = () => {
             <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex flex-wrap items-center gap-2">
               <span>Módulos del Plan: {plan?.name}</span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                {activeModulesCount} de {mergedModules.length} módulos habilitados
+                {activeModulesCount} de {visibleModules.length} módulos habilitados
               </span>
+              {!canEditPlanPermissions && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-slate-500" />
+                  <span>Solo Lectura</span>
+                </span>
+              )}
             </h1>
           </div>
         </div>
@@ -698,13 +731,23 @@ export const PlanPermissionsPage: React.FC = () => {
             <span>Grupos de Permisos</span>
           </Link>
 
-          <Link
-            href="/admin/plans"
-            className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs transition-all shadow-md shadow-amber-500/20 inline-flex items-center gap-1.5"
-          >
-            <Check className="w-4 h-4 stroke-[3]" />
-            <span>Listo / Guardar</span>
-          </Link>
+          {canEditPlanPermissions ? (
+            <Link
+              href="/admin/plans"
+              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs transition-all shadow-md shadow-amber-500/20 inline-flex items-center gap-1.5"
+            >
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>Listo / Guardar</span>
+            </Link>
+          ) : (
+            <Link
+              href="/admin/plans"
+              className="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all shadow-xs inline-flex items-center gap-1.5"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Volver a Planes</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -727,25 +770,16 @@ export const PlanPermissionsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Custom Permission Quick Add Form */}
-        <form onSubmit={handleAddCustomPermission} className="w-full md:w-auto flex items-center gap-2 bg-white/10 backdrop-blur-md p-2 rounded-2xl border border-white/10">
-          <input
-            type="text"
-            required
-            placeholder="Añadir clave personalizada (ej. view_...)"
-            value={newPermission}
-            onChange={(e) => setNewPermission(e.target.value)}
-            className="px-3.5 py-2 bg-slate-900/60 border border-white/10 rounded-xl text-xs font-mono text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-amber-500/40 w-full md:w-60"
-          />
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl transition-all shadow-xs shrink-0 inline-flex items-center gap-1 cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Agregar</span>
-          </button>
-        </form>
+        {/* Modules summary badge */}
+        <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 shrink-0">
+          <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" />
+          <div className="text-right">
+            <div className="text-xs font-bold text-white">Gestión por Módulos</div>
+            <div className="text-[10px] text-amber-200">
+              {visibleModules.length} módulos disponibles
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* White Label Plan Restrictive Notice */}
@@ -755,17 +789,37 @@ export const PlanPermissionsPage: React.FC = () => {
             <Shield className="w-4 h-4" />
           </div>
           <div>
-            <div className="font-extrabold text-amber-950 dark:text-amber-100">
-              Plan Matriz de tu Marca Blanca: {whiteLabelPlan?.name || 'Plan Activo'} ({whiteLabelPlanPermissions.length} permisos habilitados)
+            <div className="font-extrabold text-amber-950 dark:text-amber-100 flex items-center gap-2">
+              <span>Módulos de tu Marca Blanca: {whiteLabelPlan?.name || 'Plan Activo'}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100">
+                {visibleModules.length} Módulos Disponibles
+              </span>
             </div>
             <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
-              Solo puedes habilitar en los planes de tus agencias los módulos contratados por tu Marca Blanca. Los módulos no contratados aparecen bloqueados.
+              Solo se muestran los grupos de permisos contratados por tu Marca Blanca. Puedes habilitar o deshabilitar cada uno de estos módulos en los planes de tus agencias.
             </p>
           </div>
         </div>
       )}
 
-      {/* Control Bar: Search & View Mode Switcher */}
+      {/* Read-Only Notice when user cannot edit */}
+      {!canEditPlanPermissions && (
+        <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 p-4 rounded-2xl flex items-center gap-3 text-xs text-blue-950 dark:text-blue-200 font-medium shadow-xs">
+          <div className="w-8 h-8 rounded-xl bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/20">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="font-extrabold text-blue-950 dark:text-blue-100 flex items-center gap-2">
+              <span>Modo Solo Lectura</span>
+            </div>
+            <p className="text-[11px] text-blue-700 dark:text-blue-300 mt-0.5">
+              No tienes autorización para modificar los permisos de este plan. Puedes consultar los módulos asignados a continuación.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Control Bar: Search Input */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="relative w-full sm:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -778,225 +832,123 @@ export const PlanPermissionsPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-          <button
-            type="button"
-            onClick={() => setViewMode('modules')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'modules'
-                ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-xs'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>Vista Módulos Principales</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('advanced')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'advanced'
-                ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-xs'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            <Shield className="w-3.5 h-3.5" />
-            <span>Modo Avanzado (Permisos Clave)</span>
-          </button>
+        <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
+          Mostrando {filteredModules.length} módulos disponibles
         </div>
       </div>
 
-      {/* VIEW MODE 1: MODULES CARDS GRID (Exact match of previous design + Edit icon) */}
-      {viewMode === 'modules' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-          {filteredModules.map((mod) => {
-            const IconComp = mod.icon;
-            const totalCount = mod.permissions.length;
-            const activeCount = mod.permissions.filter((p) => activeKeys.includes(p.toLowerCase())).length;
-            const isFull = totalCount > 0 && activeCount === totalCount;
-            const isPartial = activeCount > 0 && activeCount < totalCount;
-            const isAllowed = isModuleAllowedForWhiteLabel(mod);
+      {/* MODULES & GROUPS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+        {filteredModules.map((mod) => {
+          const IconComp = mod.icon;
+          const totalCount = mod.permissions.length;
+          const activeCount = mod.permissions.filter((p) => activeKeys.includes(p.toLowerCase())).length;
+          const isFull = totalCount > 0 && activeCount === totalCount;
+          const isPartial = activeCount > 0 && activeCount < totalCount;
 
-            return (
-              <div
-                key={mod.id}
-                className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all group"
-              >
-                <div>
-                  {/* Card Header with Icon, Category, Title and Edit Icon Button */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
-                        <IconComp className="w-5 h-5" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-[10px] font-black text-amber-500 uppercase tracking-wider block truncate">
-                          {mod.category}
-                        </span>
-                        <h3 className="font-black text-sm text-slate-900 dark:text-slate-100 leading-snug truncate">
-                          {mod.name}
-                        </h3>
-                      </div>
+          return (
+            <div
+              key={mod.id}
+              className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all group"
+            >
+              <div>
+                {/* Card Header with Icon, Category, Title and Edit Icon Button */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+                      <IconComp className="w-5 h-5" />
                     </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-black text-amber-500 uppercase tracking-wider block truncate">
+                        {mod.category}
+                      </span>
+                      <h3 className="font-black text-sm text-slate-900 dark:text-slate-100 leading-snug truncate">
+                        {mod.name}
+                      </h3>
+                    </div>
+                  </div>
 
-                    {/* Edit Icon Button: takes user to full view to configure group's permissions */}
+                  {/* Edit Icon Button: Only super_admin can configure individual permissions of the group */}
+                  {isSuperAdmin && (
                     <button
                       type="button"
                       onClick={() => setEditingGroupMod(mod)}
                       className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-amber-500 hover:text-white dark:bg-slate-800 dark:hover:bg-amber-500 dark:hover:text-white text-slate-400 flex items-center justify-center transition-all cursor-pointer shadow-2xs shrink-0"
-                      title="Editar permisos asignados a este grupo (vista completa)"
+                      title="Editar permisos asignados a este grupo (vista completa por rubro)"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
-                  </div>
-
-                  {/* Module Description */}
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed my-3 line-clamp-2 min-h-[32px]">
-                    {mod.description}
-                  </p>
-
-                  {/* List of Permission Pills */}
-                  <div className="flex flex-wrap gap-1.5 min-h-[50px] mb-4 content-start">
-                    {mod.permissions.slice(0, 10).map((pKey) => (
-                      <span
-                        key={pKey}
-                        className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-mono text-[11px] font-semibold"
-                      >
-                        {pKey}
-                      </span>
-                    ))}
-                    {mod.permissions.length > 10 && (
-                      <span className="px-2 py-1 rounded-lg bg-slate-100/60 dark:bg-slate-800/50 text-slate-500 text-[10px] font-bold">
-                        +{mod.permissions.length - 10} más
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                {/* Bottom Full-Width Enable / Disable Button */}
-                <div className="pt-2">
-                  {isFull ? (
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={() => handleToggleAllInModule(mod, false)}
-                      className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black text-xs transition-all shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
+                {/* Module Description */}
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed my-3 line-clamp-2 min-h-[32px]">
+                  {mod.description}
+                </p>
+
+                {/* List of Permission Pills */}
+                <div className="flex flex-wrap gap-1.5 min-h-[50px] mb-4 content-start">
+                  {mod.permissions.slice(0, 10).map((pKey) => (
+                    <span
+                      key={pKey}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-mono text-[11px] font-semibold"
                     >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Módulo Habilitado</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={saving || !isAllowed}
-                      onClick={() => handleToggleAllInModule(mod, true)}
-                      className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
-                        !isAllowed
-                          ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 border border-slate-200/50 dark:border-slate-800 cursor-not-allowed opacity-60'
-                          : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 cursor-pointer active:scale-95'
-                      }`}
-                    >
-                      {!isAllowed ? (
-                        <>
-                          <Lock className="w-3.5 h-3.5" />
-                          <span>No Incluido en Plan Matriz</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-400 dark:border-slate-500" />
-                          <span>{isPartial ? `Habilitar Módulo (${activeCount}/${totalCount})` : 'Habilitar Módulo'}</span>
-                        </>
-                      )}
-                    </button>
+                      {pKey}
+                    </span>
+                  ))}
+                  {mod.permissions.length > 10 && (
+                    <span className="px-2 py-1 rounded-lg bg-slate-100/60 dark:bg-slate-800/50 text-slate-500 text-[10px] font-bold">
+                      +{mod.permissions.length - 10} más
+                    </span>
                   )}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
 
-      {/* VIEW MODE 2: ADVANCED GLOBAL SYSTEM PERMISSIONS EXPLORER */}
-      {viewMode === 'advanced' && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-between text-xs">
-            <span className="font-bold text-slate-700 dark:text-slate-300">
-              Explorador global de todos los permisos registrados ({systemPermissions.length} en el sistema)
-            </span>
-            <span className="text-slate-500">
-              {activeKeys.length} permisos habilitados en este plan
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {systemPermissions
-              .filter((sysPerm) => {
-                if (!searchQuery.trim()) return true;
-                const q = searchQuery.toLowerCase();
-                return (
-                  sysPerm.name.toLowerCase().includes(q) ||
-                  getPermissionLabel(sysPerm.name).toLowerCase().includes(q) ||
-                  getPermissionDescription(sysPerm.name).toLowerCase().includes(q)
-                );
-              })
-              .map((sysPerm) => {
-                const isActive = activeKeys.includes(sysPerm.name.toLowerCase());
-                const isAllowed = isSinglePermAllowedForWhiteLabel(sysPerm.name);
-
-                return (
-                  <div
-                    key={sysPerm.id}
-                    onClick={() => {
-                      if (!isAllowed) {
-                        toast.error(`El permiso "${sysPerm.name}" no está contratado en el plan de su Marca Blanca.`);
-                        return;
-                      }
-                      handleTogglePermissionForPlan(sysPerm.name);
-                    }}
-                    className={`p-4 rounded-2xl border flex items-start justify-between gap-3 transition-all select-none ${
-                      !isAllowed
-                        ? 'bg-slate-50/70 border-slate-200 text-slate-400 opacity-60 cursor-not-allowed'
-                        : isActive
-                          ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-300 dark:border-amber-600/50 text-amber-950 dark:text-amber-200 shadow-xs cursor-pointer'
-                          : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 cursor-pointer'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={isActive}
-                        disabled={!isAllowed}
-                        readOnly
-                        className="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500 pointer-events-none accent-amber-600 shrink-0"
-                      />
-                      <div className="space-y-1">
-                        <h4 className="font-black text-xs text-slate-900 dark:text-slate-100 leading-snug">
-                          {getPermissionLabel(sysPerm.name)}
-                        </h4>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                          {getPermissionDescription(sysPerm.name)}
-                        </p>
-                        <div className="inline-block px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-md font-mono text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                          {sysPerm.name}
-                        </div>
-                      </div>
+              {/* Bottom Full-Width Enable / Disable Button or Read-Only Status */}
+              <div className="pt-2">
+                {!canEditPlanPermissions ? (
+                  isFull ? (
+                    <div className="w-full py-2.5 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 select-none">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Módulo Habilitado</span>
                     </div>
-
-                    {isActive ? (
-                      <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full shrink-0 border border-amber-200 dark:border-amber-700">
-                        Activo
-                      </span>
-                    ) : !isAllowed ? (
-                      <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full shrink-0 border border-rose-200 flex items-center gap-1">
-                        <Lock className="w-2.5 h-2.5" /> Bloqueado
-                      </span>
-                    ) : null}
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      )}
+                  ) : isPartial ? (
+                    <div className="w-full py-2.5 px-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 font-bold text-xs flex items-center justify-center gap-2 select-none">
+                      <AlertCircle className="w-4 h-4 text-amber-500" />
+                      <span>Parcialmente Habilitado ({activeCount}/{totalCount})</span>
+                    </div>
+                  ) : (
+                    <div className="w-full py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800 text-slate-400 dark:text-slate-500 font-bold text-xs flex items-center justify-center gap-2 select-none">
+                      <Lock className="w-3.5 h-3.5 text-slate-400" />
+                      <span>No Asignado</span>
+                    </div>
+                  )
+                ) : isFull ? (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => handleToggleAllInModule(mod, false)}
+                    className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black text-xs transition-all shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Módulo Habilitado</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => handleToggleAllInModule(mod, true)}
+                    className="w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 cursor-pointer active:scale-95"
+                  >
+                    <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-400 dark:border-slate-500" />
+                    <span>{isPartial ? `Habilitar Módulo (${activeCount}/${totalCount})` : 'Habilitar Módulo'}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

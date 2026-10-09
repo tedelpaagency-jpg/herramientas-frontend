@@ -328,7 +328,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ]
           : []),
         { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
-        { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck, permission: ['roles.manage', 'manage_roles'] },
+        { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck, permission: ['roles.manage', 'manage_roles', 'roles.view', 'view_roles', 'roles', 'permission_groups.view', 'permission_groups.manage'] },
         { label: 'Personalizar Marca', path: '/branding', icon: Palette, permission: ['custom_agency_branding', 'branding.view', 'branding.manage'] },
         { label: 'Biblioteca de Medios', path: '/media', icon: ImageIcon, permission: ['courses.view', 'activities.view', 'agencies.view', 'media.view'] },
         ...(isSuperAdmin || isWhiteLabelAdmin

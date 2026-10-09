@@ -304,6 +304,21 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     description: 'Permite configurar, agregar y remover permisos asociados a un grupo',
     module: 'Roles & Permisos',
   },
+  'roles.manage': {
+    label: 'Administrar Roles & Permisos',
+    description: 'Permite crear, configurar y asignar roles y permisos personalizados a usuarios del equipo',
+    module: 'Roles & Permisos',
+  },
+  'roles.view': {
+    label: 'Ver Roles & Permisos',
+    description: 'Permite consultar el catálogo de roles y permisos configurados en la agencia',
+    module: 'Roles & Permisos',
+  },
+  manage_roles: {
+    label: 'Administrar Roles & Permisos',
+    description: 'Permite crear y gestionar los roles de la agencia',
+    module: 'Roles & Permisos',
+  },
 };
 
 const ACTION_MAP: Record<string, { verb: string; desc: string }> = {
@@ -344,6 +359,8 @@ const DOMAIN_MAP: Record<string, string> = {
   landings: 'Landing Pages',
   landing: 'Landing Pages',
   permission_groups: 'Grupos de Permisos',
+  roles: 'Roles & Permisos',
+  role: 'Roles & Permisos',
 };
 
 export function getPermissionLabel(key: string): string {
@@ -392,6 +409,93 @@ export function getPermissionModule(key: string): string {
 
   if (PERMISSION_LABELS[normalizedKey]) {
     return PERMISSION_LABELS[normalizedKey].module;
+  }
+
+  // Consistent rubro & domain category mapping
+  if (
+    normalizedKey.startsWith('estates.') ||
+    normalizedKey.startsWith('estate.') ||
+    normalizedKey === 'view_estates' ||
+    normalizedKey === 'manage_estates' ||
+    normalizedKey.includes('estate')
+  ) {
+    return 'Inmobiliaria';
+  }
+
+  if (
+    normalizedKey.startsWith('visas.') ||
+    normalizedKey.startsWith('packages.') ||
+    normalizedKey.startsWith('requests.') ||
+    normalizedKey.startsWith('commissions.') ||
+    normalizedKey.includes('visa') ||
+    normalizedKey.includes('travel') ||
+    normalizedKey.includes('w8')
+  ) {
+    return 'Turismo & Viajes';
+  }
+
+  if (
+    normalizedKey.startsWith('landings.') ||
+    normalizedKey.startsWith('landing.') ||
+    normalizedKey.includes('landing')
+  ) {
+    return 'Landing Pages';
+  }
+
+  if (
+    normalizedKey.startsWith('lexvault.') ||
+    normalizedKey.startsWith('contracts.') ||
+    normalizedKey.includes('lexvault') ||
+    normalizedKey.includes('contract')
+  ) {
+    return 'Legal & Contratos';
+  }
+
+  if (
+    normalizedKey.startsWith('stages.') ||
+    normalizedKey.startsWith('clients.') ||
+    normalizedKey.startsWith('workspaces.') ||
+    normalizedKey.startsWith('automations.') ||
+    normalizedKey.includes('crm') ||
+    normalizedKey.includes('lead')
+  ) {
+    return 'CRM & Clientes';
+  }
+
+  if (
+    normalizedKey.startsWith('campaigns.') ||
+    normalizedKey.startsWith('marketing.') ||
+    normalizedKey.includes('email_marketing')
+  ) {
+    return 'Marketing & Campañas';
+  }
+
+  if (
+    normalizedKey.startsWith('pos.') ||
+    normalizedKey.startsWith('products.') ||
+    normalizedKey.includes('pos') ||
+    normalizedKey.includes('spin_wheel')
+  ) {
+    return 'Comercio & POS';
+  }
+
+  if (
+    normalizedKey.startsWith('courses.') ||
+    normalizedKey.startsWith('activities.') ||
+    normalizedKey.includes('course') ||
+    normalizedKey.includes('activit')
+  ) {
+    return 'Capacitación & Academia';
+  }
+
+  if (
+    normalizedKey.startsWith('roles.') ||
+    normalizedKey.startsWith('permission_groups.') ||
+    normalizedKey.startsWith('users.') ||
+    normalizedKey.includes('role') ||
+    normalizedKey.includes('permission_group')
+  ) {
+    return 'Roles & Usuarios';
   }
 
   if (normalizedKey.includes('.')) {

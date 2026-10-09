@@ -93,7 +93,33 @@ export const GroupPermissionsEditorView: React.FC<GroupPermissionsEditorViewProp
     return restrictedPermissions.includes(lower);
   };
 
-  // Group available permissions by system module domain
+  // Determine initial active category according to group rubro
+  const getInitialCategory = (): string => {
+    const text = `${group.name || ''} ${group.category || ''} ${group.slug || ''}`.toLowerCase();
+    if (text.includes('inmobiliaria') || text.includes('propiedad') || text.includes('estate')) return 'Inmobiliaria';
+    if (text.includes('turismo') || text.includes('viaje') || text.includes('visa') || text.includes('paquete')) return 'Turismo & Viajes';
+    if (text.includes('landing')) return 'Landing Pages';
+    if (text.includes('lexvault') || text.includes('contrato') || text.includes('legal')) return 'Legal & Contratos';
+    if (text.includes('crm') || text.includes('cliente') || text.includes('lead') || text.includes('pipeline')) return 'CRM & Clientes';
+    if (text.includes('marketing') || text.includes('campaña') || text.includes('email')) return 'Marketing & Campañas';
+    if (text.includes('pos') || text.includes('producto') || text.includes('comercio')) return 'Comercio & POS';
+    if (text.includes('curso') || text.includes('capacitac') || text.includes('academia') || text.includes('actividad')) return 'Capacitación & Academia';
+    if (text.includes('rol') || text.includes('usuario')) return 'Roles & Usuarios';
+    return 'all';
+  };
+
+  const [selectedCategory, setSelectedCategory] = useState<string>(() => getInitialCategory());
+
+  // List of all unique rubros present in available permissions
+  const allRubros = useMemo(() => {
+    const set = new Set<string>();
+    availablePermissions.forEach((p) => {
+      set.add(getPermissionModule(p.name));
+    });
+    return Array.from(set).sort();
+  }, [availablePermissions]);
+
+  // Group available permissions by system module domain and active rubro
   const groupedPermissions = useMemo(() => {
     const map: Record<string, Permission[]> = {};
     const q = searchQuery.toLowerCase().trim();
@@ -103,6 +129,8 @@ export const GroupPermissionsEditorView: React.FC<GroupPermissionsEditorViewProp
       if (onlySelected && !isSelected) return;
 
       const mod = getPermissionModule(perm.name);
+      if (selectedCategory !== 'all' && mod !== selectedCategory) return;
+
       const label = getPermissionLabel(perm.name).toLowerCase();
       const desc = getPermissionDescription(perm.name).toLowerCase();
 
@@ -120,7 +148,7 @@ export const GroupPermissionsEditorView: React.FC<GroupPermissionsEditorViewProp
     });
 
     return map;
-  }, [availablePermissions, searchQuery, onlySelected, selectedPermissions]);
+  }, [availablePermissions, searchQuery, onlySelected, selectedPermissions, selectedCategory]);
 
   const totalAvailableCount = availablePermissions.length;
   const selectedCount = selectedPermissions.length;
@@ -369,6 +397,74 @@ export const GroupPermissionsEditorView: React.FC<GroupPermissionsEditorViewProp
             <Undo2 className="w-3.5 h-3.5 text-slate-400" />
             <span>Deseleccionar Todos</span>
           </button>
+        </div>
+      </div>
+
+      {/* Rubro / Categoría Selector Chips */}
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Rubro / Categoría:
+            </span>
+            {selectedCategory !== 'all' && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                Mostrando {selectedCategory}
+              </span>
+            )}
+          </div>
+          {selectedCategory !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+            >
+              Ver todos los rubros
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+          <button
+            type="button"
+            onClick={() => setSelectedCategory('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              selectedCategory === 'all'
+                ? 'bg-amber-500 text-white shadow-xs shadow-amber-500/20'
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            Todos ({totalAvailableCount})
+          </button>
+          {allRubros.map((rubro) => {
+            const rubroPerms = availablePermissions.filter((p) => getPermissionModule(p.name) === rubro);
+            const rubroSelected = rubroPerms.filter((p) => selectedPermissions.includes(p.name)).length;
+            const isCurrent = selectedCategory === rubro;
+
+            return (
+              <button
+                key={rubro}
+                type="button"
+                onClick={() => setSelectedCategory(rubro)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                  isCurrent
+                    ? 'bg-amber-500 text-white shadow-xs shadow-amber-500/20'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                <span>{rubro}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    isCurrent
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  {rubroSelected}/{rubroPerms.length}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

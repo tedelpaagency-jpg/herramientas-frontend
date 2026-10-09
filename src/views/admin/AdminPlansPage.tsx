@@ -613,10 +613,14 @@ export const AdminPlansPage: React.FC = () => {
                       <td className="py-3.5 px-4">
                         <Link
                           href={`/admin/plans/${plan.id}/permissions`}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold text-[11px] transition-colors"
+                          title={isSuperAdmin ? 'Configurar permisos del plan' : 'Ver permisos del plan (Solo lectura)'}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 font-semibold text-[11px] transition-colors"
                         >
                           <Shield className="w-3.5 h-3.5" />
                           <span>{plan.plan_permissions?.length || 0} permisos</span>
+                          {!isSuperAdmin && (
+                            <span className="text-[10px] text-slate-500 font-normal">(Ver)</span>
+                          )}
                         </Link>
                       </td>
                       <td className="py-3.5 px-4">

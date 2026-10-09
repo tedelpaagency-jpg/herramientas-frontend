@@ -347,6 +347,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (basePerms.some((p) => p.startsWith('courses') || p.startsWith('activities'))) {
       macroExpanded.push('activities.view', 'activities.create', 'activities.update', 'activities.delete', 'activities.assign', 'activities.resources', 'activities.progress');
     }
+    if (basePerms.some((p) => p.startsWith('roles') || p === 'manage_roles' || p.startsWith('permission_groups'))) {
+      macroExpanded.push('roles.manage', 'manage_roles', 'roles.view', 'view_roles', 'roles', 'permission_groups.view', 'permission_groups.create', 'permission_groups.edit', 'permission_groups.delete', 'permission_groups.manage');
+    }
     basePerms = Array.from(new Set(macroExpanded));
 
     if (isWhiteLabelAdmin) {
