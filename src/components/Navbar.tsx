@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { HeaderShortcuts } from './HeaderShortcuts';
+import { HeaderSearch } from './HeaderSearch';
 import visaWholesaleService, { VisaNotification } from '../services/visaWholesaleService';
 import { normalizeFileUrl } from '../services/apiClient';
 
@@ -31,7 +32,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { isDark, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState<VisaNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -123,16 +123,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="material-symbols-outlined text-[20px] sm:text-[24px]">menu</span>
         </button>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 w-full max-w-[180px] xs:max-w-[220px] sm:max-w-xs lg:w-96 min-w-0">
-          <span className="material-symbols-outlined text-slate-400 dark:text-slate-400 flex-shrink-0 text-[18px] sm:text-[22px]">search</span>
-          <input 
-            className="bg-transparent border-none focus:ring-0 outline-none text-xs sm:text-body-md w-full min-w-0 truncate text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" 
-            placeholder="Buscar en el portal..." 
-            type="text" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        {/* Buscador Inteligente Global */}
+        <HeaderSearch />
       </div>
       
       {/* Right Header Actions */}

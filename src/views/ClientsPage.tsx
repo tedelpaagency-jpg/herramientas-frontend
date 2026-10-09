@@ -39,7 +39,12 @@ export const ClientsPage: React.FC = () => {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
   const [selectedAssignedUserId, setSelectedAssignedUserId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('search') || '';
+    }
+    return '';
+  });
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedClientForDetails, setSelectedClientForDetails] = useState<Client | null>(null);
