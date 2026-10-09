@@ -456,7 +456,7 @@ export const MarketingPage: React.FC = () => {
           </div>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight">Campañas de Marketing por Correo</h1>
           <p className="text-slate-300 text-sm max-w-xl">
-            Diseña plantillas HTML, segmenta tus listas por Workspaces y Etapas del CRM y envía campañas masivas automatizadas.
+            Diseña plantillas HTML, segmenta tus listas por CRMs y Etapas del CRM y envía campañas masivas automatizadas.
           </p>
         </div>
 
@@ -816,7 +816,7 @@ export const MarketingPage: React.FC = () => {
           <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
             <h3 className="text-lg font-black text-slate-900 dark:text-white">Configurar Envío Masivo a Prospectos del CRM</h3>
             <p className="text-xs text-slate-500 font-medium">
-              Selecciona la audiencia objetivo por Workspaces y Etapas del CRM y personaliza el asunto y contenido.
+              Selecciona la audiencia objetivo por CRMs y Etapas del CRM y personaliza el asunto y contenido.
             </p>
           </div>
 
@@ -855,14 +855,14 @@ export const MarketingPage: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-blue-600" /> Filtrar por Workspace
+                    <Layers className="w-3.5 h-3.5 text-blue-600" /> Filtrar por CRM
                   </label>
                   <select
                     value={selectedWorkspaceId}
                     onChange={(e) => setSelectedWorkspaceId(e.target.value ? Number(e.target.value) : '')}
                     className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-bold focus:outline-none"
                   >
-                    <option value="">🌐 Todos los Workspaces</option>
+                    <option value="">🌐 Todos los CRMs</option>
                     {workspaces.map(ws => (
                       <option key={ws.id} value={ws.id}>🏢 {ws.name} (ID: #{ws.id})</option>
                     ))}

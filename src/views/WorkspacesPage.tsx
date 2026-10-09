@@ -40,7 +40,7 @@ export const WorkspacesPage: React.FC = () => {
       setWorkspaces(data);
     } catch (err) {
       console.error('Error fetching workspaces:', err);
-      toast.error('Error al cargar la lista de Workspaces');
+      toast.error('Error al cargar la lista de CRMs');
     } finally {
       setIsLoading(false);
     }
@@ -71,30 +71,30 @@ export const WorkspacesPage: React.FC = () => {
     try {
       if (editingWorkspace) {
         await workspaceMetaService.updateWorkspace(editingWorkspace.id, formData);
-        toast.success('Workspace actualizado exitosamente');
+        toast.success('CRM actualizado exitosamente');
       } else {
         await workspaceMetaService.createWorkspace(formData);
-        toast.success('Workspace creado exitosamente');
+        toast.success('CRM creado exitosamente');
       }
       setIsCreateModalOpen(false);
       fetchWorkspaces();
     } catch (err) {
       console.error('Error saving workspace:', err);
-      toast.error('Error al guardar el Workspace');
+      toast.error('Error al guardar el CRM');
     }
   };
 
   const handleDeleteWorkspace = async (ws: Workspace) => {
-    if (!confirm(`¿Estás seguro de que deseas eliminar el workspace "${ws.name}"?`)) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el CRM "${ws.name}"?`)) {
       return;
     }
     try {
       await workspaceMetaService.deleteWorkspace(ws.id);
-      toast.success('Workspace eliminado exitosamente');
+      toast.success('CRM eliminado exitosamente');
       fetchWorkspaces();
     } catch (err) {
       console.error('Error deleting workspace:', err);
-      toast.error('Error al eliminar el Workspace');
+      toast.error('Error al eliminar el CRM');
     }
   };
 
@@ -113,10 +113,10 @@ export const WorkspacesPage: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-600/20">
               <Kanban className="w-5 h-5" />
             </div>
-            Workspaces por Agencia & CRM
+            CRMs por Agencia
           </h2>
           <p className="text-xs text-slate-500 font-medium mt-1">
-            Selecciona un Workspace para ver su embudo Kanban o configurar la integración Meta Leads y Custom Fields.
+            Selecciona un CRM para ver su embudo Kanban o configurar la integración Meta Leads y Custom Fields.
           </p>
         </div>
 
@@ -125,7 +125,7 @@ export const WorkspacesPage: React.FC = () => {
           className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95 self-start md:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Nuevo Workspace</span>
+          <span>Nuevo CRM</span>
         </button>
       </div>
 
@@ -136,7 +136,7 @@ export const WorkspacesPage: React.FC = () => {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar Workspace por nombre, campaña Meta o descripción..."
+          placeholder="Buscar CRM por nombre, campaña Meta o descripción..."
           className="w-full bg-transparent text-slate-900 dark:text-white text-xs font-medium focus:outline-none placeholder-slate-400"
         />
       </div>
@@ -145,17 +145,17 @@ export const WorkspacesPage: React.FC = () => {
       {isLoading ? (
         <div className="py-20 flex flex-col justify-center items-center gap-3">
           <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-xs font-bold text-slate-400">Cargando Workspaces...</span>
+          <span className="text-xs font-bold text-slate-400">Cargando CRMs...</span>
         </div>
       ) : filteredWorkspaces.length === 0 ? (
         <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
           <Kanban className="w-10 h-10 text-slate-300 mx-auto" />
-          <p className="text-xs font-bold text-slate-500">No se encontraron Workspaces para esta agencia.</p>
+          <p className="text-xs font-bold text-slate-500">No se encontraron CRMs para esta agencia.</p>
           <button
             onClick={handleOpenCreate}
             className="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-sm hover:bg-blue-700"
           >
-            + Crear Primer Workspace
+            + Crear Primer CRM
           </button>
         </div>
       ) : (
@@ -164,7 +164,7 @@ export const WorkspacesPage: React.FC = () => {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">Workspace</th>
+                  <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">CRM</th>
                   <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">Agencia</th>
                   <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">Estado Integration</th>
                   <th className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 whitespace-nowrap">Campaña Meta</th>
@@ -287,7 +287,7 @@ export const WorkspacesPage: React.FC = () => {
                         <button
                           onClick={() => handleOpenEdit(ws)}
                           className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                          title="Editar Workspace"
+                          title="Editar CRM"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
@@ -295,7 +295,7 @@ export const WorkspacesPage: React.FC = () => {
                         <button
                           onClick={() => handleDeleteWorkspace(ws)}
                           className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors border border-slate-200 dark:border-slate-700"
-                          title="Eliminar Workspace"
+                          title="Eliminar CRM"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -308,7 +308,7 @@ export const WorkspacesPage: React.FC = () => {
           </div>
 
           <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 font-medium">
-            <p>Mostrando <strong className="text-slate-800 dark:text-white">{filteredWorkspaces.length}</strong> Workspaces</p>
+            <p>Mostrando <strong className="text-slate-800 dark:text-white">{filteredWorkspaces.length}</strong> CRMs</p>
           </div>
         </div>
       )}
@@ -336,7 +336,7 @@ export const WorkspacesPage: React.FC = () => {
             <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <Kanban className="w-5 h-5 text-blue-600" />
-                {editingWorkspace ? 'Editar Workspace' : 'Nuevo Workspace'}
+                {editingWorkspace ? 'Editar CRM' : 'Nuevo CRM'}
               </h3>
               <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
@@ -345,7 +345,7 @@ export const WorkspacesPage: React.FC = () => {
 
             <form onSubmit={handleSubmitWorkspace} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre del Workspace</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre del CRM</label>
                 <input
                   type="text"
                   required
@@ -361,7 +361,7 @@ export const WorkspacesPage: React.FC = () => {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Descripción u objetivo comercial del workspace..."
+                  placeholder="Descripción u objetivo comercial del CRM..."
                   rows={3}
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none"
                 />
@@ -397,7 +397,7 @@ export const WorkspacesPage: React.FC = () => {
                   type="submit"
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm"
                 >
-                  Guardar Workspace
+                  Guardar CRM
                 </button>
               </div>
             </form>

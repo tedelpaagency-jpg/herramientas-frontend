@@ -72,7 +72,7 @@ export const WorkspaceMetaModal: React.FC<WorkspaceMetaModalProps> = ({
   };
 
   const handleDisconnect = async () => {
-    if (!confirm('¿Desea desconectar la integración de Meta de este Workspace? Los prospectos históricos permanecerán intactos.')) {
+    if (!confirm('¿Desea desconectar la integración de Meta de este CRM? Los prospectos históricos permanecerán intactos.')) {
       return;
     }
 
@@ -114,7 +114,7 @@ export const WorkspaceMetaModal: React.FC<WorkspaceMetaModalProps> = ({
                 Configurar Integración Meta (Facebook / Instagram)
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Workspace: <span className="font-bold text-slate-700 dark:text-slate-300">{workspace.name}</span>
+                CRM: <span className="font-bold text-slate-700 dark:text-slate-300">{workspace.name}</span>
               </p>
             </div>
           </div>

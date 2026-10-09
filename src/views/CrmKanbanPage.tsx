@@ -740,10 +740,10 @@ export const CrmKanbanPage: React.FC = () => {
           <Link
             href="/workspaces"
             className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl transition-all active:scale-95 border border-slate-200 dark:border-slate-700"
-            title="Volver al Panel de Workspaces"
+            title="Volver al Panel de CRMs"
           >
             <ArrowLeft className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-            <span>Workspaces</span>
+            <span>CRMs</span>
           </Link>
 
           {currentWorkspace && (
@@ -1308,7 +1308,7 @@ export const CrmKanbanPage: React.FC = () => {
                   <Plus className="w-5 h-5" />
                 </div>
                 <span>Agregar Nueva Columna</span>
-                <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">Crear una nueva etapa en este workspace</span>
+                <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">Crear una nueva etapa en este CRM</span>
               </button>
             </div>
           )}

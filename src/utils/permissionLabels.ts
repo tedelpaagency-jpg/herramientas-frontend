@@ -155,7 +155,7 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     module: 'CRM & Clientes',
   },
   manage_crm: {
-    label: 'Administrar CRM & Workspaces',
+    label: 'Administrar CRMs',
     description: 'Crear pipelines, fases personalizadas y reasignar asesores',
     module: 'CRM & Clientes',
   },

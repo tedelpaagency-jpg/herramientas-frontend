@@ -119,7 +119,7 @@ export const WorkspaceCustomFieldsModal: React.FC<WorkspaceCustomFieldsModalProp
   };
 
   const handleDeleteField = async (id: number) => {
-    if (!confirm('¿Desea eliminar este campo personalizado del Workspace?')) return;
+    if (!confirm('¿Desea eliminar este campo personalizado del CRM?')) return;
     try {
       await workspaceMetaService.deleteCustomField(id);
       fetchFields();
@@ -143,7 +143,7 @@ export const WorkspaceCustomFieldsModal: React.FC<WorkspaceCustomFieldsModalProp
                 Campos Personalizados (Custom Fields)
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Workspace: <span className="font-bold text-slate-700 dark:text-slate-300">{workspace.name}</span>
+                CRM: <span className="font-bold text-slate-700 dark:text-slate-300">{workspace.name}</span>
               </p>
             </div>
           </div>
@@ -302,7 +302,7 @@ export const WorkspaceCustomFieldsModal: React.FC<WorkspaceCustomFieldsModalProp
               <p className="text-xs text-slate-400 py-4 text-center">Cargando campos...</p>
             ) : fields.length === 0 ? (
               <div className="p-6 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                <p className="text-xs text-slate-500 font-medium">No se han configurado campos personalizados para este Workspace.</p>
+                <p className="text-xs text-slate-500 font-medium">No se han configurado campos personalizados para este CRM.</p>
               </div>
             ) : (
               <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xs">
