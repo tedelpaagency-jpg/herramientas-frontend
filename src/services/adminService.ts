@@ -52,6 +52,11 @@ export const adminService = {
     await apiClient.delete(`/v1/admin/plans/${planId}/permissions/${permissionId}`);
   },
 
+  syncPlanPermissions: async (planId: number, permissions: string[]): Promise<PlanPermission[]> => {
+    const res = await apiClient.post(`/v1/admin/plans/${planId}/sync-permissions`, { permissions });
+    return res.data?.data || res.data || [];
+  },
+
   // === PERMISOS GLOBALES DEL SISTEMA ===
   getPermissions: async (): Promise<Permission[]> => {
     const res = await apiClient.get('/v1/admin/permissions');

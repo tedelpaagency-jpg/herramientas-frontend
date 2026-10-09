@@ -57,6 +57,7 @@ export interface PublicWhiteLabelInfo {
   logo?: string | null;
   logo_2?: string | null;
   logo_icon?: string | null;
+  favicon?: string | null;
   login_background?: string | null;
   primary_color?: string | null;
   secondary_color?: string | null;

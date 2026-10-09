@@ -19,7 +19,6 @@ import {
   getPermissionDescription, 
   getPermissionModule 
 } from '@/utils/permissionLabels';
-import PermissionGroupsTab from '@/components/permissions/PermissionGroupsTab';
 
 export const RolesPage: React.FC = () => {
   const { user, currentWhiteLabel, currentAgency, hasPermission, refreshUser } = useAuth();
@@ -44,43 +43,15 @@ export const RolesPage: React.FC = () => {
     isAgencyAdmin ||
     hasPermission(['manage_users', 'manage_roles', 'users.view', 'view_users']);
 
-  // Granular permissions for customizable permission groups
-  const canViewGroups =
-    isSuperAdmin ||
-    isWhiteLabelAdmin ||
-    isAgencyAdmin ||
-    hasPermission(['permission_groups.view', 'permission_groups.manage', 'manage_roles', 'manage_users']);
-
-  const canCreateGroups =
-    isSuperAdmin ||
-    isWhiteLabelAdmin ||
-    isAgencyAdmin ||
-    hasPermission(['permission_groups.create', 'permission_groups.manage']);
-
-  const canEditGroups =
-    isSuperAdmin ||
-    isWhiteLabelAdmin ||
-    isAgencyAdmin ||
-    hasPermission(['permission_groups.edit', 'permission_groups.manage']);
-
-  const canDeleteGroups =
-    isSuperAdmin ||
-    isWhiteLabelAdmin ||
-    isAgencyAdmin ||
-    hasPermission(['permission_groups.delete', 'permission_groups.manage']);
-
-  // Tabs: 'permission_groups' | 'manage_roles' | 'my_roles'
-  const [activeTab, setActiveTab] = useState<'permission_groups' | 'manage_roles' | 'my_roles'>('manage_roles');
+  // Tabs: 'manage_roles' | 'my_roles' (Los grupos de permisos son exclusivos para Planes)
+  const [activeTab, setActiveTab] = useState<'manage_roles' | 'my_roles'>('manage_roles');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      const isPermissionsRoute = window.location.pathname.includes('/admin/permissions');
 
-      if (tabParam === 'permission_groups' || (isPermissionsRoute && canViewGroups)) {
-        setActiveTab('permission_groups');
-      } else if (tabParam === 'my_roles') {
+      if (tabParam === 'my_roles') {
         setActiveTab('my_roles');
       } else if (tabParam === 'manage_roles') {
         setActiveTab('manage_roles');
@@ -88,7 +59,7 @@ export const RolesPage: React.FC = () => {
         setActiveTab('my_roles');
       }
     }
-  }, [canManageRoles, canViewGroups]);
+  }, [canManageRoles]);
 
   // Roles management states
   const [roles, setRoles] = useState<Role[]>([]);
@@ -104,19 +75,16 @@ export const RolesPage: React.FC = () => {
   // Create / Edit Modal state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
-  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
   const [modalFormData, setModalFormData] = useState<{
     name: string;
     display_name: string;
     description: string;
     permissions: string[];
-    permission_group_id?: number | null;
   }>({
     name: '',
     display_name: '',
     description: '',
     permissions: [],
-    permission_group_id: null,
   });
   const [modalPermSearch, setModalPermSearch] = useState<string>('');
   const [savingRole, setSavingRole] = useState<boolean>(false);
@@ -138,14 +106,13 @@ export const RolesPage: React.FC = () => {
     { id: 7, name: 'user', display_name: 'Asesor / Agente', is_system: true, description: 'Operación diaria, catálogo y atención al cliente' },
   ], []);
 
-  // Load roles, groups & available permissions
+  // Load roles & available permissions
   const loadRolesData = async () => {
     setLoadingRoles(true);
     try {
-      const [rolesData, permsData, groupsData] = await Promise.all([
+      const [rolesData, permsData] = await Promise.all([
         roleService.getRoles().catch(() => []),
         roleService.getAvailablePermissions().catch(() => []),
-        permissionGroupService.getGroups({ status: 'active' }).catch(() => []),
       ]);
 
       const seenNames = new Set((rolesData || []).map((r: Role) => r.name));
@@ -158,9 +125,8 @@ export const RolesPage: React.FC = () => {
 
       setRoles(mergedRoles);
       setAvailablePermissions(permsData || []);
-      setPermissionGroups(groupsData || []);
     } catch (err) {
-      console.error('Error al cargar roles y grupos:', err);
+      console.error('Error al cargar roles:', err);
       setRoles(DEFAULT_SYSTEM_ROLES);
     } finally {
       setLoadingRoles(false);
@@ -263,7 +229,6 @@ export const RolesPage: React.FC = () => {
       display_name: '',
       description: '',
       permissions: [],
-      permission_group_id: null,
     });
     setModalPermSearch('');
     setIsModalOpen(true);
@@ -278,23 +243,9 @@ export const RolesPage: React.FC = () => {
       display_name: role.display_name || role.name,
       description: role.description || '',
       permissions: existingPermNames,
-      permission_group_id: role.permission_group_id || null,
     });
     setModalPermSearch('');
     setIsModalOpen(true);
-  };
-
-  // Handle applying a group to role form
-  const handleApplyGroupToRole = (groupId: number) => {
-    const group = permissionGroups.find((g) => g.id === groupId);
-    if (!group) return;
-    const groupPermNames = (group.permissions || []).map((p) => p.name);
-    setModalFormData((prev) => ({
-      ...prev,
-      permission_group_id: group.id,
-      permissions: Array.from(new Set([...prev.permissions, ...groupPermNames])),
-    }));
-    toast.success(`Permisos del grupo "${group.name}" vinculados (${groupPermNames.length} permisos)`);
   };
 
   // Handle toggle permission checkbox in modal
@@ -341,7 +292,6 @@ export const RolesPage: React.FC = () => {
           display_name: modalFormData.display_name.trim(),
           description: modalFormData.description.trim() || undefined,
           permissions: modalFormData.permissions,
-          permission_group_id: modalFormData.permission_group_id ?? null,
         };
         await roleService.updateRole(editingRole.id, payload);
         toast.success(`Rol "${modalFormData.display_name}" actualizado`);
@@ -359,7 +309,6 @@ export const RolesPage: React.FC = () => {
           display_name: modalFormData.display_name.trim(),
           description: modalFormData.description.trim() || undefined,
           permissions: modalFormData.permissions,
-          permission_group_id: modalFormData.permission_group_id ?? null,
           agency_id: user?.agency_id || undefined,
           white_label_id: user?.white_label_id || undefined,
         };
@@ -577,25 +526,6 @@ export const RolesPage: React.FC = () => {
 
         {/* Tab Switcher */}
         <div className="relative z-10 flex items-center gap-2 mt-8 pt-6 border-t border-white/15 overflow-x-auto custom-scrollbar">
-          {canViewGroups && (
-            <button
-              onClick={() => setActiveTab('permission_groups')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'permission_groups'
-                  ? 'bg-white text-indigo-900 shadow-md'
-                  : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <Layers className="w-4 h-4" />
-              <span>Grupos de Permisos</span>
-              {permissionGroups.length > 0 && (
-                <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-indigo-100 text-indigo-900 font-black">
-                  {permissionGroups.length}
-                </span>
-              )}
-            </button>
-          )}
-
           <button
             onClick={() => setActiveTab('manage_roles')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -627,17 +557,6 @@ export const RolesPage: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* TAB 0: GRUPOS DE PERMISOS PERSONALIZABLES */}
-      {activeTab === 'permission_groups' && canViewGroups && (
-        <PermissionGroupsTab
-          canManage={canViewGroups}
-          canCreate={canCreateGroups}
-          canEdit={canEditGroups}
-          canDelete={canDeleteGroups}
-          onRefreshParent={loadRolesData}
-        />
-      )}
 
       {/* TAB 1: MIS ROLES & ACCESOS */}
       {activeTab === 'my_roles' && (
@@ -1195,46 +1114,6 @@ export const RolesPage: React.FC = () => {
                     className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
                   />
                 </div>
-
-                {/* Optional Permission Group Template Loader */}
-                {permissionGroups.length > 0 && (
-                  <div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-indigo-600 text-white shrink-0">
-                        <Layers className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-bold text-slate-900 dark:text-white">
-                          Plantilla / Grupo de Permisos Vinculado
-                        </h5>
-                        <p className="text-[11px] text-slate-500">
-                          Carga un paquete de permisos preconfigurado directamente a este rol
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <select
-                        value={modalFormData.permission_group_id || ''}
-                        onChange={(e) => {
-                          const val = e.target.value ? Number(e.target.value) : null;
-                          if (val) {
-                            handleApplyGroupToRole(val);
-                          } else {
-                            setModalFormData((prev) => ({ ...prev, permission_group_id: null }));
-                          }
-                        }}
-                        className="w-full sm:w-60 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                      >
-                        <option value="">Seleccionar grupo para cargar...</option>
-                        {permissionGroups.map((grp) => (
-                          <option key={grp.id} value={grp.id}>
-                            {grp.name} ({grp.permissions?.length || 0} perms)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
 
                 {/* Permissions Selector */}
                 <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">

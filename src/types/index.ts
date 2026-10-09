@@ -3,6 +3,7 @@ export interface PlanPermission {
   plan_id: number;
   permission: string;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface Plan {
@@ -117,6 +118,7 @@ export interface PermissionGroup {
   id: number;
   name: string;
   slug: string;
+  category?: string | null;
   description?: string | null;
   is_active: boolean;
   is_system: boolean;
@@ -142,6 +144,7 @@ export interface PermissionGroupUsage {
 
 export interface CreatePermissionGroupPayload {
   name: string;
+  category?: string;
   description?: string;
   is_active?: boolean;
   permissions?: string[];
@@ -151,6 +154,7 @@ export interface CreatePermissionGroupPayload {
 
 export interface UpdatePermissionGroupPayload {
   name?: string;
+  category?: string;
   description?: string;
   is_active?: boolean;
   permissions?: string[];

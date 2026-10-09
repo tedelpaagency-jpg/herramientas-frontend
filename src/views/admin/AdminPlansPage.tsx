@@ -400,7 +400,7 @@ export const AdminPlansPage: React.FC = () => {
                   Grupos de Permisos
                 </h2>
                 <p className="text-xs text-indigo-200/80 mt-0.5">
-                  Crea y configura paquetes de permisos reutilizables para asignarlos a tus planes y roles de usuario.
+                  Crea y configura paquetes de permisos modulares para estructurar las capacidades de tus planes de suscripción.
                 </p>
               </div>
             </div>
