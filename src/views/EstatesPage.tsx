@@ -31,6 +31,27 @@ import { EstateCanvaGalleryModal } from '@/components/EstateCanvaGalleryModal';
 
 const EstatesMapView = dynamic(() => import('@/components/EstatesMapView'), { ssr: false });
 
+const getPageNumbers = (current: number, total: number): (number | string)[] => {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  const pages: (number | string)[] = [];
+  pages.push(1);
+  if (current > 3) {
+    pages.push('...');
+  }
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  if (current < total - 2) {
+    pages.push('...');
+  }
+  pages.push(total);
+  return pages;
+};
+
 export const EstatesPage: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,10 +77,11 @@ export const EstatesPage: React.FC = () => {
   }, [viewParam]);
   
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(12);
   const [pagination, setPagination] = useState({
     current_page: 1,
     total: 0,
-    per_page: 10,
+    per_page: 12,
     last_page: 1
   });
 
@@ -92,6 +114,7 @@ export const EstatesPage: React.FC = () => {
     try {
       const res = await estateService.getEstates({
         page,
+        per_page: perPage,
         search: search || undefined,
         type: typeFilter || undefined,
         status: statusFilter || undefined,
@@ -132,7 +155,7 @@ export const EstatesPage: React.FC = () => {
 
   useEffect(() => {
     fetchEstates();
-  }, [page, search, typeFilter, statusFilter, agentFilter]);
+  }, [page, perPage, search, typeFilter, statusFilter, agentFilter]);
 
   useEffect(() => {
     if (viewMode === 'map') {
@@ -797,32 +820,72 @@ export const EstatesPage: React.FC = () => {
           )}
 
           {/* Pagination Controls */}
-          {pagination.last_page > 1 && (
-            <div className="bg-white px-6 py-4 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs text-slate-600">
-              <div>
-                Mostrando <strong className="text-slate-900">{(pagination.current_page - 1) * pagination.per_page + 1} - {Math.min(pagination.current_page * pagination.per_page, pagination.total)}</strong> de <strong className="text-slate-900">{pagination.total}</strong> propiedades
+          {pagination.total > 0 && (
+            <div className="bg-white dark:bg-slate-900 px-6 py-4 rounded-xl border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400 shadow-xs">
+              <div className="flex flex-wrap items-center gap-4">
+                <div>
+                  Mostrando <strong className="text-slate-900 dark:text-white">{(pagination.current_page - 1) * pagination.per_page + 1} - {Math.min(pagination.current_page * pagination.per_page, pagination.total)}</strong> de <strong className="text-slate-900 dark:text-white">{pagination.total}</strong> propiedades
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span>Mostrar:</span>
+                  <select
+                    value={perPage}
+                    onChange={(e) => {
+                      setPerPage(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value={10}>10</option>
+                    <option value={12}>12</option>
+                    <option value={24}>24</option>
+                    <option value={48}>48</option>
+                  </select>
+                  <span>por pág.</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage(p => Math.max(p - 1, 1))}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 font-bold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span>Anterior</span>
-                </button>
-                <span className="font-bold text-slate-800">
-                  Página {pagination.current_page} de {pagination.last_page}
-                </span>
-                <button
-                  disabled={page >= pagination.last_page}
-                  onClick={() => setPage(p => p + 1)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 font-bold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
-                >
-                  <span>Siguiente</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+
+              {pagination.last_page > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage(p => Math.max(p - 1, 1))}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Anterior</span>
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {getPageNumbers(pagination.current_page, pagination.last_page).map((p, idx) => (
+                      p === '...' ? (
+                        <span key={`dots-${idx}`} className="px-2 py-1 text-slate-400">...</span>
+                      ) : (
+                        <button
+                          key={`page-${p}`}
+                          onClick={() => setPage(Number(p))}
+                          className={`min-w-[32px] h-8 px-2 rounded-lg text-xs font-bold transition-colors ${
+                            pagination.current_page === p
+                              ? 'bg-blue-600 text-white shadow-xs'
+                              : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    ))}
+                  </div>
+
+                  <button
+                    disabled={page >= pagination.last_page}
+                    onClick={() => setPage(p => Math.min(p + 1, pagination.last_page))}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                  >
+                    <span className="hidden sm:inline">Siguiente</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
