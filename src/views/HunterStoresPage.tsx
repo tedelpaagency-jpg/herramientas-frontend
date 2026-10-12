@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { HunterStore, HunterProfileData, HunterRequest } from '../types/hunter';
+import { Agency } from '../types';
 import hunterService from '../services/hunterService';
+import { adminService } from '../services/adminService';
 import Portal from '../components/Portal';
 import { useAuth } from '../context/AuthContext';
 import MediaPicker from '../components/media/MediaPicker';
@@ -9,7 +11,7 @@ import {
   Store, Plus, Search, Mail, Phone, MapPin, QrCode, Copy, Check, 
   Trash2, Edit3, Eye, ShieldAlert, CheckCircle2, XCircle, Clock, 
   TrendingUp, Users, DollarSign, Award, X, Sparkles, ExternalLink, RefreshCw, ChevronLeft, UserCheck, Video, Image as ImageIcon,
-  Download, Printer, FileDown
+  Download, Printer, FileDown, Building2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -62,8 +64,19 @@ export const HunterStoresPage: React.FC = () => {
   const [rejectingRequest, setRejectingRequest] = useState<HunterRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
+  const [availableAgencies, setAvailableAgencies] = useState<Agency[]>([]);
+
+  useEffect(() => {
+    if (isSuperAdmin || isWhiteLabelAdmin) {
+      adminService.getAgencies().then((list) => {
+        setAvailableAgencies(list || []);
+      }).catch((e) => console.error('Error fetching agencies for Hunter:', e));
+    }
+  }, [isSuperAdmin, isWhiteLabelAdmin]);
+
   // Form State for Create/Edit Store & Hunter User Login
   const [formData, setFormData] = useState({
+    agency_id: null as number | null,
     name: '',
     user_name: '',
     ruc_dni: '',
@@ -128,6 +141,7 @@ export const HunterStoresPage: React.FC = () => {
     setEditingStore(null);
     setMediaInputMode('library');
     setFormData({
+      agency_id: user?.agency_id || (availableAgencies[0]?.id ?? null),
       name: '',
       user_name: '',
       ruc_dni: '',
@@ -154,6 +168,7 @@ export const HunterStoresPage: React.FC = () => {
     const isExternalUrl = !hasMediaId && rawUrl && (rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be') || rawUrl.startsWith('http://') || rawUrl.startsWith('https://'));
     setMediaInputMode(isExternalUrl ? 'external' : 'library');
     setFormData({
+      agency_id: store.agency_id || store.agency?.id || null,
       name: store.name || '',
       user_name: store.user?.name || store.name || '',
       ruc_dni: store.ruc_dni || '',
@@ -998,6 +1013,7 @@ export const HunterStoresPage: React.FC = () => {
                 <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 font-extrabold uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
                   <tr>
                     <th className="p-4">Tienda Hunter</th>
+                    <th className="p-4">Agencia</th>
                     <th className="p-4">Contacto</th>
                     <th className="p-4">Ubicación</th>
                     <th className="p-4">Captación (Link / QR)</th>
@@ -1008,13 +1024,13 @@ export const HunterStoresPage: React.FC = () => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">
+                      <td colSpan={7} className="p-8 text-center text-slate-400 font-medium">
                         Cargando Tiendas Hunter...
                       </td>
                     </tr>
                   ) : stores.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-400 italic">
+                      <td colSpan={7} className="p-8 text-center text-slate-400 italic">
                         No se encontraron Tiendas Hunter registradas.
                       </td>
                     </tr>
@@ -1057,6 +1073,13 @@ export const HunterStoresPage: React.FC = () => {
                               <p className="text-[11px] text-slate-400">RUC/DNI: {store.ruc_dni || 'N/A'}</p>
                             </div>
                           </div>
+                        </td>
+
+                        <td className="p-4">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                            <Building2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                            <span className="truncate max-w-[150px]">{store.agency?.name || (store.agency_id ? `Agencia #${store.agency_id}` : 'Sin Agencia')}</span>
+                          </span>
                         </td>
 
                         <td className="p-4 text-slate-600 dark:text-slate-300">
@@ -1202,8 +1225,38 @@ export const HunterStoresPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Agency Assignment / Reassignment for Admins */}
+                {(isSuperAdmin || isWhiteLabelAdmin) && (
+                  <div className="p-3 bg-amber-50/60 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800/50 space-y-1.5">
+                    <label className="block font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Building2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        Agencia Asignada *
+                      </span>
+                      {editingStore && (
+                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                          Reasignar a otra Agencia
+                        </span>
+                      )}
+                    </label>
+                    <select
+                      required
+                      value={formData.agency_id || ''}
+                      onChange={(e) => setFormData({ ...formData, agency_id: e.target.value ? Number(e.target.value) : null })}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none"
+                    >
+                      <option value="">-- Seleccionar Agencia --</option>
+                      {availableAgencies.map((agency) => (
+                        <option key={agency.id} value={agency.id}>
+                          {agency.name} (ID #{agency.id})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Tienda / Agencia *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Tienda / Comercio *</label>
                   <input
                     type="text"
                     required
