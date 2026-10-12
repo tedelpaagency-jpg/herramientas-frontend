@@ -81,6 +81,7 @@ export interface CourseUserAssignment {
   total_materials_count?: number;
   completed_materials?: any[];
   completed_material_ids?: number[];
+  completed_section_ids?: number[];
   user?: {
     id: number;
     name: string;

@@ -211,6 +211,15 @@ export const courseService = {
     return response.data;
   },
 
+  // Estudiante: Marcar sección como COMPLETADA (POST)
+  completeSection: async (courseId: number | string, sectionId: number) => {
+    const response = await apiClient.post<{ status: string; message: string; data: any }>(`/v1/my-courses/${courseId}/sections/${sectionId}/complete`, {
+      course_id: courseId,
+      section_id: sectionId,
+    });
+    return response.data;
+  },
+
   // Obtener URL de streaming/descarga protegida de recurso
   getResourceStreamUrl: (resourceId: number, download = false) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('santun_auth_token') : null;

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  ArrowLeft, BookOpen, Video, FileText, CheckCircle2, PlayCircle, Download, 
+  ArrowLeft, ArrowRight, BookOpen, Video, FileText, CheckCircle2, PlayCircle, Download, 
   ExternalLink, Loader2, Sparkles, AlertCircle, Clock, Layers, Lock, Play, Plus, Award, GraduationCap,
   AlignLeft, Check, FolderOpen, File, Folder, ChevronDown, ChevronUp, Eye
 } from 'lucide-react';
@@ -107,6 +107,38 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
       : (assignment?.completed_material_ids ?? [])
   );
 
+  // Secciones completadas (sincronizadas con assignment y guardadas en localStorage como resguardo)
+  const [completedSectionIds, setCompletedSectionIds] = useState<Set<number>>(() => {
+    if (typeof window !== 'undefined' && courseId) {
+      try {
+        const stored = localStorage.getItem(`course_${courseId}_completed_sections`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return new Set(parsed);
+        }
+      } catch (e) {}
+    }
+    return new Set();
+  });
+
+  useEffect(() => {
+    if (assignment) {
+      const fromAssignment = Array.isArray(assignment.completed_section_ids)
+        ? assignment.completed_section_ids.map((s: any) => typeof s === 'number' ? s : (s.section_id ?? s.id))
+        : [];
+      
+      setCompletedSectionIds(prev => {
+        const merged = new Set([...prev, ...fromAssignment]);
+        if (typeof window !== 'undefined' && courseId) {
+          try {
+            localStorage.setItem(`course_${courseId}_completed_sections`, JSON.stringify(Array.from(merged)));
+          } catch (e) {}
+        }
+        return merged;
+      });
+    }
+  }, [assignment, courseId]);
+
   const handleCompleteMaterial = async (materialId: number) => {
     if (isPreview || !courseId) return;
     try {
@@ -141,11 +173,21 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
         }
         if (latestAssignment) setAssignment(latestAssignment);
       } else {
-        const res = await courseService.completeMaterial(courseId);
+        const res = await courseService.completeSection(courseId, sectionToComplete.id);
         if (res.status === 'success' && res.data?.assignment) {
           setAssignment(res.data.assignment);
         }
       }
+
+      setCompletedSectionIds(prev => {
+        const updated = new Set([...prev, sectionToComplete.id]);
+        if (typeof window !== 'undefined' && courseId) {
+          try {
+            localStorage.setItem(`course_${courseId}_completed_sections`, JSON.stringify(Array.from(updated)));
+          } catch (e) {}
+        }
+        return updated;
+      });
       toast.success(`Sección "${sectionToComplete.title}" marcada como completada 🎉`);
     } catch (err: any) {
       console.error('Error al marcar sección:', err);
@@ -183,7 +225,11 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
 
   const isSectionCompleted = (sec: CourseSection) => {
     const mats = sec.materials || [];
-    return mats.length > 0 ? mats.every(m => completedMaterialIds.has(m.id)) : false;
+    if (mats.length > 0) {
+      return mats.every(m => completedMaterialIds.has(m.id));
+    }
+    // Para secciones sin materiales registrados (ej. introducción teórica o notas de lectura)
+    return completedSectionIds.has(sec.id);
   };
 
   const getSectionIndex = (secId: number) => {
@@ -191,7 +237,7 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
   };
 
   const isSectionLocked = (secId: number) => {
-    if (isPreview) return false;
+    if (isPreview || isCompleted) return false;
     const idx = getSectionIndex(secId);
     if (idx <= 0) return false;
     for (let i = 0; i < idx; i++) {
@@ -205,6 +251,18 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
 
   const handleSectionClick = (sec: CourseSection, changeViewMode = true) => {
     if (isSectionLocked(sec.id)) {
+      // Si la sección activa es la anterior inmediata y no tiene materiales, autocompletarla y permitir el avance
+      const currentIdx = activeSection ? getSectionIndex(activeSection.id) : -1;
+      const targetIdx = getSectionIndex(sec.id);
+      if (currentIdx !== -1 && targetIdx === currentIdx + 1 && (!activeSection?.materials || activeSection.materials.length === 0)) {
+        handleCompleteSection(activeSection);
+        setActiveSectionId(sec.id);
+        const mats = sec.materials || [];
+        if (mats.length > 0) setActiveMaterialId(mats[0].id);
+        if (changeViewMode) setViewMode('player');
+        return;
+      }
+
       toast.error('Debes completar las secciones anteriores para acceder a esta sección 🔒');
       return;
     }
@@ -217,10 +275,9 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
   const handleContinueCourse = () => {
     for (const sec of allFlatSections) {
       if (isSectionLocked(sec.id)) break;
-      const uncompleted = (sec.materials || []).find(m => !completedMaterialIds.has(m.id));
-      if (uncompleted) {
+      if (!isSectionCompleted(sec)) {
         setActiveSectionId(sec.id);
-        setActiveMaterialId(uncompleted.id);
+        if (sec.materials?.[0]) setActiveMaterialId(sec.materials[0].id);
         setViewMode('player');
         return;
       }
@@ -236,22 +293,22 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
   const sectionMaterials = activeSection?.materials || [];
 
   const isActiveSectionCompleted = Boolean(
-    activeSection &&
-    (sectionMaterials.length === 0 || sectionMaterials.every(m => completedMaterialIds.has(m.id)))
+    activeSection && isSectionCompleted(activeSection)
   );
 
   const completedSectionsCount = isCompleted
     ? sections.length
-    : sections.filter(sec => {
-        const mats = sec.materials || [];
-        return mats.length > 0 ? mats.every(m => completedMaterialIds.has(m.id)) : false;
-      }).length;
+    : sections.filter(sec => isSectionCompleted(sec)).length;
 
   const sectionProgressPercentage = isCompleted
     ? 100
     : sections.length > 0
       ? Math.round((completedSectionsCount / sections.length) * 100)
       : (assignment?.progress_percentage ?? 0);
+
+  const currentSectionIndex = activeSection ? getSectionIndex(activeSection.id) : 0;
+  const prevSection = currentSectionIndex > 0 ? allFlatSections[currentSectionIndex - 1] : null;
+  const nextSection = currentSectionIndex < allFlatSections.length - 1 ? allFlatSections[currentSectionIndex + 1] : null;
 
   // Contenido principal de la lección (Video o Documento principal de la sección)
   const sectionVideoMaterial = activeSection?.primary_type === 'none'
@@ -911,6 +968,66 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                     </div>
                   )}
                 </div>
+
+                {/* 4. BARRA DE NAVEGACIÓN INFERIOR (ANTERIOR / COMPLETAR / SIGUIENTE) */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 md:p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                  {prevSection ? (
+                    <button
+                      type="button"
+                      onClick={() => handleSectionClick(prevSection, false)}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span className="truncate max-w-[180px]">Anterior: {prevSection.title}</span>
+                    </button>
+                  ) : <div className="hidden sm:block" />}
+
+                  <div className="flex items-center gap-2">
+                    {isActiveSectionCompleted ? (
+                      <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs border border-emerald-200 dark:border-emerald-500/30">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        <span>Sección Completada</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleCompleteSection(activeSection)}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition-all shadow-md shadow-emerald-600/20 active:scale-95"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Marcar Sección como Completada</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {nextSection ? (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!isActiveSectionCompleted && (!activeSection?.materials || activeSection.materials.length === 0)) {
+                          await handleCompleteSection(activeSection);
+                        }
+                        handleSectionClick(nextSection, false);
+                      }}
+                      disabled={isSectionLocked(nextSection.id) && !isActiveSectionCompleted && Boolean(activeSection?.materials && activeSection.materials.length > 0)}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold text-xs transition-all shadow-md shadow-indigo-600/20"
+                    >
+                      <span className="truncate max-w-[180px]">Siguiente: {nextSection.title}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    !isCompleted && (
+                      <button
+                        type="button"
+                        onClick={handleComplete}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20"
+                      >
+                        <Award className="w-4 h-4" />
+                        <span>Finalizar Curso</span>
+                      </button>
+                    )
+                  )}
+                </div>
               </>
             )}
           </div>
@@ -963,11 +1080,13 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                                     <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full aspect-square font-black text-xs flex items-center justify-center shrink-0 z-10 transition-all duration-200 ${
                                       locked
                                         ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 border-2 border-slate-300 dark:border-slate-700'
-                                        : isSecActive
-                                          ? 'bg-emerald-500 text-white border-2 border-emerald-400 scale-110 shadow-md shadow-emerald-500/40'
-                                          : 'bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] shadow-xs group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110'
+                                        : isSectionCompleted(sec)
+                                          ? 'bg-emerald-600 text-white border-2 border-emerald-500 shadow-sm'
+                                          : isSecActive
+                                            ? 'bg-emerald-500 text-white border-2 border-emerald-400 scale-110 shadow-md shadow-emerald-500/40'
+                                            : 'bg-white dark:bg-slate-950 border-2 border-emerald-500 text-emerald-600 dark:text-[#00e699] shadow-xs group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:border-emerald-400 group-hover/sec:scale-110'
                                     }`}>
-                                      {locked ? <Lock className="w-3 h-3 text-slate-400" /> : currentSecNumber}
+                                      {locked ? <Lock className="w-3 h-3 text-slate-400" /> : isSectionCompleted(sec) ? <Check className="w-3.5 h-3.5 text-white stroke-[3]" /> : currentSecNumber}
                                     </div>
 
                                     <div className="flex items-center gap-3 min-w-0">
@@ -1035,11 +1154,13 @@ export const MyCourseDetailPage: React.FC<MyCourseDetailPageProps> = ({ isPrevie
                         <div className={`absolute -left-[34px] top-3.5 w-5 h-5 rounded-full border text-[10px] font-black flex items-center justify-center shadow-xs z-10 transition-all duration-200 ${
                           locked
                             ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 border-slate-300 dark:border-slate-700'
-                            : isSecActive
-                              ? 'bg-emerald-500 text-white border-emerald-400 scale-110 shadow-md shadow-emerald-500/30'
-                              : 'bg-white dark:bg-slate-950 border-emerald-500 text-emerald-600 dark:text-[#00e699] group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:scale-115'
+                            : isSectionCompleted(sec)
+                              ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
+                              : isSecActive
+                                ? 'bg-emerald-500 text-white border-emerald-400 scale-110 shadow-md shadow-emerald-500/30'
+                                : 'bg-white dark:bg-slate-950 border-emerald-500 text-emerald-600 dark:text-[#00e699] group-hover/sec:bg-emerald-500 group-hover/sec:text-white group-hover/sec:scale-115'
                         }`}>
-                          {locked ? <Lock className="w-3 h-3 text-slate-400" /> : secIdx + 1}
+                          {locked ? <Lock className="w-3 h-3 text-slate-400" /> : isSectionCompleted(sec) ? <Check className="w-3 h-3 text-white stroke-[3]" /> : secIdx + 1}
                         </div>
 
                         <div className="flex items-center gap-3 min-w-0">
