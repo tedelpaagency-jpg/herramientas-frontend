@@ -7,6 +7,7 @@ import Portal from '../components/Portal';
 import { useAuth } from '../context/AuthContext';
 import MediaPicker from '../components/media/MediaPicker';
 import { normalizeFileUrl } from '../services/apiClient';
+import AgencySearchSelect from '../components/AgencySearchSelect';
 import { 
   Store, Plus, Search, Mail, Phone, MapPin, QrCode, Copy, Check, 
   Trash2, Edit3, Eye, ShieldAlert, CheckCircle2, XCircle, Clock, 
@@ -65,6 +66,7 @@ export const HunterStoresPage: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState('');
 
   const [availableAgencies, setAvailableAgencies] = useState<Agency[]>([]);
+  const [agencyFilter, setAgencyFilter] = useState<number | ''>('');
 
   useEffect(() => {
     if (isSuperAdmin || isWhiteLabelAdmin) {
@@ -103,6 +105,7 @@ export const HunterStoresPage: React.FC = () => {
       const res = await hunterService.getStores({
         search,
         status: statusFilter,
+        agency_id: agencyFilter ? Number(agencyFilter) : undefined,
       });
       const storeList = res.data || [];
       setStores(storeList);
@@ -121,7 +124,7 @@ export const HunterStoresPage: React.FC = () => {
 
   useEffect(() => {
     fetchStores();
-  }, [search, statusFilter]);
+  }, [search, statusFilter, agencyFilter]);
 
   const loadProfile = async (storeId: number) => {
     setSelectedProfileStoreId(storeId);
@@ -994,6 +997,21 @@ export const HunterStoresPage: React.FC = () => {
                 />
               </div>
 
+              {(isSuperAdmin || isWhiteLabelAdmin) && availableAgencies.length > 0 && (
+                <div className="w-52">
+                  <AgencySearchSelect
+                    agencies={availableAgencies}
+                    value={agencyFilter}
+                    onChange={(val) => setAgencyFilter(val ? Number(val) : '')}
+                    allowAll
+                    allLabel="Todas las Agencias"
+                    allValue=""
+                    placeholder="Todas las Agencias"
+                    size="sm"
+                  />
+                </div>
+              )}
+
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -1239,19 +1257,13 @@ export const HunterStoresPage: React.FC = () => {
                         </span>
                       )}
                     </label>
-                    <select
-                      required
+                    <AgencySearchSelect
+                      agencies={availableAgencies}
                       value={formData.agency_id || ''}
-                      onChange={(e) => setFormData({ ...formData, agency_id: e.target.value ? Number(e.target.value) : null })}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-bold focus:outline-none"
-                    >
-                      <option value="">-- Seleccionar Agencia --</option>
-                      {availableAgencies.map((agency) => (
-                        <option key={agency.id} value={agency.id}>
-                          {agency.name} (ID #{agency.id})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setFormData({ ...formData, agency_id: val ? Number(val) : null })}
+                      placeholder="-- Seleccionar Agencia --"
+                      buttonClassName="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                    />
                   </div>
                 )}
 

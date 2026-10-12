@@ -13,6 +13,8 @@ import { TravelReport } from '../types/travelReport';
 import { User, Agency } from '../types';
 import { confirmDialog } from '../utils/alerts';
 import toast from 'react-hot-toast';
+import { AgencySearchSelect } from '../components/AgencySearchSelect';
+import { UserSearchSelect } from '../components/UserSearchSelect';
 
 export const TravelReportsPage: React.FC = () => {
   const { user } = useAuth();
@@ -269,18 +271,15 @@ export const TravelReportsPage: React.FC = () => {
           {isMultiAgencyAdmin && (
             <div>
               <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1 ml-1">Agencia</label>
-              <select
+              <AgencySearchSelect
+                agencies={agenciesList}
                 value={selectedAgency}
-                onChange={(e) => setSelectedAgency(e.target.value)}
-                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
-              >
-                <option value="all">Todas las Agencias</option>
-                {agenciesList.map((ag) => (
-                  <option key={ag.id} value={ag.id}>
-                    {ag.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedAgency(String(val))}
+                allowAll
+                allLabel="Todas las Agencias"
+                allValue="all"
+                size="sm"
+              />
             </div>
           )}
 
@@ -303,18 +302,16 @@ export const TravelReportsPage: React.FC = () => {
           {/* User / Agent Filter */}
           <div>
             <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1 ml-1">Agente / Usuario</label>
-            <select
+            <UserSearchSelect
+              users={usersList}
+              agencies={agenciesList}
               value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
-            >
-              <option value="all">Todos los Vendedores</option>
-              {usersList.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} {u.last_name || ''} {u.role ? `(${u.role})` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={(uid) => setSelectedUser(String(uid))}
+              allowAll
+              allLabel="Todos los Vendedores"
+              allValue="all"
+              size="sm"
+            />
           </div>
 
           {/* Start Date */}

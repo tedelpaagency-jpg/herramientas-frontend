@@ -29,6 +29,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { taskService, UserTaskWorkspace, UserTaskStage, UserTask } from '../services/taskService';
+import { UserSearchSelect } from '../components/UserSearchSelect';
 import Portal from '../components/Portal';
 
 export default function TasksPage() {
@@ -1419,18 +1420,16 @@ export default function TasksPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Asignar a Usuario / Agente</label>
-                  <select
+                  <UserSearchSelect
+                    users={teamUsers}
                     value={taskAssignedUserId}
-                    onChange={(e) => setTaskAssignedUserId(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none"
-                  >
-                    <option value="">Mi usuario (Asignarme a mí)</option>
-                    {teamUsers.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name} ({u.email})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setTaskAssignedUserId(val ? Number(val) : '')}
+                    allowAll
+                    allLabel="Mi usuario (Asignarme a mí)"
+                    allValue=""
+                    placeholder="-- Mi usuario (Asignarme a mí) --"
+                    size="sm"
+                  />
                 </div>
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">

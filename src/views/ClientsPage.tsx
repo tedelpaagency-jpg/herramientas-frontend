@@ -10,6 +10,8 @@ import { workspaceMetaService } from '../services/workspaceMetaService';
 import { agencyCustomFieldService, AgencyCustomField } from '../services/agencyCustomFieldService';
 import { AgencyCustomFieldsModal } from '../components/AgencyCustomFieldsModal';
 import { AdvisorSearchSelect } from '../components/AdvisorSearchSelect';
+import { AgencySearchSelect } from '../components/AgencySearchSelect';
+import { UserSearchSelect } from '../components/UserSearchSelect';
 import { Users, Plus, Search, Mail, Phone, Edit3, Trash2, Info, Filter, Layers, UserCheck, ChevronLeft, ChevronRight, Sliders, Calendar, CheckSquare, Building2, X } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
 import { LeadCampaignDetailsModal } from '@/components/LeadCampaignDetailsModal';
@@ -329,20 +331,15 @@ export const ClientsPage: React.FC = () => {
 
         {/* Agency Selector */}
         {(agencies.length > 0 || isSuperAdmin || isWhiteLabelAdmin) && (
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <Building2 className="w-4 h-4 text-purple-600 shrink-0" />
-            <select
+          <div className="w-full md:w-60">
+            <AgencySearchSelect
+              agencies={agencies}
               value={selectedAgencyId}
-              onChange={(e) => setSelectedAgencyId(e.target.value)}
-              className="px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 w-full md:w-56"
-            >
-              <option value="">🏢 Todas las Agencias ({agencies.length})</option>
-              {agencies.map((ag) => (
-                <option key={ag.id} value={ag.id}>
-                  🏢 {ag.name} (ID: #{ag.id})
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedAgencyId(String(val))}
+              allowAll
+              allLabel="🏢 Todas las Agencias"
+              size="md"
+            />
           </div>
         )}
 
@@ -716,18 +713,13 @@ export const ClientsPage: React.FC = () => {
                     <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">
                       Agencia Asignada
                     </label>
-                    <select
+                    <AgencySearchSelect
+                      agencies={agencies}
                       value={formData.agency_id}
-                      onChange={(e) => setFormData({ ...formData, agency_id: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
-                    >
-                      <option value="">-- Sin Agencia Específica --</option>
-                      {agencies.map((ag) => (
-                        <option key={ag.id} value={ag.id}>
-                          🏢 {ag.name} (ID: #{ag.id})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setFormData({ ...formData, agency_id: String(val) })}
+                      placeholder="-- Sin Agencia Específica --"
+                      className="w-full"
+                    />
                   </div>
                 )}
 
@@ -735,31 +727,21 @@ export const ClientsPage: React.FC = () => {
                   <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">
                     Asesor / Usuario Responsable
                   </label>
-                  <select
+                  <UserSearchSelect
+                    users={users}
+                    agencies={agencies}
                     value={formData.assigned_user_id}
-                    onChange={(e) => {
-                      const uid = e.target.value;
-                      const selectedU = users.find((u) => String(u.id) === uid);
+                    onChange={(uid) => {
+                      const selectedU = users.find((u) => String(u.id) === String(uid));
                       setFormData((prev) => ({
                         ...prev,
-                        assigned_user_id: uid,
+                        assigned_user_id: uid ? String(uid) : '',
                         agency_id: (!prev.agency_id && selectedU?.agency_id) ? String(selectedU.agency_id) : prev.agency_id,
                       }));
                     }}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white"
-                  >
-                    <option value="">-- Sin Asignar (General) --</option>
-                    {users.map((u) => {
-                      const agencyLabel = u.agency?.name 
-                        ? ` [🏢 ${u.agency.name}]` 
-                        : (agencies.find(a => a.id === u.agency_id)?.name ? ` [🏢 ${agencies.find(a => a.id === u.agency_id)?.name}]` : '');
-                      return (
-                        <option key={u.id} value={u.id}>
-                          👤 {u.name}{agencyLabel} ({u.email})
-                        </option>
-                      );
-                    })}
-                  </select>
+                    placeholder="-- Sin Asignar (General) --"
+                    className="w-full"
+                  />
                 </div>
 
                 <div>

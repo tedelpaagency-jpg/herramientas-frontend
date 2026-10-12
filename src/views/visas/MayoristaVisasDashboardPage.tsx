@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ViewPaymentReceiptModal } from '@/components/visas/modals/ViewPaymentReceiptModal';
+import { AgencySearchSelect } from '@/components/AgencySearchSelect';
 
 const getGroupTypeBadge = (type?: string) => {
   switch (type) {
@@ -652,18 +653,17 @@ export const MayoristaVisasDashboardPage: React.FC = () => {
           <span>Contexto Operativo:</span>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <select
-            value={selectedAgencyId}
-            onChange={(e) => setSelectedAgencyId(e.target.value)}
-            className="w-full sm:w-80 px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-slate-100"
-          >
-            <option value="all">Todas las Agencias Autorizadas ({metrics.total_agencias})</option>
-            {agencies.map((agency: any) => (
-              <option key={agency.id} value={agency.id}>
-                {agency.name} ({agency.city || agency.country || 'Agencia'})
-              </option>
-            ))}
-          </select>
+          <div className="w-full sm:w-80">
+            <AgencySearchSelect
+              agencies={agencies}
+              value={selectedAgencyId}
+              onChange={(val) => setSelectedAgencyId(String(val))}
+              allowAll
+              allLabel={`Todas las Agencias Autorizadas (${metrics.total_agencias})`}
+              allValue="all"
+              size="md"
+            />
+          </div>
           <button
             onClick={fetchDashboard}
             className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-xl"

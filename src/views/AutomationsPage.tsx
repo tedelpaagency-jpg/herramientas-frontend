@@ -37,6 +37,8 @@ import { toast } from 'react-hot-toast';
 import { automationService, PipelineAutomation, AutomationMeta, WebhookTestResult } from '../services/automationService';
 import Portal from '../components/Portal';
 import VisualWorkflowBuilder from '../components/automations/VisualWorkflowBuilder';
+import { AgencySearchSelect } from '../components/AgencySearchSelect';
+import { UserSearchSelect } from '../components/UserSearchSelect';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
@@ -758,28 +760,26 @@ export default function AutomationsPage() {
                       <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                         <Building className="w-3.5 h-3.5 text-blue-500" /> Agencia
                       </label>
-                      <select
+                      <AgencySearchSelect
+                        agencies={meta.agencies}
                         value={agencyId}
-                        onChange={(e) => {
-                          const val = e.target.value ? Number(e.target.value) : '';
-                          setAgencyId(val);
+                        onChange={(val) => {
+                          const v = val ? Number(val) : '';
+                          setAgencyId(v);
                           setWorkspaceId('');
-                          if (val && selectedUserId) {
+                          if (v && selectedUserId) {
                             const isValidUser = meta?.users?.some(
-                              (u) => Number(u.agency_id) === Number(val) && u.id === Number(selectedUserId)
+                              (u) => Number(u.agency_id) === Number(v) && u.id === Number(selectedUserId)
                             );
                             if (!isValidUser) setSelectedUserId('');
                           }
                         }}
-                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-900 dark:text-white focus:outline-none"
-                      >
-                        <option value="">-- Todas las Agencias --</option>
-                        {meta.agencies.map((ag) => (
-                          <option key={ag.id} value={ag.id}>
-                            {ag.name}
-                          </option>
-                        ))}
-                      </select>
+                        allowAll
+                        allLabel="-- Todas las Agencias --"
+                        allValue=""
+                        placeholder="-- Todas las Agencias --"
+                        size="sm"
+                      />
                     </div>
                   )}
 
@@ -1034,18 +1034,13 @@ export default function AutomationsPage() {
                       {/* Sub-inputs for recipient */}
                       {recipientType === 'user' && (
                         <div className="pt-1">
-                          <select
+                          <UserSearchSelect
+                            users={availableUsersModal}
                             value={selectedUserId}
-                            onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : '')}
-                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-900 dark:text-white"
-                          >
-                            <option value="">-- Seleccionar Usuario de la Agencia --</option>
-                            {availableUsersModal.map((u) => (
-                              <option key={u.id} value={u.id}>
-                                {u.name} ({u.email})
-                              </option>
-                            ))}
-                          </select>
+                            onChange={(val) => setSelectedUserId(val ? Number(val) : '')}
+                            placeholder="-- Seleccionar Usuario de la Agencia --"
+                            size="sm"
+                          />
                         </div>
                       )}
 

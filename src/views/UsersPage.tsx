@@ -9,6 +9,7 @@ import adminService from '../services/adminService';
 import whiteLabelService from '../services/whiteLabelService';
 import { useAuth } from '../context/AuthContext';
 import UserFormModal from '../components/UserFormModal';
+import { AgencySearchSelect } from '../components/AgencySearchSelect';
 import {
   Users,
   UserPlus,
@@ -414,16 +415,17 @@ export const UsersPage: React.FC = () => {
 
           {/* Agency Filter */}
           {(isSuperAdmin || isGerenteComercial) && (
-            <select
-              value={agencyFilter}
-              onChange={(e) => setAgencyFilter(e.target.value ? Number(e.target.value) : '')}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20 max-w-[180px] truncate"
-            >
-              <option value="">Todas las Agencias</option>
-              {agencies.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
+            <div className="w-52">
+              <AgencySearchSelect
+                agencies={agencies}
+                value={agencyFilter}
+                onChange={(val) => setAgencyFilter(val ? Number(val) : '')}
+                allowAll
+                allLabel="Todas las Agencias"
+                size="sm"
+                placeholder="Todas las Agencias"
+              />
+            </div>
           )}
 
           {/* Status Filter */}

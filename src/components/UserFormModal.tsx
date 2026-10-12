@@ -7,6 +7,7 @@ import adminService from '../services/adminService';
 import roleService from '../services/roleService';
 import { useAuth } from '../context/AuthContext';
 import { X, UserPlus, Save, Loader2, ShieldCheck, Building } from 'lucide-react';
+import { AgencySearchSelect } from './AgencySearchSelect';
 import Portal from './Portal';
 
 interface UserFormModalProps {
@@ -280,17 +281,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               {isLoadingAgencies ? (
                 <div className="text-xs text-slate-400 animate-pulse">Cargando agencias...</div>
               ) : (
-                <select
+                <AgencySearchSelect
+                  agencies={agencies}
                   value={formData.agency_id}
-                  onChange={(e) => setFormData({ ...formData, agency_id: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all appearance-none"
-                >
-                  {agencies.map((agency) => (
-                    <option key={agency.id} value={agency.id}>
-                      {agency.name} {agency.city ? `(${agency.city})` : ''}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setFormData({ ...formData, agency_id: Number(val) })}
+                  placeholder="-- Seleccionar Agencia --"
+                  required
+                />
               )}
             </div>
           )}

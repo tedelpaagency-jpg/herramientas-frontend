@@ -9,6 +9,7 @@ import apiClient from '../services/apiClient';
 import { AgencyTeam } from '../types/travelReport';
 import toast from 'react-hot-toast';
 import { confirmDialog } from '../utils/alerts';
+import { UserSearchSelect } from '../components/UserSearchSelect';
 
 interface UserSimple {
   id: number;
@@ -322,32 +323,36 @@ export const AgencyTeamsPage: React.FC = () => {
 
                 <div>
                   <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase">Gerente de Equipo</label>
-                  <select
-                    value={leaderId}
-                    onChange={(e) => setLeaderId(e.target.value)}
-                    className="w-full mt-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-xs font-bold"
-                  >
-                    <option value="">-- Seleccionar Gerente --</option>
-                    {Array.isArray(users) && users.map((u) => (
-                      <option key={u.id} value={u.id}>{u.name} ({u.role || 'Usuario'})</option>
-                    ))}
-                  </select>
+                  <div className="mt-1">
+                    <UserSearchSelect
+                      users={Array.isArray(users) ? users : []}
+                      value={leaderId}
+                      onChange={(val) => setLeaderId(val ? String(val) : '')}
+                      allowAll
+                      allLabel="-- Sin Asignar --"
+                      allValue=""
+                      placeholder="-- Seleccionar Gerente --"
+                      size="md"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase">Administrador / Director</label>
-                  <select
-                    value={adminId}
-                    onChange={(e) => setAdminId(e.target.value)}
-                    className="w-full mt-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-xs font-bold"
-                  >
-                    <option value="">-- Seleccionar Administrador --</option>
-                    {Array.isArray(users) && users.map((u) => (
-                      <option key={u.id} value={u.id}>{u.name} ({u.role || 'Usuario'})</option>
-                    ))}
-                  </select>
+                  <div className="mt-1">
+                    <UserSearchSelect
+                      users={Array.isArray(users) ? users : []}
+                      value={adminId}
+                      onChange={(val) => setAdminId(val ? String(val) : '')}
+                      allowAll
+                      allLabel="-- Sin Asignar --"
+                      allValue=""
+                      placeholder="-- Seleccionar Administrador --"
+                      size="md"
+                    />
+                  </div>
                 </div>
 
                 <div>

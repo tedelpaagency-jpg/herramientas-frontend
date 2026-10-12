@@ -12,6 +12,8 @@ import {
   Sparkles, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { AgencySearchSelect } from '@/components/AgencySearchSelect';
+import { UserSearchSelect } from '@/components/UserSearchSelect';
 
 export const MayoristaAgenciesPage: React.FC = () => {
   const { user } = useAuth();
@@ -444,23 +446,17 @@ export const MayoristaAgenciesPage: React.FC = () => {
             {/* Quick Switcher & Actions */}
             <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
               {/* Quick Agency Switcher */}
-              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
-                <Building2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                <span className="text-slate-400 font-medium hidden sm:inline">Cambiar agencia:</span>
-                <select
+              <div className="w-56 sm:w-64">
+                <AgencySearchSelect
+                  agencies={agencies}
                   value={selectedAgencyForDashboard.id}
-                  onChange={(e) => {
-                    const matched = agencies.find(a => a.id === Number(e.target.value));
+                  onChange={(val) => {
+                    const matched = agencies.find(a => a.id === Number(val));
                     if (matched) handleSelectAgencyForDashboard(matched);
                   }}
-                  className="bg-transparent font-bold text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer"
-                >
-                  {agencies.map(a => (
-                    <option key={a.id} value={a.id} className="dark:bg-slate-900 text-slate-900 dark:text-white">
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
+                  size="sm"
+                  placeholder="Cambiar agencia..."
+                />
               </div>
 
               <button
@@ -496,22 +492,21 @@ export const MayoristaAgenciesPage: React.FC = () => {
 
             {isWhiteLabelAdmin && (
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <select
-                  value={selectedAgencyForDashboard.assigned_operator_id || ''}
-                  onChange={(e) => {
-                    const val = e.target.value ? Number(e.target.value) : null;
-                    handleAssignOperator(selectedAgencyForDashboard.id, val);
-                  }}
-                  disabled={isUpdatingOp}
-                  className="w-full sm:w-64 py-1.5 px-2.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">-- Sin Operador Asignado --</option>
-                  {operators.map((op) => (
-                    <option key={op.id} value={op.id}>
-                      {op.name} ({op.role === 'white_label_admin' ? 'Admin' : 'Operador'})
-                    </option>
-                  ))}
-                </select>
+                <div className="w-full sm:w-64">
+                  <UserSearchSelect
+                    users={operators}
+                    value={selectedAgencyForDashboard.assigned_operator_id || ''}
+                    onChange={(val) => {
+                      handleAssignOperator(selectedAgencyForDashboard.id, val ? Number(val) : null);
+                    }}
+                    allowAll
+                    allLabel="-- Sin Operador Asignado --"
+                    allValue=""
+                    placeholder="-- Sin Operador Asignado --"
+                    size="sm"
+                    disabled={isUpdatingOp}
+                  />
+                </div>
                 {isUpdatingOp && <RefreshCw className="w-3.5 h-3.5 animate-spin text-sky-600" />}
               </div>
             )}
@@ -1369,33 +1364,20 @@ export const MayoristaAgenciesPage: React.FC = () => {
                       {/* Operador Mayorista Asignado */}
                       <td className="py-4 px-4 align-middle">
                         {isWhiteLabelAdmin ? (
-                          <div className="space-y-1.5">
-                            <div className="relative">
-                              <select
-                                value={agency.assigned_operator_id || ''}
-                                onChange={(e) => {
-                                  const val = e.target.value ? Number(e.target.value) : null;
-                                  handleAssignOperator(agency.id, val);
-                                }}
-                                disabled={isUpdating}
-                                className={`w-full py-1.5 pl-2.5 pr-8 text-xs font-semibold rounded-xl border transition-all ${
-                                  currentOperator
-                                    ? 'bg-sky-50/60 dark:bg-sky-950/40 border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200'
-                                    : 'bg-amber-50/60 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300'
-                                } focus:ring-2 focus:ring-indigo-500 disabled:opacity-50`}
-                              >
-                                <option value="">-- Sin Operador Asignado --</option>
-                                {operators.map((op) => (
-                                  <option key={op.id} value={op.id}>
-                                    {op.name} ({op.role === 'white_label_admin' ? 'Admin' : op.role === 'mayorista_supervisor' ? 'Supervisor' : 'Operador'})
-                                  </option>
-                                ))}
-                              </select>
-                              {isUpdating && (
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin absolute right-2.5 top-1/2 -translate-y-1/2 text-sky-600" />
-                              )}
-                            </div>
-
+                          <div className="space-y-1.5 min-w-[200px]">
+                            <UserSearchSelect
+                              users={operators}
+                              value={agency.assigned_operator_id || ''}
+                              onChange={(val) => {
+                                handleAssignOperator(agency.id, val ? Number(val) : null);
+                              }}
+                              allowAll
+                              allLabel="-- Sin Operador Asignado --"
+                              allValue=""
+                              placeholder="-- Sin Operador Asignado --"
+                              size="sm"
+                              disabled={isUpdating}
+                            />
                             {currentOperator && (
                               <div className="text-[10px] text-slate-400 flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
@@ -1539,22 +1521,21 @@ export const MayoristaAgenciesPage: React.FC = () => {
               </span>
               {isWhiteLabelAdmin ? (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
-                  <select
-                    value={selectedAgency.assigned_operator_id || ''}
-                    onChange={(e) => {
-                      const val = e.target.value ? Number(e.target.value) : null;
-                      handleAssignOperator(selectedAgency.id, val);
-                    }}
-                    disabled={updatingAgencyId === selectedAgency.id}
-                    className="flex-1 py-2 px-3 text-xs font-semibold rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="">-- Sin Operador Asignado --</option>
-                    {operators.map((op) => (
-                      <option key={op.id} value={op.id}>
-                        {op.name} ({op.email})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex-1">
+                    <UserSearchSelect
+                      users={operators}
+                      value={selectedAgency.assigned_operator_id || ''}
+                      onChange={(val) => {
+                        handleAssignOperator(selectedAgency.id, val ? Number(val) : null);
+                      }}
+                      allowAll
+                      allLabel="-- Sin Operador Asignado --"
+                      allValue=""
+                      placeholder="-- Sin Operador Asignado --"
+                      size="sm"
+                      disabled={updatingAgencyId === selectedAgency.id}
+                    />
+                  </div>
                   {updatingAgencyId === selectedAgency.id && (
                     <span className="text-xs text-indigo-500 flex items-center gap-1">
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Guardando...
