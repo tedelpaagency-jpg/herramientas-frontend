@@ -180,6 +180,16 @@ export const estateService = {
     link.remove();
     window.URL.revokeObjectURL(downloadUrl);
   },
+
+  getEstateReports: async (params?: { agency_id?: number; agent_id?: number }): Promise<any> => {
+    const response = await apiClient.get('/v1/estates/reports', { params });
+    return response.data?.data || response.data;
+  },
+
+  getCategoriesCatalog: async (params?: { agency_id?: number }): Promise<any[]> => {
+    const response = await apiClient.get('/v1/estates/categories-catalog', { params });
+    return response.data?.data || response.data || [];
+  },
 };
 
 export default estateService;

@@ -5,6 +5,13 @@ import dynamic from 'next/dynamic';
 import { Estate, User } from '../types';
 import estateService from '../services/estateService';
 import userService from '../services/userService';
+import { useAuth } from '../context/AuthContext';
+import { adminService } from '../services/adminService';
+import { Agency } from '../types';
+import { AgencySearchSelect } from '@/components/AgencySearchSelect';
+import { SearchableSelect, SearchableSelectOption } from '@/components/SearchableSelect';
+import { EstateReportsView } from '@/components/estates/EstateReportsView';
+import { ESTATE_CATEGORIES_CATALOG, getEstateCategoryName, EstateCategory } from '@/utils/estateCategories';
 import { 
   Building2, 
   Plus, 
@@ -23,7 +30,10 @@ import {
   Layout,
   Download,
   MapPin,
-  Maximize2
+  Maximize2,
+  BarChart3,
+  Layers,
+  Tag
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -60,21 +70,27 @@ export const EstatesPage: React.FC = () => {
   const searchParams = useSearchParams();
   const viewParam = searchParams ? searchParams.get('view') : null;
 
+  const { user, dashboardType } = useAuth();
+  const isWhiteLabelOrSuperAdmin = dashboardType === 'white_label_admin' || dashboardType === 'super_admin' || user?.role === 'white_label_admin' || user?.role === 'super_admin';
+
   const [estates, setEstates] = useState<Estate[]>([]);
   const [mapEstates, setMapEstates] = useState<Estate[]>([]);
   const [loadingMap, setLoadingMap] = useState<boolean>(false);
   const [agents, setAgents] = useState<User[]>([]);
+  const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [categoriesList, setCategoriesList] = useState<EstateCategory[]>(ESTATE_CATEGORIES_CATALOG);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string | number>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [agentFilter, setAgentFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'map'>(viewParam === 'map' ? 'map' : 'table');
+  const [agencyFilter, setAgencyFilter] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'map' | 'reports'>(
+    viewParam === 'map' ? 'map' : viewParam === 'reports' ? 'reports' : 'table'
+  );
 
   useEffect(() => {
-    if (viewParam === 'map') {
-      setViewMode('map');
-    } else if (viewParam === 'table' || viewParam === 'grid') {
+    if (viewParam === 'map' || viewParam === 'reports' || viewParam === 'table' || viewParam === 'grid') {
       setViewMode(viewParam);
     }
   }, [viewParam]);
@@ -122,16 +138,43 @@ export const EstatesPage: React.FC = () => {
     }
   };
 
+  const fetchAgencies = async () => {
+    if (!isWhiteLabelOrSuperAdmin) return;
+    try {
+      const ags = await adminService.getAgencies();
+      setAgencies(ags);
+    } catch (err) {
+      console.error('Error fetching agencies:', err);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const cats = await estateService.getCategoriesCatalog({
+        agency_id: agencyFilter ? Number(agencyFilter) : undefined,
+      });
+      if (Array.isArray(cats) && cats.length > 0) {
+        setCategoriesList(cats);
+      }
+    } catch (err) {
+      console.error('Error fetching categories catalog:', err);
+    }
+  };
+
   const fetchEstates = async () => {
     setIsLoading(true);
     try {
+      const isOperationFilter = ['sale', 'rent', 'auction'].includes(statusFilter);
       const res = await estateService.getEstates({
         page,
         per_page: perPage,
         search: search || undefined,
-        type: typeFilter || undefined,
-        status: statusFilter || undefined,
+        property_type: typeFilter ? Number(typeFilter) : undefined,
+        type: typeFilter ? String(typeFilter) : undefined,
+        status: isOperationFilter ? undefined : (statusFilter || undefined),
+        property_status: statusFilter === 'rent' ? 1 : statusFilter === 'sale' ? 2 : statusFilter === 'auction' ? 3 : undefined,
         agent_id: agentFilter ? Number(agentFilter) : undefined,
+        agency_id: agencyFilter ? Number(agencyFilter) : undefined,
       });
 
       setEstates(res.data);
@@ -148,11 +191,15 @@ export const EstatesPage: React.FC = () => {
   const fetchMapEstates = async () => {
     setLoadingMap(true);
     try {
+      const isOperationFilter = ['sale', 'rent', 'auction'].includes(statusFilter);
       const data = await estateService.getEstatesMap({
         search: search || undefined,
-        type: typeFilter || undefined,
-        status: statusFilter || undefined,
+        property_type: typeFilter ? Number(typeFilter) : undefined,
+        type: typeFilter ? String(typeFilter) : undefined,
+        status: isOperationFilter ? undefined : (statusFilter || undefined),
+        property_status: statusFilter === 'rent' ? 1 : statusFilter === 'sale' ? 2 : statusFilter === 'auction' ? 3 : undefined,
         agent_id: agentFilter ? Number(agentFilter) : undefined,
+        agency_id: agencyFilter ? Number(agencyFilter) : undefined,
       });
       setMapEstates(data);
     } catch (err) {
@@ -164,17 +211,21 @@ export const EstatesPage: React.FC = () => {
 
   useEffect(() => {
     fetchAgents();
-  }, []);
+    fetchAgencies();
+    fetchCategories();
+  }, [agencyFilter]);
 
   useEffect(() => {
-    fetchEstates();
-  }, [page, perPage, search, typeFilter, statusFilter, agentFilter]);
+    if (viewMode !== 'reports') {
+      fetchEstates();
+    }
+  }, [page, perPage, search, typeFilter, statusFilter, agentFilter, agencyFilter, viewMode]);
 
   useEffect(() => {
     if (viewMode === 'map') {
       fetchMapEstates();
     }
-  }, [viewMode, search, typeFilter, statusFilter, agentFilter]);
+  }, [viewMode, search, typeFilter, statusFilter, agentFilter, agencyFilter]);
 
   const handleOpenCreateModal = () => router.push('/estates/new');
   const handleOpenEditModal = (estate: Estate) => router.push(`/estates/${estate.id}/edit`);
@@ -284,7 +335,8 @@ export const EstatesPage: React.FC = () => {
       {/* Filter & View Switcher Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-4 items-center justify-between">
         <div className="flex flex-wrap gap-3 items-center flex-grow">
-          <div className="flex-grow max-w-md relative">
+          {/* Búsqueda General */}
+          <div className="flex-grow max-w-xs relative min-w-[200px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -298,38 +350,63 @@ export const EstatesPage: React.FC = () => {
             />
           </div>
 
-          <select
-            value={typeFilter}
-            onChange={(e) => {
-              setTypeFilter(e.target.value);
-              setPage(1);
-            }}
-            className="bg-[#F4F5F7] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
-          >
-            <option value="">Todos los tipos</option>
-            <option value="house">Casa</option>
-            <option value="apartment">Departamento</option>
-            <option value="land">Terreno / Lote</option>
-            <option value="commercial">Comercial</option>
-            <option value="office">Oficina</option>
-          </select>
+          {/* Selector con Búsqueda de Categorías (Todas las 22 de la DB) */}
+          <div className="w-full sm:w-60 min-w-[210px]">
+            <SearchableSelect
+              options={categoriesList.map(cat => ({
+                value: cat.id,
+                label: cat.name,
+                badge: cat.count !== undefined && cat.count !== null ? `${cat.count}` : undefined,
+                icon: <Layers className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+              }))}
+              value={typeFilter}
+              onChange={(val) => {
+                setTypeFilter(val || '');
+                setPage(1);
+              }}
+              placeholder="Todas las Categorías"
+              searchPlaceholder="Buscar categoría o tipo..."
+              allowClear={true}
+              allOption={{
+                value: '',
+                label: `Todas las Categorías (${categoriesList.length})`,
+                icon: <Layers className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+              }}
+              size="sm"
+            />
+          </div>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className="bg-[#F4F5F7] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
-          >
-            <option value="">Todos los estados</option>
-            <option value="available">Disponible</option>
-            <option value="reserved">Reservado</option>
-            <option value="sold">Vendido</option>
-            <option value="rented">Alquilado</option>
-          </select>
+          {/* Selector con Búsqueda de Estado / Operación */}
+          <div className="w-full sm:w-56 min-w-[200px]">
+            <SearchableSelect
+              options={[
+                { value: '1', label: 'Disponible', badge: 'Estado' },
+                { value: '2', label: 'Reservado', badge: 'Estado' },
+                { value: '3', label: 'Vendido', badge: 'Estado' },
+                { value: '4', label: 'Alquilado', badge: 'Estado' },
+                { value: 'sale', label: 'En Venta', badge: 'Operación' },
+                { value: 'rent', label: 'En Alquiler', badge: 'Operación' },
+                { value: 'auction', label: 'En Remate / Anticresis', badge: 'Operación' },
+              ]}
+              value={statusFilter}
+              onChange={(val) => {
+                setStatusFilter(val || '');
+                setPage(1);
+              }}
+              placeholder="Todos los estados"
+              searchPlaceholder="Buscar estado u operación..."
+              allowClear={true}
+              allOption={{
+                value: '',
+                label: 'Todos los estados',
+                icon: <Tag className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              }}
+              size="sm"
+            />
+          </div>
 
-          <div className="w-full sm:w-64 min-w-[220px]">
+          {/* Asesor Filter */}
+          <div className="w-full sm:w-56 min-w-[200px]">
             <AdvisorSearchSelect
               users={agents}
               selectedUserId={agentFilter}
@@ -341,13 +418,31 @@ export const EstatesPage: React.FC = () => {
               className="w-full"
             />
           </div>
+
+          {/* Filtro por Agencia (Solo para Marca Blanca / Super Admin) */}
+          {isWhiteLabelOrSuperAdmin && agencies.length > 0 && (
+            <div className="w-full sm:w-56 min-w-[200px]">
+              <AgencySearchSelect
+                agencies={agencies}
+                value={agencyFilter}
+                onChange={(agId) => {
+                  setAgencyFilter(String(agId || ''));
+                  setPage(1);
+                }}
+                allowAll={true}
+                allLabel="🏢 Todas las Agencias"
+                placeholder="Filtrar por Agencia"
+                size="sm"
+              />
+            </div>
+          )}
         </div>
 
-        {/* View Mode Toggle Buttons */}
-        <div className="flex items-center gap-1 bg-[#F4F5F7] p-1 rounded-lg border border-slate-200">
+        {/* View Mode Toggle Buttons (4 modos: Tabla, Cuadrícula, Mapa, Reportes) */}
+        <div className="flex items-center gap-1 bg-[#F4F5F7] dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
           <button
             onClick={() => setViewMode('table')}
-            className={`p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors ${
+            className={`p-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
               viewMode === 'table' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
             title="Vista Lista Tabla"
@@ -357,7 +452,7 @@ export const EstatesPage: React.FC = () => {
           </button>
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors ${
+            className={`p-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
               viewMode === 'grid' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
             title="Vista Cuadrícula Tarjetas"
@@ -367,7 +462,7 @@ export const EstatesPage: React.FC = () => {
           </button>
           <button
             onClick={() => setViewMode('map')}
-            className={`p-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors ${
+            className={`p-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
               viewMode === 'map' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
             title="Vista Mapa Interactivo"
@@ -375,11 +470,32 @@ export const EstatesPage: React.FC = () => {
             <MapPin className="w-4 h-4" />
             <span className="hidden sm:inline">Mapa</span>
           </button>
+          <button
+            onClick={() => setViewMode('reports')}
+            className={`p-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
+              viewMode === 'reports' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+            title="Vista Reportes y Contadores"
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span className="hidden sm:inline">Reportes</span>
+          </button>
         </div>
       </div>
 
       {/* Main Content Area */}
-      {viewMode === 'map' ? (
+      {viewMode === 'reports' ? (
+        <EstateReportsView 
+          agencies={agencies}
+          agents={agents}
+          isWhiteLabelOrSuperAdmin={isWhiteLabelOrSuperAdmin}
+          selectedAgencyId={agencyFilter}
+          onAgencyChange={(agId) => {
+            setAgencyFilter(String(agId || ''));
+            setPage(1);
+          }}
+        />
+      ) : viewMode === 'map' ? (
         <EstatesMapView 
           estates={mapEstates.length > 0 ? mapEstates : estates} 
           loading={loadingMap} 
@@ -457,8 +573,8 @@ export const EstatesPage: React.FC = () => {
                                   {estate.title}
                                 </h4>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase">
-                                    {estate.type || 'Inmueble'}
+                                  <span className="text-[11px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 px-2 py-0.5 rounded uppercase">
+                                    {getEstateCategoryName((estate as any).property_type || estate.type)}
                                   </span>
                                   <span className="text-xs text-slate-400">
                                     {estate.bedrooms ? `${estate.bedrooms} dorm.` : ''} {estate.area_sqm || estate.size ? `• ${estate.area_sqm || estate.size} m²` : ''}
@@ -700,7 +816,7 @@ export const EstatesPage: React.FC = () => {
 
                         <div className="absolute top-3 left-3 flex items-center gap-2">
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-900/80 text-white backdrop-blur-md">
-                            {estate.type || 'Inmueble'}
+                            {getEstateCategoryName((estate as any).property_type || estate.type)}
                           </span>
                         </div>
 
