@@ -284,7 +284,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           delete submissionData['card_number'];
           delete submissionData['card_expiry'];
           delete submissionData['card_cvc'];
-          onSubmit(submissionData);
+          await onSubmit(submissionData);
         }
       } catch (err: any) {
         setStripeElementError(err.message || 'Error de comunicación con Stripe');
@@ -292,7 +292,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         setIsProcessingPayment(false);
       }
     } else {
-      onSubmit(formData);
+      await onSubmit(formData);
     }
   };
 

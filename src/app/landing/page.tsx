@@ -19,6 +19,7 @@ function CustomHtmlIframeContainer({
   stripeAppearance,
   onSubmit,
   submitted,
+  loading = false,
 }: {
   customHtml: string;
   formSchema: any;
@@ -29,6 +30,7 @@ function CustomHtmlIframeContainer({
   stripeAppearance?: any;
   onSubmit: (answers: Record<string, any>) => void;
   submitted: boolean;
+  loading?: boolean;
 }) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const [mountTarget, setMountTarget] = useState<HTMLElement | null>(null);
@@ -202,6 +204,7 @@ function CustomHtmlIframeContainer({
             privacyPolicy={privacyPolicy}
             stripeAppearance={stripeAppearance || paymentConfig?.stripe_appearance || formSchema?.stripe_appearance}
             isFormLoading={!isStyleReady}
+            loading={loading}
           />
         ),
         mountTarget
@@ -219,6 +222,7 @@ function PublicLandingContent() {
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     // Isolate public landing from global dashboard theme (strip dark mode class)
@@ -264,6 +268,7 @@ function PublicLandingContent() {
 
   const handleSubmitLead = async (formData: Record<string, any>) => {
     try {
+      setSubmitting(true);
       const payload = {
         landing_id: landing.id,
         id: landing.id,
@@ -271,6 +276,7 @@ function PublicLandingContent() {
         last_name: formData.last_name || '',
         email: formData.email || '',
         phone: formData.phone || '',
+        stripe_token: formData.stripe_token || undefined,
         answers: formData,
       };
 
@@ -286,6 +292,8 @@ function PublicLandingContent() {
     } catch (err: any) {
       console.error('Error submitting lead:', err);
       toast.error(err.response?.data?.message || 'Error al enviar el formulario. Intenta nuevamente.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -352,6 +360,7 @@ function PublicLandingContent() {
         stripeAppearance={landing.stripe_appearance || landing.payment_config?.stripe_appearance || landing.form_schema?.stripe_appearance}
         onSubmit={handleSubmitLead}
         submitted={submitted}
+        loading={submitting}
       />
     );
   }
@@ -408,6 +417,7 @@ function PublicLandingContent() {
               termsAndConditions={landing.terms_and_conditions}
               privacyPolicy={landing.privacy_policy}
               stripeAppearance={landing.stripe_appearance || landing.payment_config?.stripe_appearance || landing.form_schema?.stripe_appearance}
+              loading={submitting}
             />
           )}
         </div>
