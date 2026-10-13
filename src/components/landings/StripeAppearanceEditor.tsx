@@ -5,7 +5,7 @@ import { StripeAppearanceConfig } from '../../types/landing';
 import { defaultStripeAppearance, stripePresets, isColorDark } from '../../utils/stripeAppearance';
 import {
   Palette, Sliders, Type, CreditCard, Sparkles, Check, Lock, ShieldCheck,
-  Eye, RefreshCw, Layers, AlertCircle, CheckCircle2, ChevronRight
+  Eye, RefreshCw, Layers, AlertCircle, CheckCircle2, ChevronRight, CheckSquare
 } from 'lucide-react';
 
 interface Props {
@@ -21,7 +21,7 @@ export const StripeAppearanceEditor: React.FC<Props> = ({
 }) => {
   const currentConfig: StripeAppearanceConfig = { ...defaultStripeAppearance, ...config };
 
-  const [activeSection, setActiveSection] = useState<'presets' | 'background' | 'typography' | 'inputs' | 'buttons' | 'states'>('presets');
+  const [activeSection, setActiveSection] = useState<'presets' | 'background' | 'typography' | 'inputs' | 'buttons' | 'checkboxes' | 'states'>('presets');
   const [previewError, setPreviewError] = useState(false);
   const [previewSuccess, setPreviewSuccess] = useState(false);
   const [isButtonHovered, setIsButtonHovered] = useState(false);
@@ -116,6 +116,16 @@ export const StripeAppearanceEditor: React.FC<Props> = ({
     transition: 'all 0.2s ease',
   };
 
+  const checkboxStyle: React.CSSProperties = {
+    accentColor: currentConfig.checkbox_accent_color || '#10b981',
+    backgroundColor: currentConfig.checkbox_bg_color || '#ffffff',
+    borderColor: currentConfig.checkbox_border_color || '#cbd5e1',
+    borderRadius: currentConfig.checkbox_border_radius || '4px',
+    cursor: 'pointer',
+    width: '16px',
+    height: '16px',
+  };
+
   return (
     <div className="space-y-6">
       {/* Subnav Tabs */}
@@ -169,6 +179,16 @@ export const StripeAppearanceEditor: React.FC<Props> = ({
         >
           <CreditCard className="w-3.5 h-3.5" />
           <span>Botones</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection('checkboxes')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+            activeSection === 'checkboxes' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <CheckSquare className="w-3.5 h-3.5" />
+          <span>Casillas / Checkboxes</span>
         </button>
         <button
           type="button"
@@ -750,6 +770,98 @@ export const StripeAppearanceEditor: React.FC<Props> = ({
             </div>
           )}
 
+          {/* SECTION: CASILLAS / CHECKBOXES */}
+          {activeSection === 'checkboxes' && (
+            <div className="p-5 bg-slate-950 border border-slate-800 rounded-2xl space-y-4 text-xs">
+              <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <CheckSquare className="w-4 h-4 text-emerald-400" />
+                <span>Personalización de Casillas (Checkboxes)</span>
+              </h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Personaliza la apariencia de las casillas de verificación como Términos y Condiciones, Políticas de Privacidad y campos checkbox del formulario.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Checkbox Accent Color */}
+                <div className="space-y-1.5">
+                  <label className="block text-slate-300 font-semibold">Color de Selección (Acento / Checkmark)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={currentConfig.checkbox_accent_color && currentConfig.checkbox_accent_color.startsWith('#') ? currentConfig.checkbox_accent_color : '#10b981'}
+                      onChange={(e) => updateField('checkbox_accent_color', e.target.value)}
+                      className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={currentConfig.checkbox_accent_color || ''}
+                      onChange={(e) => updateField('checkbox_accent_color', e.target.value)}
+                      placeholder="#10b981"
+                      className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Checkbox Background Color */}
+                <div className="space-y-1.5">
+                  <label className="block text-slate-300 font-semibold">Fondo del Checkbox (Desmarcado)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={currentConfig.checkbox_bg_color && currentConfig.checkbox_bg_color.startsWith('#') ? currentConfig.checkbox_bg_color : '#ffffff'}
+                      onChange={(e) => updateField('checkbox_bg_color', e.target.value)}
+                      className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={currentConfig.checkbox_bg_color || ''}
+                      onChange={(e) => updateField('checkbox_bg_color', e.target.value)}
+                      placeholder="#ffffff"
+                      className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Checkbox Border Color */}
+                <div className="space-y-1.5">
+                  <label className="block text-slate-300 font-semibold">Color del Borde</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={currentConfig.checkbox_border_color && currentConfig.checkbox_border_color.startsWith('#') ? currentConfig.checkbox_border_color : '#cbd5e1'}
+                      onChange={(e) => updateField('checkbox_border_color', e.target.value)}
+                      className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={currentConfig.checkbox_border_color || ''}
+                      onChange={(e) => updateField('checkbox_border_color', e.target.value)}
+                      placeholder="#cbd5e1"
+                      className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Checkbox Border Radius */}
+                <div className="space-y-1.5">
+                  <label className="block text-slate-300 font-semibold">Redondeado de la Casilla</label>
+                  <select
+                    value={currentConfig.checkbox_border_radius || '4px'}
+                    onChange={(e) => updateField('checkbox_border_radius', e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-xs"
+                  >
+                    <option value="0px">Cuadrado perfecto (0px)</option>
+                    <option value="2px">Mínimo (2px)</option>
+                    <option value="4px">Estándar (4px)</option>
+                    <option value="6px">Suave (6px)</option>
+                    <option value="8px">Muy Redondeado (8px)</option>
+                    <option value="9999px">Circular (Radio redondo)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* SECTION: ESTADOS & ALERTAS */}
           {activeSection === 'states' && (
             <div className="p-5 bg-slate-950 border border-slate-800 rounded-2xl space-y-4 text-xs">
@@ -983,15 +1095,46 @@ export const StripeAppearanceEditor: React.FC<Props> = ({
                 </div>
               )}
 
-              {/* Simulated Terms Link */}
-              <div className="text-[11px] text-left opacity-90">
-                <span>Al continuar aceptas los </span>
-                <span
-                  className="underline font-bold cursor-pointer"
-                  style={{ color: currentConfig.link_color || '#10b981' }}
-                >
-                  Términos y Condiciones
-                </span>
+              {/* Simulated Terms & Privacy Checkboxes */}
+              <div className="space-y-2 text-left pt-1">
+                <div className="text-[11px] opacity-90 flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    id="previewTermsCheck"
+                    defaultChecked
+                    style={checkboxStyle}
+                    className="shrink-0 mt-0.5"
+                  />
+                  <label htmlFor="previewTermsCheck" className="cursor-pointer leading-tight">
+                    Acepto los{' '}
+                    <span
+                      className="underline font-bold"
+                      style={{ color: currentConfig.link_color || '#10b981' }}
+                    >
+                      Términos y Condiciones
+                    </span>{' '}
+                    del servicio <span style={{ color: currentConfig.error_color || '#ef4444' }}>*</span>
+                  </label>
+                </div>
+                <div className="text-[11px] opacity-90 flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    id="previewPrivacyCheck"
+                    defaultChecked
+                    style={checkboxStyle}
+                    className="shrink-0 mt-0.5"
+                  />
+                  <label htmlFor="previewPrivacyCheck" className="cursor-pointer leading-tight">
+                    He leído las{' '}
+                    <span
+                      className="underline font-bold"
+                      style={{ color: currentConfig.link_color || '#10b981' }}
+                    >
+                      Políticas de Privacidad
+                    </span>{' '}
+                    <span style={{ color: currentConfig.error_color || '#ef4444' }}>*</span>
+                  </label>
+                </div>
               </div>
 
               {/* Action Button */}

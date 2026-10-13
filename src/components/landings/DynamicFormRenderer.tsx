@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { FormSchema, FormFieldSchema, PaymentConfig, StripeAppearanceConfig } from '../../types/landing';
-import { isColorDark } from '../../utils/stripeAppearance';
-import { ChevronRight, ChevronLeft, Check, Send, Loader2, CreditCard, Lock, ShieldCheck } from 'lucide-react';
+import { isColorDark, defaultStripeAppearance } from '../../utils/stripeAppearance';
+import { ChevronRight, ChevronLeft, Check, Send, Loader2, CreditCard, Lock, ShieldCheck, AlertCircle } from 'lucide-react';
 
 // Carga asíncrona del script oficial de Stripe.js v3 en el documento y ventana del contenedor
 const loadStripeJs = (targetDoc?: Document | null, targetWin?: any): Promise<any> => {
@@ -108,17 +108,54 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const steps = formSchema?.steps || [];
   const layout = formSchema?.layout || 'linear';
 
+  const isFieldRequired = (field: FormFieldSchema): boolean => {
+    if (Boolean(field.required)) {
+      return true;
+    }
+    if (Boolean(field.is_system_field)) {
+      return true;
+    }
+    if (field.name && ['name', 'email'].includes(field.name.toLowerCase().trim())) {
+      return true;
+    }
+    return false;
+  };
+
   const handleInputChange = (field: FormFieldSchema, value: any) => {
     setFormData((prev) => ({
       ...prev,
       [field.name]: value,
     }));
     if (errors[field.name]) {
-      setErrors((prev) => {
-        const updated = { ...prev };
-        delete updated[field.name];
-        return updated;
-      });
+      const isEmpty = value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
+      if (!isEmpty) {
+        setErrors((prev) => {
+          const updated = { ...prev };
+          delete updated[field.name];
+          return updated;
+        });
+      }
+    }
+  };
+
+  const handleFieldBlur = (field: FormFieldSchema) => {
+    const required = isFieldRequired(field);
+    const val = formData[field.name];
+    const isEmpty = val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
+
+    if (required && isEmpty) {
+      setErrors((prev) => ({
+        ...prev,
+        [field.name]: `${field.label || 'Este campo'} es obligatorio`,
+      }));
+    } else if (!isEmpty && field.type === 'email') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (typeof val === 'string' && !emailRegex.test(val.trim())) {
+        setErrors((prev) => ({
+          ...prev,
+          [field.name]: 'Ingresa un correo electrónico válido',
+        }));
+      }
     }
   };
 
@@ -132,10 +169,16 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const validateCurrentFields = (): boolean => {
     const newErrors: Record<string, string> = {};
     currentStepFields.forEach((field) => {
-      if (field.required) {
-        const val = formData[field.name];
-        if (!val || (typeof val === 'string' && val.trim() === '')) {
-          newErrors[field.name] = `${field.label} es obligatorio`;
+      const required = isFieldRequired(field);
+      const val = formData[field.name];
+      const isEmpty = val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
+
+      if (required && isEmpty) {
+        newErrors[field.name] = `${field.label || 'Este campo'} es obligatorio`;
+      } else if (!isEmpty && field.type === 'email') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (typeof val === 'string' && !emailRegex.test(val.trim())) {
+          newErrors[field.name] = 'Ingresa un correo electrónico válido';
         }
       }
     });
@@ -308,39 +351,51 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   };
 
   // Stripe Appearance Integration
-  const effectiveStripeAppearance: StripeAppearanceConfig | undefined =
-    stripeAppearance ||
-    paymentConfig?.stripe_appearance ||
-    formSchema?.stripe_appearance;
+  const effectiveStripeAppearance: StripeAppearanceConfig = useMemo(() => {
+    let resolved: any =
+      stripeAppearance ||
+      paymentConfig?.stripe_appearance ||
+      formSchema?.stripe_appearance;
 
-  const stripeBoxStyle: React.CSSProperties = effectiveStripeAppearance
-    ? {
-        backgroundColor: effectiveStripeAppearance.bg_transparent
-          ? 'transparent'
-          : (effectiveStripeAppearance.bg_color || (isDark ? '#090d16' : '#f0fdf4')),
-        borderColor: effectiveStripeAppearance.container_border_color || (isDark ? '#1e293b' : '#a7f3d0'),
-        borderWidth: effectiveStripeAppearance.container_border_width || '1px',
-        borderStyle: 'solid',
-        borderRadius: effectiveStripeAppearance.container_border_radius || '16px',
-        padding: effectiveStripeAppearance.spacing_unit || '16px',
-        color: effectiveStripeAppearance.text_color || (isDark ? '#f8fafc' : '#064e3b'),
-        fontFamily: effectiveStripeAppearance.font_family || undefined,
-        boxShadow: effectiveStripeAppearance.container_shadow === 'none' ? 'none' : undefined,
+    if (typeof resolved === 'string') {
+      try {
+        resolved = JSON.parse(resolved);
+      } catch {
+        resolved = null;
       }
-    : {};
+    }
 
-  const stripeInputStyle: React.CSSProperties = effectiveStripeAppearance
-    ? {
-        backgroundColor: effectiveStripeAppearance.input_bg_color || inputInlineStyle.backgroundColor,
-        color: effectiveStripeAppearance.input_text_color || inputInlineStyle.color,
-        borderColor: effectiveStripeAppearance.input_border_color || inputInlineStyle.borderColor,
-        borderWidth: effectiveStripeAppearance.input_border_width || '1px',
-        borderRadius: effectiveStripeAppearance.input_border_radius || '12px',
-        padding: effectiveStripeAppearance.input_padding || '12px 14px',
-        fontSize: effectiveStripeAppearance.font_size || '13px',
-        fontFamily: effectiveStripeAppearance.font_family || undefined,
-      }
-    : inputInlineStyle;
+    return {
+      ...defaultStripeAppearance,
+      ...(resolved && typeof resolved === 'object' ? resolved : {}),
+    };
+  }, [stripeAppearance, paymentConfig?.stripe_appearance, formSchema?.stripe_appearance]);
+
+  const stripeBoxStyle: React.CSSProperties = {
+    backgroundColor: effectiveStripeAppearance.bg_transparent
+      ? 'transparent'
+      : (effectiveStripeAppearance.bg_color || (isDark ? '#090d16' : '#f0fdf4')),
+    borderColor: effectiveStripeAppearance.container_border_color || (isDark ? '#1e293b' : '#a7f3d0'),
+    borderWidth: effectiveStripeAppearance.container_border_width || '1px',
+    borderStyle: 'solid',
+    borderRadius: effectiveStripeAppearance.container_border_radius || '16px',
+    padding: effectiveStripeAppearance.spacing_unit || '16px',
+    color: effectiveStripeAppearance.text_color || (isDark ? '#f8fafc' : '#064e3b'),
+    fontFamily: effectiveStripeAppearance.font_family || undefined,
+    boxShadow: effectiveStripeAppearance.container_shadow === 'none' ? 'none' : undefined,
+  };
+
+  const stripeInputStyle: React.CSSProperties = {
+    backgroundColor: effectiveStripeAppearance.input_bg_color || '#ffffff',
+    color: effectiveStripeAppearance.input_text_color || '#0f172a',
+    borderColor: effectiveStripeAppearance.input_border_color || '#cbd5e1',
+    borderWidth: effectiveStripeAppearance.input_border_width || '1px',
+    borderStyle: 'solid',
+    borderRadius: effectiveStripeAppearance.input_border_radius || '12px',
+    padding: effectiveStripeAppearance.input_padding || '12px 14px',
+    fontSize: effectiveStripeAppearance.font_size || '13px',
+    fontFamily: effectiveStripeAppearance.font_family || undefined,
+  };
 
   const stripeLabelStyle: React.CSSProperties = effectiveStripeAppearance
     ? {
@@ -382,6 +437,14 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       }
     : {};
 
+  const stripeCheckboxStyle: React.CSSProperties = {
+    accentColor: effectiveStripeAppearance.checkbox_accent_color || 'var(--yes-green, #10b981)',
+    backgroundColor: effectiveStripeAppearance.checkbox_bg_color || '#ffffff',
+    borderColor: effectiveStripeAppearance.checkbox_border_color || '#cbd5e1',
+    borderRadius: effectiveStripeAppearance.checkbox_border_radius || '4px',
+    cursor: 'pointer',
+  };
+
   // Serialized key to avoid re-triggering effect on every render
   const stripeAppearanceKey = JSON.stringify(effectiveStripeAppearance || {});
 
@@ -412,20 +475,20 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           elementsInstanceRef.current = stripe.elements();
         }
 
-        const isBgDark = isDark || (effectiveStripeAppearance?.bg_color ? isColorDark(effectiveStripeAppearance.bg_color) : false);
+        const isInputDark = isColorDark(effectiveStripeAppearance.input_bg_color || '#ffffff');
 
         // Estilos conformes a las reglas oficiales de Stripe Elements
         const cardStyle = {
           base: {
-            color: effectiveStripeAppearance?.input_text_color || (isBgDark ? '#f8fafc' : '#0f172a'),
-            fontFamily: effectiveStripeAppearance?.font_family || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            fontSize: effectiveStripeAppearance?.font_size || '14px',
-            fontWeight: (effectiveStripeAppearance?.font_weight as string) || '500',
+            color: effectiveStripeAppearance.input_text_color || (isInputDark ? '#f8fafc' : '#0f172a'),
+            fontFamily: effectiveStripeAppearance.font_family || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontSize: effectiveStripeAppearance.font_size || '14px',
+            fontWeight: (effectiveStripeAppearance.font_weight as string) || '500',
             fontSmoothing: 'antialiased',
             '::placeholder': {
-              color: effectiveStripeAppearance?.input_placeholder_color || (isBgDark ? '#64748b' : '#94a3b8'),
+              color: effectiveStripeAppearance.input_placeholder_color || (isInputDark ? '#64748b' : '#94a3b8'),
             },
-            iconColor: effectiveStripeAppearance?.input_focus_border_color || '#10b981',
+            iconColor: effectiveStripeAppearance.input_focus_border_color || '#10b981',
           },
           invalid: {
             color: effectiveStripeAppearance?.error_color || '#ef4444',
@@ -640,88 +703,116 @@ export const DynamicFormRenderer: React.FC<Props> = ({
 
       {/* Field Rendering */}
       <div className="flex flex-col space-y-4 w-full" style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '1rem' }}>
-        {currentStepFields.map((field) => (
-          <div
-            key={field.id}
-            className="flex flex-col space-y-1.5 text-left w-full"
-            style={{ display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box', textAlign: 'left' }}
-          >
-            {field.type !== 'checkbox' && (
-              <label
-                className={`${labelClasses} block w-full text-left mb-1`}
-                style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...labelStyle }}
-              >
-                {field.label} {field.required && <span className="text-red-500">*</span>}
-              </label>
-            )}
+        {currentStepFields.map((field) => {
+          const required = isFieldRequired(field);
+          const hasError = Boolean(errors[field.name]);
+          const fieldInputStyle: React.CSSProperties = {
+            ...inputInlineStyle,
+            ...(hasError ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
+          };
+          const fieldClasses = `${inputClasses} ${hasError ? 'border-red-500 focus:border-red-500 ring-1 ring-red-500/20' : ''} block w-full`;
 
-            {field.type === 'textarea' ? (
-              <textarea
-                value={formData[field.name] || ''}
-                onChange={(e) => handleInputChange(field, e.target.value)}
-                placeholder={field.placeholder || ''}
-                rows={3}
-                className={`${inputClasses} block w-full`}
-                style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...inputInlineStyle }}
-              />
-            ) : field.type === 'select' ? (
-              <select
-                value={formData[field.name] || ''}
-                onChange={(e) => handleInputChange(field, e.target.value)}
-                className={`${inputClasses} block w-full`}
-                style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...inputInlineStyle }}
-              >
-                <option value="" style={{ backgroundColor: customStyles.input_bg_color, color: customStyles.input_text_color }}>-- Seleccionar --</option>
-                {field.options?.map((opt, i) => (
-                  <option key={i} value={opt.value} style={{ backgroundColor: customStyles.input_bg_color, color: customStyles.input_text_color }}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            ) : field.type === 'checkbox' ? (
-              <label
-                className={`flex items-center gap-2.5 cursor-pointer text-xs ${isDark ? 'text-slate-300' : 'text-slate-700 font-medium'}`}
-                style={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer', ...labelStyle }}
-              >
-                <input
-                  type="checkbox"
-                  checked={!!formData[field.name]}
-                  onChange={(e) => handleInputChange(field, e.target.checked)}
-                  className="rounded border-slate-300 bg-white text-indigo-600 w-4 h-4 focus:ring-indigo-500"
-                  style={{ display: 'inline-block', width: '16px', height: '16px', margin: '0 6px 0 0', flexShrink: 0, cursor: 'pointer' }}
-                />
-                <span style={{ cursor: 'pointer', lineHeight: 1.3 }}>
-                  {field.label} {field.required && <span className="text-red-500">*</span>}
-                </span>
-              </label>
-            ) : field.type === 'file' ? (
-              <div className="flex flex-col space-y-1 w-full" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                <input
-                  type="file"
-                  onChange={(e) => handleInputChange(field, e.target.files?.[0] || null)}
-                  className={`w-full text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer ${inputClasses}`}
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...inputInlineStyle }}
-                />
-                <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`} style={subtitleStyle}>Archivos permitidos: imágenes, PDF, comprobantes de pago (Máx. 5MB)</p>
-              </div>
-            ) : (
-              <input
-                type={field.type}
-                value={formData[field.name] || ''}
-                onChange={(e) => handleInputChange(field, e.target.value)}
-                placeholder={field.placeholder || ''}
-                className={`${inputClasses} block w-full`}
-                style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...inputInlineStyle }}
-              />
-            )}
+          return (
+            <div
+              key={field.id}
+              className="flex flex-col space-y-1.5 text-left w-full"
+              style={{ display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box', textAlign: 'left' }}
+            >
+              {field.type !== 'checkbox' && (
+                <label
+                  className={`${labelClasses} block w-full text-left mb-1`}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...labelStyle }}
+                >
+                  {field.label} {required && <span className="text-red-500 font-bold ml-0.5" title="Campo obligatorio">*</span>}
+                </label>
+              )}
 
-            {errors[field.name] && (
-              <p className="text-[11px] text-red-500 font-semibold" style={{ display: 'block', width: '100%', marginTop: '4px' }}>
-                {errors[field.name]}
-              </p>
-            )}
-          </div>
-        ))}
+              {field.type === 'textarea' ? (
+                <textarea
+                  value={formData[field.name] || ''}
+                  onChange={(e) => handleInputChange(field, e.target.value)}
+                  onBlur={() => handleFieldBlur(field)}
+                  placeholder={field.placeholder || ''}
+                  required={required}
+                  rows={3}
+                  className={fieldClasses}
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...fieldInputStyle }}
+                />
+              ) : field.type === 'select' ? (
+                <select
+                  value={formData[field.name] || ''}
+                  onChange={(e) => handleInputChange(field, e.target.value)}
+                  onBlur={() => handleFieldBlur(field)}
+                  required={required}
+                  className={fieldClasses}
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...fieldInputStyle }}
+                >
+                  <option value="" style={{ backgroundColor: customStyles.input_bg_color, color: customStyles.input_text_color }}>-- Seleccionar --</option>
+                  {field.options?.map((opt, i) => (
+                    <option key={i} value={opt.value} style={{ backgroundColor: customStyles.input_bg_color, color: customStyles.input_text_color }}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              ) : field.type === 'checkbox' ? (
+                <label
+                  className={`flex items-center gap-2.5 cursor-pointer text-xs ${isDark ? 'text-slate-300' : 'text-slate-700 font-medium'}`}
+                  style={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer', ...labelStyle }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!formData[field.name]}
+                    onChange={(e) => handleInputChange(field, e.target.checked)}
+                    onBlur={() => handleFieldBlur(field)}
+                    required={required}
+                    className="w-4 h-4"
+                    style={{
+                      display: 'inline-block',
+                      width: '16px',
+                      height: '16px',
+                      margin: '0 6px 0 0',
+                      flexShrink: 0,
+                      ...stripeCheckboxStyle,
+                    }}
+                  />
+                  <span style={{ cursor: 'pointer', lineHeight: 1.3 }}>
+                    {field.label} {required && <span className="text-red-500 font-bold ml-0.5" title="Campo obligatorio">*</span>}
+                  </span>
+                </label>
+              ) : field.type === 'file' ? (
+                <div className="flex flex-col space-y-1 w-full" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                  <input
+                    type="file"
+                    onChange={(e) => handleInputChange(field, e.target.files?.[0] || null)}
+                    onBlur={() => handleFieldBlur(field)}
+                    required={required}
+                    className={`w-full text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer ${fieldClasses}`}
+                    style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...fieldInputStyle }}
+                  />
+                  <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`} style={subtitleStyle}>Archivos permitidos: imágenes, PDF, comprobantes de pago (Máx. 5MB)</p>
+                </div>
+              ) : (
+                <input
+                  type={field.type}
+                  value={formData[field.name] || ''}
+                  onChange={(e) => handleInputChange(field, e.target.value)}
+                  onBlur={() => handleFieldBlur(field)}
+                  placeholder={field.placeholder || ''}
+                  required={required}
+                  className={fieldClasses}
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...fieldInputStyle }}
+                />
+              )}
+
+              {hasError && (
+                <p className="text-[11px] text-red-500 font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', marginTop: '4px' }}>
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{errors[field.name]}</span>
+                </p>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Stripe Payment Card Input Box if enabled */}
@@ -818,12 +909,29 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               <input
                 type="text"
                 placeholder="EJ. JUAN PEREZ"
+                required
                 value={formData['card_holder_name'] || ''}
                 onChange={(e) => handleInputChange({ id: 'card_holder_name', name: 'card_holder_name', label: 'Nombre en la Tarjeta', type: 'text' }, e.target.value.toUpperCase())}
-                className={`${inputClasses} block w-full`}
-                style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...stripeInputStyle }}
+                onBlur={() => {
+                  if (!formData['card_holder_name'] || !formData['card_holder_name'].trim()) {
+                    setErrors((prev) => ({ ...prev, card_holder_name: 'Nombre en la tarjeta es obligatorio' }));
+                  }
+                }}
+                className={`w-full transition focus:outline-none focus:ring-2 block ${errors['card_holder_name'] ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/20'}`}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  ...stripeInputStyle,
+                  ...(errors['card_holder_name'] ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
+                }}
               />
-              {errors['card_holder_name'] && <p className="text-[11px] font-semibold" style={stripeErrorStyle}>{errors['card_holder_name']}</p>}
+              {errors['card_holder_name'] && (
+                <p className="text-[11px] font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={stripeErrorStyle}>
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{errors['card_holder_name']}</span>
+                </p>
+              )}
             </div>
 
             {stripePublishableKey ? (
@@ -841,16 +949,16 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 <div
                   className="w-full transition-all duration-200"
                   style={{
-                    backgroundColor: effectiveStripeAppearance?.input_bg_color || (isDark ? '#020617' : '#ffffff'),
-                    borderWidth: effectiveStripeAppearance?.input_border_width || '1px',
+                    backgroundColor: effectiveStripeAppearance.input_bg_color || '#ffffff',
+                    borderWidth: effectiveStripeAppearance.input_border_width || '1px',
                     borderStyle: 'solid',
                     borderColor: isCardFocused
-                      ? (effectiveStripeAppearance?.input_focus_border_color || '#10b981')
+                      ? (effectiveStripeAppearance.input_focus_border_color || '#10b981')
                       : (stripeElementError || errors['stripe_card']
-                        ? (effectiveStripeAppearance?.error_color || '#ef4444')
-                        : (effectiveStripeAppearance?.input_border_color || (isDark ? '#334155' : '#cbd5e1'))),
-                    borderRadius: effectiveStripeAppearance?.input_border_radius || '10px',
-                    padding: effectiveStripeAppearance?.input_padding || '12px 14px',
+                        ? (effectiveStripeAppearance.error_color || '#ef4444')
+                        : (effectiveStripeAppearance.input_border_color || '#cbd5e1')),
+                    borderRadius: effectiveStripeAppearance.input_border_radius || '10px',
+                    padding: effectiveStripeAppearance.input_padding || '12px 14px',
                     boxShadow: isCardFocused
                       ? `0 0 0 2px ${(effectiveStripeAppearance?.input_focus_border_color || '#10b981')}33`
                       : 'none',
@@ -899,18 +1007,36 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                       type="text"
                       maxLength={19}
                       placeholder="0000 0000 0000 0000"
+                      required
                       value={formData['card_number'] || ''}
                       onChange={(e) => {
                         const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
                         const formatted = raw.replace(/(.{4})/g, '$1 ').trim();
                         handleInputChange({ id: 'card_number', name: 'card_number', label: 'Número de Tarjeta', type: 'text' }, formatted);
                       }}
-                      className={`${inputClasses} font-mono tracking-wider block w-full`}
-                      style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...stripeInputStyle }}
+                      onBlur={() => {
+                        const raw = (formData['card_number'] || '').replace(/\s/g, '');
+                        if (!raw || raw.length < 15) {
+                          setErrors((prev) => ({ ...prev, card_number: 'Número de tarjeta obligatorio (mín. 15-16 dígitos)' }));
+                        }
+                      }}
+                      className={`w-full font-mono tracking-wider transition focus:outline-none focus:ring-2 block ${errors['card_number'] ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/20'}`}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        ...stripeInputStyle,
+                        ...(errors['card_number'] ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
+                      }}
                     />
-                    <CreditCard className="w-4 h-4 text-slate-400 absolute right-3 top-3.5 pointer-events-none" style={{ position: 'absolute', right: '12px', top: '14px' }} />
+                    <CreditCard className="w-4 h-4 pointer-events-none opacity-60" style={{ position: 'absolute', right: '12px', top: '14px', color: effectiveStripeAppearance.input_text_color || '#94a3b8' }} />
                   </div>
-                  {errors['card_number'] && <p className="text-[11px] font-semibold" style={stripeErrorStyle}>{errors['card_number']}</p>}
+                  {errors['card_number'] && (
+                    <p className="text-[11px] font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={stripeErrorStyle}>
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errors['card_number']}</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Expiración y CVC Grid */}
@@ -927,12 +1053,13 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                       className={`${labelClasses} block w-full text-left mb-1`}
                       style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
                     >
-                      Vencimiento (MM/AA) <span className="text-red-500">*</span>
+                      Vencimiento (MM/AA) <span className="text-red-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="text"
                       maxLength={5}
                       placeholder="MM/AA"
+                      required
                       value={formData['card_expiry'] || ''}
                       onChange={(e) => {
                         let val = e.target.value.replace(/\D/g, '');
@@ -941,10 +1068,26 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                         }
                         handleInputChange({ id: 'card_expiry', name: 'card_expiry', label: 'Fecha de Vencimiento', type: 'text' }, val);
                       }}
-                      className={`${inputClasses} font-mono block w-full`}
-                      style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...stripeInputStyle }}
+                      onBlur={() => {
+                        if (!formData['card_expiry'] || !/^\d{2}\/\d{2}$/.test(formData['card_expiry'])) {
+                          setErrors((prev) => ({ ...prev, card_expiry: 'Fecha de expiración requerida (MM/AA)' }));
+                        }
+                      }}
+                      className={`w-full font-mono transition focus:outline-none focus:ring-2 block ${errors['card_expiry'] ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/20'}`}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        ...stripeInputStyle,
+                        ...(errors['card_expiry'] ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
+                      }}
                     />
-                    {errors['card_expiry'] && <p className="text-[11px] font-semibold" style={stripeErrorStyle}>{errors['card_expiry']}</p>}
+                    {errors['card_expiry'] && (
+                      <p className="text-[11px] font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={stripeErrorStyle}>
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{errors['card_expiry']}</span>
+                      </p>
+                    )}
                   </div>
 
                   {/* CVC / CVV */}
@@ -956,21 +1099,38 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                       className={`${labelClasses} block w-full text-left mb-1`}
                       style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
                     >
-                      CVC / CVV <span className="text-red-500">*</span>
+                      CVC / CVV <span className="text-red-500 font-bold ml-0.5">*</span>
                     </label>
                     <input
                       type="password"
                       maxLength={4}
                       placeholder="123"
+                      required
                       value={formData['card_cvc'] || ''}
                       onChange={(e) => {
                         const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
                         handleInputChange({ id: 'card_cvc', name: 'card_cvc', label: 'CVC / CVV', type: 'text' }, raw);
                       }}
-                      className={`${inputClasses} font-mono block w-full`}
-                      style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...stripeInputStyle }}
+                      onBlur={() => {
+                        if (!formData['card_cvc'] || formData['card_cvc'].length < 3) {
+                          setErrors((prev) => ({ ...prev, card_cvc: 'Código CVC / CVV obligatorio' }));
+                        }
+                      }}
+                      className={`w-full font-mono transition focus:outline-none focus:ring-2 block ${errors['card_cvc'] ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/20'}`}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        ...stripeInputStyle,
+                        ...(errors['card_cvc'] ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
+                      }}
                     />
-                    {errors['card_cvc'] && <p className="text-[11px] font-semibold" style={stripeErrorStyle}>{errors['card_cvc']}</p>}
+                    {errors['card_cvc'] && (
+                      <p className="text-[11px] font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={stripeErrorStyle}>
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{errors['card_cvc']}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               </>
@@ -1019,10 +1179,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 maxHeight: '18px',
                 margin: '0 6px 0 0',
                 padding: 0,
-                accentColor: 'var(--yes-green, #10b981)',
-                cursor: 'pointer',
                 flexShrink: 0,
                 boxSizing: 'border-box',
+                ...stripeCheckboxStyle,
               }}
             />
             <label htmlFor="termsCheck" style={{ display: 'inline-block', textTransform: 'none', color: customStyles.text_color || (isDark ? '#ffffff' : '#1e293b'), fontSize: '0.8rem', margin: 0, cursor: 'pointer', lineHeight: 1.3 }}>
@@ -1066,10 +1225,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 maxHeight: '18px',
                 margin: '0 6px 0 0',
                 padding: 0,
-                accentColor: 'var(--yes-green, #10b981)',
-                cursor: 'pointer',
                 flexShrink: 0,
                 boxSizing: 'border-box',
+                ...stripeCheckboxStyle,
               }}
             />
             <label htmlFor="privacyCheck" style={{ display: 'inline-block', textTransform: 'none', color: customStyles.text_color || (isDark ? '#ffffff' : '#1e293b'), fontSize: '0.8rem', margin: 0, cursor: 'pointer', lineHeight: 1.3 }}>

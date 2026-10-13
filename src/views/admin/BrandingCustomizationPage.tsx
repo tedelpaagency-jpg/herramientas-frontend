@@ -6,7 +6,7 @@ import whiteLabelService from '../../services/whiteLabelService';
 import adminService from '../../services/adminService';
 import { 
   Palette, Type, Image as ImageIcon, Globe, Code, Sparkles, Save, RotateCcw, 
-  Check, Eye, Layout, Lock, Building2, ShieldCheck, RefreshCw, Upload, Smartphone, ExternalLink, Sun, Moon, Minimize2, Maximize2, CreditCard, Key, EyeOff, Loader2, CheckCircle2, AlertCircle
+  Check, Eye, Layout, Lock, Building2, ShieldCheck, RefreshCw, Upload, Smartphone, ExternalLink, Sun, Moon, Minimize2, Maximize2, CreditCard, Key, EyeOff, Loader2, CheckCircle2, AlertCircle, AlertTriangle
 } from 'lucide-react';
 import MediaPicker from '../../components/media/MediaPicker';
 
@@ -56,8 +56,12 @@ export default function BrandingCustomizationPage({
   const [saving, setSaving] = useState<boolean>(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [testingStripe, setTestingStripe] = useState<boolean>(false);
-  const [stripeTestResult, setStripeTestResult] = useState<{ status: 'success' | 'error'; message: string } | null>(null);
+  const [testingStripeMode, setTestingStripeMode] = useState<'test' | 'live' | null>(null);
+  const [stripeTestResults, setStripeTestResults] = useState<{
+    test?: { status: 'success' | 'error' | 'warning'; message: string } | null;
+    live?: { status: 'success' | 'error' | 'warning'; message: string } | null;
+  }>({});
+  const [showSecretKeys, setShowSecretKeys] = useState<{ test: boolean; live: boolean }>({ test: false, live: false });
 
   // Preview interactive state controls
   const [previewMode, setPreviewMode] = useState<'dashboard' | 'login'>('dashboard');
@@ -100,6 +104,12 @@ export default function BrandingCustomizationPage({
     stripe_secret_key: '',
     stripe_webhook_secret: '',
     stripe_mode: 'test',
+    stripe_test_publishable_key: '',
+    stripe_test_secret_key: '',
+    stripe_test_webhook_secret: '',
+    stripe_live_publishable_key: '',
+    stripe_live_secret_key: '',
+    stripe_live_webhook_secret: '',
     card_color: '#2563eb',
     card_logo: '',
     card_logo_file: null,
@@ -214,6 +224,12 @@ export default function BrandingCustomizationPage({
       stripe_secret_key: entity.stripe_secret_key || '',
       stripe_webhook_secret: entity.stripe_webhook_secret || '',
       stripe_mode: entity.stripe_mode || 'test',
+      stripe_test_publishable_key: entity.stripe_test_publishable_key || (entity.stripe_mode === 'test' ? entity.stripe_publishable_key : '') || '',
+      stripe_test_secret_key: entity.stripe_test_secret_key || (entity.stripe_mode === 'test' ? entity.stripe_secret_key : '') || '',
+      stripe_test_webhook_secret: entity.stripe_test_webhook_secret || (entity.stripe_mode === 'test' ? entity.stripe_webhook_secret : '') || '',
+      stripe_live_publishable_key: entity.stripe_live_publishable_key || (entity.stripe_mode === 'live' ? entity.stripe_publishable_key : '') || '',
+      stripe_live_secret_key: entity.stripe_live_secret_key || (entity.stripe_mode === 'live' ? entity.stripe_secret_key : '') || '',
+      stripe_live_webhook_secret: entity.stripe_live_webhook_secret || (entity.stripe_mode === 'live' ? entity.stripe_webhook_secret : '') || '',
       card_color: entity.card_color || '#2563eb',
       card_logo: entity.card_logo || '',
       card_logo_file: null,
@@ -264,36 +280,61 @@ export default function BrandingCustomizationPage({
     }));
   };
 
-  const handleTestStripeConnection = async () => {
-    if (!form.stripe_secret_key) {
-      setStripeTestResult({
-        status: 'error',
-        message: 'Debe ingresar la Clave Secreta (Stripe Secret Key) para verificar la conexión.',
-      });
+  const handleTestStripeConnection = async (modeToTest?: 'test' | 'live') => {
+    const targetMode = modeToTest || form.stripe_mode || 'test';
+    const secretKeyToTest = targetMode === 'live' ? form.stripe_live_secret_key : form.stripe_test_secret_key;
+    const modeLabel = targetMode === 'live' ? 'Producción (Live)' : 'Pruebas (Test)';
+
+    if (!secretKeyToTest) {
+      setStripeTestResults(prev => ({
+        ...prev,
+        [targetMode]: {
+          status: 'error',
+          message: `Debe ingresar la Clave Secreta (Secret Key) de Modo ${modeLabel} para probar la conexión.`,
+        },
+      }));
       return;
     }
-    setTestingStripe(true);
-    setStripeTestResult(null);
+
+    setTestingStripeMode(targetMode);
+    setStripeTestResults(prev => ({ ...prev, [targetMode]: null }));
     try {
-      const res = await whiteLabelService.testStripeConnection(form.stripe_secret_key);
+      const res = await whiteLabelService.testStripeConnection(secretKeyToTest, targetMode);
       if (res.status === 'success') {
-        setStripeTestResult({
-          status: 'success',
-          message: res.message || '¡Conexión verificada exitosamente!',
-        });
+        setStripeTestResults(prev => ({
+          ...prev,
+          [targetMode]: {
+            status: 'success',
+            message: res.message || `¡Conexión verificada exitosamente en Modo ${modeLabel}!`,
+          },
+        }));
+      } else if (res.status === 'warning') {
+        setStripeTestResults(prev => ({
+          ...prev,
+          [targetMode]: {
+            status: 'warning',
+            message: res.message,
+          },
+        }));
       } else {
-        setStripeTestResult({
-          status: 'error',
-          message: res.message || 'Error al validar con Stripe.',
-        });
+        setStripeTestResults(prev => ({
+          ...prev,
+          [targetMode]: {
+            status: 'error',
+            message: res.message || 'Error al validar con Stripe.',
+          },
+        }));
       }
     } catch (err: any) {
-      setStripeTestResult({
-        status: 'error',
-        message: err.response?.data?.message || err.message || 'Error de comunicación con el servidor.',
-      });
+      setStripeTestResults(prev => ({
+        ...prev,
+        [targetMode]: {
+          status: 'error',
+          message: err.response?.data?.message || err.message || 'Error de comunicación con el servidor.',
+        },
+      }));
     } finally {
-      setTestingStripe(false);
+      setTestingStripeMode(null);
     }
   };
 
@@ -305,10 +346,27 @@ export default function BrandingCustomizationPage({
     setSuccessMsg(null);
     setErrorMsg(null);
 
+    const activePublishableKey = form.stripe_mode === 'live'
+      ? (form.stripe_live_publishable_key || form.stripe_publishable_key)
+      : (form.stripe_test_publishable_key || form.stripe_publishable_key);
+    const activeSecretKey = form.stripe_mode === 'live'
+      ? (form.stripe_live_secret_key || form.stripe_secret_key)
+      : (form.stripe_test_secret_key || form.stripe_secret_key);
+    const activeWebhookSecret = form.stripe_mode === 'live'
+      ? (form.stripe_live_webhook_secret || form.stripe_webhook_secret)
+      : (form.stripe_test_webhook_secret || form.stripe_webhook_secret);
+
+    const payload = {
+      ...form,
+      stripe_publishable_key: activePublishableKey,
+      stripe_secret_key: activeSecretKey,
+      stripe_webhook_secret: activeWebhookSecret,
+    };
+
     try {
       let updated: any;
       if (targetType === 'white_label') {
-        updated = await whiteLabelService.updateWhiteLabel(selectedId, form);
+        updated = await whiteLabelService.updateWhiteLabel(selectedId, payload);
         const freshWl = updated?.data || updated;
         if (freshWl) {
           setCurrentWhiteLabel(freshWl);
@@ -329,7 +387,7 @@ export default function BrandingCustomizationPage({
           }
         }
       } else {
-        updated = await adminService.updateAgency(selectedId, form);
+        updated = await adminService.updateAgency(selectedId, payload);
         const freshAg = updated?.data || updated;
         if (freshAg) {
           setCurrentAgency(freshAg);
@@ -1170,143 +1228,453 @@ export default function BrandingCustomizationPage({
 
             {/* TAB 6: STRIPE PAYMENT GATEWAY API KEYS */}
             {activeTab === 'stripe' && (
-              <div className="space-y-5">
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-start gap-3">
+              <div className="space-y-6">
+                
+                {/* Information Header */}
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-start gap-3">
                   <CreditCard className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                   <div className="text-xs space-y-1">
-                    <span className="font-bold text-slate-900 dark:text-white block">Integración de Pagos Directos con Stripe</span>
-                    <p className="text-slate-600 dark:text-slate-300">
-                      Configure sus credenciales API de Stripe para que las landings, suscripciones y solicitudes de pago cobren directamente a su cuenta bancaria.
+                    <span className="font-bold text-slate-900 dark:text-white block text-sm">
+                      Integración de Pasarela de Pagos Stripe
+                    </span>
+                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Registre y almacene por separado sus credenciales de <strong>Modo Pruebas (Test)</strong> y <strong>Modo Producción (Live)</strong>. Indique cuál de los dos entornos está activo mediante los botones inferiores; el entorno seleccionado será el que procese los cobros en landings y solicitudes de pago.
                     </p>
                   </div>
                 </div>
 
-                {/* Stripe Environment Selector */}
+                {/* 1. Active Environment Selector Buttons with Status Indicators */}
                 <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
-                    Entorno / Modo de Stripe:
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Seleccionar Entorno Activo de Stripe:
+                    </label>
+                    <span className="text-[11px] font-semibold text-slate-500">
+                      Entorno en uso: <strong className={form.stripe_mode === 'live' ? 'text-emerald-500 uppercase' : 'text-amber-500 uppercase'}>{form.stripe_mode === 'live' ? 'Producción (Live)' : 'Pruebas (Test)'}</strong>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* Botón / Tarjeta Modo Pruebas */}
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, stripe_mode: 'test' })}
-                      className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                      className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden group ${
                         form.stripe_mode === 'test'
-                          ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-sm'
-                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-500'
+                          ? 'border-amber-500 bg-amber-500/10 shadow-md shadow-amber-500/10 ring-2 ring-amber-500/30'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
                       }`}
                     >
-                      <Key className="w-4 h-4" /> Modo Pruebas (Test / Sandbox)
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`p-2 rounded-xl ${form.stripe_mode === 'test' ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                            <Key className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                              Modo Pruebas (Test / Sandbox)
+                            </span>
+                            <span className="text-[10px] text-slate-500 block">
+                              Tarjetas simuladas sin cobros reales
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Indicador de Activo */}
+                        {form.stripe_mode === 'test' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-500 text-slate-950 shadow-xs">
+                            <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" />
+                            Activo
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400">
+                            Inactivo
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                        Utiliza las claves de prueba (<code>pk_test_...</code> / <code>sk_test_...</code>) para validar formularios y flujos sin cobrar dinero.
+                      </p>
+
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px]">
+                        <span className={form.stripe_mode === 'test' ? 'font-bold text-amber-600 dark:text-amber-400' : 'text-slate-400'}>
+                          {form.stripe_mode === 'test' ? '● Entorno en uso en toda la plataforma' : 'Haga clic para activar este modo'}
+                        </span>
+                        {form.stripe_mode === 'test' && <Check className="w-3.5 h-3.5 text-amber-500" />}
+                      </div>
                     </button>
+
+                    {/* Botón / Tarjeta Modo Producción */}
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, stripe_mode: 'live' })}
-                      className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                      className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden group ${
                         form.stripe_mode === 'live'
-                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-500'
+                          ? 'border-emerald-500 bg-emerald-500/10 shadow-md shadow-emerald-500/10 ring-2 ring-emerald-500/30'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
                       }`}
                     >
-                      <ShieldCheck className="w-4 h-4" /> Modo Producción (Live Real)
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`p-2 rounded-xl ${form.stripe_mode === 'live' ? 'bg-emerald-500 text-white font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                            <ShieldCheck className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                              Modo Producción (Live Real)
+                            </span>
+                            <span className="text-[10px] text-slate-500 block">
+                              Transacciones y cobros reales en vivo
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Indicador de Activo */}
+                        {form.stripe_mode === 'live' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500 text-white shadow-xs">
+                            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                            Activo
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400">
+                            Inactivo
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                        Utiliza las claves en vivo (<code>pk_live_...</code> / <code>sk_live_...</code>) para cobrar directamente a tarjetas de crédito de clientes.
+                      </p>
+
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px]">
+                        <span className={form.stripe_mode === 'live' ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}>
+                          {form.stripe_mode === 'live' ? '● Entorno en uso en toda la plataforma' : 'Haga clic para activar este modo'}
+                        </span>
+                        {form.stripe_mode === 'live' && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+                      </div>
                     </button>
+
                   </div>
                 </div>
 
-                {/* Publishable Key */}
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
-                    Stripe Publishable Key (Clave Publicable):
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={form.stripe_mode === 'live' ? 'pk_live_...' : 'pk_test_...'}
-                    value={form.stripe_publishable_key}
-                    onChange={(e) => setForm({ ...form, stripe_publishable_key: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
-                  />
-                  <span className="text-[10px] text-slate-400 block">
-                    Comienza con <code className="font-mono text-emerald-500">pk_test_</code> o <code className="font-mono text-emerald-500">pk_live_</code>. Se utiliza en el frontend para procesar Stripe Checkout.
-                  </span>
-                </div>
-
-                {/* Secret Key */}
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
-                    Stripe Secret Key (Clave Secreta):
-                  </label>
-                  <input
-                    type="password"
-                    placeholder={form.stripe_mode === 'live' ? 'sk_live_...' : 'sk_test_...'}
-                    value={form.stripe_secret_key}
-                    onChange={(e) => setForm({ ...form, stripe_secret_key: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
-                  />
-                  <span className="text-[10px] text-slate-400 block">
-                    Comienza con <code className="font-mono text-emerald-500">sk_test_</code> o <code className="font-mono text-emerald-500">sk_live_</code>. Clave confidencial requerida para crear órdenes y cobros backend.
-                  </span>
-                </div>
-
-                {/* Webhook Secret */}
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
-                    Stripe Webhook Signing Secret (Opcional):
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="whsec_..."
-                    value={form.stripe_webhook_secret}
-                    onChange={(e) => setForm({ ...form, stripe_webhook_secret: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
-                  />
-                  <span className="text-[10px] text-slate-400 block">
-                    Comienza con <code className="font-mono text-emerald-500">whsec_</code>. Utilizado para verificar firmas de eventos webhooks devueltos por Stripe.
-                  </span>
-                </div>
-
-                {/* Test Connection Button & Status Result */}
-                <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white block">Garantizar y Validar Conexión</span>
-                      <span className="text-[11px] text-slate-500">Pruebe inmediatamente si la clave de Stripe es válida con los servidores de Stripe.</span>
+                {/* 2. Tarjeta A: Credenciales de Modo Pruebas (Test / Sandbox) */}
+                <div className={`p-5 rounded-2xl border transition-all space-y-4 ${
+                  form.stripe_mode === 'test'
+                    ? 'bg-amber-500/5 dark:bg-amber-950/20 border-amber-500/50 shadow-sm'
+                    : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 opacity-90'
+                }`}>
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-3 flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        <Key className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                          Credenciales de Modo Pruebas (Sandbox)
+                        </h4>
+                        <span className="text-[11px] text-slate-500">
+                          Configure aquí las claves de prueba que proporciona Stripe.
+                        </span>
+                      </div>
                     </div>
+
+                    <div className="flex items-center gap-2">
+                      {form.stripe_mode === 'test' ? (
+                        <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          Entorno Activo Actualmente
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setForm({ ...form, stripe_mode: 'test' })}
+                          className="px-3 py-1 rounded-xl text-[11px] font-bold border border-slate-300 dark:border-slate-700 hover:border-amber-500 text-slate-600 dark:text-slate-300 hover:text-amber-600 transition-colors"
+                        >
+                          Activar este entorno
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Inputs Modo Pruebas */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* Test Publishable Key */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                        Publishable Key (Pruebas):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="pk_test_..."
+                        value={form.stripe_test_publishable_key || ''}
+                        onChange={(e) => setForm({ ...form, stripe_test_publishable_key: e.target.value })}
+                        className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:border-amber-500 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 block">
+                        Debe comenzar con <code className="font-mono text-amber-600 dark:text-amber-400">pk_test_</code>.
+                      </span>
+                    </div>
+
+                    {/* Test Secret Key */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                          Secret Key (Pruebas):
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowSecretKeys(prev => ({ ...prev, test: !prev.test }))}
+                          className="text-[10px] text-slate-400 hover:text-slate-200 flex items-center gap-1"
+                        >
+                          {showSecretKeys.test ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          {showSecretKeys.test ? 'Ocultar' : 'Mostrar'}
+                        </button>
+                      </div>
+                      <input
+                        type={showSecretKeys.test ? 'text' : 'password'}
+                        placeholder="sk_test_..."
+                        value={form.stripe_test_secret_key || ''}
+                        onChange={(e) => setForm({ ...form, stripe_test_secret_key: e.target.value })}
+                        className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:border-amber-500 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 block">
+                        Debe comenzar con <code className="font-mono text-amber-600 dark:text-amber-400">sk_test_</code>.
+                      </span>
+                    </div>
+
+                    {/* Test Webhook Secret */}
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                        Webhook Signing Secret (Pruebas - Opcional):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="whsec_..."
+                        value={form.stripe_test_webhook_secret || ''}
+                        onChange={(e) => setForm({ ...form, stripe_test_webhook_secret: e.target.value })}
+                        className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:border-amber-500 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 block">
+                        Comienza con <code className="font-mono text-amber-600 dark:text-amber-400">whsec_</code>. Utilizado para verificar firmas de eventos de prueba.
+                      </span>
+                    </div>
+
+                  </div>
+
+                  {/* Botón para Probar Conexión Modo Pruebas */}
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between flex-wrap gap-3">
+                    <span className="text-[11px] text-slate-500">
+                      Valide la autenticación de la Clave Secreta de pruebas directamente con Stripe.
+                    </span>
                     <button
                       type="button"
-                      onClick={handleTestStripeConnection}
-                      disabled={testingStripe || !form.stripe_secret_key}
-                      className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 transition-all disabled:opacity-50 shadow-md"
+                      onClick={() => handleTestStripeConnection('test')}
+                      disabled={testingStripeMode !== null || !form.stripe_test_secret_key}
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-2 transition-all disabled:opacity-40"
                     >
-                      {testingStripe ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                      {testingStripeMode === 'test' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
                       ) : (
-                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <Key className="w-3.5 h-3.5 text-amber-500" />
                       )}
-                      {testingStripe ? 'Verificando con Stripe...' : 'Verificar Conexión con Stripe'}
+                      {testingStripeMode === 'test' ? 'Validando con Stripe...' : 'Probar Claves de Pruebas'}
                     </button>
                   </div>
 
-                  {stripeTestResult && (
+                  {/* Resultado de prueba modo pruebas */}
+                  {stripeTestResults.test && (
                     <div
-                      className={`p-3.5 rounded-xl border flex items-start gap-3 text-xs transition-all ${
-                        stripeTestResult.status === 'success'
+                      className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs transition-all ${
+                        stripeTestResults.test.status === 'success'
                           ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                          : stripeTestResults.test.status === 'warning'
+                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
                           : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
                       }`}
                     >
-                      {stripeTestResult.status === 'success' ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                      {stripeTestResults.test.status === 'success' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      ) : stripeTestResults.test.status === 'warning' ? (
+                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                       ) : (
-                        <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                        <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                       )}
                       <div>
-                        <span className="font-bold block">
-                          {stripeTestResult.status === 'success' ? '¡Conexión Exitosa con Stripe!' : 'Fallo en la Conexión con Stripe'}
+                        <span className="font-bold block text-[11px]">
+                          {stripeTestResults.test.status === 'success' ? '¡Conexión de Pruebas Exitosa!' : stripeTestResults.test.status === 'warning' ? 'Advertencia de Validación' : 'Error en Conexión de Pruebas'}
                         </span>
-                        <span>{stripeTestResult.message}</span>
+                        <span className="text-[11px] leading-tight block">{stripeTestResults.test.message}</span>
                       </div>
                     </div>
                   )}
                 </div>
+
+                {/* 3. Tarjeta B: Credenciales de Modo Producción (Live Real) */}
+                <div className={`p-5 rounded-2xl border transition-all space-y-4 ${
+                  form.stripe_mode === 'live'
+                    ? 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/50 shadow-sm'
+                    : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 opacity-90'
+                }`}>
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-3 flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                          Credenciales de Modo Producción (Live Real)
+                        </h4>
+                        <span className="text-[11px] text-slate-500">
+                          Configure las claves para cobrar dinero real a través de Stripe.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {form.stripe_mode === 'live' ? (
+                        <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          Entorno Activo Actualmente
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setForm({ ...form, stripe_mode: 'live' })}
+                          className="px-3 py-1 rounded-xl text-[11px] font-bold border border-slate-300 dark:border-slate-700 hover:border-emerald-500 text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
+                        >
+                          Activar este entorno
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Inputs Modo Producción */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* Live Publishable Key */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                        Publishable Key (Producción):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="pk_live_..."
+                        value={form.stripe_live_publishable_key || ''}
+                        onChange={(e) => setForm({ ...form, stripe_live_publishable_key: e.target.value })}
+                        className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 block">
+                        Debe comenzar con <code className="font-mono text-emerald-600 dark:text-emerald-400">pk_live_</code>.
+                      </span>
+                    </div>
+
+                    {/* Live Secret Key */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                          Secret Key (Producción):
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowSecretKeys(prev => ({ ...prev, live: !prev.live }))}
+                          className="text-[10px] text-slate-400 hover:text-slate-200 flex items-center gap-1"
+                        >
+                          {showSecretKeys.live ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          {showSecretKeys.live ? 'Ocultar' : 'Mostrar'}
+                        </button>
+                      </div>
+                      <input
+                        type={showSecretKeys.live ? 'text' : 'password'}
+                        placeholder="sk_live_..."
+                        value={form.stripe_live_secret_key || ''}
+                        onChange={(e) => setForm({ ...form, stripe_live_secret_key: e.target.value })}
+                        className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 block">
+                        Debe comenzar con <code className="font-mono text-emerald-600 dark:text-emerald-400">sk_live_</code>.
+                      </span>
+                    </div>
+
+                    {/* Live Webhook Secret */}
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                        Webhook Signing Secret (Producción - Opcional):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="whsec_..."
+                        value={form.stripe_live_webhook_secret || ''}
+                        onChange={(e) => setForm({ ...form, stripe_live_webhook_secret: e.target.value })}
+                        className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 block">
+                        Comienza con <code className="font-mono text-emerald-600 dark:text-emerald-400">whsec_</code>. Utilizado para verificar firmas de eventos reales de Stripe.
+                      </span>
+                    </div>
+
+                  </div>
+
+                  {/* Botón para Probar Conexión Modo Producción */}
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between flex-wrap gap-3">
+                    <span className="text-[11px] text-slate-500">
+                      Valide la autenticación de la Clave Secreta de producción directamente con Stripe.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleTestStripeConnection('live')}
+                      disabled={testingStripeMode !== null || !form.stripe_live_secret_key}
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-2 transition-all disabled:opacity-40"
+                    >
+                      {testingStripeMode === 'live' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
+                      ) : (
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                      )}
+                      {testingStripeMode === 'live' ? 'Validando con Stripe...' : 'Probar Claves de Producción'}
+                    </button>
+                  </div>
+
+                  {/* Resultado de prueba modo producción */}
+                  {stripeTestResults.live && (
+                    <div
+                      className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs transition-all ${
+                        stripeTestResults.live.status === 'success'
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                          : stripeTestResults.live.status === 'warning'
+                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
+                          : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
+                      }`}
+                    >
+                      {stripeTestResults.live.status === 'success' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      ) : stripeTestResults.live.status === 'warning' ? (
+                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                      )}
+                      <div>
+                        <span className="font-bold block text-[11px]">
+                          {stripeTestResults.live.status === 'success' ? '¡Conexión de Producción Exitosa!' : stripeTestResults.live.status === 'warning' ? 'Advertencia de Validación' : 'Error en Conexión de Producción'}
+                        </span>
+                        <span className="text-[11px] leading-tight block">{stripeTestResults.live.message}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Resumen Operativo */}
+                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-slate-400" />
+                    <span>
+                      Modo actualmente seleccionado: <strong className={form.stripe_mode === 'live' ? 'text-emerald-500' : 'text-amber-500'}>{form.stripe_mode === 'live' ? 'PRODUCCIÓN (LIVE)' : 'PRUEBAS (TEST)'}</strong>. Al presionar <strong>"Guardar y Aplicar Marca"</strong>, se registrarán ambos juegos de claves y se aplicará el modo seleccionado.
+                    </span>
+                  </div>
+                </div>
+
               </div>
             )}
 

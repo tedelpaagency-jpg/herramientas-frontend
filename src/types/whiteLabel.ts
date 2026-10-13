@@ -28,6 +28,12 @@ export interface WhiteLabel {
   stripe_secret_key?: string | null;
   stripe_webhook_secret?: string | null;
   stripe_mode?: 'test' | 'live' | string | null;
+  stripe_test_publishable_key?: string | null;
+  stripe_test_secret_key?: string | null;
+  stripe_test_webhook_secret?: string | null;
+  stripe_live_publishable_key?: string | null;
+  stripe_live_secret_key?: string | null;
+  stripe_live_webhook_secret?: string | null;
   border_radius?: string | null;
   card_color?: string | null;
   card_logo?: string | null;

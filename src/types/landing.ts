@@ -74,6 +74,12 @@ export interface StripeAppearanceConfig {
   button_padding?: string;
   button_text?: string;
 
+  // Casillas / Checkboxes
+  checkbox_accent_color?: string;
+  checkbox_bg_color?: string;
+  checkbox_border_color?: string;
+  checkbox_border_radius?: string;
+
   // Otros elementos
   error_color?: string;
   success_color?: string;

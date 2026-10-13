@@ -78,6 +78,12 @@ export interface Agency {
   stripe_secret_key?: string | null;
   stripe_webhook_secret?: string | null;
   stripe_mode?: 'test' | 'live' | string | null;
+  stripe_test_publishable_key?: string | null;
+  stripe_test_secret_key?: string | null;
+  stripe_test_webhook_secret?: string | null;
+  stripe_live_publishable_key?: string | null;
+  stripe_live_secret_key?: string | null;
+  stripe_live_webhook_secret?: string | null;
   plan_id?: number;
   plan?: Plan;
   gerente_id?: number;

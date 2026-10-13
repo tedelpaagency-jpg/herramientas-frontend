@@ -65,6 +65,12 @@ export const WhiteLabelsPage: React.FC = () => {
     stripe_secret_key: '',
     stripe_webhook_secret: '',
     stripe_mode: 'test' as 'test' | 'live',
+    stripe_test_publishable_key: '',
+    stripe_test_secret_key: '',
+    stripe_test_webhook_secret: '',
+    stripe_live_publishable_key: '',
+    stripe_live_secret_key: '',
+    stripe_live_webhook_secret: '',
     status: 'active' as 'active' | 'suspended',
     plan_id: null as number | null,
     admin_name: '',
@@ -116,11 +122,28 @@ export const WhiteLabelsPage: React.FC = () => {
   const handleCreateOrUpdateWL = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const activePublishableKey = formData.stripe_mode === 'live'
+        ? (formData.stripe_live_publishable_key || formData.stripe_publishable_key)
+        : (formData.stripe_test_publishable_key || formData.stripe_publishable_key);
+      const activeSecretKey = formData.stripe_mode === 'live'
+        ? (formData.stripe_live_secret_key || formData.stripe_secret_key)
+        : (formData.stripe_test_secret_key || formData.stripe_secret_key);
+      const activeWebhookSecret = formData.stripe_mode === 'live'
+        ? (formData.stripe_live_webhook_secret || formData.stripe_webhook_secret)
+        : (formData.stripe_test_webhook_secret || formData.stripe_webhook_secret);
+
+      const payload = {
+        ...formData,
+        stripe_publishable_key: activePublishableKey,
+        stripe_secret_key: activeSecretKey,
+        stripe_webhook_secret: activeWebhookSecret,
+      };
+
       if (editingWL) {
-        await whiteLabelService.updateWhiteLabel(editingWL.id, formData);
+        await whiteLabelService.updateWhiteLabel(editingWL.id, payload);
         toast.success('Marca Blanca actualizada exitosamente');
       } else {
-        await whiteLabelService.createWhiteLabel(formData);
+        await whiteLabelService.createWhiteLabel(payload);
         toast.success('Marca Blanca creada exitosamente');
       }
       setIsCreateModalOpen(false);
@@ -212,6 +235,12 @@ export const WhiteLabelsPage: React.FC = () => {
       stripe_secret_key: '',
       stripe_webhook_secret: '',
       stripe_mode: 'test' as 'test' | 'live',
+      stripe_test_publishable_key: '',
+      stripe_test_secret_key: '',
+      stripe_test_webhook_secret: '',
+      stripe_live_publishable_key: '',
+      stripe_live_secret_key: '',
+      stripe_live_webhook_secret: '',
       status: 'active' as 'active' | 'suspended',
       plan_id: null,
       admin_name: '',
@@ -244,6 +273,12 @@ export const WhiteLabelsPage: React.FC = () => {
       stripe_secret_key: wl.stripe_secret_key || '',
       stripe_webhook_secret: wl.stripe_webhook_secret || '',
       stripe_mode: (wl.stripe_mode as 'test' | 'live') || 'test',
+      stripe_test_publishable_key: wl.stripe_test_publishable_key || (wl.stripe_mode === 'test' ? wl.stripe_publishable_key : '') || '',
+      stripe_test_secret_key: wl.stripe_test_secret_key || (wl.stripe_mode === 'test' ? wl.stripe_secret_key : '') || '',
+      stripe_test_webhook_secret: wl.stripe_test_webhook_secret || (wl.stripe_mode === 'test' ? wl.stripe_webhook_secret : '') || '',
+      stripe_live_publishable_key: wl.stripe_live_publishable_key || (wl.stripe_mode === 'live' ? wl.stripe_publishable_key : '') || '',
+      stripe_live_secret_key: wl.stripe_live_secret_key || (wl.stripe_mode === 'live' ? wl.stripe_secret_key : '') || '',
+      stripe_live_webhook_secret: wl.stripe_live_webhook_secret || (wl.stripe_mode === 'live' ? wl.stripe_webhook_secret : '') || '',
       status: wl.status,
       plan_id: wl.plan_id || wl.plan?.id || null,
       admin_name: '',
@@ -606,48 +641,147 @@ export const WhiteLabelsPage: React.FC = () => {
                 </div>
 
                 {/* Stripe API Keys Section */}
-                <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-mono font-extrabold text-emerald-600 dark:text-emerald-400">Credenciales API de Stripe (Cobros Directos)</span>
-                    <select
-                      value={formData.stripe_mode}
-                      onChange={(e) => setFormData({ ...formData, stripe_mode: e.target.value as 'test' | 'live' })}
-                      className="px-2 py-1 text-[10px] font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
-                    >
-                      <option value="test">Modo Test (Pruebas)</option>
-                      <option value="live">Modo Live (Producción)</option>
-                    </select>
+                <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <span className="text-[11px] uppercase font-mono font-extrabold text-emerald-600 dark:text-emerald-400 block">
+                        Credenciales API de Stripe (Cobros Directos)
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        Registre por separado las claves de Prueba y Producción. Seleccione cuál entorno está activo.
+                      </span>
+                    </div>
+
+                    {/* Selector de Entorno Activo */}
+                    <div className="flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-900 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, stripe_mode: 'test' })}
+                        className={`px-3 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1.5 transition-all ${
+                          formData.stripe_mode === 'test'
+                            ? 'bg-amber-500 text-slate-950 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${formData.stripe_mode === 'test' ? 'bg-slate-950 animate-ping' : 'bg-slate-400'}`} />
+                        Modo Pruebas (Test)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, stripe_mode: 'live' })}
+                        className={`px-3 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1.5 transition-all ${
+                          formData.stripe_mode === 'live'
+                            ? 'bg-emerald-500 text-white shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${formData.stripe_mode === 'live' ? 'bg-white animate-ping' : 'bg-slate-400'}`} />
+                        Modo Producción (Live)
+                      </button>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1">Publishable Key</label>
-                      <input
-                        type="text"
-                        placeholder="pk_test_..."
-                        value={formData.stripe_publishable_key}
-                        onChange={(e) => setFormData({ ...formData, stripe_publishable_key: e.target.value })}
-                        className="w-full px-2.5 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl"
-                      />
+
+                  {/* Bloque 1: Credenciales Modo Pruebas */}
+                  <div className={`p-3 rounded-xl border space-y-2 transition-all ${
+                    formData.stripe_mode === 'test'
+                      ? 'bg-amber-500/5 dark:bg-amber-950/20 border-amber-500/40 ring-1 ring-amber-500/20'
+                      : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 opacity-80'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                        🧪 Claves de Modo Pruebas (Sandbox)
+                      </span>
+                      {formData.stripe_mode === 'test' ? (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-amber-500 text-slate-950">
+                          ● Activo en la plataforma
+                        </span>
+                      ) : (
+                        <span className="text-[9px] text-slate-400 font-semibold">Inactivo (Guardado)</span>
+                      )}
                     </div>
-                    <div>
-                      <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1">Secret Key</label>
-                      <input
-                        type="password"
-                        placeholder="sk_test_..."
-                        value={formData.stripe_secret_key}
-                        onChange={(e) => setFormData({ ...formData, stripe_secret_key: e.target.value })}
-                        className="w-full px-2.5 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl"
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-slate-600 dark:text-slate-400 mb-0.5 font-bold">Publishable Key (Test)</label>
+                        <input
+                          type="text"
+                          placeholder="pk_test_..."
+                          value={formData.stripe_test_publishable_key || ''}
+                          onChange={(e) => setFormData({ ...formData, stripe_test_publishable_key: e.target.value })}
+                          className="w-full px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-600 dark:text-slate-400 mb-0.5 font-bold">Secret Key (Test)</label>
+                        <input
+                          type="password"
+                          placeholder="sk_test_..."
+                          value={formData.stripe_test_secret_key || ''}
+                          onChange={(e) => setFormData({ ...formData, stripe_test_secret_key: e.target.value })}
+                          className="w-full px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-600 dark:text-slate-400 mb-0.5 font-bold">Webhook Secret (Test)</label>
+                        <input
+                          type="text"
+                          placeholder="whsec_..."
+                          value={formData.stripe_test_webhook_secret || ''}
+                          onChange={(e) => setFormData({ ...formData, stripe_test_webhook_secret: e.target.value })}
+                          className="w-full px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-1">Webhook Secret</label>
-                      <input
-                        type="text"
-                        placeholder="whsec_..."
-                        value={formData.stripe_webhook_secret}
-                        onChange={(e) => setFormData({ ...formData, stripe_webhook_secret: e.target.value })}
-                        className="w-full px-2.5 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl"
-                      />
+                  </div>
+
+                  {/* Bloque 2: Credenciales Modo Producción */}
+                  <div className={`p-3 rounded-xl border space-y-2 transition-all ${
+                    formData.stripe_mode === 'live'
+                      ? 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/40 ring-1 ring-emerald-500/20'
+                      : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 opacity-80'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                        🚀 Claves de Modo Producción (Live Real)
+                      </span>
+                      {formData.stripe_mode === 'live' ? (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-emerald-500 text-white">
+                          ● Activo en la plataforma
+                        </span>
+                      ) : (
+                        <span className="text-[9px] text-slate-400 font-semibold">Inactivo (Guardado)</span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-slate-600 dark:text-slate-400 mb-0.5 font-bold">Publishable Key (Live)</label>
+                        <input
+                          type="text"
+                          placeholder="pk_live_..."
+                          value={formData.stripe_live_publishable_key || ''}
+                          onChange={(e) => setFormData({ ...formData, stripe_live_publishable_key: e.target.value })}
+                          className="w-full px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-600 dark:text-slate-400 mb-0.5 font-bold">Secret Key (Live)</label>
+                        <input
+                          type="password"
+                          placeholder="sk_live_..."
+                          value={formData.stripe_live_secret_key || ''}
+                          onChange={(e) => setFormData({ ...formData, stripe_live_secret_key: e.target.value })}
+                          className="w-full px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-600 dark:text-slate-400 mb-0.5 font-bold">Webhook Secret (Live)</label>
+                        <input
+                          type="text"
+                          placeholder="whsec_..."
+                          value={formData.stripe_live_webhook_secret || ''}
+                          onChange={(e) => setFormData({ ...formData, stripe_live_webhook_secret: e.target.value })}
+                          className="w-full px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

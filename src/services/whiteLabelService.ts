@@ -77,9 +77,10 @@ export const whiteLabelService = {
     return response.data;
   },
 
-  testStripeConnection: async (stripeSecretKey: string) => {
+  testStripeConnection: async (stripeSecretKey: string, expectedMode?: 'test' | 'live') => {
     const response = await apiClient.post('/v1/stripe/test-connection', {
       stripe_secret_key: stripeSecretKey,
+      expected_mode: expectedMode,
     });
     return response.data;
   },

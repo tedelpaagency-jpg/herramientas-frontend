@@ -2,6 +2,7 @@ import React from 'react';
 import { PaymentConfig, LandingAvailableResources } from '../../types/landing';
 import { CreditCard, Zap, DollarSign, Package } from 'lucide-react';
 import { StripeAppearanceEditor } from './StripeAppearanceEditor';
+import { defaultStripeAppearance } from '../../utils/stripeAppearance';
 
 interface Props {
   workflowId?: number | null;
@@ -71,7 +72,13 @@ export const WorkflowPaymentSettings: React.FC<Props> = ({
             <input
               type="checkbox"
               checked={config.enabled}
-              onChange={(e) => updateConfig({ enabled: e.target.checked })}
+              onChange={(e) => {
+                const isEnabled = e.target.checked;
+                updateConfig({
+                  enabled: isEnabled,
+                  stripe_appearance: config.stripe_appearance || defaultStripeAppearance,
+                });
+              }}
               className="rounded border-slate-700 bg-slate-900 text-emerald-500 w-4 h-4"
             />
             Habilitar Pago en Landing
