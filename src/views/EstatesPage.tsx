@@ -28,6 +28,7 @@ import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
 import { EstateCanvasModal } from '@/components/EstateCanvasModal';
 import { EstateCanvaGalleryModal } from '@/components/EstateCanvaGalleryModal';
+import { AdvisorSearchSelect } from '@/components/AdvisorSearchSelect';
 
 const EstatesMapView = dynamic(() => import('@/components/EstatesMapView'), { ssr: false });
 
@@ -101,7 +102,7 @@ export const EstatesPage: React.FC = () => {
 
   const fetchAgents = async () => {
     try {
-      const res = await userService.getUsers();
+      const res = await userService.getUsers({ all: true });
       const userList = Array.isArray(res) ? res : (res.data?.data || res.data || []);
       setAgents(userList);
     } catch (err) {
@@ -316,21 +317,18 @@ export const EstatesPage: React.FC = () => {
             <option value="rented">Alquilado</option>
           </select>
 
-          <select
-            value={agentFilter}
-            onChange={(e) => {
-              setAgentFilter(e.target.value);
-              setPage(1);
-            }}
-            className="bg-[#F4F5F7] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20"
-          >
-            <option value="">👤 Todos los Agentes / Asesores</option>
-            {agents.map((ag) => (
-              <option key={ag.id} value={ag.id}>
-                {ag.name || ag.email} (ID: #{ag.id})
-              </option>
-            ))}
-          </select>
+          <div className="w-full sm:w-64 min-w-[220px]">
+            <AdvisorSearchSelect
+              users={agents}
+              selectedUserId={agentFilter}
+              onChange={(userId) => {
+                setAgentFilter(userId);
+                setPage(1);
+              }}
+              placeholder="Todos los Asesores"
+              className="w-full"
+            />
+          </div>
         </div>
 
         {/* View Mode Toggle Buttons */}

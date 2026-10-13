@@ -31,29 +31,41 @@ const createPriceMarkerIcon = (estate: Estate, isSelected: boolean) => {
     ? `$${(price / 1000).toFixed(0)}k` 
     : `$${price}`;
 
-  const isAvailable = String(estate.status) === '1' || estate.status === 'available';
-  const isReserved = String(estate.status) === '2' || estate.status === 'reserved';
+  const isAvailable = String(estate.status) === '1' || estate.status === 'available' || !estate.status || String(estate.status) === 'Disponible';
+  const isReserved = String(estate.status) === '2' || estate.status === 'reserved' || String(estate.status) === 'Reservada';
   
-  let bgGradient = 'background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);';
-  let dotColor = '#10b981'; // green
+  // Available default: Green gradient
+  let bgGradient = 'background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1.5px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);';
+  let arrowColor = '#059669';
+  let dotColor = '#ffffff';
 
   if (isSelected) {
-    bgGradient = 'background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); border: 2px solid #ffffff; box-shadow: 0 0 15px rgba(79, 70, 229, 0.6);';
+    if (isAvailable) {
+      bgGradient = 'background: linear-gradient(135deg, #047857 0%, #10b981 100%); border: 2.5px solid #ffffff; box-shadow: 0 0 20px rgba(16, 185, 129, 0.9);';
+      arrowColor = '#047857';
+      dotColor = '#ffffff';
+    } else {
+      bgGradient = 'background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); border: 2.5px solid #ffffff; box-shadow: 0 0 18px rgba(79, 70, 229, 0.8);';
+      arrowColor = '#3b82f6';
+      dotColor = '#ffffff';
+    }
   } else if (isReserved) {
-    bgGradient = 'background: linear-gradient(135deg, #d97706 0%, #b45309 100%);';
-    dotColor = '#fbbf24';
+    bgGradient = 'background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);';
+    arrowColor = '#d97706';
+    dotColor = '#fef3c7';
   } else if (!isAvailable) {
-    bgGradient = 'background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);';
+    bgGradient = 'background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4);';
+    arrowColor = '#be123c';
     dotColor = '#fecdd3';
   }
 
   const html = `
-    <div style="position: relative; display: flex; flex-direction: column; align-items: center; font-family: system-ui, -apple-system, sans-serif; cursor: pointer; ${isSelected ? 'transform: scale(1.15); z-index: 999;' : ''}">
-      <div style="padding: 5px 10px; border-radius: 20px; ${bgGradient} color: white; font-weight: 800; font-size: 11px; white-space: nowrap; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
-        <span style="width: 7px; height: 7px; border-radius: 50%; background-color: ${dotColor}; display: inline-block;"></span>
+    <div style="position: relative; display: flex; flex-direction: column; align-items: center; font-family: system-ui, -apple-system, sans-serif; cursor: pointer; ${isSelected ? 'transform: scale(1.18); z-index: 999;' : 'transition: transform 0.15s ease;'}">
+      <div style="padding: 5px 10px; border-radius: 20px; ${bgGradient} color: white; font-weight: 800; font-size: 11px; white-space: nowrap; display: flex; align-items: center; gap: 5px;">
+        <span style="width: 7px; height: 7px; border-radius: 50%; background-color: ${dotColor}; display: inline-block; box-shadow: 0 0 4px rgba(255,255,255,0.6);"></span>
         <span>${priceLabel}</span>
       </div>
-      <div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid ${isSelected ? '#3b82f6' : isReserved ? '#b45309' : !isAvailable ? '#be123c' : '#1e293b'}; margin-top: -1px;"></div>
+      <div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid ${arrowColor}; margin-top: -1px;"></div>
     </div>
   `;
 
@@ -232,6 +244,22 @@ export const EstatesMapView: React.FC<EstatesMapViewProps> = ({ estates, loading
 
       {/* Main Leaflet Map View */}
       <div className="flex-1 h-full w-full relative z-10">
+        {/* Status Color Legend Overlay */}
+        <div className="absolute top-3 right-3 z-[1000] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3.5 py-1.5 rounded-2xl shadow-md border border-slate-200/80 dark:border-slate-800 hidden sm:flex items-center gap-3.5 text-[11px] pointer-events-auto">
+          <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-200">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/50"></span>
+            <span>Disponible</span>
+          </div>
+          <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-200">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs shadow-amber-500/50"></span>
+            <span>Reservada</span>
+          </div>
+          <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-200">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-xs shadow-rose-500/50"></span>
+            <span>No disponible</span>
+          </div>
+        </div>
+
         <MapContainer
           center={mapCenter}
           zoom={13}

@@ -98,19 +98,23 @@ export const AdvisorSearchSelect: React.FC<AdvisorSearchSelectProps> = ({
     }
 
     const query = searchTerm.toLowerCase().trim();
+    const cleanNumQuery = query.replace('#', '').trim();
+
     return list.filter((u) => {
       const name = (u.name || '').toLowerCase();
       const lastName = ((u as any).last_name || '').toLowerCase();
       const email = (u.email || '').toLowerCase();
       const agencyName = getUserAgencyName(u).toLowerCase();
       const role = (u.role || '').toLowerCase();
+      const idStr = String(u.id);
 
       return (
         name.includes(query) ||
         lastName.includes(query) ||
         email.includes(query) ||
         agencyName.includes(query) ||
-        role.includes(query)
+        role.includes(query) ||
+        (cleanNumQuery !== '' && idStr.includes(cleanNumQuery))
       );
     });
   }, [users, selectedAgencyId, showAllAgenciesOverride, searchTerm, agencies]);
