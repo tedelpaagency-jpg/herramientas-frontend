@@ -22,12 +22,14 @@ import {
   FileText,
   Layout,
   Download,
-  MapPin
+  MapPin,
+  Maximize2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
 import { EstateCanvasModal } from '@/components/EstateCanvasModal';
 import { EstateCanvaGalleryModal } from '@/components/EstateCanvaGalleryModal';
+import { EstateImageLightboxModal } from '@/components/EstateImageLightboxModal';
 import { AdvisorSearchSelect } from '@/components/AdvisorSearchSelect';
 
 const EstatesMapView = dynamic(() => import('@/components/EstatesMapView'), { ssr: false });
@@ -93,6 +95,16 @@ export const EstatesPage: React.FC = () => {
   const [activeEstateForPdf, setActiveEstateForPdf] = useState<Estate | null>(null);
   const [canvaGalleryModalOpen, setCanvaGalleryModalOpen] = useState(false);
   const [selectedEstateForCanva, setSelectedEstateForCanva] = useState<Estate | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxEstate, setLightboxEstate] = useState<Estate | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const handleExpandImage = (estate: Estate, initialIndex: number = 0) => {
+    setActiveMenuId(null);
+    setLightboxEstate(estate);
+    setLightboxIndex(initialIndex);
+    setLightboxOpen(true);
+  };
 
   const handleViewCanvaGallery = (estate: Estate) => {
     setActiveMenuId(null);
@@ -372,6 +384,7 @@ export const EstatesPage: React.FC = () => {
           estates={mapEstates.length > 0 ? mapEstates : estates} 
           loading={loadingMap} 
           onSelectCanvaGallery={handleViewCanvaGallery}
+          onExpandImage={handleExpandImage}
         />
       ) : isLoading ? (
         <TableSkeleton rows={5} />
@@ -415,13 +428,24 @@ export const EstatesPage: React.FC = () => {
                           {/* Título + Imagen Thumbnail */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex-shrink-0 overflow-hidden relative">
+                              <div 
+                                onClick={() => imgUrl && handleExpandImage(estate, 0)}
+                                className={`w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex-shrink-0 overflow-hidden relative transition-all ${
+                                  imgUrl ? 'cursor-pointer group/thumb hover:ring-2 hover:ring-blue-500 hover:shadow-md' : ''
+                                }`}
+                                title={imgUrl ? "Click para expandir imagen" : ""}
+                              >
                                 {imgUrl ? (
-                                  <img
-                                    src={imgUrl}
-                                    alt={estate.title}
-                                    className="w-full h-full object-cover"
-                                  />
+                                  <>
+                                    <img
+                                      src={imgUrl}
+                                      alt={estate.title}
+                                      className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform duration-300"
+                                    />
+                                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                      <Maximize2 className="w-4 h-4 drop-shadow" />
+                                    </div>
+                                  </>
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center text-slate-400">
                                     <ImageIcon className="w-5 h-5" />
@@ -646,13 +670,27 @@ export const EstatesPage: React.FC = () => {
                     className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group relative"
                   >
                     <div>
-                      <div className="h-48 bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center overflow-hidden">
+                      <div 
+                        onClick={() => imgUrl && handleExpandImage(estate, 0)}
+                        className={`h-48 bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center overflow-hidden ${
+                          imgUrl ? 'cursor-pointer group/cardimg' : ''
+                        }`}
+                        title={imgUrl ? "Click para expandir imagen" : ""}
+                      >
                         {imgUrl ? (
-                          <img
-                            src={imgUrl}
-                            alt={estate.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
+                          <>
+                            <img
+                              src={imgUrl}
+                              alt={estate.title}
+                              className="w-full h-full object-cover group-hover/cardimg:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-slate-950/25 opacity-0 group-hover/cardimg:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                              <span className="bg-slate-900/85 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xl border border-white/20">
+                                <Maximize2 className="w-3.5 h-3.5" />
+                                <span>Expandir imagen</span>
+                              </span>
+                            </div>
+                          </>
                         ) : (
                           <div className="flex flex-col items-center text-slate-400">
                             <ImageIcon className="w-10 h-10 mb-1" />
@@ -905,6 +943,14 @@ export const EstatesPage: React.FC = () => {
         estate={selectedEstateForCanva}
         onCopyWhatsApp={() => selectedEstateForCanva && handleCopyWhatsApp(selectedEstateForCanva)}
         onDownloadPdf={() => selectedEstateForCanva && handleDownloadPdf(selectedEstateForCanva)}
+      />
+
+      {/* Image Lightbox Modal */}
+      <EstateImageLightboxModal
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        estate={lightboxEstate}
+        initialImageIndex={lightboxIndex}
       />
     </div>
   );

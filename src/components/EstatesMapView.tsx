@@ -93,9 +93,15 @@ interface EstatesMapViewProps {
   estates: Estate[];
   loading?: boolean;
   onSelectCanvaGallery?: (estate: Estate) => void;
+  onExpandImage?: (estate: Estate, initialIndex?: number) => void;
 }
 
-export const EstatesMapView: React.FC<EstatesMapViewProps> = ({ estates, loading = false, onSelectCanvaGallery }) => {
+export const EstatesMapView: React.FC<EstatesMapViewProps> = ({ 
+  estates, 
+  loading = false, 
+  onSelectCanvaGallery,
+  onExpandImage
+}) => {
   const [selectedEstate, setSelectedEstate] = useState<Estate | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -210,12 +216,28 @@ export const EstatesMapView: React.FC<EstatesMapViewProps> = ({ estates, loading
                         : 'border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-indigo-800'
                     }`}
                   >
-                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 relative">
+                    <div 
+                      onClick={(e) => {
+                        if (onExpandImage) {
+                          e.stopPropagation();
+                          onExpandImage(estate, 0);
+                        }
+                      }}
+                      className={`w-16 h-16 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 relative transition-transform ${
+                        onExpandImage ? 'group/sideimg cursor-pointer hover:ring-2 hover:ring-indigo-500' : ''
+                      }`}
+                      title={onExpandImage ? "Click para expandir imagen" : ""}
+                    >
                       <img
                         src={getImageUrl(estate)}
                         alt={estate.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover/sideimg:scale-110 transition-transform duration-300"
                       />
+                      {onExpandImage && (
+                        <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/sideimg:opacity-100 transition-opacity flex items-center justify-center text-white">
+                          <Maximize2 className="w-4 h-4 drop-shadow" />
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -286,12 +308,26 @@ export const EstatesMapView: React.FC<EstatesMapViewProps> = ({ estates, loading
               >
                 <Popup className="custom-leaflet-popup">
                   <div className="w-64 p-1 space-y-2">
-                    <div className="h-32 w-full rounded-xl overflow-hidden relative bg-slate-100">
+                    <div 
+                      onClick={() => onExpandImage?.(estate, 0)}
+                      className={`h-32 w-full rounded-xl overflow-hidden relative bg-slate-100 ${
+                        onExpandImage ? 'group/popimg cursor-pointer' : ''
+                      }`}
+                      title={onExpandImage ? "Click para expandir imagen" : ""}
+                    >
                       <img
                         src={getImageUrl(estate)}
                         alt={estate.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover/popimg:scale-105 transition-transform duration-300"
                       />
+                      {onExpandImage && (
+                        <div className="absolute inset-0 bg-slate-950/30 opacity-0 group-hover/popimg:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                          <span className="bg-slate-900/85 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md border border-white/20">
+                            <Maximize2 className="w-3 h-3" />
+                            <span>Expandir imagen</span>
+                          </span>
+                        </div>
+                      )}
                       <div className="absolute top-2 right-2">
                         {getStatusBadge(estate.status)}
                       </div>
