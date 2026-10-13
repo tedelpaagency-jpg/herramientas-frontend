@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { FormSchema, FormFieldSchema, PaymentConfig, StripeAppearanceConfig } from '../../types/landing';
+import { FormSchema, FormFieldSchema, PaymentConfig, StripeAppearanceConfig, FormStyleConfig } from '../../types/landing';
 import { isColorDark, defaultStripeAppearance } from '../../utils/stripeAppearance';
 import { ChevronRight, ChevronLeft, Check, Send, Loader2, CreditCard, Lock, ShieldCheck, AlertCircle } from 'lucide-react';
 
@@ -104,9 +104,29 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       .join('');
   };
 
-  const fields = formSchema?.fields || [];
-  const steps = formSchema?.steps || [];
-  const layout = formSchema?.layout || 'linear';
+  const effectiveFormSchema: FormSchema = useMemo(() => {
+    let resolved: any = formSchema;
+    if (typeof resolved === 'string') {
+      try {
+        resolved = JSON.parse(resolved);
+      } catch {
+        resolved = {};
+      }
+    }
+    if (resolved && typeof resolved.styles === 'string') {
+      try {
+        resolved = {
+          ...resolved,
+          styles: JSON.parse(resolved.styles),
+        };
+      } catch {}
+    }
+    return resolved || {};
+  }, [formSchema]);
+
+  const fields = effectiveFormSchema?.fields || [];
+  const steps = effectiveFormSchema?.steps || [];
+  const layout = effectiveFormSchema?.layout || 'linear';
 
   const isFieldRequired = (field: FormFieldSchema): boolean => {
     if (Boolean(field.required)) {
@@ -278,8 +298,10 @@ export const DynamicFormRenderer: React.FC<Props> = ({
 
   const progressPercent = steps.length > 0 ? Math.round(((currentStepIndex + 1) / steps.length) * 100) : 100;
 
-  const isDark = variant === 'dark';
-  const customStyles = formSchema?.styles || {};
+  const customStyles: FormStyleConfig = effectiveFormSchema?.styles || {};
+  const isDark = customStyles.bg_color
+    ? isColorDark(customStyles.bg_color)
+    : (variant === 'dark');
 
   // Border Radius Mapping
   const radiusClassMap: Record<string, string> = {
@@ -291,20 +313,74 @@ export const DynamicFormRenderer: React.FC<Props> = ({
     '2xl': 'rounded-3xl',
     full: 'rounded-full',
   };
+  const radiusPixelsMap: Record<string, string> = {
+    none: '0px',
+    sm: '6px',
+    md: '8px',
+    lg: '12px',
+    xl: '16px',
+    '2xl': '24px',
+    full: '9999px',
+  };
   const activeRadiusClass = customStyles.border_radius
     ? (radiusClassMap[customStyles.border_radius] || 'rounded-xl')
     : 'rounded-xl';
+  const activeRadiusPixels = customStyles.border_radius
+    ? (radiusPixelsMap[customStyles.border_radius] || customStyles.border_radius)
+    : '12px';
+
+  const cardStyle = customStyles.card_style || 'card';
+
+  // Base card styling
+  const cardBaseStyle: React.CSSProperties =
+    cardStyle === 'minimal'
+      ? {
+          backgroundColor: customStyles.bg_color || 'transparent',
+          color: customStyles.text_color || (isDark ? '#f8fafc' : '#0f172a'),
+          border: 'none',
+          boxShadow: 'none',
+          padding: 0,
+        }
+      : cardStyle === 'glass'
+      ? {
+          backgroundColor: customStyles.bg_color || (isDark ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.85)'),
+          color: customStyles.text_color || (isDark ? '#f8fafc' : '#0f172a'),
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.1)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderRadius: activeRadiusPixels,
+          padding: '1.75rem',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)',
+        }
+      : cardStyle === 'bordered'
+      ? {
+          backgroundColor: customStyles.bg_color || (isDark ? '#020617' : '#f8fafc'),
+          color: customStyles.text_color || (isDark ? '#f8fafc' : '#0f172a'),
+          border: isDark ? '1px solid #1e293b' : '1px solid #cbd5e1',
+          borderRadius: activeRadiusPixels,
+          padding: '1.75rem',
+          boxShadow: 'none',
+        }
+      : {
+          // Default Card
+          backgroundColor: customStyles.bg_color || (isDark ? '#0f172a' : '#ffffff'),
+          color: customStyles.text_color || (isDark ? '#f8fafc' : '#0f172a'),
+          border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
+          borderRadius: activeRadiusPixels,
+          padding: '1.75rem',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+        };
 
   // Base container class calculation
-  let containerClasses = className;
-  if (!containerClasses) {
-    if (customStyles.card_style === 'minimal') {
+  let containerClasses = className || '';
+  if (!containerClasses || containerClasses === 'space-y-5') {
+    if (cardStyle === 'minimal') {
       containerClasses = isDark ? 'space-y-6 text-slate-100' : 'space-y-5 text-slate-900';
-    } else if (customStyles.card_style === 'glass') {
+    } else if (cardStyle === 'glass') {
       containerClasses = `space-y-6 p-6 sm:p-8 shadow-2xl backdrop-blur-md ${activeRadiusClass} ${
         isDark ? 'bg-slate-900/70 text-slate-100 border border-white/10' : 'bg-white/80 text-slate-900 border border-white/20'
       }`;
-    } else if (customStyles.card_style === 'bordered') {
+    } else if (cardStyle === 'bordered') {
       containerClasses = `space-y-6 p-6 sm:p-8 ${activeRadiusClass} ${
         isDark ? 'bg-slate-950/60 text-slate-100 border border-slate-800' : 'bg-slate-50/60 text-slate-900 border border-slate-300'
       }`;
@@ -318,9 +394,10 @@ export const DynamicFormRenderer: React.FC<Props> = ({
 
   // Inline CSS Overrides
   const containerStyle: React.CSSProperties = {
+    ...cardBaseStyle,
     ...(customStyles.bg_color ? { backgroundColor: customStyles.bg_color } : {}),
     ...(customStyles.text_color ? { color: customStyles.text_color } : {}),
-    ...(customStyles.border_radius === 'none' ? { borderRadius: '0px' } : {}),
+    ...(customStyles.border_radius ? { borderRadius: activeRadiusPixels } : {}),
   };
 
   const titleStyle: React.CSSProperties = customStyles.text_color ? { color: customStyles.text_color } : {};
@@ -338,16 +415,33 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   }`;
 
   const inputInlineStyle: React.CSSProperties = {
-    ...(customStyles.input_bg_color ? { backgroundColor: customStyles.input_bg_color } : {}),
-    ...(customStyles.input_text_color ? { color: customStyles.input_text_color } : {}),
-    ...(customStyles.input_border_color ? { borderColor: customStyles.input_border_color } : {}),
-    ...(customStyles.border_radius === 'none' ? { borderRadius: '0px' } : {}),
+    backgroundColor: customStyles.input_bg_color || (isDark ? '#020617' : '#ffffff'),
+    color: customStyles.input_text_color || (isDark ? '#ffffff' : '#0f172a'),
+    borderColor: customStyles.input_border_color || (isDark ? '#1e293b' : '#cbd5e1'),
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderRadius: activeRadiusPixels,
+    outline: 'none',
+    boxSizing: 'border-box',
+    width: '100%',
   };
 
   const buttonInlineStyle: React.CSSProperties = {
-    ...(customStyles.button_bg_color ? { background: customStyles.button_bg_color, backgroundColor: customStyles.button_bg_color } : {}),
-    ...(customStyles.button_text_color ? { color: customStyles.button_text_color } : {}),
-    ...(customStyles.border_radius === 'none' ? { borderRadius: '0px' } : {}),
+    background: customStyles.button_bg_color || (isDark ? '#4f46e5' : '#6366f1'),
+    backgroundColor: !customStyles.button_bg_color?.includes('gradient')
+      ? (customStyles.button_bg_color || (isDark ? '#4f46e5' : '#6366f1'))
+      : undefined,
+    backgroundImage: customStyles.button_bg_color?.includes('gradient')
+      ? customStyles.button_bg_color
+      : 'none',
+    color: customStyles.button_text_color || '#ffffff',
+    borderRadius: activeRadiusPixels,
+    padding: '14px 24px',
+    fontWeight: '700',
+    border: 'none',
+    cursor: 'pointer',
+    width: '100%',
+    boxSizing: 'border-box',
   };
 
   // Stripe Appearance Integration
@@ -1453,12 +1547,14 @@ export const DynamicFormRenderer: React.FC<Props> = ({
             disabled={loading || isProcessingPayment}
             onMouseEnter={() => setIsBtnHovered(true)}
             onMouseLeave={() => setIsBtnHovered(false)}
-            className={`w-full flex items-center justify-center gap-2 text-white text-sm px-6 py-3.5 ${activeRadiusClass} font-bold shadow-lg hover:shadow-emerald-500/20 transition-all duration-200 disabled:opacity-50 cursor-pointer ${
+            className={`w-full flex items-center justify-center gap-2 text-sm px-6 py-3.5 ${activeRadiusClass} font-bold shadow-lg transition-all duration-200 disabled:opacity-50 cursor-pointer ${
               effectiveStripeAppearance && paymentConfig?.enabled
+                ? 'text-white'
+                : customStyles.button_bg_color
                 ? ''
                 : paymentConfig?.enabled
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500'
-                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white'
             }`}
             style={{
               display: 'flex',

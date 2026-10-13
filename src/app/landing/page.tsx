@@ -392,9 +392,9 @@ function PublicLandingContent() {
         ))}
 
         {/* Dynamic Form Container */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
+        <div className="w-full max-w-xl mx-auto">
           {submitted ? (
-            <div className="text-center py-10 space-y-3">
+            <div className="text-center py-10 space-y-3 bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
               <CheckCircle2 className="w-14 h-14 text-teal-400 mx-auto" />
               <h3 className="text-2xl font-bold text-white">¡Gracias por registrarte!</h3>
               <p className="text-sm text-slate-400">Hemos recibido tus datos con éxito.</p>
@@ -403,7 +403,6 @@ function PublicLandingContent() {
             <DynamicFormRenderer
               formSchema={landing.form_schema}
               onSubmit={handleSubmitLead}
-              variant="dark"
               paymentConfig={landing.payment_config}
               stripePublishableKey={landing.stripe_publishable_key}
               termsAndConditions={landing.terms_and_conditions}
