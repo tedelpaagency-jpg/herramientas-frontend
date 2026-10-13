@@ -58,15 +58,15 @@ export const AdminPlansPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Filter & Tab state
-  const [activeTab, setActiveTab] = useState<'all' | 'global' | 'white_label' | 'permission_groups'>('all');
+  const [activeTab, setActiveTab] = useState<'plans' | 'permission_groups'>('plans');
   const [selectedWlId, setSelectedWlId] = useState<string | number>('all');
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'permission_groups' || tabParam === 'permissions' || tabParam === 'grupos') {
       setActiveTab('permission_groups');
-    } else if (tabParam === 'global' || tabParam === 'white_label' || tabParam === 'all') {
-      setActiveTab(tabParam as any);
+    } else {
+      setActiveTab('plans');
     }
   }, [searchParams]);
 
@@ -76,7 +76,7 @@ export const AdminPlansPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    type: 'agency' as 'white_label' | 'agency',
+    type: 'white_label' as 'white_label' | 'agency',
     white_label_id: '' as string | number,
     price: 0,
     billing_type: 'fixed' as 'fixed' | 'commission',
@@ -124,7 +124,7 @@ export const AdminPlansPage: React.FC = () => {
     setFormData({
       name: '',
       description: '',
-      type: 'agency',
+      type: isSuperAdmin ? 'white_label' : 'agency',
       white_label_id: isWhiteLabelAdmin ? (userWl?.id || '') : '',
       price: 0,
       billing_type: 'fixed',
@@ -143,7 +143,7 @@ export const AdminPlansPage: React.FC = () => {
     setFormData({
       name: plan.name,
       description: plan.description || '',
-      type: plan.type || 'agency',
+      type: plan.type || (isSuperAdmin ? 'white_label' : 'agency'),
       white_label_id: plan.white_label_id || '',
       price: plan.price,
       billing_type: plan.billing_type || 'fixed',
@@ -167,8 +167,10 @@ export const AdminPlansPage: React.FC = () => {
     const payload = {
       name: formData.name,
       description: formData.description,
-      type: formData.type,
-      white_label_id: formData.white_label_id ? Number(formData.white_label_id) : null,
+      type: isSuperAdmin ? 'white_label' : (isWhiteLabelAdmin ? 'agency' : formData.type),
+      white_label_id: isWhiteLabelAdmin
+        ? (userWl?.id ? Number(userWl.id) : null)
+        : (formData.white_label_id ? Number(formData.white_label_id) : null),
       price: Number(formData.price),
       billing_type: formData.billing_type,
       commission_percentage: formData.billing_type === 'commission' ? Number(formData.commission_percentage) : null,
@@ -218,13 +220,28 @@ export const AdminPlansPage: React.FC = () => {
     }
   };
 
-  // Helper to check if a plan is Global (created for system / without specific WL)
-  const isGlobalPlan = (p: Plan) => !p.white_label_id && (p.type === 'white_label' || !p.white_label);
+  // Helper to check if a plan is Global (available for all white labels)
+  const isGlobalPlan = (p: Plan) => !p.white_label_id;
 
-  const globalPlansCount = plans.filter(isGlobalPlan).length;
-  const whiteLabelPlansCount = plans.filter((p) => !isGlobalPlan(p)).length;
+  // Filtrado principal por rol
+  const relevantPlans = plans.filter((p) => {
+    // Para Super Admin: en la lista solo los planes para la marca blanca (type === 'white_label')
+    if (isSuperAdmin && p.type !== 'white_label') {
+      return false;
+    }
 
-  const filteredPlans = plans.filter((p) => {
+    // Para Marca Blanca: solo se muestran los planes propios de su marca blanca
+    if (isWhiteLabelAdmin) {
+      const myWlId = userWl?.id;
+      if (myWlId && p.white_label_id !== myWlId && p.white_label?.id !== myWlId) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  const filteredPlans = relevantPlans.filter((p) => {
     const matchesSearch =
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -232,15 +249,15 @@ export const AdminPlansPage: React.FC = () => {
 
     if (!matchesSearch) return false;
 
-    // Filter by tab selection
-    if (activeTab === 'global' && !isGlobalPlan(p)) return false;
-    if (activeTab === 'white_label' && isGlobalPlan(p)) return false;
-
-    // Filter by selected Marca Blanca dropdown
-    if (selectedWlId !== 'all') {
-      const targetId = Number(selectedWlId);
-      if (p.white_label_id !== targetId && p.white_label?.id !== targetId) {
-        return false;
+    // Filter by selected Marca Blanca dropdown (para Super Admin)
+    if (isSuperAdmin && selectedWlId !== 'all') {
+      if (selectedWlId === 'global') {
+        if (p.white_label_id) return false;
+      } else {
+        const targetId = Number(selectedWlId);
+        if (p.white_label_id !== targetId && p.white_label?.id !== targetId) {
+          return false;
+        }
       }
     }
 
@@ -258,12 +275,12 @@ export const AdminPlansPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                {isWhiteLabelAdmin ? 'Planes de mi Marca & Permisos' : 'Gestión de Planes'}
+                {isWhiteLabelAdmin ? 'Planes de mi Marca & Permisos' : 'Planes para Marcas Blancas'}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
                 {isWhiteLabelAdmin
-                  ? 'Administra los planes de suscripción para tus agencias y los grupos de permisos de acceso'
-                  : 'Administra los planes de suscripción globales del sistema y de Marcas Blancas'}
+                  ? 'Administra exclusivamente los planes de suscripción de tu Marca Blanca para tus agencias y los grupos de permisos'
+                  : 'Administra los planes de suscripción para las Marcas Blancas de la plataforma'}
               </p>
             </div>
           </div>
@@ -272,7 +289,7 @@ export const AdminPlansPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
-            onClick={() => setActiveTab(activeTab === 'permission_groups' ? 'all' : 'permission_groups')}
+            onClick={() => setActiveTab(activeTab === 'permission_groups' ? 'plans' : 'permission_groups')}
             className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-xs ${
               activeTab === 'permission_groups'
                 ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-md'
@@ -291,7 +308,7 @@ export const AdminPlansPage: React.FC = () => {
           <button
             onClick={() => {
               if (activeTab === 'permission_groups') {
-                setActiveTab('all');
+                setActiveTab('plans');
               }
               openCreateModal();
             }}
@@ -320,52 +337,23 @@ export const AdminPlansPage: React.FC = () => {
       {/* Main Tabs Navigation */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
         <button
-          onClick={() => { setActiveTab('all'); setSelectedWlId('all'); }}
+          onClick={() => { setActiveTab('plans'); setSelectedWlId('all'); }}
           className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all ${
-            activeTab === 'all'
+            activeTab === 'plans'
               ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
               : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
           }`}
         >
-          <span>{isWhiteLabelAdmin ? 'Planes de mi Marca' : 'Todos los Planes'}</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
-            {plans.length}
+          {isWhiteLabelAdmin ? (
+            <Layers className="w-3.5 h-3.5" />
+          ) : (
+            <Building2 className="w-3.5 h-3.5" />
+          )}
+          <span>{isWhiteLabelAdmin ? 'Planes de mi Marca' : 'Planes para Marcas Blancas'}</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'plans' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
+            {relevantPlans.length}
           </span>
         </button>
-
-        {(!isWhiteLabelAdmin || globalPlansCount > 0) && (
-          <button
-            onClick={() => { setActiveTab('global'); setSelectedWlId('all'); }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all ${
-              activeTab === 'global'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>Planes Globales (Sistema)</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'global' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
-              {globalPlansCount}
-            </span>
-          </button>
-        )}
-
-        {!isWhiteLabelAdmin && (
-          <button
-            onClick={() => setActiveTab('white_label')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all ${
-              activeTab === 'white_label'
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Planes de Marcas Blancas</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'white_label' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
-              {whiteLabelPlansCount}
-            </span>
-          </button>
-        )}
 
         <button
           onClick={() => setActiveTab('permission_groups')}
@@ -406,7 +394,7 @@ export const AdminPlansPage: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setActiveTab('all')}
+              onClick={() => setActiveTab('plans')}
               className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/20 inline-flex items-center gap-2 shrink-0 cursor-pointer"
             >
               <Layers className="w-4 h-4" />
@@ -451,121 +439,137 @@ export const AdminPlansPage: React.FC = () => {
 
           {/* Filter Controls: Search & Marca Blanca Select Dropdown */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between">
-        {/* Search */}
-        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre de plan o marca blanca..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-transparent text-xs font-medium outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
-          />
-        </div>
+            {/* Search */}
+            <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-3 flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder={isWhiteLabelAdmin ? "Buscar en planes de mi marca..." : "Buscar plan para marca blanca..."}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-transparent text-xs font-medium outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
+              />
+            </div>
 
-        {/* Marca Blanca Selector Dropdown */}
-        {(activeTab === 'white_label' || activeTab === 'all') && whiteLabels.length > 0 && (
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800">
-            <Filter className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-              Marca Blanca:
-            </span>
-            <select
-              value={selectedWlId}
-              onChange={(e) => setSelectedWlId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-              className="bg-transparent text-xs font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer"
-            >
-              <option value="all">Todas las Marcas Blancas ({whiteLabels.length})</option>
+            {/* Marca Blanca Selector Dropdown (Solo Super Admin) */}
+            {isSuperAdmin && whiteLabels.length > 0 && (
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                <Filter className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                  Marca Blanca:
+                </span>
+                <select
+                  value={selectedWlId}
+                  onChange={(e) => setSelectedWlId(e.target.value === 'all' || e.target.value === 'global' ? e.target.value : Number(e.target.value))}
+                  className="bg-transparent text-xs font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer"
+                >
+                  <option value="all">Todas las Marcas Blancas ({whiteLabels.length})</option>
+                  <option value="global">🌐 General (Todas las Marcas)</option>
+                  {whiteLabels.map((wl) => (
+                    <option key={wl.id} value={wl.id}>
+                      🏢 {wl.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Marca Blanca Filter Chips (Solo Super Admin) */}
+          {isSuperAdmin && whiteLabels.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+              <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">
+                Filtrar Marca:
+              </span>
+              <button
+                onClick={() => setSelectedWlId('all')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-colors shrink-0 ${
+                  selectedWlId === 'all'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                Todas
+              </button>
+              <button
+                onClick={() => setSelectedWlId('global')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-colors shrink-0 flex items-center gap-1.5 ${
+                  selectedWlId === 'global'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+                }`}
+              >
+                <Globe className="w-3 h-3" />
+                <span>Generales</span>
+              </button>
               {whiteLabels.map((wl) => (
-                <option key={wl.id} value={wl.id}>
-                  🏢 {wl.name}
-                </option>
+                <button
+                  key={wl.id}
+                  onClick={() => setSelectedWlId(wl.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-colors shrink-0 flex items-center gap-1.5 ${
+                    selectedWlId === wl.id
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 hover:bg-purple-100 dark:hover:bg-purple-900/40'
+                  }`}
+                >
+                  <Building2 className="w-3 h-3" />
+                  <span>{wl.name}</span>
+                </button>
               ))}
-            </select>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
 
-      {/* Quick Marca Blanca Filter Chips (when Marcas Blancas exist and tab is white_label or all) */}
-      {(activeTab === 'white_label' || activeTab === 'all') && whiteLabels.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
-          <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">
-            Filtrar Marca:
-          </span>
-          <button
-            onClick={() => setSelectedWlId('all')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-colors shrink-0 ${
-              selectedWlId === 'all'
-                ? 'bg-purple-600 text-white'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-            }`}
-          >
-            Todas
-          </button>
-          {whiteLabels.map((wl) => (
-            <button
-              key={wl.id}
-              onClick={() => setSelectedWlId(wl.id)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-colors shrink-0 flex items-center gap-1.5 ${
-                selectedWlId === wl.id
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 hover:bg-purple-100 dark:hover:bg-purple-900/40'
-              }`}
-            >
-              <Building2 className="w-3 h-3" />
-              <span>{wl.name}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
-        {loading ? (
-          <TableSkeleton rows={5} />
-        ) : filteredPlans.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-xs">
-            No se encontraron planes que coincidan con la búsqueda o filtro seleccionado.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="py-3.5 px-4">Plan</th>
-                  <th className="py-3.5 px-4">Origen / Marca Blanca</th>
-                  <th className="py-3.5 px-4">Método de Cobro</th>
-                  <th className="py-3.5 px-4">Precio</th>
-                  <th className="py-3.5 px-4">Tipos de Agencia</th>
-                  <th className="py-3.5 px-4">Permisos</th>
-                  <th className="py-3.5 px-4">Estado</th>
-                  <th className="py-3.5 px-4 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {filteredPlans.map((plan) => {
-                  const isGlobal = isGlobalPlan(plan);
-                  return (
-                    <tr key={plan.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900 dark:text-slate-100">{plan.name}</p>
-                        {plan.description && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">{plan.description}</p>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {isGlobal ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800 font-bold text-[10px]">
-                            <Globe className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                            <span>Global (Sistema)</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800 font-bold text-[10px]">
-                            <Building2 className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                            <span>{plan.white_label?.name || `Marca Blanca #${plan.white_label_id}`}</span>
-                          </span>
-                        )}
-                      </td>
+          {/* Table */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+            {loading ? (
+              <TableSkeleton rows={5} />
+            ) : filteredPlans.length === 0 ? (
+              <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-xs">
+                No se encontraron planes que coincidan con la búsqueda o filtro seleccionado.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="py-3.5 px-4">Plan</th>
+                      <th className="py-3.5 px-4">{isWhiteLabelAdmin ? 'Marca Blanca' : 'Destinatario'}</th>
+                      <th className="py-3.5 px-4">Método de Cobro</th>
+                      <th className="py-3.5 px-4">Precio</th>
+                      <th className="py-3.5 px-4">Tipos de Agencia</th>
+                      <th className="py-3.5 px-4">Permisos</th>
+                      <th className="py-3.5 px-4">Estado</th>
+                      <th className="py-3.5 px-4 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                    {filteredPlans.map((plan) => {
+                      return (
+                        <tr key={plan.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <p className="font-bold text-slate-900 dark:text-slate-100">{plan.name}</p>
+                            {plan.description && (
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">{plan.description}</p>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {isWhiteLabelAdmin ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800 font-bold text-[10px]">
+                                <Building2 className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                <span>{plan.white_label?.name || userWl?.name || 'Mi Marca Blanca'}</span>
+                              </span>
+                            ) : plan.white_label ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800 font-bold text-[10px]">
+                                <Building2 className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                <span>{plan.white_label.name}</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800 font-bold text-[10px]">
+                                <Globe className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                                <span>General (Todas las Marcas)</span>
+                              </span>
+                            )}
+                          </td>
                       <td className="py-3.5 px-4 font-semibold">
                         {plan.billing_type === 'commission' ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
@@ -714,19 +718,26 @@ export const AdminPlansPage: React.FC = () => {
                 />
               </div>
 
-              {/* Asignación Marca Blanca vs Global */}
-              {whiteLabels.length > 0 && (
+              {/* Asignación Marca Blanca */}
+              {isWhiteLabelAdmin ? (
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Marca Blanca Asociada</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Marca Blanca</label>
+                  <div className="w-full px-3 py-2 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200 text-xs font-bold flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-purple-600" />
+                    <span>{userWl?.name || 'Mi Marca Blanca'}</span>
+                  </div>
+                </div>
+              ) : whiteLabels.length > 0 && (
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Marca Blanca Asignada
+                  </label>
                   <select
                     value={formData.white_label_id}
                     onChange={(e) => setFormData({ ...formData, white_label_id: e.target.value })}
-                    disabled={isWhiteLabelAdmin}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold disabled:opacity-75 disabled:bg-slate-100 dark:disabled:bg-slate-800/60"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
                   >
-                    {!isWhiteLabelAdmin && (
-                      <option value="">🌐 Plan Global (Sistema / Sin Marca Blanca)</option>
-                    )}
+                    <option value="">🌐 General (Disponible para todas las Marcas Blancas)</option>
                     {whiteLabels.map((wl) => (
                       <option key={wl.id} value={wl.id}>
                         🏢 {wl.name}
@@ -739,14 +750,26 @@ export const AdminPlansPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo de Plan (Destinatario) *</label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'white_label' | 'agency' })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
-                  >
-                    <option value="agency">Plan para Agencias</option>
-                    <option value="white_label">Plan para Marcas Blancas (Organizaciones)</option>
-                  </select>
+                  {isSuperAdmin ? (
+                    <div className="w-full px-3 py-2 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200 text-xs font-bold flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-purple-600" />
+                      <span>Plan para Marcas Blancas</span>
+                    </div>
+                  ) : isWhiteLabelAdmin ? (
+                    <div className="w-full px-3 py-2 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 text-xs font-bold flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-blue-600" />
+                      <span>Plan para Agencias</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value as 'white_label' | 'agency' })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold"
+                    >
+                      <option value="agency">Plan para Agencias</option>
+                      <option value="white_label">Plan para Marcas Blancas (Organizaciones)</option>
+                    </select>
+                  )}
                 </div>
 
                 <div>

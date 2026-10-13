@@ -50,6 +50,7 @@ export const AdminAgenciesPage: React.FC = () => {
     city: '',
     province: '',
     domain: '',
+    white_label_id: '' as string | number,
     stripe_publishable_key: '',
     stripe_secret_key: '',
     stripe_webhook_secret: '',
@@ -104,6 +105,7 @@ export const AdminAgenciesPage: React.FC = () => {
       city: '',
       province: '',
       domain: '',
+      white_label_id: '',
       stripe_publishable_key: '',
       stripe_secret_key: '',
       stripe_webhook_secret: '',
@@ -126,6 +128,7 @@ export const AdminAgenciesPage: React.FC = () => {
       city: agency.city || '',
       province: agency.province || '',
       domain: agency.domain || '',
+      white_label_id: agency.white_label_id || '',
       stripe_publishable_key: agency.stripe_publishable_key || '',
       stripe_secret_key: agency.stripe_secret_key || '',
       stripe_webhook_secret: agency.stripe_webhook_secret || '',
@@ -141,10 +144,17 @@ export const AdminAgenciesPage: React.FC = () => {
     setError(null);
     setSuccess(null);
 
-    const payload = {
+    const payload: any = {
       ...formData,
-      plan_id: formData.plan_id ? Number(formData.plan_id) : undefined,
+      white_label_id: formData.white_label_id ? Number(formData.white_label_id) : null,
     };
+
+    if (editingAgency) {
+      // El plan de la agencia NO se puede modificar desde el formulario de edición; está ligado a la suscripción
+      delete payload.plan_id;
+    } else {
+      payload.plan_id = formData.plan_id ? Number(formData.plan_id) : undefined;
+    }
 
     try {
       if (editingAgency) {
@@ -447,17 +457,52 @@ export const AdminAgenciesPage: React.FC = () => {
                   />
                 </div>
 
+                {editingAgency ? (
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Plan de la Agencia</label>
+                    <div className="p-2.5 px-3 bg-amber-50/60 dark:bg-amber-950/20 rounded-xl border border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                          {editingAgency.current_subscription?.plan?.name || editingAgency.plan?.name || 'Plan Estándar'}
+                        </span>
+                        <p className="text-[10px] text-slate-500">Ligado a suscripción activa</p>
+                      </div>
+                      <span className="text-[10px] bg-amber-200/60 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200 px-2 py-0.5 rounded-full font-bold">
+                        No modificable aquí
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Plan Inicial</label>
+                    <select
+                      value={formData.plan_id}
+                      onChange={(e) => setFormData({ ...formData, plan_id: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                    >
+                      <option value="">Seleccionar Plan...</option>
+                      {plans.map((plan) => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.name} ({plan.billing_type === 'commission' ? `${plan.commission_percentage || 0}% Comisión` : `$${Number(plan.price).toFixed(2)}/mes`})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Plan Inicial</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Marca Blanca {editingAgency ? '(Reasignar)' : ''}
+                  </label>
                   <select
-                    value={formData.plan_id}
-                    onChange={(e) => setFormData({ ...formData, plan_id: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                    value={formData.white_label_id}
+                    onChange={(e) => setFormData({ ...formData, white_label_id: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
                   >
-                    <option value="">Seleccionar Plan...</option>
-                    {plans.map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name} ({plan.billing_type === 'commission' ? `${plan.commission_percentage || 0}% Comisión` : `$${Number(plan.price).toFixed(2)}/mes`})
+                    <option value="">Sin Marca Blanca Asignada</option>
+                    {whiteLabels.map((wl) => (
+                      <option key={wl.id} value={wl.id}>
+                        🏢 {wl.name}
                       </option>
                     ))}
                   </select>

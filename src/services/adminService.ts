@@ -3,12 +3,12 @@ import { Plan, Permission, Agency, Subscription, PlanPermission } from '../types
 
 export const adminService = {
   // === PLANES ===
-  getPlans: async (): Promise<Plan[]> => {
+  getPlans: async (params?: Record<string, any>): Promise<Plan[]> => {
     try {
-      const res = await apiClient.get('/v1/plans');
+      const res = await apiClient.get('/v1/plans', { params });
       return res.data?.data || res.data || [];
     } catch {
-      const res = await apiClient.get('/v1/admin/plans');
+      const res = await apiClient.get('/v1/admin/plans', { params });
       return res.data?.data || res.data || [];
     }
   },
