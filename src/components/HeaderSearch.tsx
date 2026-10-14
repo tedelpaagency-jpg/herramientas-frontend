@@ -262,6 +262,15 @@ const SYSTEM_MODULES: ModuleItem[] = [
     keywords: ['marketing', 'campañas', 'email', 'correos masivos', 'newsletters'],
   },
   {
+    id: 'mod-marketing-b2b',
+    label: 'Marketing B2B (Creativos Publicitarios)',
+    path: '/marketing-b2b',
+    icon: Sparkles,
+    category: 'MARKETING & LEGAL',
+    permission: ['marketing_b2b', 'marketing_b2b.view', 'marketing_b2b.manage', 'marketing_b2b.generate'],
+    keywords: ['marketing', 'creativos', 'b2b', 'publicidad', 'canva', 'flyers', 'historias', 'reels', 'templates', 'videos', 'redes sociales'],
+  },
+  {
     id: 'mod-automations',
     label: 'Automatizaciones & Webhooks',
     path: '/automations',

@@ -9,7 +9,7 @@ import {
   Home, Users, Calendar, Mail, FileText, ShoppingCart, Globe, ShieldCheck, 
   Building2, Plane, Package, Trophy, GraduationCap, BookOpen, UserCheck, 
   Store, Briefcase, CreditCard, Layers, Key, Settings, Wrench, HelpCircle, 
-  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator, Palette, X, Film, Image as ImageIcon, LayoutGrid, FileCheck
+  LayoutDashboard, Compass, CheckSquare, Zap, FileSpreadsheet, MapPin, Calculator, Palette, X, Film, Image as ImageIcon, LayoutGrid, FileCheck, Sparkles
 } from 'lucide-react';
 
 
@@ -300,6 +300,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Hunter Stores', path: '/hunter', icon: Store, permission: ['view_hunter', 'hunter.view', 'hunter'] },
         { label: 'Landings', path: '/landings', icon: Globe, permission: ['landings.view', 'view_landings', 'landings', 'landings.create', 'landings.edit', 'landings.delete', 'manage_landings'] },
         { label: 'Marketing & Campañas', path: '/marketing', icon: Zap, permission: ['email_marketing', 'view_email_marketing', 'campaigns.view', 'marketing.view', 'marketing'] },
+        { label: 'Marketing B2B (Creativos)', path: '/marketing-b2b', icon: Sparkles, permission: ['marketing_b2b', 'marketing_b2b.view', 'marketing_b2b.manage', 'marketing_b2b.generate'] },
         { label: 'Automatizaciones', path: '/automations', icon: Wrench, permission: ['automations', 'view_automations', 'automations.view'] },
       ],
     },
