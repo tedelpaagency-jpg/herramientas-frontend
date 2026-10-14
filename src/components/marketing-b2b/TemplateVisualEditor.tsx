@@ -4,20 +4,48 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Save, Eye, Plus, Trash2, ArrowUp, ArrowDown, Move, 
   Layers, CheckSquare, Square, DollarSign, Image as ImageIcon, 
-  Type, User, Tag, Shield, RefreshCw, X, Check, Lock, Unlock, Sliders
+  Type, User, Tag, Shield, RefreshCw, X, Check, Lock, Unlock, Sliders,
+  Globe, Folder, Film, Sparkles
 } from 'lucide-react';
 import { 
   MarketingTemplate, 
   MarketingTemplateElement, 
   MarketingMediaResource, 
+  MarketingCreativeCategory,
   AspectRatioType, 
   ElementType 
 } from '../../types/marketingB2B';
+import { Media } from '../../types/media';
+import { MediaPicker } from '../media/MediaPicker';
 import marketingB2BService from '../../services/marketingB2BService';
 import toast from 'react-hot-toast';
 
+const COUNTRIES = [
+  { code: '', name: 'Global / Todos los países' },
+  { code: 'US', name: 'Estados Unidos' },
+  { code: 'ES', name: 'España' },
+  { code: 'MX', name: 'México' },
+  { code: 'CO', name: 'Colombia' },
+  { code: 'DO', name: 'República Dominicana' },
+  { code: 'CA', name: 'Canadá' },
+  { code: 'AR', name: 'Argentina' },
+  { code: 'CL', name: 'Chile' },
+  { code: 'PE', name: 'Perú' },
+  { code: 'EC', name: 'Ecuador' },
+  { code: 'PA', name: 'Panamá' },
+  { code: 'CR', name: 'Costa Rica' },
+  { code: 'GT', name: 'Guatemala' },
+  { code: 'UY', name: 'Uruguay' },
+  { code: 'BR', name: 'Brasil' },
+  { code: 'GB', name: 'Reino Unido' },
+  { code: 'FR', name: 'Francia' },
+  { code: 'IT', name: 'Italia' },
+  { code: 'DE', name: 'Alemania' },
+];
+
 interface TemplateVisualEditorProps {
   template?: MarketingTemplate | null;
+  initialMedia?: Media | null;
   initialResource?: MarketingMediaResource | null;
   onSaved?: (savedTemplate: MarketingTemplate) => void;
   onClose?: () => void;
@@ -25,6 +53,7 @@ interface TemplateVisualEditorProps {
 
 export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
   template,
+  initialMedia,
   initialResource,
   onSaved,
   onClose,
@@ -39,10 +68,38 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Master Resource
+  // Media Library Background
+  const [selectedMedia, setSelectedMedia] = useState<Media | null>(() => {
+    if (template?.media) return template.media;
+    if (initialMedia) return initialMedia;
+    return null;
+  });
+
+  // Legacy Master Resource support
   const [resource, setResource] = useState<MarketingMediaResource | null>(
     template?.resource || initialResource || null
   );
+
+  // Segmentación: País y Categoría
+  const [country, setCountry] = useState<string>(template?.country || '');
+  const [categoryId, setCategoryId] = useState<number | ''>(template?.category_id || '');
+  const [categories, setCategories] = useState<MarketingCreativeCategory[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+
+  useEffect(() => {
+    const fetchCats = async () => {
+      setIsLoadingCategories(true);
+      try {
+        const cats = await marketingB2BService.getCategories({ is_active: true });
+        setCategories(cats);
+      } catch (err) {
+        console.error('Error fetching categories in editor:', err);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    fetchCats();
+  }, []);
 
   // Layers list
   const [elements, setElements] = useState<MarketingTemplateElement[]>(() => {
@@ -298,9 +355,27 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
     setDragStart(null);
   };
 
+  const backgroundUrl = selectedMedia?.full_url || selectedMedia?.url || template?.media?.full_url || template?.media?.url || template?.preview_full_url || template?.media_url || template?.resource?.file_url || resource?.file_url || null;
+
+  const isVideoMedia = (() => {
+    if (selectedMedia) {
+      if (selectedMedia.file_type === 'video') return true;
+      if (selectedMedia.mime_type && selectedMedia.mime_type.startsWith('video/')) return true;
+      const pathOrUrl = (selectedMedia.extension || selectedMedia.url || selectedMedia.file_name || '').toLowerCase();
+      if (pathOrUrl.endsWith('.mp4') || pathOrUrl.endsWith('.mov') || pathOrUrl.endsWith('.webm')) return true;
+      return false;
+    }
+    if (resource) {
+      return resource.type === 'video';
+    }
+    if (template?.media_type === 'video') return true;
+    return false;
+  })();
+
   const handleSave = async () => {
-    if (!resource) {
-      toast.error('Debe seleccionar un recurso multimedia maestro.');
+    const hasMedia = !!(selectedMedia?.id || template?.media_id || resource?.id || template?.resource_id || backgroundUrl);
+    if (!hasMedia) {
+      toast.error('Debe seleccionar una imagen o video desde la biblioteca de medios.');
       return;
     }
 
@@ -313,10 +388,11 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
     const toastId = toast.loading('Guardando plantilla publicitaria...');
 
     try {
-      const payload = {
-        resource_id: resource.id,
+      const payload: any = {
         name: templateName,
         description,
+        country: country || null,
+        category_id: categoryId ? Number(categoryId) : null,
         aspect_ratio: aspectRatio,
         base_cost: Number(baseCost),
         suggested_price: Number(suggestedPrice),
@@ -330,6 +406,18 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
         },
         elements,
       };
+
+      if (selectedMedia?.id) {
+        payload.media_id = selectedMedia.id;
+      } else if (template?.media_id) {
+        payload.media_id = template.media_id;
+      }
+
+      if (resource?.id) {
+        payload.resource_id = resource.id;
+      } else if (template?.resource_id) {
+        payload.resource_id = template.resource_id;
+      }
 
       let result: MarketingTemplate;
       if (template?.id) {
@@ -356,11 +444,11 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
   const selectedElemIdx = elements.findIndex((e) => e.field_key === selectedElementId);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] bg-slate-950 text-white rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
+    <div className="flex flex-col h-[calc(100vh-120px)] bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm dark:shadow-2xl">
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-800 shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+          <div className="w-10 h-10 rounded-xl bg-purple-600/10 dark:bg-purple-600/20 border border-purple-500/20 dark:border-purple-500/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
             <Layers className="w-5 h-5" />
           </div>
           <div>
@@ -368,21 +456,21 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
               type="text"
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
-              className="text-base font-black bg-transparent text-white border-b border-transparent hover:border-slate-700 focus:border-purple-500 outline-none transition-colors"
+              className="text-base font-black bg-transparent text-slate-900 dark:text-white border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-purple-500 outline-none transition-colors"
               placeholder="Nombre de la Plantilla"
             />
-            <p className="text-[11px] text-slate-400">Editor Visual de Plantillas Multicanal B2B</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Editor Visual de Plantillas Multicanal B2B</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Formato */}
-          <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs font-bold text-slate-300">
+          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-xs">
             <span>Formato:</span>
             <select
               value={aspectRatio}
               onChange={(e) => setAspectRatio(e.target.value as AspectRatioType)}
-              className="bg-transparent text-purple-400 font-black outline-none cursor-pointer"
+              className="bg-transparent text-purple-600 dark:text-purple-400 font-black outline-none cursor-pointer [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-white"
             >
               <option value="9:16">9:16 (Stories)</option>
               <option value="1:1">1:1 (Post Feed)</option>
@@ -397,8 +485,8 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
             onClick={() => setShowSafeZones(!showSafeZones)}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
               showSafeZones 
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' 
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300' 
+                : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
@@ -410,8 +498,8 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
             onClick={() => setIsPublished(!isPublished)}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all flex items-center gap-1.5 cursor-pointer ${
               isPublished
-                ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                : 'bg-slate-800 border-slate-700 text-slate-400'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
             }`}
           >
             {isPublished ? <Check className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
@@ -431,7 +519,7 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 cursor-pointer"
+              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -442,68 +530,166 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
       {/* Editor Body */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar: Capas y Configuraciones */}
-        <div className="w-80 bg-slate-900 border-r border-slate-800 p-5 overflow-y-auto space-y-6 shrink-0">
+        <div className="w-80 bg-slate-50/70 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 overflow-y-auto space-y-6 shrink-0">
+          {/* Fondo Multimedia (Biblioteca de Medios) */}
+          <div className="space-y-3 bg-white dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span>Fondo Multimedia</span>
+              </h4>
+              <span className="text-[10px] text-purple-700 dark:text-purple-400 font-bold bg-purple-500/10 px-2 py-0.5 rounded-full">
+                Biblioteca
+              </span>
+            </div>
+
+            <MediaPicker
+              value={selectedMedia ? (selectedMedia.full_url || selectedMedia.url) : backgroundUrl}
+              onChange={({ id, url, media }) => {
+                if (media) {
+                  setSelectedMedia(media);
+                } else if (id) {
+                  setSelectedMedia({
+                    id,
+                    url,
+                    full_url: url,
+                    original_name: 'Media seleccionado',
+                    file_name: '',
+                    disk: 'public',
+                    path: url,
+                    size: 0,
+                  } as any);
+                }
+              }}
+              onClear={() => {
+                setSelectedMedia(null);
+                setResource(null);
+              }}
+              type="all"
+              allowedTypes={['image', 'video']}
+              buttonLabel="Seleccionar de Biblioteca"
+              placeholder="Ninguna imagen o video seleccionado"
+            />
+          </div>
+
+          {/* Segmentación: País y Categoría */}
+          <div className="space-y-3 bg-white dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span>Segmentación & Clasificación</span>
+            </h4>
+
+            {/* Selector de País */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Globe className="w-3 h-3 text-slate-400 dark:text-slate-500" />
+                <span>País de Destino / Audiencia</span>
+              </label>
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-purple-500 cursor-pointer [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-white"
+              >
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.name === 'Global / Todos los países' ? '' : c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Selector de Categoría (Exclusiva de Marca Blanca) */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <Tag className="w-3 h-3 text-slate-400 dark:text-slate-500" />
+                  <span>Categoría de Creativo</span>
+                </label>
+                <span className="text-[9px] text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider">
+                  Marca Blanca
+                </span>
+              </div>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-purple-500 cursor-pointer [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-white"
+              >
+                <option value="">Sin categoría específica</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              {categories.length === 0 && !isLoadingCategories && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400/80 italic">
+                  No hay categorías creadas aún. Puedes agregarlas desde la pestaña "Categorías".
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* Configuración Comercial */}
-          <div className="space-y-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-            <h4 className="text-xs font-black uppercase text-slate-300 flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-emerald-400" />
+          <div className="space-y-3 bg-white dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <h4 className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Condiciones Comerciales</span>
             </h4>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-400">Costo Base ($)</label>
+                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Costo Base ($)</label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   value={baseCost}
                   onChange={(e) => setBaseCost(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-black text-white outline-none focus:border-purple-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-black text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-400">Precio Sugerido ($)</label>
+                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Precio Sugerido ($)</label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   value={suggestedPrice}
                   onChange={(e) => setSuggestedPrice(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-black text-white outline-none focus:border-purple-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-black text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
             </div>
-            <div className="text-[10px] text-emerald-400 font-bold">
+            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
               Ganancia sugerida para agencia: ${(suggestedPrice - baseCost).toFixed(2)}
             </div>
           </div>
 
           {/* Botones Agregar Capas */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-black uppercase text-slate-400">
+            <div className="flex items-center justify-between text-xs font-black uppercase text-slate-500 dark:text-slate-400">
               <span>Capas Disponibles</span>
-              <span className="text-[10px] text-slate-500">{elements.length} capas</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">{elements.length} capas</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => handleAddElement('text')}
-                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-purple-500 text-[11px] font-bold text-slate-300 hover:text-white flex flex-col items-center gap-1 transition-all cursor-pointer"
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex flex-col items-center gap-1 transition-all cursor-pointer shadow-xs"
               >
-                <Type className="w-4 h-4 text-purple-400" />
+                <Type className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 <span>Texto</span>
               </button>
               <button
                 onClick={() => handleAddElement('badge')}
-                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-purple-500 text-[11px] font-bold text-slate-300 hover:text-white flex flex-col items-center gap-1 transition-all cursor-pointer"
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex flex-col items-center gap-1 transition-all cursor-pointer shadow-xs"
               >
-                <Tag className="w-4 h-4 text-emerald-400" />
+                <Tag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Insignia</span>
               </button>
               <button
                 onClick={() => handleAddElement('custom_field')}
-                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-purple-500 text-[11px] font-bold text-slate-300 hover:text-white flex flex-col items-center gap-1 transition-all cursor-pointer"
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex flex-col items-center gap-1 transition-all cursor-pointer shadow-xs"
               >
-                <Sliders className="w-4 h-4 text-amber-400" />
+                <Sliders className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 <span>Contacto</span>
               </button>
             </div>
@@ -511,7 +697,7 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
 
           {/* Lista de Capas (Stack) */}
           <div className="space-y-2">
-            <div className="text-xs font-black uppercase text-slate-400">Orden de Capas (Z-Index)</div>
+            <div className="text-xs font-black uppercase text-slate-500 dark:text-slate-400">Orden de Capas (Z-Index)</div>
             <div className="space-y-2">
               {elements.map((elem, idx) => {
                 const isSelected = elem.field_key === selectedElementId;
@@ -521,21 +707,21 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                     onClick={() => setSelectedElementId(elem.field_key)}
                     className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                       isSelected
-                        ? 'bg-purple-600/15 border-purple-500 ring-1 ring-purple-500/20'
-                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                        ? 'bg-purple-600/10 dark:bg-purple-600/15 border-purple-500 ring-1 ring-purple-500/20'
+                        : 'bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      {elem.element_type === 'agency_logo' && <ImageIcon className="w-4 h-4 text-purple-400 shrink-0" />}
-                      {elem.element_type === 'sale_price' && <DollarSign className="w-4 h-4 text-emerald-400 shrink-0" />}
-                      {elem.element_type === 'agent_name' && <User className="w-4 h-4 text-blue-400 shrink-0" />}
-                      {elem.element_type === 'text' && <Type className="w-4 h-4 text-amber-400 shrink-0" />}
-                      {elem.element_type === 'badge' && <Tag className="w-4 h-4 text-rose-400 shrink-0" />}
-                      {elem.element_type === 'custom_field' && <Sliders className="w-4 h-4 text-indigo-400 shrink-0" />}
+                      {elem.element_type === 'agency_logo' && <ImageIcon className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />}
+                      {elem.element_type === 'sale_price' && <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                      {elem.element_type === 'agent_name' && <User className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />}
+                      {elem.element_type === 'text' && <Type className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />}
+                      {elem.element_type === 'badge' && <Tag className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />}
+                      {elem.element_type === 'custom_field' && <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />}
 
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-slate-200 truncate">{elem.label}</div>
-                        <div className="text-[10px] text-slate-400 flex items-center gap-1.5">
+                        <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{elem.label}</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                           <span>{elem.is_agency_editable ? 'Editable por agencia' : 'Fijo'}</span>
                           <span>•</span>
                           <span className="font-mono">z:{elem.z_index}</span>
@@ -546,14 +732,14 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 'up'); }}
-                        className="p-1 text-slate-400 hover:text-white"
+                        className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
                         title="Mover arriba"
                       >
                         <ArrowUp className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 'down'); }}
-                        className="p-1 text-slate-400 hover:text-white"
+                        className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
                         title="Mover abajo"
                       >
                         <ArrowDown className="w-3.5 h-3.5" />
@@ -561,7 +747,7 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                       {elem.element_type !== 'agency_logo' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDeleteElement(idx); }}
-                          className="p-1 text-slate-400 hover:text-rose-400"
+                          className="p-1 text-slate-400 hover:text-rose-500"
                           title="Eliminar capa"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -579,26 +765,26 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
         <div 
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
-          className="flex-1 bg-slate-950 flex flex-col items-center justify-center p-6 overflow-hidden relative select-none"
+          className="flex-1 bg-slate-100/90 dark:bg-slate-950 flex flex-col items-center justify-center p-6 overflow-hidden relative select-none"
         >
           {/* Background Ambient Glow */}
-          <div className="absolute inset-0 bg-radial-gradient from-purple-900/10 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-radial-gradient from-purple-500/5 dark:from-purple-900/10 via-transparent to-transparent pointer-events-none" />
 
           {/* Canvas Wrapper */}
           <div
             ref={canvasContainerRef}
-            className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-800 bg-slate-900 transition-all"
+            className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-300 dark:border-slate-800 bg-slate-900 transition-all"
             style={{
               aspectRatio: currentAspect.aspect,
               maxWidth: currentAspect.maxWidth,
               width: '100%',
             }}
           >
-            {/* Master Resource Background */}
-            {resource ? (
-              resource.type === 'video' ? (
+            {/* Background Image / Video from Media Library */}
+            {backgroundUrl ? (
+              isVideoMedia ? (
                 <video
-                  src={resource.file_url}
+                  src={backgroundUrl}
                   className="w-full h-full object-cover pointer-events-none"
                   autoPlay
                   loop
@@ -607,14 +793,22 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                 />
               ) : (
                 <img
-                  src={resource.file_url}
-                  alt="Fondo Maestro"
+                  src={backgroundUrl}
+                  alt="Fondo de la Plantilla"
                   className="w-full h-full object-cover pointer-events-none"
                 />
               )
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold text-xs p-6 text-center">
-                Seleccione un recurso maestro en la biblioteca para ver la vista previa.
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 font-bold text-xs p-6 text-center space-y-3 bg-slate-950">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                  <ImageIcon className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-white text-xs font-bold">Sin imagen o video seleccionado</p>
+                  <p className="text-[11px] text-slate-400 max-w-xs">
+                    Elige una imagen o video desde la biblioteca de medios en el panel lateral para visualizar la plantilla.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -685,55 +879,55 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
             })}
           </div>
 
-          <div className="mt-4 text-center text-xs text-slate-400 flex items-center gap-3">
+          <div className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400 flex items-center gap-3">
             <span className="inline-flex items-center gap-1">
-              <Move className="w-3.5 h-3.5 text-purple-400" /> Arrastra las capas para posicionarlas
+              <Move className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Arrastra las capas para posicionarlas
             </span>
             <span>•</span>
-            <span className="text-slate-500">Coordenadas relativas 0.0 - 1.0</span>
+            <span className="text-slate-400 dark:text-slate-500">Coordenadas relativas 0.0 - 1.0</span>
           </div>
         </div>
 
         {/* Right Sidebar: Propiedades de la Capa Seleccionada */}
-        <div className="w-80 bg-slate-900 border-l border-slate-800 p-5 overflow-y-auto space-y-6 shrink-0">
+        <div className="w-80 bg-slate-50/70 dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 p-5 overflow-y-auto space-y-6 shrink-0">
           {selectedElem && selectedElemIdx !== -1 ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <h4 className="text-xs font-black uppercase text-purple-400 flex items-center gap-2">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <h4 className="text-xs font-black uppercase text-purple-600 dark:text-purple-400 flex items-center gap-2">
                   <Sliders className="w-4 h-4" />
                   <span>Propiedades de Capa</span>
                 </h4>
-                <span className="text-[10px] font-mono text-slate-500">{selectedElem.element_type}</span>
+                <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">{selectedElem.element_type}</span>
               </div>
 
               {/* Etiqueta y Llave */}
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-300">Etiqueta</label>
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Etiqueta</label>
                 <input
                   type="text"
                   value={selectedElem.label}
                   onChange={(e) => handleUpdateElement(selectedElemIdx, { label: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-purple-500"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
 
               {/* Valor por defecto / Texto */}
               {selectedElem.element_type !== 'agency_logo' && (
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-300">Texto / Valor Predeterminado</label>
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Texto / Valor Predeterminado</label>
                   <input
                     type="text"
                     value={selectedElem.default_value || ''}
                     onChange={(e) => handleUpdateElement(selectedElemIdx, { default_value: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-purple-500"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white outline-none focus:border-purple-500"
                   />
                 </div>
               )}
 
               {/* Editable por Agencia Toggle */}
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+              <div className="p-3 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 shadow-xs">
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-xs font-bold text-slate-300">Editable por Agencia</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Editable por Agencia</span>
                   <input
                     type="checkbox"
                     checked={selectedElem.is_agency_editable}
@@ -748,7 +942,7 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
 
               {/* Posición Relativa */}
               <div className="space-y-2">
-                <div className="text-[11px] font-bold text-slate-400 uppercase">Posición y Tamaño Relativo (0.0 - 1.0)</div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Posición y Tamaño Relativo (0.0 - 1.0)</div>
                 <div className="grid grid-cols-2 gap-2 text-xs font-mono">
                   <div>
                     <span className="text-[10px] text-slate-500">X:</span>
@@ -759,7 +953,7 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                       max="1"
                       value={selectedElem.relative_x}
                       onChange={(e) => handleUpdateElement(selectedElemIdx, { relative_x: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-white text-xs"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-slate-900 dark:text-white text-xs"
                     />
                   </div>
                   <div>
@@ -771,7 +965,7 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                       max="1"
                       value={selectedElem.relative_y}
                       onChange={(e) => handleUpdateElement(selectedElemIdx, { relative_y: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-white text-xs"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-slate-900 dark:text-white text-xs"
                     />
                   </div>
                   <div>
@@ -783,7 +977,7 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                       max="1"
                       value={selectedElem.relative_width}
                       onChange={(e) => handleUpdateElement(selectedElemIdx, { relative_width: parseFloat(e.target.value) || 0.1 })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-white text-xs"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-slate-900 dark:text-white text-xs"
                     />
                   </div>
                   <div>
@@ -795,35 +989,35 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                       max="1"
                       value={selectedElem.relative_height}
                       onChange={(e) => handleUpdateElement(selectedElemIdx, { relative_height: parseFloat(e.target.value) || 0.05 })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-white text-xs"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-slate-900 dark:text-white text-xs"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Estilos Visuales */}
-              <div className="space-y-3 pt-3 border-t border-slate-800">
-                <div className="text-[11px] font-bold text-slate-400 uppercase">Estilos y Colores</div>
+              <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Estilos y Colores</div>
 
                 {selectedElem.element_type !== 'agency_logo' && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs text-slate-400">Color de Texto</label>
+                      <label className="text-xs text-slate-600 dark:text-slate-400">Color de Texto</label>
                       <input
                         type="color"
                         value={selectedElem.styles?.color || '#FFFFFF'}
                         onChange={(e) => handleUpdateElementStyles(selectedElemIdx, { color: e.target.value })}
-                        className="w-8 h-8 rounded bg-transparent cursor-pointer border border-slate-700"
+                        className="w-8 h-8 rounded bg-transparent cursor-pointer border border-slate-300 dark:border-slate-700"
                       />
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <label className="text-xs text-slate-400">Color de Fondo</label>
+                      <label className="text-xs text-slate-600 dark:text-slate-400">Color de Fondo</label>
                       <input
                         type="color"
                         value={selectedElem.styles?.background_color || '#000000'}
                         onChange={(e) => handleUpdateElementStyles(selectedElemIdx, { background_color: e.target.value })}
-                        className="w-8 h-8 rounded bg-transparent cursor-pointer border border-slate-700"
+                        className="w-8 h-8 rounded bg-transparent cursor-pointer border border-slate-300 dark:border-slate-700"
                       />
                     </div>
                   </div>
@@ -831,7 +1025,7 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
 
                 {/* Opacidad */}
                 <div className="space-y-1">
-                  <div className="flex justify-between text-xs text-slate-400">
+                  <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                     <span>Opacidad</span>
                     <span>{Math.round((selectedElem.styles?.opacity ?? 1) * 100)}%</span>
                   </div>
@@ -842,13 +1036,13 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                     step="0.05"
                     value={selectedElem.styles?.opacity ?? 1}
                     onChange={(e) => handleUpdateElementStyles(selectedElemIdx, { opacity: parseFloat(e.target.value) })}
-                    className="w-full accent-purple-500 cursor-pointer"
+                    className="w-full accent-purple-600 dark:accent-purple-500 cursor-pointer"
                   />
                 </div>
 
                 {/* Redondeo de bordes */}
                 <div className="space-y-1">
-                  <div className="flex justify-between text-xs text-slate-400">
+                  <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                     <span>Radio de Borde</span>
                     <span>{selectedElem.styles?.border_radius || 0}px</span>
                   </div>
@@ -859,13 +1053,13 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                     step="2"
                     value={selectedElem.styles?.border_radius || 0}
                     onChange={(e) => handleUpdateElementStyles(selectedElemIdx, { border_radius: parseInt(e.target.value) })}
-                    className="w-full accent-purple-500 cursor-pointer"
+                    className="w-full accent-purple-600 dark:accent-purple-500 cursor-pointer"
                   />
                 </div>
               </div>
             </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 text-slate-500">
+            <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 text-slate-400 dark:text-slate-500">
               <Sliders className="w-8 h-8" />
               <p className="text-xs font-bold">Selecciona una capa en el lienzo o en la lista lateral para editar sus propiedades.</p>
             </div>

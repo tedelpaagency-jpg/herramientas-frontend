@@ -69,11 +69,32 @@ export interface MarketingMediaResource {
   updated_at: string;
 }
 
+import { Media } from './media';
+
+export interface MarketingCreativeCategory {
+  id: number;
+  white_label_id: number;
+  created_by?: number | null;
+  name: string;
+  slug: string;
+  description?: string | null;
+  color?: string | null;
+  icon?: string | null;
+  is_active: boolean;
+  order: number;
+  templates_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface MarketingTemplate {
   id: number;
   white_label_id: number;
   created_by: number;
-  resource_id: number;
+  media_id?: number | null;
+  resource_id?: number | null;
+  category_id?: number | null;
+  country?: string | null;
   name: string;
   description?: string | null;
   aspect_ratio: AspectRatioType;
@@ -85,11 +106,16 @@ export interface MarketingTemplate {
   safe_zone_config?: SafeZoneConfig | null;
   preview_image_path?: string | null;
   preview_image_url?: string | null;
+  preview_full_url?: string | null;
+  media_url?: string | null;
+  media_type?: 'image' | 'video' | string | null;
   metrics?: {
     views_count?: number;
     generations_count?: number;
     downloads_count?: number;
   } | null;
+  media?: Media | null;
+  category?: MarketingCreativeCategory | null;
   resource?: MarketingMediaResource;
   elements?: MarketingTemplateElement[];
   created_at: string;

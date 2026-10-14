@@ -173,27 +173,27 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fade-in">
-      <div className="relative w-full max-w-6xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fade-in">
+      <div className="relative w-full max-w-6xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-600/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+            <div className="w-10 h-10 rounded-xl bg-purple-600/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-white">{template.name}</h3>
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-bold text-purple-300">
+                <h3 className="text-base font-black text-slate-900 dark:text-white">{template.name}</h3>
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-purple-700 dark:text-purple-300">
                   {template.aspect_ratio}
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-bold text-slate-300 flex items-center gap-1">
-                  {isVideo ? <Film className="w-2.5 h-2.5 text-amber-400" /> : <ImageIcon className="w-2.5 h-2.5 text-emerald-400" />}
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                  {isVideo ? <Film className="w-2.5 h-2.5 text-amber-500 dark:text-amber-400" /> : <ImageIcon className="w-2.5 h-2.5 text-emerald-500 dark:text-emerald-400" />}
                   {template.resource?.type}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Personaliza con los datos de tu agencia y genera el creativo en alta resolución
               </p>
             </div>
@@ -201,7 +201,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -211,12 +211,12 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
         <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
           
           {/* Left Column: Live Canvas Preview */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 relative">
-            <div className="w-full flex items-center justify-between pb-3 mb-2 border-b border-slate-800/60 text-xs font-bold text-slate-400">
+          <div className="lg:col-span-5 flex flex-col items-center justify-center bg-slate-100/70 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 relative">
+            <div className="w-full flex items-center justify-between pb-3 mb-2 border-b border-slate-200 dark:border-slate-800/60 text-xs font-bold text-slate-600 dark:text-slate-400">
               <span className="flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-purple-400" /> Vista Previa Dinámica
+                <Layers className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Vista Previa Dinámica
               </span>
-              <span className="text-[10px] font-mono text-emerald-400">En Tiempo Real</span>
+              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">En Tiempo Real</span>
             </div>
 
             {/* Canvas Container */}
@@ -322,12 +322,12 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
 
               {/* Editable Fields Section */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                    <Type className="w-4 h-4 text-purple-400" />
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-300 flex items-center gap-2">
+                    <Type className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     Campos Personalizables para tu Agencia
                   </h4>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
                     Solo los campos habilitados por la Marca Blanca son editables
                   </span>
                 </div>
@@ -338,16 +338,16 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
 
                     if (el.element_type === 'agency_logo') {
                       return (
-                        <div key={el.id || el.field_key} className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-2">
-                          <label className="block text-xs font-bold text-slate-200">
-                            {el.label} {el.is_required && <span className="text-red-400">*</span>}
+                        <div key={el.id || el.field_key} className="bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2">
+                          <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                            {el.label} {el.is_required && <span className="text-red-500">*</span>}
                           </label>
                           <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden">
+                            <div className="w-16 h-16 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
                               {logoPreview ? (
                                 <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-contain p-1" />
                               ) : (
-                                <Building2 className="w-6 h-6 text-slate-500" />
+                                <Building2 className="w-6 h-6 text-slate-400 dark:text-slate-500" />
                               )}
                             </div>
                             <div className="flex-1 space-y-1.5">
@@ -360,7 +360,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                                   onChange={(e) => handleLogoUpload(e, el.field_key)}
                                 />
                               </label>
-                              <p className="text-[11px] text-slate-400">
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                                 Formatos admitidos: PNG transparente o SVG.
                               </p>
                             </div>
@@ -371,22 +371,22 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
 
                     if (el.element_type === 'sale_price') {
                       return (
-                        <div key={el.id || el.field_key} className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-2">
-                          <label className="block text-xs font-bold text-slate-200">
-                            {el.label} ({template.currency}) {el.is_required && <span className="text-red-400">*</span>}
+                        <div key={el.id || el.field_key} className="bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2">
+                          <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                            {el.label} ({template.currency}) {el.is_required && <span className="text-red-500">*</span>}
                           </label>
                           <div className="relative">
-                            <DollarSign className="w-4 h-4 text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <DollarSign className="w-4 h-4 text-emerald-500 dark:text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
                               type="number"
                               min={baseCost}
                               step="0.01"
                               value={salePrice}
                               onChange={(e) => setSalePrice(Math.max(0, parseFloat(e.target.value) || 0))}
-                              className="w-full bg-slate-900 border border-slate-700 text-white font-extrabold text-sm rounded-xl pl-9 pr-4 py-2.5 outline-none focus:border-emerald-500 transition-colors"
+                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-extrabold text-sm rounded-xl pl-9 pr-4 py-2.5 outline-none focus:border-emerald-500 transition-colors"
                             />
                           </div>
-                          <p className="text-[11px] text-slate-400">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
                             El precio final que verá tu cliente en el flyer publicitario.
                           </p>
                         </div>
@@ -394,23 +394,23 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                     }
 
                     return (
-                      <div key={el.id || el.field_key} className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-2">
-                        <label className="block text-xs font-bold text-slate-200">
-                          {el.label} {el.is_required && <span className="text-red-400">*</span>}
+                      <div key={el.id || el.field_key} className="bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2">
+                        <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                          {el.label} {el.is_required && <span className="text-red-500">*</span>}
                         </label>
                         <input
                           type="text"
                           value={value}
                           placeholder={el.default_value || `Escribe ${el.label.toLowerCase()}...`}
                           onChange={(e) => handleInputChange(el.field_key, e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-700 text-white font-medium text-xs rounded-xl px-3 py-2.5 outline-none focus:border-purple-500 transition-colors"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium text-xs rounded-xl px-3 py-2.5 outline-none focus:border-purple-500 transition-colors"
                         />
                       </div>
                     );
                   })}
 
                   {(!template.elements || template.elements.filter(el => el.is_agency_editable).length === 0) && (
-                    <div className="p-4 bg-slate-950/60 rounded-xl text-center text-xs text-slate-400">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-xl text-center text-xs text-slate-500 dark:text-slate-400">
                       Esta plantilla solo requiere ajustar tu precio de venta comercial.
                     </div>
                   )}
@@ -418,11 +418,11 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
               </div>
 
               {/* Export Format Selector */}
-              <div className="flex items-center justify-between p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl">
-                <span className="text-xs font-bold text-slate-300">Formato de Salida:</span>
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Formato de Salida:</span>
                 <div className="flex items-center gap-2">
                   {isVideo ? (
-                    <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-lg text-xs font-black uppercase">
+                    <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-black uppercase">
                       MP4 (Video Alta Definición)
                     </span>
                   ) : (
@@ -430,14 +430,14 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setFormat('png')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${format === 'png' ? 'bg-purple-600 text-white shadow-md' : 'bg-slate-800 text-slate-400'}`}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${format === 'png' ? 'bg-purple-600 text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-400'}`}
                       >
                         PNG (Calidad Premium)
                       </button>
                       <button
                         type="button"
                         onClick={() => setFormat('jpg')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${format === 'jpg' ? 'bg-purple-600 text-white shadow-md' : 'bg-slate-800 text-slate-400'}`}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${format === 'jpg' ? 'bg-purple-600 text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-400'}`}
                       >
                         JPG (Comprimido)
                       </button>
@@ -448,12 +448,12 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
             </div>
 
             {/* Footer Actions */}
-            <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-4">
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-colors"
+                className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
@@ -462,7 +462,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                 type="button"
                 onClick={handleGenerate}
                 disabled={isSubmitting || salePrice < baseCost}
-                className="flex-1 max-w-sm flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-lg shadow-purple-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                className="flex-1 max-w-sm flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-lg shadow-purple-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>

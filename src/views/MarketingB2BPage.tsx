@@ -45,25 +45,25 @@ export const MarketingB2BPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in text-slate-900 dark:text-slate-100">
       {/* Admin Mode Switcher Banner (Only visible to WL / Super Admins) */}
       {isSuperOrWhiteLabelAdmin && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
+        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
             <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-            <span className="font-bold text-slate-200">Panel de Control Multitenant:</span>
+            <span className="font-bold text-slate-900 dark:text-slate-200">Panel de Control Multitenant:</span>
             <span>Estás autenticado con permisos de administración central.</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+            <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setViewMode('admin')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
                   viewMode === 'admin'
                     ? 'bg-purple-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -75,7 +75,7 @@ export const MarketingB2BPage: React.FC = () => {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
                   viewMode === 'agency'
                     ? 'bg-purple-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Store className="w-3.5 h-3.5" />
@@ -86,10 +86,10 @@ export const MarketingB2BPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsHistoryOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-colors cursor-pointer"
               title="Ver Historial de Generaciones"
             >
-              <History className="w-3.5 h-3.5 text-purple-400" />
+              <History className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
               Historial
             </button>
           </div>

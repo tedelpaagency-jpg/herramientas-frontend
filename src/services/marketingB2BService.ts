@@ -3,12 +3,35 @@ import {
   MarketingMediaResource, 
   MarketingTemplate, 
   MarketingGeneration, 
-  MarketingB2BMetrics 
+  MarketingB2BMetrics,
+  MarketingCreativeCategory,
 } from '../types/marketingB2B';
 
 export const marketingB2BService = {
   // ==========================================
-  // RECURSOS MAESTROS MULTIMEDIA
+  // CATEGORÍAS DE CREATIVOS (EXCLUSIVAS MARCA BLANCA)
+  // ==========================================
+  getCategories: async (params?: { is_active?: boolean; search?: string }): Promise<MarketingCreativeCategory[]> => {
+    const response = await apiClient.get('/v1/marketing-b2b/categories', { params });
+    return response.data?.data || response.data || [];
+  },
+
+  createCategory: async (data: Partial<MarketingCreativeCategory>): Promise<MarketingCreativeCategory> => {
+    const response = await apiClient.post('/v1/marketing-b2b/categories', data);
+    return response.data?.data || response.data;
+  },
+
+  updateCategory: async (id: number, data: Partial<MarketingCreativeCategory>): Promise<MarketingCreativeCategory> => {
+    const response = await apiClient.post(`/v1/marketing-b2b/categories/${id}/update`, data);
+    return response.data?.data || response.data;
+  },
+
+  deleteCategory: async (id: number): Promise<void> => {
+    await apiClient.post(`/v1/marketing-b2b/categories/${id}/delete`);
+  },
+
+  // ==========================================
+  // RECURSOS MAESTROS MULTIMEDIA (LEGACY)
   // ==========================================
   getResources: async (params?: {
     type?: string;
@@ -60,6 +83,8 @@ export const marketingB2BService = {
     aspect_ratio?: string;
     type?: string;
     status?: string;
+    country?: string;
+    category_id?: number | string;
     search?: string;
     per_page?: number;
     page?: number;
