@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (savedUser && savedToken) {
         try {
           const parsedUser = JSON.parse(savedUser);
-          if ((parsedUser as any)?.permission_version !== 3) {
+          if ((parsedUser as any)?.permission_version !== 4) {
             delete (parsedUser as any).effective_permissions;
           }
           setUser(parsedUser);
@@ -336,7 +336,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       macroExpanded.push('custom_agency_branding', 'branding.view', 'branding.manage');
     }
     if (basePerms.some((p) => p.startsWith('campaigns') || p.startsWith('marketing') || p === 'email_marketing' || p === 'view_email_marketing')) {
-      macroExpanded.push('email_marketing', 'view_email_marketing', 'campaigns.view', 'campaigns.create', 'campaigns.edit', 'campaigns.delete', 'marketing.view', 'marketing.create', 'marketing.edit', 'marketing.delete');
+      macroExpanded.push(
+        'email_marketing',
+        'view_email_marketing',
+        'campaigns.view',
+        'campaigns.create',
+        'campaigns.edit',
+        'campaigns.delete',
+        'marketing.view',
+        'marketing.create',
+        'marketing.edit',
+        'marketing.delete',
+        'marketing_b2b',
+        'marketing_b2b.manage',
+        'marketing_b2b.view',
+        'marketing_b2b.generate',
+        'marketing_b2b.download'
+      );
     }
     if (basePerms.some((p) => p.startsWith('pos') || p === 'view_pos' || p === 'manage_pos')) {
       macroExpanded.push('view_pos', 'manage_pos', 'pos.view', 'view_products');
@@ -365,6 +381,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'activities.view',
         'activities.create',
         'activities.update',
+        'marketing_b2b',
+        'marketing_b2b.manage',
+        'marketing_b2b.view',
+        'marketing_b2b.generate',
+        'marketing_b2b.download',
+        'marketing',
+        'marketing.view',
+        'email_marketing',
+        'view_email_marketing',
       ];
       basePerms = Array.from(new Set([...basePerms, ...wlAdminDefaults]));
     }
@@ -398,6 +423,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'activities.view',
         'activities.create',
         'activities.update',
+        'marketing_b2b',
+        'marketing_b2b.manage',
+        'marketing_b2b.view',
+        'marketing_b2b.generate',
+        'marketing_b2b.download',
+        'marketing',
+        'marketing.view',
+        'email_marketing',
+        'view_email_marketing',
       ];
       const reqList = Array.isArray(permission) ? permission : [permission];
       if (reqList.some((r) => wlAdminPerms.includes(r.toLowerCase().trim()))) {

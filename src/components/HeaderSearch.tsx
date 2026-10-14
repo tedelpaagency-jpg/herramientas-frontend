@@ -267,7 +267,7 @@ const SYSTEM_MODULES: ModuleItem[] = [
     path: '/marketing-b2b',
     icon: Sparkles,
     category: 'MARKETING & LEGAL',
-    permission: ['marketing_b2b', 'marketing_b2b.view', 'marketing_b2b.manage', 'marketing_b2b.generate'],
+    permission: ['marketing_b2b', 'marketing_b2b.view', 'marketing_b2b.manage', 'marketing_b2b.generate', 'marketing', 'marketing.view', 'email_marketing', 'view_email_marketing', 'campaigns.view'],
     keywords: ['marketing', 'creativos', 'b2b', 'publicidad', 'canva', 'flyers', 'historias', 'reels', 'templates', 'videos', 'redes sociales'],
   },
   {

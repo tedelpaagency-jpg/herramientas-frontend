@@ -300,7 +300,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Hunter Stores', path: '/hunter', icon: Store, permission: ['view_hunter', 'hunter.view', 'hunter'] },
         { label: 'Landings', path: '/landings', icon: Globe, permission: ['landings.view', 'view_landings', 'landings', 'landings.create', 'landings.edit', 'landings.delete', 'manage_landings'] },
         { label: 'Marketing & Campañas', path: '/marketing', icon: Zap, permission: ['email_marketing', 'view_email_marketing', 'campaigns.view', 'marketing.view', 'marketing'] },
-        { label: 'Marketing B2B (Creativos)', path: '/marketing-b2b', icon: Sparkles, permission: ['marketing_b2b', 'marketing_b2b.view', 'marketing_b2b.manage', 'marketing_b2b.generate'] },
+        { label: 'Marketing B2B (Creativos)', path: '/marketing-b2b', icon: Sparkles, permission: ['marketing_b2b', 'marketing_b2b.view', 'marketing_b2b.manage', 'marketing_b2b.generate', 'marketing', 'marketing.view', 'email_marketing', 'view_email_marketing', 'campaigns.view'] },
         { label: 'Automatizaciones', path: '/automations', icon: Wrench, permission: ['automations', 'view_automations', 'automations.view'] },
       ],
     },
@@ -346,6 +346,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title: 'ADMINISTRACIÓN MARCA BLANCA',
             items: [
               { label: 'Mi White Label', path: '/white-label/dashboard', icon: Globe },
+              { label: 'Marketing B2B (Creativos)', path: '/marketing-b2b', icon: Sparkles },
               { label: 'Personalizar Marca', path: '/admin/branding', icon: Palette },
               { label: 'Accesos Directos Header', path: '/admin/shortcuts', icon: LayoutGrid },
               { label: 'Configuración del Login', path: '/admin/login-settings', icon: Film },
