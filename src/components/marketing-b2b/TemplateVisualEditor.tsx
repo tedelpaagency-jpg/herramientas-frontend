@@ -5,7 +5,7 @@ import {
   Save, Eye, Plus, Trash2, ArrowUp, ArrowDown, Move, 
   Layers, CheckSquare, Square, DollarSign, Image as ImageIcon, 
   Type, User, Tag, Shield, RefreshCw, X, Check, Lock, Unlock, Sliders,
-  Globe, Folder, Film, Sparkles
+  Globe, Folder, Film, Sparkles, AlignLeft, AlignCenter, AlignRight
 } from 'lucide-react';
 import { 
   MarketingTemplate, 
@@ -848,7 +848,9 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                     width: `${elem.relative_width * 100}%`,
                     height: `${elem.relative_height * 100}%`,
                     zIndex: elem.z_index,
-                    backgroundColor: elem.styles?.background_color || 'transparent',
+                    backgroundColor: (elem.styles?.background_color && elem.styles.background_color !== 'transparent' && elem.styles.background_color !== 'none')
+                      ? elem.styles.background_color
+                      : 'transparent',
                     color: elem.styles?.color || '#FFFFFF',
                     borderRadius: `${elem.styles?.border_radius || 0}px`,
                     opacity: elem.styles?.opacity ?? 1,
@@ -862,7 +864,11 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
                     </div>
                   ) : (
                     <span
-                      className="w-full px-2 truncate leading-tight"
+                      className={`w-full px-2 truncate leading-tight ${
+                        (!elem.styles?.background_color || elem.styles.background_color === 'transparent' || elem.styles.background_color === 'none')
+                          ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_5px_rgba(0,0,0,0.9)]'
+                          : ''
+                      }`}
                       style={{
                         fontSize: elem.styles?.font_size_rel 
                           ? `${elem.styles.font_size_rel * 400}px` 
@@ -999,29 +1005,179 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
               <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Estilos y Colores</div>
 
-                {selectedElem.element_type !== 'agency_logo' && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs text-slate-600 dark:text-slate-400">Color de Texto</label>
-                      <input
-                        type="color"
-                        value={selectedElem.styles?.color || '#FFFFFF'}
-                        onChange={(e) => handleUpdateElementStyles(selectedElemIdx, { color: e.target.value })}
-                        className="w-8 h-8 rounded bg-transparent cursor-pointer border border-slate-300 dark:border-slate-700"
-                      />
-                    </div>
+                {selectedElem.element_type !== 'agency_logo' && (() => {
+                  const rawBg = selectedElem.styles?.background_color;
+                  const isTransparent = !rawBg || rawBg === 'transparent' || rawBg === 'none';
+                  const currentHexBg = (!isTransparent && rawBg?.startsWith('#')) ? rawBg : '#0F172A';
 
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs text-slate-600 dark:text-slate-400">Color de Fondo</label>
-                      <input
-                        type="color"
-                        value={selectedElem.styles?.background_color || '#000000'}
-                        onChange={(e) => handleUpdateElementStyles(selectedElemIdx, { background_color: e.target.value })}
-                        className="w-8 h-8 rounded bg-transparent cursor-pointer border border-slate-300 dark:border-slate-700"
-                      />
+                  return (
+                    <div className="space-y-3.5">
+                      {/* Color de Texto */}
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Color de Texto</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={selectedElem.styles?.color || '#FFFFFF'}
+                            onChange={(e) => handleUpdateElementStyles(selectedElemIdx, { color: e.target.value })}
+                            className="w-7 h-7 rounded-lg bg-transparent cursor-pointer border border-slate-300 dark:border-slate-700 shrink-0"
+                          />
+                          <div className="flex items-center gap-1">
+                            {['#FFFFFF', '#0F172A', '#FBBF24', '#34D399', '#38BDF8'].map((c) => (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => handleUpdateElementStyles(selectedElemIdx, { color: c })}
+                                className={`w-4 h-4 rounded-full border transition-transform hover:scale-110 cursor-pointer ${
+                                  (selectedElem.styles?.color || '#FFFFFF').toLowerCase() === c.toLowerCase()
+                                    ? 'ring-2 ring-purple-500 scale-105'
+                                    : 'border-slate-300 dark:border-slate-700'
+                                }`}
+                                style={{ backgroundColor: c }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Alineación de Texto */}
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Alineación</label>
+                        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateElementStyles(selectedElemIdx, { text_align: 'left' })}
+                            className={`p-1.5 rounded-md transition-all cursor-pointer ${
+                              selectedElem.styles?.text_align === 'left'
+                                ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-xs'
+                                : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                            }`}
+                            title="Alinear a la izquierda"
+                          >
+                            <AlignLeft className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateElementStyles(selectedElemIdx, { text_align: 'center' })}
+                            className={`p-1.5 rounded-md transition-all cursor-pointer ${
+                              !selectedElem.styles?.text_align || selectedElem.styles?.text_align === 'center'
+                                ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-xs'
+                                : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                            }`}
+                            title="Alinear al centro"
+                          >
+                            <AlignCenter className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateElementStyles(selectedElemIdx, { text_align: 'right' })}
+                            className={`p-1.5 rounded-md transition-all cursor-pointer ${
+                              selectedElem.styles?.text_align === 'right'
+                                ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-xs'
+                                : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                            }`}
+                            title="Alinear a la derecha"
+                          >
+                            <AlignRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Control de Fondo con opción Sin Fondo */}
+                      <div className="space-y-2.5 pt-2 border-t border-slate-200 dark:border-slate-800/80">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Fondo de la Capa</label>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            isTransparent
+                              ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
+                              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                          }`}>
+                            {isTransparent ? 'Sin Fondo (Transparente)' : 'Con Fondo'}
+                          </span>
+                        </div>
+
+                        {/* Botones de Selección Rápida Con Fondo / Sin Fondo */}
+                        <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateElementStyles(selectedElemIdx, { background_color: currentHexBg })}
+                            className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                              !isTransparent
+                                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
+                          >
+                            <span className="w-2.5 h-2.5 rounded-full border border-slate-300 dark:border-slate-600" style={{ backgroundColor: currentHexBg }} />
+                            <span>Con Fondo</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateElementStyles(selectedElemIdx, { background_color: 'transparent' })}
+                            className={`py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                              isTransparent
+                                ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-xs'
+                                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
+                          >
+                            <span className="text-[11px]">🚫</span>
+                            <span>Sin Fondo</span>
+                          </button>
+                        </div>
+
+                        {/* Si tiene fondo: Selector de Color + Paleta */}
+                        {!isTransparent ? (
+                          <div className="space-y-2 pt-1">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={currentHexBg}
+                                onChange={(e) => handleUpdateElementStyles(selectedElemIdx, { background_color: e.target.value })}
+                                className="w-8 h-8 rounded-lg bg-transparent cursor-pointer border border-slate-300 dark:border-slate-700 shrink-0"
+                              />
+                              <input
+                                type="text"
+                                value={currentHexBg}
+                                onChange={(e) => handleUpdateElementStyles(selectedElemIdx, { background_color: e.target.value })}
+                                className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-900 dark:text-white uppercase outline-none focus:border-purple-500"
+                                placeholder="#000000"
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {[
+                                { name: 'Negro Carbón', hex: '#0F172A' },
+                                { name: 'Esmeralda', hex: '#10B981' },
+                                { name: 'Púrpura', hex: '#7C3AED' },
+                                { name: 'Azul Real', hex: '#2563EB' },
+                                { name: 'Rojo', hex: '#EF4444' },
+                                { name: 'Ámbar', hex: '#F59E0B' },
+                                { name: 'Blanco', hex: '#FFFFFF' },
+                              ].map((c) => (
+                                <button
+                                  key={c.hex}
+                                  type="button"
+                                  title={c.name}
+                                  onClick={() => handleUpdateElementStyles(selectedElemIdx, { background_color: c.hex })}
+                                  className={`w-5 h-5 rounded-md border transition-all cursor-pointer hover:scale-110 ${
+                                    currentHexBg.toLowerCase() === c.hex.toLowerCase()
+                                      ? 'ring-2 ring-purple-500 scale-105 border-white dark:border-slate-900'
+                                      : 'border-slate-300 dark:border-slate-700'
+                                  }`}
+                                  style={{ backgroundColor: c.hex }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-2.5 rounded-xl bg-purple-500/5 dark:bg-purple-950/20 border border-dashed border-purple-500/30 text-[11px] text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                            <span className="text-base shrink-0">✨</span>
+                            <span className="leading-snug">Texto limpio sin caja de fondo. Se aplica sombra para resaltar sobre cualquier imagen o video.</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Opacidad */}
                 <div className="space-y-1">

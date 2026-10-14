@@ -246,6 +246,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                 const styles = el.styles || {};
                 const value = formData[el.field_key] ?? el.default_value ?? '';
                 const fontSizePercent = (styles.font_size_rel || 0.035) * 100;
+                const isTransparent = !styles.background_color || styles.background_color === 'transparent' || styles.background_color === 'none';
 
                 return (
                   <div
@@ -258,9 +259,9 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                       height: `${(el.relative_height || 0.1) * 100}%`,
                       zIndex: el.z_index || 10,
                       color: styles.color || '#ffffff',
-                      backgroundColor: styles.background_color || 'transparent',
+                      backgroundColor: isTransparent ? 'transparent' : styles.background_color,
                       textAlign: styles.text_align || 'center',
-                      borderRadius: `${styles.border_radius || 0}px`,
+                      borderRadius: isTransparent ? '0px' : `${styles.border_radius || 0}px`,
                       opacity: styles.opacity ?? 1,
                       overflow: 'hidden',
                       display: 'flex',
@@ -285,14 +286,14 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                     ) : el.element_type === 'sale_price' ? (
                       <span 
                         style={{ fontSize: `${Math.max(12, fontSizePercent * 3.5)}px`, fontWeight: styles.font_weight || 'bold' }}
-                        className="tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+                        className="tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] [text-shadow:_0_2px_5px_rgba(0,0,0,0.9)]"
                       >
                         ${salePrice.toFixed(2)} <span className="text-[0.65em] opacity-80">{template.currency}</span>
                       </span>
                     ) : (
                       <span 
                         style={{ fontSize: `${Math.max(11, fontSizePercent * 3.2)}px`, fontWeight: styles.font_weight || 'normal' }}
-                        className="drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)] px-1 truncate w-full"
+                        className="drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)] [text-shadow:_0_2px_5px_rgba(0,0,0,0.9)] px-1 truncate w-full"
                       >
                         {value || el.label}
                       </span>
