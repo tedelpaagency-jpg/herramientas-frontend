@@ -136,6 +136,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
 
   const [isStripeLoaded, setIsStripeLoaded] = useState(false);
   const [isCardComplete, setIsCardComplete] = useState(false);
+  const [isCardEmpty, setIsCardEmpty] = useState(true);
   const [isCardFocused, setIsCardFocused] = useState(false);
   const [stripeElementError, setStripeElementError] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -264,8 +265,12 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       if (useStripeElements) {
         if (!isStripeLoaded) {
           newErrors['stripe_card'] = 'La pasarela segura aún se está inicializando. Por favor espera un momento o ingresa los datos manualmente.';
+        } else if (isCardEmpty) {
+          newErrors['stripe_card'] = 'Por favor ingresa los datos de tu tarjeta (número, vencimiento y CVC).';
+        } else if (stripeElementError) {
+          newErrors['stripe_card'] = stripeElementError;
         } else if (!isCardComplete) {
-          newErrors['stripe_card'] = 'El número de tarjeta está incompleto. Recuerda que las tarjetas bancarias tienen 16 dígitos completos.';
+          newErrors['stripe_card'] = 'Por favor completa también la fecha de vencimiento (MM/AA) y el código CVC dentro de la casilla.';
         }
       } else {
         if (!formData['card_number'] || formData['card_number'].replace(/\s/g, '').length < 15) {
@@ -741,6 +746,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               }, 2000);
 
               card.on('change', (event: any) => {
+                setIsCardEmpty(Boolean(event.empty));
                 setIsCardComplete(Boolean(event.complete));
                 if (event.error) {
                   setStripeElementError(event.error.message);
@@ -1163,8 +1169,14 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                   className={`${labelClasses} block w-full text-left mb-1`}
                   style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
                 >
-                  Tarjeta de Crédito o Débito (16 dígitos) <span className="text-red-500">*</span>
+                  Datos de la Tarjeta (Número, Vencimiento MM/AA y CVC) <span className="text-red-500">*</span>
                 </label>
+                <span
+                  className="text-[11px] block mb-1 text-slate-500 dark:text-slate-400"
+                  style={{ opacity: 0.85 }}
+                >
+                  Introduce en esta casilla los 16 dígitos, seguido del mes/año de vencimiento (MM/AA) y el código CVC (3 dígitos).
+                </span>
                 <div
                   className="w-full transition-all duration-200"
                   style={{
@@ -1202,7 +1214,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                       className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium text-left"
                       style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
                     >
-                      Ingresar datos de tarjeta manualmente
+                      Ingresar datos de tarjeta en casillas separadas
                     </button>
                   </div>
                 )}
@@ -1211,6 +1223,16 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                     {errors['stripe_card']}
                   </p>
                 )}
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setForceManualCard(true)}
+                    className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium text-left"
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                  >
+                    ¿Prefieres ingresar número, fecha y CVC en casillas separadas? Haz clic aquí
+                  </button>
+                </div>
                 {!isStripeLoaded && !stripeElementError && (
                   <div className="flex flex-col gap-1.5 mt-1.5">
                     <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
