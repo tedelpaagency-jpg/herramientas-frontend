@@ -322,9 +322,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'ADMINISTRACIÓN SISTEMA',
       items: [
-        ...(isSuperAdmin || isWhiteLabelAdmin
+        ...(isSuperAdmin
           ? [
               { label: 'Marcas Blancas', path: '/admin/white-labels', icon: Globe, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
+            ]
+          : []),
+        ...(isSuperAdmin || isWhiteLabelAdmin
+          ? [
               { label: 'Gestión de Agencias', path: '/agencies', icon: Building2, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
             ]
           : []),
@@ -332,7 +336,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck, permission: ['roles.manage', 'manage_roles', 'roles.view', 'view_roles', 'roles', 'permission_groups.view', 'permission_groups.manage'] },
         { label: 'Personalizar Marca', path: '/branding', icon: Palette, permission: ['custom_agency_branding', 'branding.view', 'branding.manage'] },
         { label: 'Biblioteca de Medios', path: '/media', icon: ImageIcon, permission: ['courses.view', 'activities.view', 'agencies.view', 'media.view'] },
-        ...(isSuperAdmin || isWhiteLabelAdmin
+        ...(isSuperAdmin
           ? [
               { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_plans', 'manage_agencies'] },
               { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_subscriptions', 'manage_agencies'] },

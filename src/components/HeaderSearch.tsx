@@ -335,7 +335,7 @@ const SYSTEM_MODULES: ModuleItem[] = [
     icon: Globe,
     category: 'ADMINISTRACIÓN SISTEMA',
     permission: ['manage_agencies', 'view_agencies', 'agencies.view'],
-    roleRestriction: 'super_or_white_label',
+    roleRestriction: 'super_admin',
     keywords: ['marcas blancas', 'white labels', 'tenants', 'franquicias', 'empresas'],
   },
   {
