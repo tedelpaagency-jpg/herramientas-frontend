@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { MarketingGeneration } from '../../types/marketingB2B';
 import marketingB2BService from '../../services/marketingB2BService';
+import { normalizeFileUrl } from '../../services/apiClient';
 import toast from 'react-hot-toast';
 
 interface GenerationHistoryModalProps {
@@ -23,6 +24,7 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
 }) => {
   const [generations, setGenerations] = useState<MarketingGeneration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [downloadingUuid, setDownloadingUuid] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [previewMedia, setPreviewMedia] = useState<{ url: string; type: string; title: string } | null>(null);
 
@@ -73,6 +75,24 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [isOpen, generations]);
+
+  const handleDownload = async (gen: MarketingGeneration) => {
+    setDownloadingUuid(gen.uuid);
+    const toastId = toast.loading('Descargando creativo...');
+    try {
+      const ext = gen.format || (gen.type === 'video' ? 'mp4' : 'jpg');
+      const filename = `${gen.template?.name ? gen.template.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'creativo'}-${gen.uuid}.${ext}`;
+      await marketingB2BService.downloadGeneration(gen.uuid, filename);
+      toast.success('Descarga completada', { id: toastId });
+    } catch (err: any) {
+      console.error('Error in blob download, falling back to direct URL:', err);
+      const directUrl = marketingB2BService.getDownloadUrl(gen.uuid);
+      window.open(directUrl, '_blank');
+      toast.dismiss(toastId);
+    } finally {
+      setDownloadingUuid(null);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -168,7 +188,6 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
               const isCompleted = gen.status === 'completed';
               const isProcessing = gen.status === 'processing' || gen.status === 'pending';
               const isFailed = gen.status === 'failed';
-              const downloadUrl = marketingB2BService.getDownloadUrl(gen.uuid);
 
               return (
                 <div
@@ -181,12 +200,15 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
                       {gen.output_url ? (
                         isVideo ? (
                           <video
-                            src={gen.output_url}
+                            src={normalizeFileUrl(gen.output_url)}
                             className="w-full h-full object-cover"
+                            preload="metadata"
+                            muted
+                            playsInline
                           />
                         ) : (
                           <img
-                            src={gen.output_url}
+                            src={normalizeFileUrl(gen.output_url)}
                             alt="Output"
                             className="w-full h-full object-cover"
                           />
@@ -235,7 +257,7 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
                     <div className="flex-1 max-w-xs space-y-1.5 px-2">
                       <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
                         <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                          <RefreshCw className="w-3 h-3 animate-spin" /> Renderizando ({gen.progress || 25}%)
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Renderizando ({gen.progress || 25}%)
                         </span>
                         <span className="text-slate-400 dark:text-slate-500 font-mono">En Cola</span>
                       </div>
@@ -266,14 +288,19 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
                           </button>
                         )}
 
-                        <a
-                          href={downloadUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/20 transition-transform active:scale-95 cursor-pointer"
+                        <button
+                          type="button"
+                          disabled={downloadingUuid === gen.uuid}
+                          onClick={() => handleDownload(gen)}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/20 transition-transform active:scale-95 cursor-pointer"
                         >
-                          <ArrowDownToLine className="w-3.5 h-3.5" /> Descargar
-                        </a>
+                          {downloadingUuid === gen.uuid ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <ArrowDownToLine className="w-3.5 h-3.5" />
+                          )}
+                          <span>{downloadingUuid === gen.uuid ? 'Descargando...' : 'Descargar'}</span>
+                        </button>
                       </div>
                     )}
 
@@ -331,14 +358,15 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
             <div className="p-4 flex items-center justify-center bg-black max-h-[70vh]">
               {previewMedia.type === 'video' ? (
                 <video
-                  src={previewMedia.url}
+                  src={normalizeFileUrl(previewMedia.url)}
                   controls
                   autoPlay
+                  playsInline
                   className="max-h-[65vh] w-auto rounded-xl"
                 />
               ) : (
                 <img
-                  src={previewMedia.url}
+                  src={normalizeFileUrl(previewMedia.url)}
                   alt={previewMedia.title}
                   className="max-h-[65vh] w-auto rounded-xl object-contain"
                 />

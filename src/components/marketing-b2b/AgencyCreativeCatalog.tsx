@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { MarketingTemplate, AspectRatioType, MarketingCreativeCategory } from '../../types/marketingB2B';
 import marketingB2BService from '../../services/marketingB2BService';
+import { normalizeFileUrl } from '../../services/apiClient';
 import toast from 'react-hot-toast';
 
 const COUNTRIES_FILTER = [
@@ -228,29 +229,61 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
 
             {/* Right: Featured Frame Preview */}
             <div className="relative w-full max-w-sm aspect-square rounded-3xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl dark:shadow-2xl flex items-center justify-center group">
-              {(activeTemplate.media_type === 'video' || activeTemplate.resource?.type === 'video' || activeTemplate.media?.file_type === 'video') ? (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <video
-                    src={activeTemplate.preview_image_url || activeTemplate.preview_full_url || activeTemplate.media?.full_url || activeTemplate.media?.url || activeTemplate.media_url || activeTemplate.resource?.file_url}
-                    className="w-full h-full object-cover"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
+              {(() => {
+                const isFeaturedVideo =
+                  activeTemplate.media_type === 'video' ||
+                  activeTemplate.resource?.type === 'video' ||
+                  activeTemplate.media?.file_type === 'video' ||
+                  Boolean(activeTemplate.resource?.mime_type && activeTemplate.resource.mime_type.startsWith('video/')) ||
+                  Boolean(activeTemplate.media?.mime_type && activeTemplate.media.mime_type.startsWith('video/')) ||
+                  /\.(mp4|webm|mov)(\?.*)?$/i.test(activeTemplate.media_url || activeTemplate.media?.url || activeTemplate.preview_image_url || activeTemplate.resource?.file_url || '');
+
+                const rawVideo =
+                  activeTemplate.media?.full_url ||
+                  activeTemplate.media?.url ||
+                  activeTemplate.media_url ||
+                  activeTemplate.resource?.file_url ||
+                  (activeTemplate.preview_image_url && /\.(mp4|webm|mov)(\?.*)?$/i.test(activeTemplate.preview_image_url) ? activeTemplate.preview_image_url : null);
+
+                const featuredVideoUrl = normalizeFileUrl(rawVideo);
+                const featuredImageUrl = normalizeFileUrl(
+                  activeTemplate.preview_image_url ||
+                  activeTemplate.preview_full_url ||
+                  activeTemplate.media?.full_url ||
+                  activeTemplate.media?.url ||
+                  activeTemplate.media_url ||
+                  activeTemplate.resource?.thumbnail_url ||
+                  activeTemplate.resource?.file_url
+                );
+
+                if (isFeaturedVideo && featuredVideoUrl) {
+                  return (
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <video
+                        src={featuredVideoUrl}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-6 pointer-events-none">
+                        <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black uppercase text-white flex items-center gap-1.5">
+                          <Play className="w-3 h-3 fill-white" /> Video MP4 (H.264)
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <img
+                    src={featuredImageUrl}
+                    alt={activeTemplate.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-6">
-                    <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black uppercase text-white flex items-center gap-1.5">
-                      <Play className="w-3 h-3 fill-white" /> Video MP4 (H.264)
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <img
-                  src={activeTemplate.preview_image_url || activeTemplate.preview_full_url || activeTemplate.media?.full_url || activeTemplate.media?.url || activeTemplate.media_url || activeTemplate.resource?.thumbnail_url || activeTemplate.resource?.file_url}
-                  alt={activeTemplate.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-              )}
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -381,8 +414,29 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {templates.map((tpl) => {
-            const isVideo = tpl.media_type === 'video' || tpl.resource?.type === 'video' || tpl.media?.file_type === 'video';
-            const thumbUrl = tpl.preview_image_url || tpl.preview_full_url || tpl.media?.full_url || tpl.media?.url || tpl.media_url || tpl.resource?.thumbnail_url || tpl.resource?.file_url;
+            const isVideo =
+              tpl.media_type === 'video' ||
+              tpl.resource?.type === 'video' ||
+              tpl.media?.file_type === 'video' ||
+              Boolean(tpl.resource?.mime_type && tpl.resource.mime_type.startsWith('video/')) ||
+              Boolean(tpl.media?.mime_type && tpl.media.mime_type.startsWith('video/')) ||
+              /\.(mp4|webm|mov)(\?.*)?$/i.test(tpl.media_url || tpl.media?.url || tpl.preview_image_url || tpl.resource?.file_url || '');
+
+            const videoUrl = normalizeFileUrl(
+              tpl.media?.full_url ||
+              tpl.media?.url ||
+              tpl.media_url ||
+              tpl.resource?.file_url ||
+              (tpl.preview_image_url && /\.(mp4|webm|mov)(\?.*)?$/i.test(tpl.preview_image_url) ? tpl.preview_image_url : null)
+            );
+
+            const thumbUrl = normalizeFileUrl(
+              (!/\.(mp4|webm|mov)(\?.*)?$/i.test(tpl.preview_image_url || '') ? tpl.preview_image_url : null) ||
+              tpl.preview_full_url ||
+              tpl.resource?.thumbnail_url ||
+              (!isVideo ? (tpl.media?.full_url || tpl.media?.url || tpl.media_url || tpl.resource?.file_url) : null)
+            );
+
             const baseCostNum = Number(tpl.base_cost);
             const suggestedNum = Number(tpl.suggested_price);
             const suggestedProfit = Math.max(0, suggestedNum - baseCostNum);
@@ -398,7 +452,27 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
               >
                 {/* Media Preview Box */}
                 <div className="relative aspect-square bg-slate-100 dark:bg-slate-950 overflow-hidden">
-                  {thumbUrl ? (
+                  {isVideo && videoUrl ? (
+                    <div className="relative w-full h-full">
+                      <video
+                        src={videoUrl}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        muted
+                        playsInline
+                        loop
+                        preload="metadata"
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLVideoElement).play().catch(() => {});
+                        }}
+                        onMouseLeave={(e) => {
+                          const v = e.currentTarget as HTMLVideoElement;
+                          v.pause();
+                          v.currentTime = 0;
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-slate-950/20 group-hover:bg-transparent pointer-events-none transition-colors" />
+                    </div>
+                  ) : thumbUrl ? (
                     <img
                       src={thumbUrl}
                       alt={tpl.name}

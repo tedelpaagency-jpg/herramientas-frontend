@@ -10,6 +10,7 @@ import { MarketingTemplate, MarketingTemplateElement } from '../../types/marketi
 import { ProfitCalculator } from './ProfitCalculator';
 import marketingB2BService from '../../services/marketingB2BService';
 import { useAuth } from '../../context/AuthContext';
+import { normalizeFileUrl } from '../../services/apiClient';
 import toast from 'react-hot-toast';
 
 interface CustomizationModalProps {
@@ -77,7 +78,33 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
   if (!isOpen || !template) return null;
 
   const baseCost = Number(template.base_cost) || 0;
-  const isVideo = template.resource?.type === 'video';
+  const isVideo =
+    template.media_type === 'video' ||
+    template.resource?.type === 'video' ||
+    template.media?.file_type === 'video' ||
+    Boolean(template.resource?.mime_type && template.resource.mime_type.startsWith('video/')) ||
+    Boolean(template.media?.mime_type && template.media.mime_type.startsWith('video/')) ||
+    /\.(mp4|webm|mov)(\?.*)?$/i.test(template.media_url || template.media?.url || template.preview_image_url || template.resource?.file_url || '');
+
+  const rawVideoUrl =
+    template.media?.full_url ||
+    template.media?.url ||
+    template.media_url ||
+    template.resource?.file_url ||
+    (template.preview_image_url && /\.(mp4|webm|mov)(\?.*)?$/i.test(template.preview_image_url) ? template.preview_image_url : null);
+
+  const videoSrc = normalizeFileUrl(rawVideoUrl);
+  const imageSrc = normalizeFileUrl(
+    template.preview_image_url ||
+    template.preview_full_url ||
+    template.resource?.file_url ||
+    template.media?.full_url ||
+    template.media?.url
+  );
+  const posterUrl = normalizeFileUrl(
+    template.resource?.thumbnail_url ||
+    (!/\.(mp4|webm|mov)(\?.*)?$/i.test(template.preview_image_url || '') ? template.preview_image_url : undefined)
+  );
 
   // Aspect ratio styling for preview container
   const getAspectRatioClass = (ratio: string) => {
@@ -190,7 +217,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                   {isVideo ? <Film className="w-2.5 h-2.5 text-amber-500 dark:text-amber-400" /> : <ImageIcon className="w-2.5 h-2.5 text-emerald-500 dark:text-emerald-400" />}
-                  {template.resource?.type}
+                  {isVideo ? 'video' : 'imagen'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -223,10 +250,10 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
             <div className={`relative w-full ${getAspectRatioClass(template.aspect_ratio)} rounded-2xl overflow-hidden shadow-2xl border border-slate-700/60 bg-black flex items-center justify-center`}>
               
               {/* Master Media Background */}
-              {isVideo ? (
+              {isVideo && videoSrc ? (
                 <video
-                  src={template.resource?.file_url}
-                  poster={template.preview_image_url || template.resource?.thumbnail_url || undefined}
+                  src={videoSrc}
+                  poster={posterUrl || undefined}
                   autoPlay
                   loop
                   muted
@@ -235,7 +262,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                 />
               ) : (
                 <img
-                  src={template.preview_image_url || template.resource?.file_url}
+                  src={imageSrc}
                   alt={template.name}
                   className="w-full h-full object-cover pointer-events-none"
                 />

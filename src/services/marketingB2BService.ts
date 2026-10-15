@@ -180,7 +180,27 @@ export const marketingB2BService = {
 
   getDownloadUrl: (uuid: string): string => {
     const baseURL = (apiClient.defaults.baseURL || '').replace(/\/api\/?$/, '');
-    return `${baseURL}/api/v1/marketing-b2b/generations/${uuid}/download`;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('santun_auth_token') : null;
+    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${baseURL}/api/v1/marketing-b2b/generations/${uuid}/download${query}`;
+  },
+
+  downloadGeneration: async (uuid: string, filename?: string): Promise<void> => {
+    const response = await apiClient.get(`/v1/marketing-b2b/generations/${uuid}/download`, {
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response.data]);
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = filename || `creativo-${uuid}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => {
+      window.URL.revokeObjectURL(downloadUrl);
+    }, 1000);
   },
 
   getMetrics: async (params?: { date_from?: string; date_to?: string; white_label_id?: number }): Promise<MarketingB2BMetrics> => {

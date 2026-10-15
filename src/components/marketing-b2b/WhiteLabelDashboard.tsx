@@ -14,6 +14,7 @@ import {
   MarketingGeneration 
 } from '../../types/marketingB2B';
 import marketingB2BService from '../../services/marketingB2BService';
+import { normalizeFileUrl } from '../../services/apiClient';
 import { CreativeCategoriesManager } from './CreativeCategoriesManager';
 import { TemplateVisualEditor } from './TemplateVisualEditor';
 import toast from 'react-hot-toast';
@@ -26,6 +27,7 @@ export const WhiteLabelDashboard: React.FC = () => {
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isLoadingGenerations, setIsLoadingGenerations] = useState(false);
+  const [downloadingUuid, setDownloadingUuid] = useState<string | null>(null);
 
   // Editor states
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -122,6 +124,24 @@ export const WhiteLabelDashboard: React.FC = () => {
     } catch (err) {
       console.error('Error deleting template:', err);
       toast.error('Error al eliminar plantilla');
+    }
+  };
+
+  const handleDownload = async (gen: MarketingGeneration) => {
+    setDownloadingUuid(gen.uuid);
+    const toastId = toast.loading('Descargando creativo...');
+    try {
+      const ext = gen.format || (gen.type === 'video' ? 'mp4' : 'jpg');
+      const filename = `${gen.template?.name ? gen.template.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'creativo'}-${gen.uuid}.${ext}`;
+      await marketingB2BService.downloadGeneration(gen.uuid, filename);
+      toast.success('Descarga completada', { id: toastId });
+    } catch (err: any) {
+      console.error('Error in blob download, falling back to direct URL:', err);
+      const directUrl = marketingB2BService.getDownloadUrl(gen.uuid);
+      window.open(directUrl, '_blank');
+      toast.dismiss(toastId);
+    } finally {
+      setDownloadingUuid(null);
     }
   };
 
@@ -391,8 +411,28 @@ export const WhiteLabelDashboard: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {templates.map((tpl) => {
-                const isVideo = tpl.media_type === 'video' || tpl.resource?.type === 'video' || tpl.media?.file_type === 'video';
-                const thumbUrl = tpl.preview_image_url || tpl.preview_full_url || tpl.media?.full_url || tpl.media?.url || tpl.media_url || tpl.resource?.thumbnail_url || tpl.resource?.file_url;
+                const isVideo =
+                  tpl.media_type === 'video' ||
+                  tpl.resource?.type === 'video' ||
+                  tpl.media?.file_type === 'video' ||
+                  Boolean(tpl.resource?.mime_type && tpl.resource.mime_type.startsWith('video/')) ||
+                  Boolean(tpl.media?.mime_type && tpl.media.mime_type.startsWith('video/')) ||
+                  /\.(mp4|webm|mov)(\?.*)?$/i.test(tpl.media_url || tpl.media?.url || tpl.preview_image_url || tpl.resource?.file_url || '');
+
+                const videoUrl = normalizeFileUrl(
+                  tpl.media?.full_url ||
+                  tpl.media?.url ||
+                  tpl.media_url ||
+                  tpl.resource?.file_url ||
+                  (tpl.preview_image_url && /\.(mp4|webm|mov)(\?.*)?$/i.test(tpl.preview_image_url) ? tpl.preview_image_url : null)
+                );
+
+                const thumbUrl = normalizeFileUrl(
+                  (!/\.(mp4|webm|mov)(\?.*)?$/i.test(tpl.preview_image_url || '') ? tpl.preview_image_url : null) ||
+                  tpl.preview_full_url ||
+                  tpl.resource?.thumbnail_url ||
+                  (!isVideo ? (tpl.media?.full_url || tpl.media?.url || tpl.media_url || tpl.resource?.file_url) : null)
+                );
 
                 return (
                   <div
@@ -401,7 +441,26 @@ export const WhiteLabelDashboard: React.FC = () => {
                   >
                     {/* Media Thumbnail */}
                     <div className="relative aspect-square bg-slate-100 dark:bg-slate-950 overflow-hidden">
-                      {thumbUrl ? (
+                      {isVideo && videoUrl ? (
+                        <div className="relative w-full h-full">
+                          <video
+                            src={videoUrl}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            muted
+                            playsInline
+                            loop
+                            preload="metadata"
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLVideoElement).play().catch(() => {});
+                            }}
+                            onMouseLeave={(e) => {
+                              const v = e.currentTarget as HTMLVideoElement;
+                              v.pause();
+                              v.currentTime = 0;
+                            }}
+                          />
+                        </div>
+                      ) : thumbUrl ? (
                         <img
                           src={thumbUrl}
                           alt={tpl.name}
@@ -588,14 +647,19 @@ export const WhiteLabelDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           {gen.status === 'completed' && (
-                            <a
-                              href={marketingB2BService.getDownloadUrl(gen.uuid)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all"
+                            <button
+                              type="button"
+                              onClick={() => handleDownload(gen)}
+                              disabled={downloadingUuid === gen.uuid}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
                             >
-                              <Download className="w-3.5 h-3.5" /> Descargar
-                            </a>
+                              {downloadingUuid === gen.uuid ? (
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5" />
+                              )}
+                              Descargar
+                            </button>
                           )}
                         </td>
                       </tr>

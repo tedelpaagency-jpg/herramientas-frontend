@@ -18,6 +18,7 @@ import {
 import { Media } from '../../types/media';
 import { MediaPicker } from '../media/MediaPicker';
 import marketingB2BService from '../../services/marketingB2BService';
+import { normalizeFileUrl } from '../../services/apiClient';
 import toast from 'react-hot-toast';
 
 const COUNTRIES = [
@@ -355,8 +356,6 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
     setDragStart(null);
   };
 
-  const backgroundUrl = selectedMedia?.full_url || selectedMedia?.url || template?.media?.full_url || template?.media?.url || template?.preview_full_url || template?.media_url || template?.resource?.file_url || resource?.file_url || null;
-
   const isVideoMedia = (() => {
     if (selectedMedia) {
       if (selectedMedia.file_type === 'video') return true;
@@ -366,11 +365,43 @@ export const TemplateVisualEditor: React.FC<TemplateVisualEditorProps> = ({
       return false;
     }
     if (resource) {
-      return resource.type === 'video';
+      return resource.type === 'video' || (resource.mime_type ? resource.mime_type.startsWith('video/') : false);
     }
-    if (template?.media_type === 'video') return true;
+    if (template?.media_type === 'video' || template?.media?.file_type === 'video' || template?.resource?.type === 'video') return true;
+    const pathOrUrl = (template?.media_url || template?.preview_image_url || '').toLowerCase();
+    if (pathOrUrl.endsWith('.mp4') || pathOrUrl.endsWith('.mov') || pathOrUrl.endsWith('.webm')) return true;
     return false;
   })();
+
+  const rawBackgroundUrl = (() => {
+    if (isVideoMedia) {
+      return (
+        selectedMedia?.full_url ||
+        selectedMedia?.url ||
+        template?.media?.full_url ||
+        template?.media?.url ||
+        template?.media_url ||
+        template?.resource?.file_url ||
+        resource?.file_url ||
+        (template?.preview_image_url && /\.(mp4|webm|mov)(\?.*)?$/i.test(template.preview_image_url) ? template.preview_image_url : null) ||
+        null
+      );
+    }
+    return (
+      selectedMedia?.full_url ||
+      selectedMedia?.url ||
+      template?.media?.full_url ||
+      template?.media?.url ||
+      template?.preview_full_url ||
+      template?.preview_image_url ||
+      template?.media_url ||
+      template?.resource?.file_url ||
+      resource?.file_url ||
+      null
+    );
+  })();
+
+  const backgroundUrl = normalizeFileUrl(rawBackgroundUrl);
 
   const handleSave = async () => {
     const hasMedia = !!(selectedMedia?.id || template?.media_id || resource?.id || template?.resource_id || backgroundUrl);
