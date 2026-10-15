@@ -303,6 +303,7 @@ function PublicLandingContent() {
     } catch (err: any) {
       console.error('Error submitting lead:', err);
       toast.error(err.response?.data?.message || 'Error al enviar el formulario. Intenta nuevamente.');
+      throw err;
     } finally {
       setSubmitting(false);
     }

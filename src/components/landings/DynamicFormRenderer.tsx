@@ -296,56 +296,10 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       setIsProcessingPayment(true);
       setStripeElementError(null);
 
-      // Si tenemos clave pública de Stripe válida, tokenizar en cliente directamente con la API de Stripe
-      if (hasValidStripeKey && stripePublishableKey) {
-        try {
-          const rawNumber = (formData['card_number'] || '').replace(/\s/g, '');
-          const expParts = (formData['card_expiry'] || '').split('/');
-          const expMonth = expParts[0] ? expParts[0].trim() : '';
-          let expYear = expParts[1] ? expParts[1].trim() : '';
-          if (expYear.length === 2) expYear = '20' + expYear;
-          const cvc = (formData['card_cvc'] || '').trim();
-          const name = (formData['card_holder_name'] || formData['name'] || '').trim();
-
-          const params = new URLSearchParams();
-          params.append('card[number]', rawNumber);
-          params.append('card[exp_month]', expMonth);
-          params.append('card[exp_year]', expYear);
-          params.append('card[cvc]', cvc);
-          if (name) params.append('card[name]', name);
-
-          const res = await fetch('https://api.stripe.com/v1/tokens', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${stripePublishableKey}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: params.toString(),
-          });
-
-          const data = await res.json();
-          if (data.error) {
-            setStripeElementError(data.error.message || 'Error al validar la tarjeta en Stripe');
-            setIsProcessingPayment(false);
-            return;
-          }
-
-          if (data.id) {
-            const submissionData = { ...formData, stripe_token: data.id };
-            delete submissionData['card_number'];
-            delete submissionData['card_expiry'];
-            delete submissionData['card_cvc'];
-            await onSubmit(submissionData);
-            return;
-          }
-        } catch (err: any) {
-          console.warn('Error en tokenización cliente Stripe, continuando con fallback servidor:', err);
-        }
-      }
-
-      // Si no hubo tokenización cliente o falló, enviar al servidor para que procese con stripeSecretKey
       try {
         await onSubmit(formData);
+      } catch (err: any) {
+        setStripeElementError(err?.response?.data?.message || err?.message || 'Error al procesar el pago.');
       } finally {
         setIsProcessingPayment(false);
       }
