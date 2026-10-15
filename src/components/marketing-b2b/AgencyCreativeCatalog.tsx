@@ -252,18 +252,12 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
   return (
     <div className="space-y-8 pb-20 text-slate-900 dark:text-slate-100 relative">
       {/* ============================================================ */}
-      {/* HERO SECTION ESTILO CANVA CON DEGRADADO LAVANDA SUAVE */}
+      {/* HERO SECTION ESTILO CANVA (FONDO LIMPIO SIN DEGRADADO MORADO) */}
       {/* ============================================================ */}
-      <div className="relative rounded-3xl p-6 sm:p-8 md:p-12 bg-gradient-to-b from-purple-100/90 via-indigo-50/50 to-white/80 dark:from-purple-950/40 dark:via-slate-900/40 dark:to-slate-900 border border-purple-100 dark:border-purple-950/60 shadow-xs z-30">
-        {/* Glows de ambientación suaves contenidos en su propia capa oculta */}
-        <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-purple-400/15 dark:bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-10 right-10 w-72 h-72 bg-indigo-300/10 dark:bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-        </div>
-
+      <div className="relative rounded-3xl p-6 sm:p-8 md:p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm z-30">
         <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
           {/* TÍTULO PRINCIPAL: ¿Qué vamos a diseñar hoy? */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 via-purple-600 to-indigo-600 dark:from-indigo-300 dark:via-purple-300 dark:to-indigo-200">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
             ¿Qué vamos a diseñar hoy?
           </h1>
 
