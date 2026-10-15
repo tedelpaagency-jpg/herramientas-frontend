@@ -128,23 +128,10 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [isBtnHovered, setIsBtnHovered] = useState(false);
 
-  // Stripe Elements State & Refs
+  // Stripe Payment State
   const hasValidStripeKey = Boolean(stripePublishableKey && isValidStripePublishableKey(stripePublishableKey));
-  const [forceManualCard, setForceManualCard] = useState(false);
-  const [showFallbackOption, setShowFallbackOption] = useState(false);
-  const useStripeElements = hasValidStripeKey && !forceManualCard;
-
-  const [isStripeLoaded, setIsStripeLoaded] = useState(false);
-  const [isCardComplete, setIsCardComplete] = useState(false);
-  const [isCardEmpty, setIsCardEmpty] = useState(true);
-  const [isCardFocused, setIsCardFocused] = useState(false);
   const [stripeElementError, setStripeElementError] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
-  const stripeInstanceRef = useRef<any>(null);
-  const elementsInstanceRef = useRef<any>(null);
-  const cardElementRef = useRef<any>(null);
-  const cardContainerRef = useRef<HTMLDivElement | null>(null);
 
   const getFormattedTermsHtml = (raw: string | null | undefined): string => {
     if (!raw || !raw.trim()) return '';
@@ -261,27 +248,14 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       if (!formData['card_holder_name'] || !formData['card_holder_name'].trim()) {
         newErrors['card_holder_name'] = 'Nombre en la tarjeta es obligatorio';
       }
-
-      if (useStripeElements) {
-        if (!isStripeLoaded) {
-          newErrors['stripe_card'] = 'La pasarela segura aún se está inicializando. Por favor espera un momento o ingresa los datos manualmente.';
-        } else if (isCardEmpty) {
-          newErrors['stripe_card'] = 'Por favor ingresa los datos de tu tarjeta (número, vencimiento y CVC).';
-        } else if (stripeElementError) {
-          newErrors['stripe_card'] = stripeElementError;
-        } else if (!isCardComplete) {
-          newErrors['stripe_card'] = 'Por favor completa también la fecha de vencimiento (MM/AA) y el código CVC dentro de la casilla.';
-        }
-      } else {
-        if (!formData['card_number'] || formData['card_number'].replace(/\s/g, '').length < 15) {
-          newErrors['card_number'] = 'Número de tarjeta obligatorio (mín. 15-16 dígitos)';
-        }
-        if (!formData['card_expiry'] || !/^\d{2}\/\d{2}$/.test(formData['card_expiry'])) {
-          newErrors['card_expiry'] = 'Fecha de expiración requerida (MM/AA)';
-        }
-        if (!formData['card_cvc'] || formData['card_cvc'].length < 3) {
-          newErrors['card_cvc'] = 'Código CVC / CVV obligatorio';
-        }
+      if (!formData['card_number'] || formData['card_number'].replace(/\s/g, '').length < 15) {
+        newErrors['card_number'] = 'Número de tarjeta obligatorio (mín. 15-16 dígitos)';
+      }
+      if (!formData['card_expiry'] || !/^\d{2}\/\d{2}$/.test(formData['card_expiry'])) {
+        newErrors['card_expiry'] = 'Fecha de expiración requerida (MM/AA)';
+      }
+      if (!formData['card_cvc'] || formData['card_cvc'].length < 3) {
+        newErrors['card_cvc'] = 'Código CVC / CVV obligatorio';
       }
     }
 
@@ -318,35 +292,60 @@ export const DynamicFormRenderer: React.FC<Props> = ({
     e.preventDefault();
     if (!validateCurrentFields()) return;
 
-    if (paymentConfig?.enabled && useStripeElements && stripeInstanceRef.current) {
-      const cardElement = elementsInstanceRef.current?.getElement('card') || cardElementRef.current;
-      if (!cardElement) {
-        setStripeElementError('El formulario de tarjeta no está listo aún. Puedes ingresar los datos manualmente.');
-        setShowFallbackOption(true);
-        return;
-      }
+    if (paymentConfig?.enabled) {
       setIsProcessingPayment(true);
       setStripeElementError(null);
+
+      // Si tenemos clave pública de Stripe válida, tokenizar en cliente directamente con la API de Stripe
+      if (hasValidStripeKey && stripePublishableKey) {
+        try {
+          const rawNumber = (formData['card_number'] || '').replace(/\s/g, '');
+          const expParts = (formData['card_expiry'] || '').split('/');
+          const expMonth = expParts[0] ? expParts[0].trim() : '';
+          let expYear = expParts[1] ? expParts[1].trim() : '';
+          if (expYear.length === 2) expYear = '20' + expYear;
+          const cvc = (formData['card_cvc'] || '').trim();
+          const name = (formData['card_holder_name'] || formData['name'] || '').trim();
+
+          const params = new URLSearchParams();
+          params.append('card[number]', rawNumber);
+          params.append('card[exp_month]', expMonth);
+          params.append('card[exp_year]', expYear);
+          params.append('card[cvc]', cvc);
+          if (name) params.append('card[name]', name);
+
+          const res = await fetch('https://api.stripe.com/v1/tokens', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${stripePublishableKey}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: params.toString(),
+          });
+
+          const data = await res.json();
+          if (data.error) {
+            setStripeElementError(data.error.message || 'Error al validar la tarjeta en Stripe');
+            setIsProcessingPayment(false);
+            return;
+          }
+
+          if (data.id) {
+            const submissionData = { ...formData, stripe_token: data.id };
+            delete submissionData['card_number'];
+            delete submissionData['card_expiry'];
+            delete submissionData['card_cvc'];
+            await onSubmit(submissionData);
+            return;
+          }
+        } catch (err: any) {
+          console.warn('Error en tokenización cliente Stripe, continuando con fallback servidor:', err);
+        }
+      }
+
+      // Si no hubo tokenización cliente o falló, enviar al servidor para que procese con stripeSecretKey
       try {
-        const { token, error } = await stripeInstanceRef.current.createToken(cardElement, {
-          name: formData['card_holder_name'] || formData['name'] || '',
-        });
-
-        if (error) {
-          setStripeElementError(error.message || 'Error al validar la tarjeta en Stripe');
-          setIsProcessingPayment(false);
-          return;
-        }
-
-        if (token) {
-          const submissionData = { ...formData, stripe_token: token.id };
-          delete submissionData['card_number'];
-          delete submissionData['card_expiry'];
-          delete submissionData['card_cvc'];
-          await onSubmit(submissionData);
-        }
-      } catch (err: any) {
-        setStripeElementError(err.message || 'Error de comunicación con Stripe');
+        await onSubmit(formData);
       } finally {
         setIsProcessingPayment(false);
       }
@@ -601,209 +600,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   // Serialized key to avoid re-triggering effect on every render
   const stripeAppearanceKey = JSON.stringify(effectiveStripeAppearance || {});
 
-  // Lifecycle & mounting of official Stripe Elements (card iframe)
-  useEffect(() => {
-    if (!paymentConfig?.enabled || !useStripeElements || !isLastStep) return;
 
-    let isMounted = true;
-    let timerId: any = null;
-    let fallbackTimer: any = null;
-
-    // Safety fallback timer: si pasan 3.5 segundos sin montar, ofrecer opción manual
-    fallbackTimer = setTimeout(() => {
-      if (isMounted && !isStripeLoaded) {
-        setShowFallbackOption(true);
-      }
-    }, 3500);
-
-    const targetDoc = cardContainerRef.current?.ownerDocument || (typeof document !== 'undefined' ? document : null);
-    const targetWin = targetDoc?.defaultView || (typeof window !== 'undefined' ? window : null);
-
-    loadStripeJs(targetDoc, targetWin)
-      .then((StripeClass) => {
-        if (!isMounted || !StripeClass) {
-          if (isMounted) setShowFallbackOption(true);
-          return;
-        }
-
-        // Inicializar Stripe en el contexto de la ventana donde reside el contenedor DOM
-        if (!stripeInstanceRef.current || (stripeInstanceRef.current as any)._targetWin !== targetWin) {
-          try {
-            stripeInstanceRef.current = StripeClass(stripePublishableKey);
-            (stripeInstanceRef.current as any)._targetWin = targetWin;
-            elementsInstanceRef.current = null;
-            cardElementRef.current = null;
-          } catch (initErr: any) {
-            console.error('Error al instanciar Stripe:', initErr);
-            if (isMounted) {
-              setStripeElementError(initErr?.message || 'Error con la clave de Stripe');
-              setShowFallbackOption(true);
-            }
-            return;
-          }
-        }
-        const stripe = stripeInstanceRef.current;
-        if (!stripe) return;
-
-        if (!elementsInstanceRef.current) {
-          try {
-            elementsInstanceRef.current = stripe.elements();
-          } catch (e: any) {
-            console.error('Error al crear stripe.elements():', e);
-            if (isMounted) setShowFallbackOption(true);
-            return;
-          }
-        }
-
-        const isInputDark = isColorDark(effectiveStripeAppearance.input_bg_color || '#ffffff');
-
-        // Estilos conformes a las reglas oficiales de Stripe Elements
-        const cardStyle = {
-          base: {
-            color: effectiveStripeAppearance.input_text_color || (isInputDark ? '#f8fafc' : '#0f172a'),
-            fontFamily: effectiveStripeAppearance.font_family || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            fontSize: effectiveStripeAppearance.font_size || '14px',
-            fontWeight: (effectiveStripeAppearance.font_weight as string) || '500',
-            fontSmoothing: 'antialiased',
-            '::placeholder': {
-              color: effectiveStripeAppearance.input_placeholder_color || (isInputDark ? '#64748b' : '#94a3b8'),
-            },
-            iconColor: effectiveStripeAppearance.input_focus_border_color || '#10b981',
-          },
-          invalid: {
-            color: effectiveStripeAppearance?.error_color || '#ef4444',
-            iconColor: effectiveStripeAppearance?.error_color || '#ef4444',
-          },
-          complete: {
-            color: effectiveStripeAppearance?.success_color || '#10b981',
-            iconColor: effectiveStripeAppearance?.success_color || '#10b981',
-          },
-        };
-
-        // Si el elemento ya existe y está montado en el contenedor, solo actualizar estilos
-        const existingCard = elementsInstanceRef.current?.getElement('card') || cardElementRef.current;
-        if (existingCard && cardContainerRef.current && (cardContainerRef.current.querySelector('.StripeElement') || cardContainerRef.current.querySelector('iframe'))) {
-          try {
-            existingCard.update({ style: cardStyle });
-            cardElementRef.current = existingCard;
-            setIsStripeLoaded(true);
-            return;
-          } catch (e) {}
-        }
-
-        // Crear o reutilizar card
-        let card: any = null;
-        try {
-          if (existingCard) {
-            try {
-              existingCard.unmount();
-            } catch (e) {}
-          }
-          card = elementsInstanceRef.current.create('card', {
-            style: cardStyle,
-            hidePostalCode: true,
-          });
-        } catch (createErr: any) {
-          console.warn('Error al crear card element:', createErr);
-          if (existingCard) card = existingCard;
-        }
-
-        if (!card) {
-          if (isMounted) setShowFallbackOption(true);
-          return;
-        }
-
-        const mountToContainer = () => {
-          if (!isMounted) return;
-          if (cardContainerRef.current) {
-            try {
-              if (cardElementRef.current && cardElementRef.current !== card) {
-                try {
-                  cardElementRef.current.unmount();
-                } catch (e) {}
-              }
-
-              cardContainerRef.current.innerHTML = '';
-              card.mount(cardContainerRef.current);
-              cardElementRef.current = card;
-
-              card.on('ready', () => {
-                if (isMounted) {
-                  setIsStripeLoaded(true);
-                  setStripeElementError(null);
-                }
-              });
-
-              // Fallback automático por si 'ready' tarda o no se dispara pero el iframe ya existe
-              setTimeout(() => {
-                if (isMounted && cardContainerRef.current) {
-                  const hasIframe = cardContainerRef.current.querySelector('iframe') ||
-                                    cardContainerRef.current.querySelector('.StripeElement');
-                  if (hasIframe) {
-                    setIsStripeLoaded(true);
-                  }
-                }
-              }, 2000);
-
-              card.on('change', (event: any) => {
-                setIsCardEmpty(Boolean(event.empty));
-                setIsCardComplete(Boolean(event.complete));
-                if (event.error) {
-                  setStripeElementError(event.error.message);
-                } else {
-                  setStripeElementError(null);
-                }
-                if (event.complete) {
-                  setErrors((prev) => {
-                    if (!prev['stripe_card']) return prev;
-                    const updated = { ...prev };
-                    delete updated['stripe_card'];
-                    return updated;
-                  });
-                }
-              });
-
-              card.on('focus', () => setIsCardFocused(true));
-              card.on('blur', () => setIsCardFocused(false));
-            } catch (err: any) {
-              console.warn('Error al montar Stripe Card Element:', err);
-              if (isMounted) {
-                setStripeElementError(err?.message || 'Error al inicializar la pasarela de pago');
-                setShowFallbackOption(true);
-              }
-            }
-          } else {
-            timerId = setTimeout(mountToContainer, 50);
-          }
-        };
-
-        mountToContainer();
-      })
-      .catch((err) => {
-        console.error('Error al inicializar Stripe Elements:', err);
-        if (isMounted) {
-          setStripeElementError('No se pudo cargar la pasarela segura de Stripe. Puedes usar el formulario directo de tarjeta.');
-          setShowFallbackOption(true);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-      if (timerId) clearTimeout(timerId);
-      if (fallbackTimer) clearTimeout(fallbackTimer);
-    };
-  }, [paymentConfig?.enabled, useStripeElements, isLastStep, stripeAppearanceKey, isDark]);
-
-  useEffect(() => {
-    return () => {
-      if (cardElementRef.current) {
-        try {
-          cardElementRef.current.unmount();
-        } catch (_) {}
-        cardElementRef.current = null;
-      }
-    };
-  }, []);
 
   if (isFormLoading) {
     const isDarkVariant = variant === 'dark';
@@ -1159,8 +956,60 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               )}
             </div>
 
-            {useStripeElements ? (
-              /* Contenedor Iframe Seguro Stripe Elements */
+            {/* Número de Tarjeta */}
+            <div
+              className="flex flex-col space-y-1 text-left w-full"
+              style={{ display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}
+            >
+              <label
+                className={`${labelClasses} block w-full text-left mb-1`}
+                style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
+              >
+                Número de Tarjeta <span className="text-red-500">*</span>
+              </label>
+              <div className="relative w-full" style={{ position: 'relative', width: '100%' }}>
+                <input
+                  type="text"
+                  maxLength={19}
+                  placeholder="0000 0000 0000 0000"
+                  required
+                  value={formData['card_number'] || ''}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
+                    const formatted = raw.replace(/(.{4})/g, '$1 ').trim();
+                    handleInputChange({ id: 'card_number', name: 'card_number', label: 'Número de Tarjeta', type: 'text' }, formatted);
+                  }}
+                  onBlur={() => {
+                    const raw = (formData['card_number'] || '').replace(/\s/g, '');
+                    if (!raw || raw.length < 15) {
+                      setErrors((prev) => ({ ...prev, card_number: 'Número de tarjeta obligatorio (mín. 15-16 dígitos)' }));
+                    }
+                  }}
+                  className={`w-full font-mono tracking-wider transition focus:outline-none focus:ring-2 block ${errors['card_number'] ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/20'}`}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    ...stripeInputStyle,
+                    ...(errors['card_number'] ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
+                  }}
+                />
+                <CreditCard className="w-4 h-4 pointer-events-none opacity-60" style={{ position: 'absolute', right: '12px', top: '14px', color: effectiveStripeAppearance.input_text_color || '#94a3b8' }} />
+              </div>
+              {errors['card_number'] && (
+                <p className="text-[11px] font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={stripeErrorStyle}>
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{errors['card_number']}</span>
+                </p>
+              )}
+            </div>
+
+            {/* Expiración y CVC Grid */}
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', width: '100%', gap: '0.75rem' }}
+            >
+              {/* Expiración */}
               <div
                 className="flex flex-col space-y-1 text-left w-full"
                 style={{ display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}
@@ -1169,247 +1018,95 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                   className={`${labelClasses} block w-full text-left mb-1`}
                   style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
                 >
-                  Datos de la Tarjeta (Número, Vencimiento MM/AA y CVC) <span className="text-red-500">*</span>
+                  Vencimiento (MM/AA) <span className="text-red-500 font-bold ml-0.5">*</span>
                 </label>
-                <span
-                  className="text-[11px] block mb-1 text-slate-500 dark:text-slate-400"
-                  style={{ opacity: 0.85 }}
-                >
-                  Introduce en esta casilla los 16 dígitos, seguido del mes/año de vencimiento (MM/AA) y el código CVC (3 dígitos).
-                </span>
-                <div
-                  className="w-full transition-all duration-200"
-                  style={{
-                    backgroundColor: effectiveStripeAppearance.input_bg_color || '#ffffff',
-                    borderWidth: effectiveStripeAppearance.input_border_width || '1px',
-                    borderStyle: 'solid',
-                    borderColor: isCardFocused
-                      ? (effectiveStripeAppearance.input_focus_border_color || '#10b981')
-                      : (stripeElementError || errors['stripe_card']
-                        ? (effectiveStripeAppearance.error_color || '#ef4444')
-                        : (effectiveStripeAppearance.input_border_color || '#cbd5e1')),
-                    borderRadius: effectiveStripeAppearance.input_border_radius || '10px',
-                    padding: effectiveStripeAppearance.input_padding || '12px 14px',
-                    boxShadow: isCardFocused
-                      ? `0 0 0 2px ${(effectiveStripeAppearance?.input_focus_border_color || '#10b981')}33`
-                      : 'none',
-                    minHeight: '44px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    boxSizing: 'border-box',
-                    width: '100%',
+                <input
+                  type="text"
+                  maxLength={5}
+                  placeholder="MM/AA"
+                  required
+                  value={formData['card_expiry'] || ''}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (val.length >= 3) {
+                      val = val.slice(0, 2) + '/' + val.slice(2, 4);
+                    }
+                    handleInputChange({ id: 'card_expiry', name: 'card_expiry', label: 'Fecha de Vencimiento', type: 'text' }, val);
                   }}
-                >
-                  <div ref={cardContainerRef} style={{ width: '100%' }} />
-                </div>
-                {stripeElementError && (
-                  <div className="flex flex-col gap-1.5 mt-1">
-                    <p className="text-[11px] font-semibold flex items-center gap-1.5" style={stripeErrorStyle}>
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{stripeElementError}</span>
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setForceManualCard(true)}
-                      className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium text-left"
-                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                    >
-                      Ingresar datos de tarjeta en casillas separadas
-                    </button>
-                  </div>
-                )}
-                {errors['stripe_card'] && !stripeElementError && (
-                  <p className="text-[11px] font-semibold mt-1" style={stripeErrorStyle}>
-                    {errors['stripe_card']}
+                  onBlur={() => {
+                    if (!formData['card_expiry'] || !/^\d{2}\/\d{2}$/.test(formData['card_expiry'])) {
+                      setErrors((prev) => ({ ...prev, card_expiry: 'Fecha de expiración requerida (MM/AA)' }));
+                    }
+                  }}
+                  className={`w-full font-mono transition focus:outline-none focus:ring-2 block ${errors['card_expiry'] ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/20'}`}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    ...stripeInputStyle,
+                    ...(errors['card_expiry'] ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
+                  }}
+                />
+                {errors['card_expiry'] && (
+                  <p className="text-[11px] font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={stripeErrorStyle}>
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{errors['card_expiry']}</span>
                   </p>
                 )}
-                <div className="flex items-center justify-between pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setForceManualCard(true)}
-                    className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium text-left"
-                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                  >
-                    ¿Prefieres ingresar número, fecha y CVC en casillas separadas? Haz clic aquí
-                  </button>
-                </div>
-                {!isStripeLoaded && !stripeElementError && (
-                  <div className="flex flex-col gap-1.5 mt-1.5">
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500 shrink-0" />
-                      <span>Cargando interfaz segura de Stripe...</span>
-                    </div>
-                    {showFallbackOption && (
-                      <button
-                        type="button"
-                        onClick={() => setForceManualCard(true)}
-                        className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-semibold text-left transition"
-                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                      >
-                        ¿Tarda demasiado? Haz clic aquí para ingresar tu tarjeta directamente
-                      </button>
-                    )}
-                  </div>
+              </div>
+
+              {/* CVC / CVV */}
+              <div
+                className="flex flex-col space-y-1 text-left w-full"
+                style={{ display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}
+              >
+                <label
+                  className={`${labelClasses} block w-full text-left mb-1`}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
+                >
+                  CVC / CVV <span className="text-red-500 font-bold ml-0.5">*</span>
+                </label>
+                <input
+                  type="password"
+                  maxLength={4}
+                  placeholder="123"
+                  required
+                  value={formData['card_cvc'] || ''}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    handleInputChange({ id: 'card_cvc', name: 'card_cvc', label: 'CVC / CVV', type: 'text' }, raw);
+                  }}
+                  onBlur={() => {
+                    if (!formData['card_cvc'] || formData['card_cvc'].length < 3) {
+                      setErrors((prev) => ({ ...prev, card_cvc: 'Código CVC / CVV obligatorio' }));
+                    }
+                  }}
+                  className={`w-full font-mono transition focus:outline-none focus:ring-2 block ${errors['card_cvc'] ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/20'}`}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    ...stripeInputStyle,
+                    ...(errors['card_cvc'] ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
+                  }}
+                />
+                {errors['card_cvc'] && (
+                  <p className="text-[11px] font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={stripeErrorStyle}>
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{errors['card_cvc']}</span>
+                  </p>
                 )}
               </div>
-            ) : (
-              /* Fallback en caso de que no haya clave pública configurada o se fuerce manual */
-              <>
-                {hasValidStripeKey && (
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setForceManualCard(false)}
-                      className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
-                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                    >
-                      ← Usar formulario automático de Stripe Elements
-                    </button>
-                  </div>
-                )}
-                {/* Número de Tarjeta */}
-                <div
-                  className="flex flex-col space-y-1 text-left w-full"
-                  style={{ display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}
-                >
-                  <label
-                    className={`${labelClasses} block w-full text-left mb-1`}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
-                  >
-                    Número de Tarjeta <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative w-full" style={{ position: 'relative', width: '100%' }}>
-                    <input
-                      type="text"
-                      maxLength={19}
-                      placeholder="0000 0000 0000 0000"
-                      required
-                      value={formData['card_number'] || ''}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
-                        const formatted = raw.replace(/(.{4})/g, '$1 ').trim();
-                        handleInputChange({ id: 'card_number', name: 'card_number', label: 'Número de Tarjeta', type: 'text' }, formatted);
-                      }}
-                      onBlur={() => {
-                        const raw = (formData['card_number'] || '').replace(/\s/g, '');
-                        if (!raw || raw.length < 15) {
-                          setErrors((prev) => ({ ...prev, card_number: 'Número de tarjeta obligatorio (mín. 15-16 dígitos)' }));
-                        }
-                      }}
-                      className={`w-full font-mono tracking-wider transition focus:outline-none focus:ring-2 block ${errors['card_number'] ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/20'}`}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        ...stripeInputStyle,
-                        ...(errors['card_number'] ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
-                      }}
-                    />
-                    <CreditCard className="w-4 h-4 pointer-events-none opacity-60" style={{ position: 'absolute', right: '12px', top: '14px', color: effectiveStripeAppearance.input_text_color || '#94a3b8' }} />
-                  </div>
-                  {errors['card_number'] && (
-                    <p className="text-[11px] font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={stripeErrorStyle}>
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{errors['card_number']}</span>
-                    </p>
-                  )}
-                </div>
+            </div>
 
-                {/* Expiración y CVC Grid */}
-                <div
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full"
-                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', width: '100%', gap: '0.75rem' }}
-                >
-                  {/* Expiración */}
-                  <div
-                    className="flex flex-col space-y-1 text-left w-full"
-                    style={{ display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}
-                  >
-                    <label
-                      className={`${labelClasses} block w-full text-left mb-1`}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
-                    >
-                      Vencimiento (MM/AA) <span className="text-red-500 font-bold ml-0.5">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={5}
-                      placeholder="MM/AA"
-                      required
-                      value={formData['card_expiry'] || ''}
-                      onChange={(e) => {
-                        let val = e.target.value.replace(/\D/g, '');
-                        if (val.length >= 3) {
-                          val = val.slice(0, 2) + '/' + val.slice(2, 4);
-                        }
-                        handleInputChange({ id: 'card_expiry', name: 'card_expiry', label: 'Fecha de Vencimiento', type: 'text' }, val);
-                      }}
-                      onBlur={() => {
-                        if (!formData['card_expiry'] || !/^\d{2}\/\d{2}$/.test(formData['card_expiry'])) {
-                          setErrors((prev) => ({ ...prev, card_expiry: 'Fecha de expiración requerida (MM/AA)' }));
-                        }
-                      }}
-                      className={`w-full font-mono transition focus:outline-none focus:ring-2 block ${errors['card_expiry'] ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/20'}`}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        ...stripeInputStyle,
-                        ...(errors['card_expiry'] ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
-                      }}
-                    />
-                    {errors['card_expiry'] && (
-                      <p className="text-[11px] font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={stripeErrorStyle}>
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        <span>{errors['card_expiry']}</span>
-                      </p>
-                    )}
-                  </div>
-
-                  {/* CVC / CVV */}
-                  <div
-                    className="flex flex-col space-y-1 text-left w-full"
-                    style={{ display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}
-                  >
-                    <label
-                      className={`${labelClasses} block w-full text-left mb-1`}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: '4px', ...stripeLabelStyle }}
-                    >
-                      CVC / CVV <span className="text-red-500 font-bold ml-0.5">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      maxLength={4}
-                      placeholder="123"
-                      required
-                      value={formData['card_cvc'] || ''}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
-                        handleInputChange({ id: 'card_cvc', name: 'card_cvc', label: 'CVC / CVV', type: 'text' }, raw);
-                      }}
-                      onBlur={() => {
-                        if (!formData['card_cvc'] || formData['card_cvc'].length < 3) {
-                          setErrors((prev) => ({ ...prev, card_cvc: 'Código CVC / CVV obligatorio' }));
-                        }
-                      }}
-                      className={`w-full font-mono transition focus:outline-none focus:ring-2 block ${errors['card_cvc'] ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/20'}`}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        ...stripeInputStyle,
-                        ...(errors['card_cvc'] ? { borderColor: '#ef4444', borderWidth: '1.5px', borderStyle: 'solid' } : {}),
-                      }}
-                    />
-                    {errors['card_cvc'] && (
-                      <p className="text-[11px] font-semibold flex items-center gap-1.5 mt-1 animate-in fade-in" style={stripeErrorStyle}>
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        <span>{errors['card_cvc']}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </>
+            {/* Error retornado por Stripe */}
+            {stripeElementError && (
+              <div className="flex flex-col gap-1.5 mt-1">
+                <p className="text-[11px] font-semibold flex items-center gap-1.5" style={stripeErrorStyle}>
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{stripeElementError}</span>
+                </p>
+              </div>
             )}
           </div>
 
