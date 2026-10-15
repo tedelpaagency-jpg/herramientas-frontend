@@ -43,12 +43,16 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
     const initialSalePrice = Number(template.suggested_price) || (Number(template.base_cost) * 1.25);
     setSalePrice(initialSalePrice);
 
-    // Default format based on resource type
-    if (template.resource?.type === 'video') {
-      setFormat('mp4');
-    } else {
-      setFormat('png');
-    }
+    // Default format based on resource or media library type
+    const isVideoTemplate =
+      template.media_type === 'video' ||
+      template.resource?.type === 'video' ||
+      template.media?.file_type === 'video' ||
+      Boolean(template.resource?.mime_type && template.resource.mime_type.startsWith('video/')) ||
+      Boolean(template.media?.mime_type && template.media.mime_type.startsWith('video/')) ||
+      /\.(mp4|webm|mov)(\?.*)?$/i.test(template.media_url || template.media?.url || template.preview_image_url || template.resource?.file_url || '');
+
+    setFormat(isVideoTemplate ? 'mp4' : 'png');
 
     // Initialize fields with agency defaults
     const initialPayload: Record<string, any> = {};
@@ -184,7 +188,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
       const res = await marketingB2BService.requestGeneration({
         template_id: template.id,
         sale_price: salePrice,
-        format: format,
+        format: isVideo ? 'mp4' : format,
         customization_payload: finalPayload,
       });
 

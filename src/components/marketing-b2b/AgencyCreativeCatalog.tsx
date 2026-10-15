@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, Film, Image as ImageIcon, Search, Filter, 
-  ChevronRight, ChevronLeft, Download, Eye, TrendingUp, 
-  Clock, Play, Maximize2, Zap, Layers, RefreshCw, Globe, Tag
+  ChevronRight, TrendingUp, Clock, Zap, Layers, RefreshCw, 
+  Globe, Tag, X, RotateCcw, SlidersHorizontal
 } from 'lucide-react';
 import { MarketingTemplate, AspectRatioType, MarketingCreativeCategory } from '../../types/marketingB2B';
 import marketingB2BService from '../../services/marketingB2BService';
@@ -45,20 +45,13 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
   const [templates, setTemplates] = useState<MarketingTemplate[]>([]);
   const [categories, setCategories] = useState<MarketingCreativeCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTemplate, setActiveTemplate] = useState<MarketingTemplate | null>(null);
   const [aspectRatioFilter, setAspectRatioFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [countryFilter, setCountryFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 3D Carousel state (inspired by Canva Gallery)
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeftState, setScrollLeftState] = useState(0);
-
-  // Load categories
+  // Cargar categorías
   useEffect(() => {
     const loadCats = async () => {
       try {
@@ -83,9 +76,6 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
         status: 'published',
       });
       setTemplates(res.data);
-      if (res.data.length > 0 && !activeTemplate) {
-        setActiveTemplate(res.data[0]);
-      }
     } catch (err) {
       console.error('Error fetching marketing templates:', err);
       toast.error('Error al cargar catálogo de creativos');
@@ -94,50 +84,42 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
     }
   };
 
+  // Búsqueda en vivo con debounce de 350ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchTemplates();
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Recarga al cambiar filtros de selección
   useEffect(() => {
     fetchTemplates();
   }, [aspectRatioFilter, typeFilter, categoryFilter, countryFilter]);
 
-  // Carousel Drag Handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!carouselRef.current) return;
-    setIsDragging(true);
-    setStartX(e.pageX - carouselRef.current.offsetLeft);
-    setScrollLeftState(carouselRef.current.scrollLeft);
-    carouselRef.current.style.scrollBehavior = 'auto';
-  };
+  const hasActiveFilters = 
+    aspectRatioFilter !== 'all' || 
+    typeFilter !== 'all' || 
+    categoryFilter !== 'all' || 
+    countryFilter !== 'all' || 
+    searchTerm.trim() !== '';
 
-  const handleMouseLeaveOrUp = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    if (carouselRef.current) {
-      carouselRef.current.style.scrollBehavior = 'smooth';
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !carouselRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - carouselRef.current.offsetLeft;
-    const walk = (x - startX) * 1.8;
-    carouselRef.current.scrollLeft = scrollLeftState - walk;
-  };
-
-  const scrollCarousel = (direction: 'left' | 'right') => {
-    if (carouselRef.current) {
-      const itemWidth = 240;
-      const scrollTo = direction === 'left' 
-        ? carouselRef.current.scrollLeft - itemWidth * 2 
-        : carouselRef.current.scrollLeft + itemWidth * 2;
-      carouselRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
-    }
+  const handleResetFilters = () => {
+    setAspectRatioFilter('all');
+    setTypeFilter('all');
+    setCategoryFilter('all');
+    setCountryFilter('all');
+    setSearchTerm('');
   };
 
   return (
-    <div className="space-y-8 pb-16">
-      {/* Top Banner / Action Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900/90 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm dark:shadow-2xl relative overflow-hidden">
-        <div className="relative z-10 space-y-2">
+    <div className="space-y-6 pb-16">
+      {/* Top Banner & Buscador Principal Prominente */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 bg-white dark:bg-slate-900/90 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm dark:shadow-2xl relative overflow-hidden">
+        {/* Glow de fondo decorativo */}
+        <div className="absolute -right-16 -top-16 w-64 h-64 bg-purple-500/10 dark:bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 space-y-2 max-w-xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-wider">
             <Zap className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
             <span>Marketing B2B Automatizado</span>
@@ -145,15 +127,39 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
           <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
             Catálogo de Creativos & Videos Comerciales
           </h1>
-          <p className="text-slate-600 dark:text-slate-300 text-xs md:text-sm max-w-xl leading-relaxed">
-            Personaliza imágenes y videos de alta conversión con el logo y datos de tu agencia en menos de 45 segundos.
+          <p className="text-slate-600 dark:text-slate-300 text-xs md:text-sm leading-relaxed">
+            Personaliza imágenes y videos de alta conversión con el logo y precio de tu agencia en menos de 45 segundos.
           </p>
         </div>
 
-        <div className="relative z-10 flex items-center gap-3 shrink-0">
+        {/* Buscador Prominente y Botón de Historial */}
+        <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+          {/* Barra de Búsqueda Principal */}
+          <div className="relative flex-1 sm:w-80 md:w-96">
+            <Search className="w-4 h-4 text-purple-600 dark:text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar plantilla por título, país o servicio..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && fetchTemplates()}
+              className="w-full bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white text-xs font-semibold rounded-2xl pl-10 pr-9 py-3 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md transition-colors cursor-pointer"
+                title="Limpiar búsqueda"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           <button
             onClick={onOpenHistory}
-            className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-black border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center gap-2 transition-all cursor-pointer"
+            className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-black border border-slate-200 dark:border-slate-700/80 shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
           >
             <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
             <span>Mis Descargas & Historial</span>
@@ -161,239 +167,141 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
         </div>
       </div>
 
-      {/* 3D Showcase Spotlight (Canva Style) */}
-      {activeTemplate && (
-        <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm dark:shadow-2xl">
-          <div className="flex flex-col lg:flex-row items-center gap-8 justify-between">
-            {/* Left Info & CTA */}
-            <div className="space-y-5 max-w-md w-full">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-extrabold uppercase tracking-wider">
-                    {activeTemplate.aspect_ratio} Formato
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-1 border border-slate-200 dark:border-transparent">
-                    {(activeTemplate.media_type === 'video' || activeTemplate.resource?.type === 'video' || activeTemplate.media?.file_type === 'video') ? (
-                      <Film className="w-3 h-3 text-amber-500 dark:text-amber-400" />
-                    ) : (
-                      <ImageIcon className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
-                    )}
-                    {(activeTemplate.media_type === 'video' || activeTemplate.resource?.type === 'video' || activeTemplate.media?.file_type === 'video') ? 'video' : 'imagen'}
-                  </span>
-                  {activeTemplate.country && (
-                    <span className="px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-300 text-xs font-bold flex items-center gap-1">
-                      <Globe className="w-3 h-3 text-sky-500 dark:text-sky-400" />
-                      {activeTemplate.country}
-                    </span>
-                  )}
-                  {activeTemplate.category && (
-                    <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white text-xs font-bold flex items-center gap-1.5 border border-slate-200 dark:border-slate-700">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: activeTemplate.category.color || '#8B5CF6' }} />
-                      {activeTemplate.category.name}
-                    </span>
-                  )}
-                </div>
-                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                  {activeTemplate.name}
-                </h2>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {activeTemplate.description || 'Plantilla de alta conversión diseñada por tu Marca Blanca. Lista para incorporar tu logo y precio de venta.'}
-                </p>
-              </div>
+      {/* Barra de Filtros Notoria y Fácil de Usar para Agencias */}
+      <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-5 rounded-3xl shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Filtros de Creativos
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[11px] font-extrabold border border-purple-500/20">
+              {templates.length} {templates.length === 1 ? 'plantilla disponible' : 'plantillas disponibles'}
+            </span>
+          </div>
 
-              {/* Pricing Cards */}
-              <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Costo Base</span>
-                  <div className="text-base font-black text-slate-900 dark:text-slate-200">
-                    ${Number(activeTemplate.base_cost).toFixed(2)}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Ganancia Sugerida</span>
-                  <div className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                    +${Math.max(0, Number(activeTemplate.suggested_price) - Number(activeTemplate.base_cost)).toFixed(2)}
-                  </div>
-                </div>
-              </div>
+          {hasActiveFilters && (
+            <button
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20 transition-all cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Limpiar filtros</span>
+            </button>
+          )}
+        </div>
 
-              {/* Botón Principal */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Selector de Formato con Botones Claros y Notorios */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Formato:</span>
+            <div className="flex flex-wrap bg-slate-100 dark:bg-slate-950 rounded-2xl p-1 border border-slate-200 dark:border-slate-800 text-xs font-bold">
+              {[
+                { key: 'all', label: 'Todos' },
+                { key: '9:16', label: '9:16 (Stories)' },
+                { key: '1:1', label: '1:1 (Feed)' },
+                { key: '4:5', label: '4:5 (Vertical)' },
+                { key: '16:9', label: '16:9 (Horizontal)' },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setAspectRatioFilter(f.key)}
+                  className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                    aspectRatioFilter === f.key
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/25 font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Selector de Tipo (Imagen / Video) */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Tipo de Contenido:</span>
+            <div className="flex bg-slate-100 dark:bg-slate-950 rounded-2xl p-1 border border-slate-200 dark:border-slate-800 text-xs font-bold">
               <button
-                onClick={() => onSelectTemplate(activeTemplate)}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-sm shadow-xl shadow-purple-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer transform active:scale-95"
+                onClick={() => setTypeFilter('all')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  typeFilter === 'all'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm font-black'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
               >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Personalizar & Generar Creativo</span>
+                Todo
+              </button>
+              <button
+                onClick={() => setTypeFilter('image')}
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                  typeFilter === 'image'
+                    ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm font-black'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Imágenes</span>
+              </button>
+              <button
+                onClick={() => setTypeFilter('video')}
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                  typeFilter === 'video'
+                    ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm font-black'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Film className="w-3.5 h-3.5 text-amber-500" />
+                <span>Videos MP4</span>
               </button>
             </div>
-
-            {/* Right: Featured Frame Preview */}
-            <div className="relative w-full max-w-sm aspect-square rounded-3xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl dark:shadow-2xl flex items-center justify-center group">
-              {(() => {
-                const isFeaturedVideo =
-                  activeTemplate.media_type === 'video' ||
-                  activeTemplate.resource?.type === 'video' ||
-                  activeTemplate.media?.file_type === 'video' ||
-                  Boolean(activeTemplate.resource?.mime_type && activeTemplate.resource.mime_type.startsWith('video/')) ||
-                  Boolean(activeTemplate.media?.mime_type && activeTemplate.media.mime_type.startsWith('video/')) ||
-                  /\.(mp4|webm|mov)(\?.*)?$/i.test(activeTemplate.media_url || activeTemplate.media?.url || activeTemplate.preview_image_url || activeTemplate.resource?.file_url || '');
-
-                const rawVideo =
-                  activeTemplate.media?.full_url ||
-                  activeTemplate.media?.url ||
-                  activeTemplate.media_url ||
-                  activeTemplate.resource?.file_url ||
-                  (activeTemplate.preview_image_url && /\.(mp4|webm|mov)(\?.*)?$/i.test(activeTemplate.preview_image_url) ? activeTemplate.preview_image_url : null);
-
-                const featuredVideoUrl = normalizeFileUrl(rawVideo);
-                const featuredImageUrl = normalizeFileUrl(
-                  activeTemplate.preview_image_url ||
-                  activeTemplate.preview_full_url ||
-                  activeTemplate.media?.full_url ||
-                  activeTemplate.media?.url ||
-                  activeTemplate.media_url ||
-                  activeTemplate.resource?.thumbnail_url ||
-                  activeTemplate.resource?.file_url
-                );
-
-                if (isFeaturedVideo && featuredVideoUrl) {
-                  return (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <video
-                        src={featuredVideoUrl}
-                        className="w-full h-full object-cover"
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-6 pointer-events-none">
-                        <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black uppercase text-white flex items-center gap-1.5">
-                          <Play className="w-3 h-3 fill-white" /> Video MP4 (H.264)
-                        </span>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <img
-                    src={featuredImageUrl}
-                    alt={activeTemplate.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Format Tabs */}
-          <div className="flex bg-slate-100 dark:bg-slate-950 rounded-xl p-1 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400">
-            <button
-              onClick={() => setAspectRatioFilter('all')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${aspectRatioFilter === 'all' ? 'bg-purple-600 text-white shadow-sm' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
-            >
-              Todos los Formatos
-            </button>
-            <button
-              onClick={() => setAspectRatioFilter('9:16')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${aspectRatioFilter === '9:16' ? 'bg-purple-600 text-white shadow-sm' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
-            >
-              9:16 (Stories)
-            </button>
-            <button
-              onClick={() => setAspectRatioFilter('1:1')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${aspectRatioFilter === '1:1' ? 'bg-purple-600 text-white shadow-sm' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
-            >
-              1:1 (Feed)
-            </button>
-            <button
-              onClick={() => setAspectRatioFilter('4:5')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${aspectRatioFilter === '4:5' ? 'bg-purple-600 text-white shadow-sm' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
-            >
-              4:5 (Vertical)
-            </button>
           </div>
 
-          {/* Media Type Filter */}
-          <div className="flex bg-slate-100 dark:bg-slate-950 rounded-xl p-1 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400">
-            <button
-              onClick={() => setTypeFilter('all')}
-              className={`px-2.5 py-1.5 rounded-lg transition-all ${typeFilter === 'all' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
-            >
-              Todo
-            </button>
-            <button
-              onClick={() => setTypeFilter('image')}
-              className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1 ${typeFilter === 'image' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
-            >
-              <ImageIcon className="w-3 h-3" /> Imágenes
-            </button>
-            <button
-              onClick={() => setTypeFilter('video')}
-              className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1 ${typeFilter === 'video' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'hover:text-slate-900 dark:hover:text-slate-200'}`}
-            >
-              <Film className="w-3 h-3" /> Videos
-            </button>
-          </div>
-
-          {/* Country Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
-            <Globe className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-            <select
-              value={countryFilter}
-              onChange={(e) => setCountryFilter(e.target.value)}
-              className="bg-transparent text-slate-800 dark:text-slate-200 text-xs font-bold outline-none cursor-pointer [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-white"
-            >
-              <option value="all">Todos los Países</option>
-              {COUNTRIES_FILTER.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Category Filter */}
-          {categories.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
-              <Tag className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+          {/* Selector de País */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">País de Destino:</span>
+            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-950 px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
+              <Globe className="w-4 h-4 text-sky-500 shrink-0" />
               <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="bg-transparent text-slate-800 dark:text-slate-200 text-xs font-bold outline-none cursor-pointer max-w-[150px] [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-white"
+                value={countryFilter}
+                onChange={(e) => setCountryFilter(e.target.value)}
+                className="bg-transparent text-slate-800 dark:text-slate-200 text-xs font-bold outline-none cursor-pointer [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-white"
               >
-                <option value="all">Todas las Categorías</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
+                <option value="all">Todos los Países</option>
+                {COUNTRIES_FILTER.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
                   </option>
                 ))}
               </select>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Search Input */}
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Buscar plantillas publicitarias..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && fetchTemplates()}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-200 text-xs font-medium rounded-xl pl-9 pr-3 py-2 w-full sm:w-64 outline-none focus:border-purple-500"
-          />
+          {/* Selector de Categoría */}
+          {categories.length > 0 && (
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Categoría:</span>
+              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-950 px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
+                <Tag className="w-4 h-4 text-purple-500 shrink-0" />
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="bg-transparent text-slate-800 dark:text-slate-200 text-xs font-bold outline-none cursor-pointer max-w-[170px] [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-white"
+                >
+                  <option value="all">Todas las Categorías</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Grid of Templates */}
+      {/* Grid de Plantillas: 5 por fila en resoluciones amplias */}
       {isLoading ? (
         <div className="py-24 text-center space-y-3">
           <RefreshCw className="w-8 h-8 text-purple-500 animate-spin mx-auto" />
@@ -407,12 +315,21 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
           <div className="space-y-1">
             <h3 className="text-base font-black text-slate-900 dark:text-white">No hay plantillas publicitarias disponibles</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              Tu Marca Blanca aún no ha publicado plantillas para este filtro. Intenta cambiando el formato o los términos de búsqueda.
+              No se encontraron plantillas para los filtros seleccionados. Intenta restablecer los filtros o buscar con otro término.
             </p>
           </div>
+          {hasActiveFilters && (
+            <button
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow-md shadow-purple-600/20 cursor-pointer transition-all"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Restablecer Filtros</span>
+            </button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-4">
           {templates.map((tpl) => {
             const isVideo =
               tpl.media_type === 'video' ||
@@ -444,10 +361,7 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
             return (
               <div
                 key={tpl.id}
-                onClick={() => {
-                  setActiveTemplate(tpl);
-                  onSelectTemplate(tpl);
-                }}
+                onClick={() => onSelectTemplate(tpl)}
                 className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500 dark:hover:border-purple-500 rounded-3xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-purple-500/10 cursor-pointer flex flex-col justify-between"
               >
                 {/* Media Preview Box */}

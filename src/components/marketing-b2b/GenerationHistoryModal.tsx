@@ -186,7 +186,7 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
             </div>
           ) : (
             generations.map((gen) => {
-              const isVideo = gen.type === 'video';
+              const isVideo = gen.type === 'video' || gen.format === 'mp4' || Boolean(gen.output_path && /\.mp4$/i.test(gen.output_path));
               const isCompleted = gen.status === 'completed';
               const isProcessing = gen.status === 'processing' || gen.status === 'pending';
               const isFailed = gen.status === 'failed';
@@ -233,7 +233,7 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
                           {gen.template?.name || `Creativo #${gen.id}`}
                         </h4>
                         <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
-                          {gen.format}
+                          {isVideo ? 'MP4' : gen.format}
                         </span>
                       </div>
 
