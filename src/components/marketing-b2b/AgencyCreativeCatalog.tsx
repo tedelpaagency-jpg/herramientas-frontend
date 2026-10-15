@@ -254,10 +254,12 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
       {/* ============================================================ */}
       {/* HERO SECTION ESTILO CANVA CON DEGRADADO LAVANDA SUAVE */}
       {/* ============================================================ */}
-      <div className="relative rounded-3xl p-6 sm:p-8 md:p-12 overflow-hidden bg-gradient-to-b from-purple-100/90 via-indigo-50/50 to-white/80 dark:from-purple-950/40 dark:via-slate-900/40 dark:to-slate-900 border border-purple-100 dark:border-purple-950/60 shadow-xs">
-        {/* Glows de ambientación suaves */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-purple-400/15 dark:bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-10 right-10 w-72 h-72 bg-indigo-300/10 dark:bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="relative rounded-3xl p-6 sm:p-8 md:p-12 bg-gradient-to-b from-purple-100/90 via-indigo-50/50 to-white/80 dark:from-purple-950/40 dark:via-slate-900/40 dark:to-slate-900 border border-purple-100 dark:border-purple-950/60 shadow-xs z-30">
+        {/* Glows de ambientación suaves contenidos en su propia capa oculta */}
+        <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-purple-400/15 dark:bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-10 right-10 w-72 h-72 bg-indigo-300/10 dark:bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+        </div>
 
         <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
           {/* TÍTULO PRINCIPAL: ¿Qué vamos a diseñar hoy? */}
@@ -356,7 +358,7 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
 
               {/* Menú flotante de Formatos */}
               {activeDropdown === 'format' && (
-                <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 min-w-[210px] animate-scale-up">
+                <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 min-w-[220px] animate-scale-up ring-1 ring-black/5 dark:ring-white/10">
                   <div className="px-3 py-1.5 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800 tracking-wider">
                     Seleccionar Formato
                   </div>
@@ -477,7 +479,7 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
 
               {/* Menú flotante de Países */}
               {activeDropdown === 'country' && (
-                <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 min-w-[210px] max-h-64 overflow-y-auto animate-scale-up">
+                <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 min-w-[220px] max-h-64 overflow-y-auto animate-scale-up ring-1 ring-black/5 dark:ring-white/10">
                   <div className="px-3 py-1.5 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800 tracking-wider">
                     País de Destino
                   </div>
@@ -557,7 +559,7 @@ export const AgencyCreativeCatalog: React.FC<AgencyCreativeCatalogProps> = ({
 
               {/* Menú flotante de Categorías */}
               {activeDropdown === 'category' && (
-                <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 min-w-[210px] max-h-64 overflow-y-auto animate-scale-up">
+                <div className="absolute top-full mt-3 right-0 sm:left-1/2 sm:-translate-x-1/2 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 min-w-[220px] max-h-64 overflow-y-auto animate-scale-up ring-1 ring-black/5 dark:ring-white/10">
                   <div className="px-3 py-1.5 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800 tracking-wider">
                     Categorías de Creativos
                   </div>
