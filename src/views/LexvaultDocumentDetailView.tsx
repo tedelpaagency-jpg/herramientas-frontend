@@ -27,6 +27,7 @@ import lexvaultService from '../services/lexvaultService';
 import WordDocumentPaper, { WordDocumentPaperRef } from '../components/WordDocumentPaper';
 import toast from 'react-hot-toast';
 import LetterheadGuideModal, { downloadLetterheadGuideTemplate } from '../components/LetterheadGuideModal';
+import Portal from '../components/Portal';
 
 interface LexvaultDocumentDetailViewProps {
   id: string;
@@ -332,7 +333,8 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
 
       {/* Background Picker Modal */}
       {isBgModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+        <Portal>
+          <div className="fixed inset-0 w-screen h-screen z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
@@ -486,6 +488,7 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
             </div>
           </div>
         </div>
+      </Portal>
       )}
 
       <LetterheadGuideModal

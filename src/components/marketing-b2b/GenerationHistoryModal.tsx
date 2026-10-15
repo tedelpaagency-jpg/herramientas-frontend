@@ -9,6 +9,7 @@ import {
 import { MarketingGeneration } from '../../types/marketingB2B';
 import marketingB2BService from '../../services/marketingB2BService';
 import { normalizeFileUrl } from '../../services/apiClient';
+import Portal from '../Portal';
 import toast from 'react-hot-toast';
 
 interface GenerationHistoryModalProps {
@@ -97,8 +98,9 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fade-in">
-      <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <Portal>
+      <div className="fixed inset-0 w-screen h-screen z-[9999] overflow-y-auto bg-black/75 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fade-in">
+        <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
@@ -344,7 +346,7 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
 
       {/* Media Preview Modal if user clicks 'Eye' */}
       {previewMedia && (
-        <div className="fixed inset-0 z-60 bg-black/80 dark:bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10000] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="relative max-w-2xl w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
               <h4 className="text-sm font-bold text-slate-900 dark:text-white">{previewMedia.title}</h4>
@@ -376,6 +378,7 @@ export const GenerationHistoryModal: React.FC<GenerationHistoryModalProps> = ({
         </div>
       )}
     </div>
+  </Portal>
   );
 };
 

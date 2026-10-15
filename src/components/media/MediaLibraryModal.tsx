@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import mediaService from '../../services/mediaService';
 import { Media, MediaTenantContext } from '../../types/media';
+import Portal from '../Portal';
 import toast from 'react-hot-toast';
 
 export interface MediaLibraryModalProps {
@@ -888,9 +889,11 @@ export const MediaLibraryModal: React.FC<MediaLibraryModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-      {contentMarkup}
-    </div>
+    <Portal>
+      <div className="fixed inset-0 w-screen h-screen z-[10000] flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+        {contentMarkup}
+      </div>
+    </Portal>
   );
 };
 

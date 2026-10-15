@@ -17,6 +17,7 @@ import marketingB2BService from '../../services/marketingB2BService';
 import { normalizeFileUrl } from '../../services/apiClient';
 import { CreativeCategoriesManager } from './CreativeCategoriesManager';
 import { TemplateVisualEditor } from './TemplateVisualEditor';
+import Portal from '../Portal';
 import toast from 'react-hot-toast';
 
 export const WhiteLabelDashboard: React.FC = () => {
@@ -149,19 +150,25 @@ export const WhiteLabelDashboard: React.FC = () => {
     <div className="space-y-8 pb-16">
       {/* Visual Editor Modal */}
       {isEditorOpen && (
-        <TemplateVisualEditor
-          template={editingTemplate}
-          onSaved={() => {
-            setIsEditorOpen(false);
-            setEditingTemplate(null);
-            fetchTemplates();
-            if (activeTab === 'metrics') fetchMetrics();
-          }}
-          onClose={() => {
-            setIsEditorOpen(false);
-            setEditingTemplate(null);
-          }}
-        />
+        <Portal>
+          <div className="fixed inset-0 w-screen h-screen z-[9999] overflow-y-auto bg-black/75 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fade-in">
+            <div className="relative w-full max-w-7xl h-[94vh] shadow-2xl">
+              <TemplateVisualEditor
+                template={editingTemplate}
+                onSaved={() => {
+                  setIsEditorOpen(false);
+                  setEditingTemplate(null);
+                  fetchTemplates();
+                  if (activeTab === 'metrics') fetchMetrics();
+                }}
+                onClose={() => {
+                  setIsEditorOpen(false);
+                  setEditingTemplate(null);
+                }}
+              />
+            </div>
+          </div>
+        </Portal>
       )}
 
       {/* Top Banner with Navigation Tabs */}

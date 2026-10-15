@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { MarketingCreativeCategory } from '../../types/marketingB2B';
 import marketingB2BService from '../../services/marketingB2BService';
+import Portal from '../Portal';
 import toast from 'react-hot-toast';
 
 const PRESET_COLORS = [
@@ -340,8 +341,9 @@ export const CreativeCategoriesManager: React.FC = () => {
 
       {/* Create / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-6 relative">
+        <Portal>
+          <div className="fixed inset-0 w-screen h-screen z-[9999] flex items-center justify-center p-4 bg-black/75 dark:bg-slate-950/85 backdrop-blur-md animate-fade-in">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-6 relative">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-3">
                 <div
@@ -482,6 +484,7 @@ export const CreativeCategoriesManager: React.FC = () => {
             </form>
           </div>
         </div>
+      </Portal>
       )}
     </div>
   );
