@@ -110,11 +110,18 @@ function CustomHtmlIframeContainer({
       setIsStyleReady(true);
     }
 
-    // Ensure Stripe.js is loaded in the iframe if payment is enabled
-    if (paymentConfig?.enabled && !doc.querySelector('script[src*="js.stripe.com/v3"]')) {
-      const stripeScript = doc.createElement('script');
-      stripeScript.src = 'https://js.stripe.com/v3/';
-      doc.head.appendChild(stripeScript);
+    // Ensure Stripe.js is loaded in both parent window and iframe if payment is enabled
+    if (paymentConfig?.enabled) {
+      if (typeof document !== 'undefined' && !document.querySelector('script[src*="js.stripe.com/v3"]')) {
+        const topStripeScript = document.createElement('script');
+        topStripeScript.src = 'https://js.stripe.com/v3/';
+        document.head.appendChild(topStripeScript);
+      }
+      if (!doc.querySelector('script[src*="js.stripe.com/v3"]')) {
+        const stripeScript = doc.createElement('script');
+        stripeScript.src = 'https://js.stripe.com/v3/';
+        doc.head.appendChild(stripeScript);
+      }
     }
 
     const updateHeight = () => {
@@ -277,6 +284,10 @@ function PublicLandingContent() {
         email: formData.email || '',
         phone: formData.phone || '',
         stripe_token: formData.stripe_token || undefined,
+        card_number: formData.card_number || undefined,
+        card_expiry: formData.card_expiry || undefined,
+        card_cvc: formData.card_cvc || undefined,
+        card_holder_name: formData.card_holder_name || undefined,
         answers: formData,
       };
 

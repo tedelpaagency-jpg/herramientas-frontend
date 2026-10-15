@@ -3,42 +3,90 @@ import { FormSchema, FormFieldSchema, PaymentConfig, StripeAppearanceConfig, For
 import { isColorDark, defaultStripeAppearance } from '../../utils/stripeAppearance';
 import { ChevronRight, ChevronLeft, Check, Send, Loader2, CreditCard, Lock, ShieldCheck, AlertCircle } from 'lucide-react';
 
-// Carga asíncrona del script oficial de Stripe.js v3 en el documento y ventana del contenedor
+export const isValidStripePublishableKey = (key?: string | null): boolean => {
+  if (!key || typeof key !== 'string') return false;
+  const clean = key.trim();
+  return clean.startsWith('pk_test_') || clean.startsWith('pk_live_');
+};
+
+// Carga asíncrona y resiliente del script oficial de Stripe.js v3 en el documento y ventana activa
 const loadStripeJs = (targetDoc?: Document | null, targetWin?: any): Promise<any> => {
   return new Promise((resolve, reject) => {
     const win = targetWin || (typeof window !== 'undefined' ? window : null);
+    const topWin: any = typeof window !== 'undefined' ? window : null;
     const doc = targetDoc || (win?.document || (typeof document !== 'undefined' ? document : null));
-    if (!win || !doc) return resolve(null);
+    const topDoc = typeof document !== 'undefined' ? document : null;
 
-    if (win.Stripe) {
-      return resolve(win.Stripe);
+    if (win?.Stripe) return resolve(win.Stripe);
+    if (topWin?.Stripe) {
+      if (win) win.Stripe = topWin.Stripe;
+      return resolve(topWin.Stripe);
     }
 
-    // Fallback: si window global ya tiene Stripe cargado, enlazarlo a targetWin
-    if (typeof window !== 'undefined' && (window as any).Stripe && !win.Stripe) {
-      win.Stripe = (window as any).Stripe;
-      return resolve(win.Stripe);
+    let resolved = false;
+    let pollTimer: any = null;
+    let failTimer: any = null;
+
+    const cleanup = () => {
+      if (pollTimer) clearInterval(pollTimer);
+      if (failTimer) clearTimeout(failTimer);
+    };
+
+    const safeResolve = (stripeInst: any) => {
+      if (resolved || !stripeInst) return;
+      resolved = true;
+      cleanup();
+      if (win && !win.Stripe) win.Stripe = stripeInst;
+      resolve(stripeInst);
+    };
+
+    const safeReject = (err: any) => {
+      if (resolved) return;
+      resolved = true;
+      cleanup();
+      reject(err);
+    };
+
+    const injectScript = (d: Document | null) => {
+      if (!d) return;
+      if (!d.querySelector('script[src*="js.stripe.com/v3"]')) {
+        const script = d.createElement('script');
+        script.id = 'stripe-js-script';
+        script.src = 'https://js.stripe.com/v3/';
+        script.async = true;
+        script.onload = () => {
+          const s = win?.Stripe || topWin?.Stripe;
+          if (s) safeResolve(s);
+        };
+        script.onerror = (e) => {
+          console.warn('Stripe.js load error in document:', e);
+        };
+        (d.head || d.body || d.documentElement).appendChild(script);
+      }
+    };
+
+    injectScript(topDoc);
+    if (doc && doc !== topDoc) {
+      injectScript(doc);
     }
 
-    const existing = (doc.querySelector('script[src*="js.stripe.com/v3"]') as HTMLScriptElement | null) ||
-      (doc.getElementById('stripe-js-script') as HTMLScriptElement | null);
-    if (existing) {
-      if (win.Stripe) return resolve(win.Stripe);
-      existing.addEventListener('load', () => resolve(win.Stripe));
-      existing.addEventListener('error', (err) => reject(err));
-      setTimeout(() => {
-        if (win.Stripe) resolve(win.Stripe);
-      }, 300);
-      return;
-    }
+    // Polling cada 50ms para capturar Stripe tan pronto como esté disponible
+    pollTimer = setInterval(() => {
+      const s = win?.Stripe || topWin?.Stripe;
+      if (s) {
+        safeResolve(s);
+      }
+    }, 50);
 
-    const script = doc.createElement('script');
-    script.id = 'stripe-js-script';
-    script.src = 'https://js.stripe.com/v3/';
-    script.async = true;
-    script.onload = () => resolve(win.Stripe);
-    script.onerror = (e) => reject(e);
-    (doc.head || doc.body).appendChild(script);
+    // Timeout máximo de 6 segundos
+    failTimer = setTimeout(() => {
+      const s = win?.Stripe || topWin?.Stripe;
+      if (s) {
+        safeResolve(s);
+      } else {
+        safeReject(new Error('Tiempo de espera agotado al conectar con Stripe.js'));
+      }
+    }, 6000);
   });
 };
 
@@ -81,6 +129,11 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const [isBtnHovered, setIsBtnHovered] = useState(false);
 
   // Stripe Elements State & Refs
+  const hasValidStripeKey = Boolean(stripePublishableKey && isValidStripePublishableKey(stripePublishableKey));
+  const [forceManualCard, setForceManualCard] = useState(false);
+  const [showFallbackOption, setShowFallbackOption] = useState(false);
+  const useStripeElements = hasValidStripeKey && !forceManualCard;
+
   const [isStripeLoaded, setIsStripeLoaded] = useState(false);
   const [isCardComplete, setIsCardComplete] = useState(false);
   const [isCardFocused, setIsCardFocused] = useState(false);
@@ -208,9 +261,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         newErrors['card_holder_name'] = 'Nombre en la tarjeta es obligatorio';
       }
 
-      if (stripePublishableKey) {
+      if (useStripeElements) {
         if (!isStripeLoaded) {
-          newErrors['stripe_card'] = 'La pasarela de pago segura aún se está inicializando. Por favor espera un momento.';
+          newErrors['stripe_card'] = 'La pasarela segura aún se está inicializando. Por favor espera un momento o ingresa los datos manualmente.';
         } else if (!isCardComplete) {
           newErrors['stripe_card'] = 'El número de tarjeta está incompleto. Recuerda que las tarjetas bancarias tienen 16 dígitos completos.';
         }
@@ -260,10 +313,11 @@ export const DynamicFormRenderer: React.FC<Props> = ({
     e.preventDefault();
     if (!validateCurrentFields()) return;
 
-    if (paymentConfig?.enabled && stripePublishableKey && stripeInstanceRef.current) {
+    if (paymentConfig?.enabled && useStripeElements && stripeInstanceRef.current) {
       const cardElement = elementsInstanceRef.current?.getElement('card') || cardElementRef.current;
       if (!cardElement) {
-        setStripeElementError('El formulario de tarjeta no está listo aún. Por favor recarga la página.');
+        setStripeElementError('El formulario de tarjeta no está listo aún. Puedes ingresar los datos manualmente.');
+        setShowFallbackOption(true);
         return;
       }
       setIsProcessingPayment(true);
@@ -544,29 +598,56 @@ export const DynamicFormRenderer: React.FC<Props> = ({
 
   // Lifecycle & mounting of official Stripe Elements (card iframe)
   useEffect(() => {
-    if (!paymentConfig?.enabled || !stripePublishableKey || !isLastStep) return;
+    if (!paymentConfig?.enabled || !useStripeElements || !isLastStep) return;
 
     let isMounted = true;
     let timerId: any = null;
+    let fallbackTimer: any = null;
+
+    // Safety fallback timer: si pasan 3.5 segundos sin montar, ofrecer opción manual
+    fallbackTimer = setTimeout(() => {
+      if (isMounted && !isStripeLoaded) {
+        setShowFallbackOption(true);
+      }
+    }, 3500);
 
     const targetDoc = cardContainerRef.current?.ownerDocument || (typeof document !== 'undefined' ? document : null);
     const targetWin = targetDoc?.defaultView || (typeof window !== 'undefined' ? window : null);
 
     loadStripeJs(targetDoc, targetWin)
       .then((StripeClass) => {
-        if (!isMounted || !StripeClass) return;
+        if (!isMounted || !StripeClass) {
+          if (isMounted) setShowFallbackOption(true);
+          return;
+        }
 
         // Inicializar Stripe en el contexto de la ventana donde reside el contenedor DOM
         if (!stripeInstanceRef.current || (stripeInstanceRef.current as any)._targetWin !== targetWin) {
-          stripeInstanceRef.current = StripeClass(stripePublishableKey);
-          (stripeInstanceRef.current as any)._targetWin = targetWin;
-          elementsInstanceRef.current = null;
-          cardElementRef.current = null;
+          try {
+            stripeInstanceRef.current = StripeClass(stripePublishableKey);
+            (stripeInstanceRef.current as any)._targetWin = targetWin;
+            elementsInstanceRef.current = null;
+            cardElementRef.current = null;
+          } catch (initErr: any) {
+            console.error('Error al instanciar Stripe:', initErr);
+            if (isMounted) {
+              setStripeElementError(initErr?.message || 'Error con la clave de Stripe');
+              setShowFallbackOption(true);
+            }
+            return;
+          }
         }
         const stripe = stripeInstanceRef.current;
+        if (!stripe) return;
 
         if (!elementsInstanceRef.current) {
-          elementsInstanceRef.current = stripe.elements();
+          try {
+            elementsInstanceRef.current = stripe.elements();
+          } catch (e: any) {
+            console.error('Error al crear stripe.elements():', e);
+            if (isMounted) setShowFallbackOption(true);
+            return;
+          }
         }
 
         const isInputDark = isColorDark(effectiveStripeAppearance.input_bg_color || '#ffffff');
@@ -594,35 +675,70 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           },
         };
 
-        // Si el elemento ya existe, actualizamos sus estilos según las reglas de Stripe de forma dinámica sin destruir el elemento
-        const existingCard = elementsInstanceRef.current.getElement('card') || cardElementRef.current;
-        if (existingCard) {
+        // Si el elemento ya existe y está montado en el contenedor, solo actualizar estilos
+        const existingCard = elementsInstanceRef.current?.getElement('card') || cardElementRef.current;
+        if (existingCard && cardContainerRef.current && (cardContainerRef.current.querySelector('.StripeElement') || cardContainerRef.current.querySelector('iframe'))) {
           try {
             existingCard.update({ style: cardStyle });
             cardElementRef.current = existingCard;
             setIsStripeLoaded(true);
             return;
-          } catch (e) {
-            return;
-          }
+          } catch (e) {}
         }
 
-        const card = elementsInstanceRef.current.create('card', {
-          style: cardStyle,
-          hidePostalCode: true,
-        });
+        // Crear o reutilizar card
+        let card: any = null;
+        try {
+          if (existingCard) {
+            try {
+              existingCard.unmount();
+            } catch (e) {}
+          }
+          card = elementsInstanceRef.current.create('card', {
+            style: cardStyle,
+            hidePostalCode: true,
+          });
+        } catch (createErr: any) {
+          console.warn('Error al crear card element:', createErr);
+          if (existingCard) card = existingCard;
+        }
+
+        if (!card) {
+          if (isMounted) setShowFallbackOption(true);
+          return;
+        }
 
         const mountToContainer = () => {
           if (!isMounted) return;
           if (cardContainerRef.current) {
             try {
+              if (cardElementRef.current && cardElementRef.current !== card) {
+                try {
+                  cardElementRef.current.unmount();
+                } catch (e) {}
+              }
+
               cardContainerRef.current.innerHTML = '';
               card.mount(cardContainerRef.current);
               cardElementRef.current = card;
 
               card.on('ready', () => {
-                setIsStripeLoaded(true);
+                if (isMounted) {
+                  setIsStripeLoaded(true);
+                  setStripeElementError(null);
+                }
               });
+
+              // Fallback automático por si 'ready' tarda o no se dispara pero el iframe ya existe
+              setTimeout(() => {
+                if (isMounted && cardContainerRef.current) {
+                  const hasIframe = cardContainerRef.current.querySelector('iframe') ||
+                                    cardContainerRef.current.querySelector('.StripeElement');
+                  if (hasIframe) {
+                    setIsStripeLoaded(true);
+                  }
+                }
+              }, 2000);
 
               card.on('change', (event: any) => {
                 setIsCardComplete(Boolean(event.complete));
@@ -643,8 +759,12 @@ export const DynamicFormRenderer: React.FC<Props> = ({
 
               card.on('focus', () => setIsCardFocused(true));
               card.on('blur', () => setIsCardFocused(false));
-            } catch (err) {
+            } catch (err: any) {
               console.warn('Error al montar Stripe Card Element:', err);
+              if (isMounted) {
+                setStripeElementError(err?.message || 'Error al inicializar la pasarela de pago');
+                setShowFallbackOption(true);
+              }
             }
           } else {
             timerId = setTimeout(mountToContainer, 50);
@@ -655,13 +775,18 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       })
       .catch((err) => {
         console.error('Error al inicializar Stripe Elements:', err);
+        if (isMounted) {
+          setStripeElementError('No se pudo cargar la pasarela segura de Stripe. Puedes usar el formulario directo de tarjeta.');
+          setShowFallbackOption(true);
+        }
       });
 
     return () => {
       isMounted = false;
       if (timerId) clearTimeout(timerId);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
     };
-  }, [paymentConfig?.enabled, stripePublishableKey, isLastStep, stripeAppearanceKey, isDark]);
+  }, [paymentConfig?.enabled, useStripeElements, isLastStep, stripeAppearanceKey, isDark]);
 
   useEffect(() => {
     return () => {
@@ -1028,7 +1153,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               )}
             </div>
 
-            {stripePublishableKey ? (
+            {useStripeElements ? (
               /* Contenedor Iframe Seguro Stripe Elements */
               <div
                 className="flex flex-col space-y-1 text-left w-full"
@@ -1066,9 +1191,20 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                   <div ref={cardContainerRef} style={{ width: '100%' }} />
                 </div>
                 {stripeElementError && (
-                  <p className="text-[11px] font-semibold mt-1" style={stripeErrorStyle}>
-                    {stripeElementError}
-                  </p>
+                  <div className="flex flex-col gap-1.5 mt-1">
+                    <p className="text-[11px] font-semibold flex items-center gap-1.5" style={stripeErrorStyle}>
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{stripeElementError}</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setForceManualCard(true)}
+                      className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium text-left"
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                    >
+                      Ingresar datos de tarjeta manualmente
+                    </button>
+                  </div>
                 )}
                 {errors['stripe_card'] && !stripeElementError && (
                   <p className="text-[11px] font-semibold mt-1" style={stripeErrorStyle}>
@@ -1076,15 +1212,39 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                   </p>
                 )}
                 {!isStripeLoaded && !stripeElementError && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-1">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span>Cargando interfaz segura de Stripe...</span>
+                  <div className="flex flex-col gap-1.5 mt-1.5">
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500 shrink-0" />
+                      <span>Cargando interfaz segura de Stripe...</span>
+                    </div>
+                    {showFallbackOption && (
+                      <button
+                        type="button"
+                        onClick={() => setForceManualCard(true)}
+                        className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-semibold text-left transition"
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                      >
+                        ¿Tarda demasiado? Haz clic aquí para ingresar tu tarjeta directamente
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
             ) : (
-              /* Fallback en caso de que no haya clave pública configurada */
+              /* Fallback en caso de que no haya clave pública configurada o se fuerce manual */
               <>
+                {hasValidStripeKey && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setForceManualCard(false)}
+                      className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                    >
+                      ← Usar formulario automático de Stripe Elements
+                    </button>
+                  </div>
+                )}
                 {/* Número de Tarjeta */}
                 <div
                   className="flex flex-col space-y-1 text-left w-full"
