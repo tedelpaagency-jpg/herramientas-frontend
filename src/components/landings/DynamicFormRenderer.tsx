@@ -133,8 +133,8 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const [stripeElementError, setStripeElementError] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isStripeLoaded, setIsStripeLoaded] = useState(false);
-  const [isCardFocused, setIsCardFocused] = useState(false);
 
+  const cardWrapperRef = useRef<HTMLDivElement | null>(null);
   const cardContainerRef = useRef<HTMLDivElement | null>(null);
   const stripeInstanceRef = useRef<any>(null);
   const elementsInstanceRef = useRef<any>(null);
@@ -655,10 +655,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         const elementStyles = {
           base: {
             color: effectiveStripeAppearance.input_text_color || (isDark ? '#f8fafc' : '#0f172a'),
-            fontFamily: effectiveStripeAppearance.font_family || 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            fontSize: effectiveStripeAppearance.font_size || '14px',
-            fontWeight: '500',
-            lineHeight: '20px',
+            fontFamily: effectiveStripeAppearance.font_family || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontSize: effectiveStripeAppearance.font_size || '15px',
+            lineHeight: '22px',
             '::placeholder': {
               color: isDark ? '#64748b' : '#94a3b8',
             },
@@ -677,8 +676,20 @@ export const DynamicFormRenderer: React.FC<Props> = ({
 
         cardElementRef.current = cardEl;
 
-        cardEl.on('focus', () => setIsCardFocused(true));
-        cardEl.on('blur', () => setIsCardFocused(false));
+        cardEl.on('focus', () => {
+          if (cardWrapperRef.current) {
+            cardWrapperRef.current.style.borderColor = effectiveStripeAppearance.button_bg_color || '#6366f1';
+            cardWrapperRef.current.style.boxShadow = `0 0 0 3px ${effectiveStripeAppearance.button_bg_color ? `${effectiveStripeAppearance.button_bg_color}33` : 'rgba(99, 102, 241, 0.2)'}`;
+          }
+        });
+
+        cardEl.on('blur', () => {
+          if (cardWrapperRef.current) {
+            cardWrapperRef.current.style.borderColor = effectiveStripeAppearance.input_border_color || (isDark ? '#1e293b' : '#cbd5e1');
+            cardWrapperRef.current.style.boxShadow = 'none';
+          }
+        });
+
         cardEl.on('change', (e: any) => {
           if (e.error) {
             setStripeElementError(e.error.message);
@@ -1091,15 +1102,45 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               </label>
               {hasValidStripeKey ? (
                 <div
-                  ref={cardContainerRef}
-                  style={getStripeElementContainerStyle(isCardFocused, Boolean(stripeElementError))}
+                  ref={cardWrapperRef}
+                  className="stripe-card-wrapper w-full"
+                  style={{
+                    backgroundColor: effectiveStripeAppearance.input_bg_color || (isDark ? '#020617' : '#ffffff'),
+                    borderWidth: effectiveStripeAppearance.input_border_width || '1px',
+                    borderStyle: 'solid',
+                    borderColor: stripeElementError
+                      ? '#ef4444'
+                      : (effectiveStripeAppearance.input_border_color || (isDark ? '#1e293b' : '#cbd5e1')),
+                    borderRadius: effectiveStripeAppearance.input_border_radius || activeRadiusPixels,
+                    padding: effectiveStripeAppearance.input_padding || '12px 14px',
+                    boxSizing: 'border-box',
+                    width: '100%',
+                    minHeight: '44px',
+                    cursor: 'text',
+                    position: 'relative',
+                    transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                  }}
+                  onClick={() => {
+                    if (cardElementRef.current) {
+                      try { cardElementRef.current.focus(); } catch {}
+                    }
+                  }}
                 >
                   {!isStripeLoaded && (
-                    <div className="flex items-center gap-2 opacity-50 text-xs py-1">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <div className="flex items-center gap-2 text-xs opacity-50 py-0.5 mb-1.5 select-none pointer-events-none">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500 shrink-0" />
                       <span>Cargando interfaz segura de Stripe...</span>
                     </div>
                   )}
+                  {/* IMPORTANTE: Este contenedor nunca debe tener hijos React para no romper el iframe de Stripe */}
+                  <div
+                    ref={cardContainerRef}
+                    id="stripe-card-element-mount"
+                    style={{
+                      width: '100%',
+                      minHeight: '20px',
+                    }}
+                  />
                 </div>
               ) : (
                 <div className="space-y-3">
