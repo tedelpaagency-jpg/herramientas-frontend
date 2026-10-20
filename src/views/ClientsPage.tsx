@@ -80,10 +80,14 @@ export const ClientsPage: React.FC = () => {
 
   useEffect(() => {
     fetchWorkspaces();
-    fetchUsers();
     fetchAgencyCustomFields();
     fetchAgencies();
   }, []);
+
+  useEffect(() => {
+    setSelectedAssignedUserId('');
+    fetchUsers(selectedAgencyId);
+  }, [selectedAgencyId]);
 
   useEffect(() => {
     setPage(1);
@@ -120,9 +124,14 @@ export const ClientsPage: React.FC = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (agencyId?: string) => {
     try {
-      const res = await userService.getUsers({ all: true, per_page: 500 });
+      const targetAgencyId = agencyId !== undefined ? agencyId : selectedAgencyId;
+      const res = await userService.getUsers({ 
+        all: true, 
+        per_page: 500,
+        agency_id: targetAgencyId ? Number(targetAgencyId) : undefined,
+      });
       const userList = Array.isArray(res) 
         ? res 
         : (Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []));

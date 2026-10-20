@@ -413,11 +413,32 @@ export const UsersPage: React.FC = () => {
             )}
           </select>
 
+          {/* White Label Filter (Super Admin only) */}
+          {isSuperAdmin && whiteLabels.length > 0 && (
+            <select
+              value={whiteLabelFilter}
+              onChange={(e) => {
+                setWhiteLabelFilter(e.target.value !== '' ? Number(e.target.value) : '');
+                setAgencyFilter('');
+              }}
+              className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+            >
+              <option value="">Todas las Marcas Blancas</option>
+              {whiteLabels.map((wl) => (
+                <option key={wl.id} value={wl.id}>{wl.name}</option>
+              ))}
+            </select>
+          )}
+
           {/* Agency Filter */}
-          {(isSuperAdmin || isGerenteComercial) && (
+          {canFilterAgencies && (
             <div className="w-52">
               <AgencySearchSelect
-                agencies={agencies}
+                agencies={
+                  whiteLabelFilter 
+                    ? agencies.filter(a => a.white_label_id === Number(whiteLabelFilter))
+                    : agencies
+                }
                 value={agencyFilter}
                 onChange={(val) => setAgencyFilter(val ? Number(val) : '')}
                 allowAll

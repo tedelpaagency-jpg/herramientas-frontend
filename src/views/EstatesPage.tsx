@@ -128,9 +128,14 @@ export const EstatesPage: React.FC = () => {
     setCanvaGalleryModalOpen(true);
   };
 
-  const fetchAgents = async () => {
+  const fetchAgents = async (currentAgencyId?: string) => {
     try {
-      const res = await userService.getUsers({ all: true });
+      const selectedAgId = currentAgencyId !== undefined ? currentAgencyId : agencyFilter;
+      const res = await userService.getUsers({ 
+        all: true,
+        agency_id: selectedAgId ? Number(selectedAgId) : undefined,
+        role: 'agent'
+      });
       const userList = Array.isArray(res) ? res : (res.data?.data || res.data || []);
       setAgents(userList);
     } catch (err) {
@@ -176,7 +181,6 @@ export const EstatesPage: React.FC = () => {
         agent_id: agentFilter ? Number(agentFilter) : undefined,
         agency_id: agencyFilter ? Number(agencyFilter) : undefined,
       });
-
       setEstates(res.data);
       if (res.pagination) {
         setPagination(res.pagination);
@@ -210,8 +214,12 @@ export const EstatesPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAgents();
     fetchAgencies();
+  }, []);
+
+  useEffect(() => {
+    setAgentFilter('');
+    fetchAgents(agencyFilter);
     fetchCategories();
   }, [agencyFilter]);
 

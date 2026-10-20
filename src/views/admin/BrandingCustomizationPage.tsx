@@ -98,6 +98,15 @@ export default function BrandingCustomizationPage({
     font_family: 'Inter, sans-serif',
     border_radius: 'rounded-xl',
     custom_domain: '',
+    frontend_enabled: false,
+    custom_domain_verified: false,
+    banner_image: '',
+    hero_title: '',
+    hero_subtitle: '',
+    about_title: '',
+    about_text: '',
+    cta_text: '',
+    seo_title: '',
     seo_description: '',
     custom_css: '',
     stripe_publishable_key: '',
@@ -114,6 +123,9 @@ export default function BrandingCustomizationPage({
     card_logo: '',
     card_logo_file: null,
   });
+
+  const [verifyingDomain, setVerifyingDomain] = useState<boolean>(false);
+  const [domainVerificationResult, setDomainVerificationResult] = useState<{ verified: boolean; message: string } | null>(null);
 
   // Load available entities on mount
   useEffect(() => {
@@ -218,6 +230,15 @@ export default function BrandingCustomizationPage({
       font_family: entity.font_family || 'Inter, sans-serif',
       border_radius: entity.border_radius || 'rounded-xl',
       custom_domain: entity.custom_domain || entity.domain || '',
+      frontend_enabled: Boolean(entity.frontend_enabled),
+      custom_domain_verified: Boolean(entity.custom_domain_verified),
+      banner_image: entity.banner_image || '',
+      hero_title: entity.hero_title || '',
+      hero_subtitle: entity.hero_subtitle || '',
+      about_title: entity.about_title || '',
+      about_text: entity.about_text || '',
+      cta_text: entity.cta_text || '',
+      seo_title: entity.seo_title || '',
       seo_description: entity.seo_description || entity.description || '',
       custom_css: entity.custom_css || '',
       stripe_publishable_key: entity.stripe_publishable_key || '',
@@ -335,6 +356,30 @@ export default function BrandingCustomizationPage({
       }));
     } finally {
       setTestingStripeMode(null);
+    }
+  };
+
+  const handleVerifyDomain = async () => {
+    if (!selectedId || targetType !== 'agency') return;
+    setVerifyingDomain(true);
+    setDomainVerificationResult(null);
+    try {
+      const res = await adminService.verifyDomain(selectedId);
+      const isVerified = Boolean(res.data?.verified);
+      setDomainVerificationResult({
+        verified: isVerified,
+        message: res.message || (isVerified ? 'Dominio verificado con éxito en la red DNS.' : 'No se encontraron registros DNS activos apuntando a este dominio.'),
+      });
+      if (isVerified) {
+        setForm((prev: any) => ({ ...prev, custom_domain_verified: true }));
+      }
+    } catch (err: any) {
+      setDomainVerificationResult({
+        verified: false,
+        message: err.response?.data?.message || err.message || 'Error al verificar la configuración DNS del dominio.',
+      });
+    } finally {
+      setVerifyingDomain(false);
     }
   };
 
@@ -1185,44 +1230,269 @@ export default function BrandingCustomizationPage({
               </div>
             )}
 
-            {/* TAB 5: DOMAIN & SEO */}
+            {/* TAB 5: DOMAIN & PORTAL INMOBILIARIO */}
             {activeTab === 'domain' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Dominio Personalizado (Custom Domain):</label>
-                  <input
-                    type="text"
-                    placeholder="ej. app.miagencia.com"
-                    value={form.custom_domain}
-                    onChange={(e) => setForm({ ...form, custom_domain: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono font-bold bg-slate-50 border border-slate-300 rounded-lg text-slate-800"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-1 block">
-                    Apunte su CNAME a la dirección IP o servidor maestro de Santun.
+              <div className="space-y-6">
+                
+                {/* 1. Módulo del Portal Inmobiliario Público */}
+                <div className="p-4 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 border border-emerald-500/30 rounded-2xl space-y-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-emerald-500 text-slate-950 font-bold">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-bold text-slate-900 dark:text-white block">
+                          Portal Web Inmobiliario Público
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          Template oficial Travel Agency 03 adaptado a bienes raíces
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Switch Habilitar Frontend Inmobiliario */}
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(form.frontend_enabled)}
+                        onChange={(e) => setForm({ ...form, frontend_enabled: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-[#00a884]"></div>
+                      <span className="ml-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {form.frontend_enabled ? 'Habilitado' : 'Desactivado'}
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Estado de Publicación y Verificación */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-emerald-500/20">
+                    <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Estado de Publicación:</span>
+                      {form.frontend_enabled ? (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Portal Público Activo</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                          <AlertCircle className="w-4 h-4" />
+                          <span>Desactivado</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Estado de Verificación DNS:</span>
+                      {form.custom_domain_verified ? (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                          <ShieldCheck className="w-4 h-4" />
+                          <span>Dominio Verificado</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>Verificación Pendiente</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Acceso Directo al Portal */}
+                  {form.custom_domain && (
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-xs text-slate-500">
+                        URL pública del sitio: <strong className="font-mono text-slate-800 dark:text-white">{form.custom_domain}</strong>
+                      </span>
+                      <a
+                        href={form.custom_domain.startsWith('http') ? form.custom_domain : `https://${form.custom_domain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 text-xs font-bold bg-[#00a884] text-white rounded-lg flex items-center gap-1.5 hover:bg-[#008f70] transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Abrir Sitio Inmobiliario</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Configuración del Dominio Personalizado y Verificación DNS */}
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                    Dominio Personalizado de la Agencia (Custom Domain):
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      placeholder="ej. inmobiliaria-ejemplo.com o propiedades.midominio.com"
+                      value={form.custom_domain}
+                      onChange={(e) => setForm({ ...form, custom_domain: e.target.value })}
+                      className="flex-grow px-3 py-2 text-xs font-mono font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
+                    />
+                    {targetType === 'agency' && (
+                      <button
+                        type="button"
+                        onClick={handleVerifyDomain}
+                        disabled={verifyingDomain || !form.custom_domain}
+                        className="px-4 py-2 text-xs font-bold bg-slate-800 text-white dark:bg-slate-700 rounded-lg flex items-center justify-center gap-2 hover:bg-slate-900 transition-colors shrink-0 disabled:opacity-50"
+                      >
+                        {verifyingDomain ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Verificando DNS...</span>
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Verificar DNS</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  
+                  {domainVerificationResult && (
+                    <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                      domainVerificationResult.verified
+                        ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                        : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+                    }`}>
+                      {domainVerificationResult.verified ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+                      <span>{domainVerificationResult.message}</span>
+                    </div>
+                  )}
+
+                  <span className="text-[10px] text-slate-400 block">
+                    Apunte su registro CNAME o tipo A a los servidores de la plataforma. La resolución se efectúa dinámicamente en cada petición entrante.
                   </span>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Meta Descripción SEO / Compartir:</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Descripción que aparecerá en Google y previsualización de enlaces de WhatsApp..."
-                    value={form.seo_description}
-                    onChange={(e) => setForm({ ...form, seo_description: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-800"
-                  />
+                {/* 3. Personalización Visual del Portal Inmobiliario */}
+                {targetType === 'agency' && (
+                  <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#00a884]" />
+                      Personalización de Contenidos del Sitio Público
+                    </h4>
+
+                    {/* Banner / Portada */}
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-slate-50 dark:bg-slate-950">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase block mb-1">
+                        Imagen Principal o Banner de Portada (Hero Background):
+                      </label>
+                      <MediaPicker
+                        value={form.banner_image}
+                        type="image"
+                        buttonLabel="Seleccionar Portada Inmobiliaria"
+                        onChange={({ url }) => {
+                          setForm((prev: any) => ({
+                            ...prev,
+                            banner_image: url || prev.banner_image,
+                          }));
+                        }}
+                      />
+                    </div>
+
+                    {/* Títulos del Hero */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Título de Portada (Hero Title):</label>
+                        <input
+                          type="text"
+                          placeholder="ej. Encuentra el Inmueble de tus Sueños"
+                          value={form.hero_title}
+                          onChange={(e) => setForm({ ...form, hero_title: e.target.value })}
+                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Subtítulo de Portada (Hero Subtitle):</label>
+                        <input
+                          type="text"
+                          placeholder="ej. Propiedades exclusivas en venta y alquiler con asesoría garantizada"
+                          value={form.hero_subtitle}
+                          onChange={(e) => setForm({ ...form, hero_subtitle: e.target.value })}
+                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Sección Conócenos */}
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Título Sección «Conócenos»:</label>
+                        <input
+                          type="text"
+                          placeholder="ej. Conócenos — Tu aliado inmobiliario de confianza"
+                          value={form.about_title}
+                          onChange={(e) => setForm({ ...form, about_title: e.target.value })}
+                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Texto de Presentación de la Agencia:</label>
+                        <textarea
+                          rows={3}
+                          placeholder="Presentación de la empresa, trayectoria, valores y cobertura..."
+                          value={form.about_text}
+                          onChange={(e) => setForm({ ...form, about_text: e.target.value })}
+                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Llamada a la Acción (CTA) */}
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Texto de Llamada a la Acción (Banner de Consignación):</label>
+                      <input
+                        type="text"
+                        placeholder="ej. ¿Deseas vender o alquilar tu propiedad? Contáctanos hoy mismo."
+                        value={form.cta_text}
+                        onChange={(e) => setForm({ ...form, cta_text: e.target.value })}
+                        className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Metadatos SEO Básicos */}
+                <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Título SEO (Etiqueta &lt;title&gt;):</label>
+                    <input
+                      type="text"
+                      placeholder="ej. Inmobiliaria Ejemplo — Compra, Venta y Alquiler de Inmuebles"
+                      value={form.seo_title}
+                      onChange={(e) => setForm({ ...form, seo_title: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Meta Descripción SEO / Compartir:</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Descripción que aparecerá en Google y previsualización de enlaces de WhatsApp..."
+                      value={form.seo_description}
+                      onChange={(e) => setForm({ ...form, seo_description: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Inyección de Estilos CSS Personalizados:</label>
+                    <textarea
+                      rows={3}
+                      placeholder="/* p.ej. .primary-btn1 { border-radius: 9999px; } */"
+                      value={form.custom_css}
+                      onChange={(e) => setForm({ ...form, custom_css: e.target.value })}
+                      className="w-full px-3 py-2 text-xs font-mono bg-slate-900 text-emerald-400 rounded-lg"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Inyección de Estilos CSS Personalizados:</label>
-                  <textarea
-                    rows={4}
-                    placeholder="/* p.ej. .sidebar-brand { opacity: 0.9; } */"
-                    value={form.custom_css}
-                    onChange={(e) => setForm({ ...form, custom_css: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-slate-900 text-emerald-400 rounded-lg"
-                  />
-                </div>
               </div>
             )}
 

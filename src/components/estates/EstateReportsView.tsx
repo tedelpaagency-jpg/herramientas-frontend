@@ -92,8 +92,14 @@ export const EstateReportsView: React.FC<EstateReportsViewProps> = ({
     fetchReports();
   }, [activeAgencyFilter, activeAgentFilter]);
 
+  useEffect(() => {
+    setActiveAgencyFilter(selectedAgencyId);
+    setActiveAgentFilter('');
+  }, [selectedAgencyId]);
+
   const handleAgencySelect = (agencyId: any) => {
     setActiveAgencyFilter(agencyId);
+    setActiveAgentFilter('');
     if (onAgencyChange) {
       onAgencyChange(agencyId);
     }

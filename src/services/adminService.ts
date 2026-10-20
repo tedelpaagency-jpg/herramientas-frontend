@@ -157,6 +157,11 @@ export const adminService = {
     return res.data?.data || res.data;
   },
 
+  verifyDomain: async (id: number): Promise<{ status: string; message: string; data: any }> => {
+    const res = await apiClient.post(`/v1/agencies/${id}/verify-domain`);
+    return res.data;
+  },
+
   // === SUSCRIPCIONES ===
   getSubscriptions: async (): Promise<Subscription[]> => {
     const res = await apiClient.get('/v1/admin/subscriptions');

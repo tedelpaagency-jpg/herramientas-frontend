@@ -44,15 +44,21 @@ export const TravelReportsPage: React.FC = () => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const res = await userService.getUsers({ per_page: 100 });
+        const agencyIdParam = selectedAgency !== 'all' ? Number(selectedAgency) : undefined;
+        const res = await userService.getUsers({
+          all: true,
+          per_page: 200,
+          agency_id: agencyIdParam
+        });
         const usersData = Array.isArray(res) ? res : res?.data?.data || res?.data || [];
         setUsersList(usersData);
       } catch (err) {
         console.error('Error cargando lista de usuarios', err);
       }
     };
+    setSelectedUser('all');
     loadUsers();
-  }, []);
+  }, [selectedAgency]);
 
   useEffect(() => {
     const loadAgencies = async () => {
