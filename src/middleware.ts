@@ -17,6 +17,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Check if current hostname has an active Public Real Estate Portal (Inmobiliaria Frontend) on root '/'
+  if (request.nextUrl.pathname === '/' && !request.nextUrl.searchParams.has('dashboard')) {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://santun.tedelpa.com/api';
+      const inmoRes = await fetch(
+        `${apiUrl}/v1/public/inmobiliaria/config?domain=${encodeURIComponent(host)}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'X-Domain': host,
+          },
+          cache: 'no-store',
+        }
+      );
+
+      if (inmoRes.ok) {
+        const inmoJson = await inmoRes.json();
+        if (inmoJson?.data?.frontend_enabled && !inmoJson?.data?.redirect_to_login) {
+          const rewriteUrl = request.nextUrl.clone();
+          rewriteUrl.pathname = '/travel-agency-03';
+          rewriteUrl.searchParams.set('domain', host);
+          return NextResponse.rewrite(rewriteUrl);
+        }
+      }
+    } catch {
+      // Fall through if API check fails
+    }
+  }
+
   // Check if current hostname is configured as a custom domain for a landing page
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://santun.tedelpa.com/api';

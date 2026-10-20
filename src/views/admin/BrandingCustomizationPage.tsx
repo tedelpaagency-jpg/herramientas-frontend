@@ -266,8 +266,12 @@ export default function BrandingCustomizationPage({
       font_family: entity.font_family || 'Inter, sans-serif',
       border_radius: entity.border_radius || 'rounded-xl',
       custom_domain: entity.custom_domain || entity.domain || '',
-      frontend_enabled: Boolean(entity.frontend_enabled),
-      custom_domain_verified: Boolean(entity.custom_domain_verified),
+      frontend_enabled: Boolean(
+        entity.frontend_enabled ?? entity.agencies?.some((a: any) => Boolean(a.frontend_enabled))
+      ),
+      custom_domain_verified: Boolean(
+        entity.custom_domain_verified ?? entity.agencies?.some((a: any) => Boolean(a.custom_domain_verified))
+      ),
       banner_image: entity.banner_image || '',
       hero_title: entity.hero_title || '',
       hero_subtitle: entity.hero_subtitle || '',
@@ -439,6 +443,8 @@ export default function BrandingCustomizationPage({
 
     const payload = {
       ...form,
+      domain: form.custom_domain,
+      custom_domain: form.custom_domain,
       stripe_publishable_key: activePublishableKey,
       stripe_secret_key: activeSecretKey,
       stripe_webhook_secret: activeWebhookSecret,
@@ -449,6 +455,22 @@ export default function BrandingCustomizationPage({
       if (targetType === 'white_label') {
         updated = await whiteLabelService.updateWhiteLabel(selectedId, payload);
         const freshWl = updated?.data || updated;
+
+        // Sincronizar frontend_enabled y dominio con la agencia hija de esta Marca Blanca
+        const wlAgencies = agencies.filter((a: any) => Number(a.white_label_id) === Number(selectedId));
+        const targetChildAg =
+          wlAgencies.find((a: any) => a.domain === form.custom_domain) || wlAgencies[0];
+        if (targetChildAg) {
+          try {
+            await adminService.updateAgency(targetChildAg.id, {
+              name: targetChildAg.name,
+              frontend_enabled: Boolean(form.frontend_enabled),
+              domain: form.custom_domain || targetChildAg.domain,
+            });
+          } catch {
+            // No bloquear guardado de WL si falla actualización secundaria
+          }
+        }
         if (freshWl) {
           setCurrentWhiteLabel(freshWl);
           if (typeof window !== 'undefined') {
@@ -1380,19 +1402,32 @@ export default function BrandingCustomizationPage({
 
                   {/* Acceso Directo al Portal */}
                   {form.custom_domain && (
-                    <div className="flex items-center justify-between pt-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                       <span className="text-xs text-slate-500">
                         URL pública del sitio: <strong className="font-mono text-slate-800 dark:text-white">{form.custom_domain}</strong>
                       </span>
-                      <a
-                        href={form.custom_domain.startsWith('http') ? form.custom_domain : `https://${form.custom_domain}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 text-xs font-bold bg-[#00a884] text-white rounded-lg flex items-center gap-1.5 hover:bg-[#008f70] transition-colors"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Abrir Sitio Inmobiliario</span>
-                      </a>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <a
+                          href={`/travel-agency-03?domain=${encodeURIComponent(
+                            form.custom_domain.replace(/^https?:\/\//i, '').split('/')[0]
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 text-xs font-bold bg-slate-800 text-white rounded-lg flex items-center gap-1.5 hover:bg-slate-900 transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Vista Previa Portal</span>
+                        </a>
+                        <a
+                          href={form.custom_domain.startsWith('http') ? form.custom_domain : `https://${form.custom_domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 text-xs font-bold bg-[#00a884] text-white rounded-lg flex items-center gap-1.5 hover:bg-[#008f70] transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Abrir Sitio Inmobiliario</span>
+                        </a>
+                      </div>
                     </div>
                   )}
                 </div>

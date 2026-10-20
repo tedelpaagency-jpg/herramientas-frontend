@@ -311,9 +311,10 @@ export const LoginPage: React.FC = () => {
       // Extraer URL de redirección previa si el usuario intentó acceder a un módulo directo (ej: /visas/grupos)
       const searchParams = new URLSearchParams(window.location.search);
       const redirectParam = searchParams.get('redirect');
-      const targetUrl = (redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')) 
-        ? redirectParam 
-        : '/';
+      const targetUrl =
+        redirectParam && redirectParam !== '/' && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+          ? redirectParam
+          : '/dashboard';
       
       // Navegación limpia con recarga para sincronizar contexto, permisos y cabeceras de axios
       window.location.href = targetUrl;

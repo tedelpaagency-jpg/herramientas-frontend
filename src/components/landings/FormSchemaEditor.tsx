@@ -61,7 +61,7 @@ export const FormSchemaEditor: React.FC<Props> = ({
   credentialTemplateId,
   onCredentialTemplateIdChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<'fields' | 'steps' | 'styles' | 'stripe' | 'automation'>('fields');
+  const [activeTab, setActiveTab] = useState<'fields' | 'steps' | 'styles' | 'stripe' | 'automation' | 'legal'>('fields');
   const [termsEditorMode, setTermsEditorMode] = useState<'rich' | 'code'>('rich');
   const [privacyEditorMode, setPrivacyEditorMode] = useState<'rich' | 'code'>('rich');
   const [showPassword, setShowPassword] = useState(false);
@@ -295,6 +295,15 @@ export const FormSchemaEditor: React.FC<Props> = ({
           >
             CRM & Cursos
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('legal')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition ${
+              activeTab === 'legal' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5 text-amber-400" /> Términos & Políticas
+          </button>
         </div>
       </div>
 
@@ -380,7 +389,14 @@ export const FormSchemaEditor: React.FC<Props> = ({
                       <select
                         value={field.type}
                         disabled={isSystemField}
-                        onChange={(e) => handleUpdateField(idx, { type: e.target.value as any })}
+                        onChange={(e) => {
+                          const newType = e.target.value as FormFieldSchema['type'];
+                          const updates: Partial<FormFieldSchema> = { type: newType };
+                          if (newType === 'select' && (!field.options || field.options.length === 0)) {
+                            updates.options = [{ label: 'Opción 1', value: 'Opción 1' }];
+                          }
+                          handleUpdateField(idx, updates);
+                        }}
                         className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white disabled:opacity-60"
                       >
                         <option value="text">Texto</option>
@@ -394,6 +410,74 @@ export const FormSchemaEditor: React.FC<Props> = ({
                       </select>
                     </div>
                   </div>
+
+                  {field.type === 'select' && (
+                    <div className="mt-2 p-3 bg-slate-900/90 border border-indigo-500/30 rounded-lg space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-indigo-300 flex items-center gap-1.5">
+                          <ListOrdered className="w-3.5 h-3.5" /> Opciones del Select ({(field.options || []).length})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentOptions = Array.isArray(field.options) ? field.options : [];
+                            const nextNum = currentOptions.length + 1;
+                            handleUpdateField(idx, {
+                              options: [
+                                ...currentOptions,
+                                { label: `Opción ${nextNum}`, value: `Opción ${nextNum}` },
+                              ],
+                            });
+                          }}
+                          className="inline-flex items-center gap-1 bg-indigo-600/80 hover:bg-indigo-500 text-white text-[11px] px-2.5 py-1 rounded-md transition font-medium"
+                        >
+                          <Plus className="w-3 h-3" /> Agregar Opción
+                        </button>
+                      </div>
+
+                      {(!field.options || field.options.length === 0) ? (
+                        <p className="text-[11px] text-slate-500 italic">
+                          No hay opciones configuradas. Haz clic en &quot;Agregar Opción&quot; para añadir elementos a la lista desplegable.
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {field.options.map((opt, optIdx) => (
+                            <div key={optIdx} className="flex items-center gap-2">
+                              <span className="text-[10px] font-mono text-slate-500 w-5 text-right">
+                                {optIdx + 1}.
+                              </span>
+                              <input
+                                type="text"
+                                value={opt.label ?? ''}
+                                placeholder={`Texto de la opción ${optIdx + 1}`}
+                                onChange={(e) => {
+                                  const newText = e.target.value;
+                                  const updatedOptions = [...(field.options || [])];
+                                  updatedOptions[optIdx] = {
+                                    label: newText,
+                                    value: newText,
+                                  };
+                                  handleUpdateField(idx, { options: updatedOptions });
+                                }}
+                                className="flex-1 bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded px-2.5 py-1 text-xs text-white focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updatedOptions = (field.options || []).filter((_, i) => i !== optIdx);
+                                  handleUpdateField(idx, { options: updatedOptions });
+                                }}
+                                className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-slate-800 transition"
+                                title="Eliminar opción"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                 {layout === 'multi_step' && steps.length > 0 && (
                   <div className="pt-1">
@@ -1205,156 +1289,162 @@ export const FormSchemaEditor: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Términos y Condiciones Editor Box (Rich Text / HTML) */}
-      <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3 text-xs">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="font-bold text-slate-200 flex items-center gap-2">
-            📜 Términos y Condiciones de la Landing (Rich Text / HTML)
-          </label>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setTermsEditorMode(termsEditorMode === 'rich' ? 'code' : 'rich')}
-              className="inline-flex items-center gap-1.5 text-[11px] bg-slate-900 border border-slate-700 text-indigo-300 hover:text-white px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
-            >
-              {termsEditorMode === 'rich' ? (
-                <>
-                  <Code className="w-3.5 h-3.5 text-cyan-400" /> Código HTML
-                </>
-              ) : (
-                <>
-                  <FileText className="w-3.5 h-3.5 text-pink-400" /> Editor Enriquecido
-                </>
-              )}
-            </button>
-            {termsAndConditions && termsAndConditions.trim() !== '' ? (
-              <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/90 px-2.5 py-0.5 rounded-full border border-emerald-800 flex items-center gap-1">
-                ✓ Checkbox & Modal Activo
-              </span>
+      {/* LEGAL TAB: Términos y Condiciones & Políticas de Privacidad */}
+      {activeTab === 'legal' && (
+        <div className="space-y-5">
+          <style>{`
+            .ql-toolbar.ql-snow {
+              background-color: #0f172a !important;
+              border-color: #334155 !important;
+              border-top-left-radius: 0.5rem;
+              border-top-right-radius: 0.5rem;
+            }
+            .ql-container.ql-snow {
+              background-color: #020617 !important;
+              border-color: #334155 !important;
+              color: #ffffff !important;
+              min-height: 140px;
+              font-size: 0.85rem;
+              border-bottom-left-radius: 0.5rem;
+              border-bottom-right-radius: 0.5rem;
+            }
+            .ql-stroke { stroke: #cbd5e1 !important; }
+            .ql-fill { fill: #cbd5e1 !important; }
+            .ql-picker-label { color: #cbd5e1 !important; }
+            .ql-picker-options { background-color: #0f172a !important; color: #ffffff !important; }
+          `}</style>
+
+          {/* Términos y Condiciones Editor Box (Rich Text / HTML) */}
+          <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="font-bold text-slate-200 flex items-center gap-2">
+                📜 Términos y Condiciones de la Landing (Rich Text / HTML)
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTermsEditorMode(termsEditorMode === 'rich' ? 'code' : 'rich')}
+                  className="inline-flex items-center gap-1.5 text-[11px] bg-slate-900 border border-slate-700 text-indigo-300 hover:text-white px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
+                >
+                  {termsEditorMode === 'rich' ? (
+                    <>
+                      <Code className="w-3.5 h-3.5 text-cyan-400" /> Código HTML
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-3.5 h-3.5 text-pink-400" /> Editor Enriquecido
+                    </>
+                  )}
+                </button>
+                {termsAndConditions && termsAndConditions.trim() !== '' ? (
+                  <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/90 px-2.5 py-0.5 rounded-full border border-emerald-800 flex items-center gap-1">
+                    ✓ Checkbox & Modal Activo
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-500 font-medium bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
+                    No mostrado (vacío)
+                  </span>
+                )}
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Diseña o pega el contenido completo de los Términos y Condiciones. Puedes aplicar formato en negrita, listas, títulos o pegar código HTML. Se mostrará enriquecido en el modal público de todas las Landings Pages.
+            </p>
+
+            {termsEditorMode === 'rich' ? (
+              <div className="bg-slate-900 rounded-lg overflow-hidden border border-slate-700 text-white shadow-inner">
+                <ReactQuill
+                  theme="snow"
+                  value={termsAndConditions || ''}
+                  onChange={(val) => onTermsAndConditionsChange && onTermsAndConditionsChange(val)}
+                  placeholder="Escribe aquí los Términos y Condiciones con formato enriquecido..."
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, 3, false] }],
+                      ['bold', 'italic', 'underline', 'strike'],
+                      [{ list: 'ordered' }, { list: 'bullet' }],
+                      ['link', 'clean'],
+                    ],
+                  }}
+                />
+              </div>
             ) : (
-              <span className="text-[10px] text-slate-500 font-medium bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
-                No mostrado (vacío)
-              </span>
+              <textarea
+                rows={6}
+                value={termsAndConditions || ''}
+                onChange={(e) => onTermsAndConditionsChange && onTermsAndConditionsChange(e.target.value)}
+                placeholder="Escribe o pega código HTML para los Términos y Condiciones..."
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-emerald-400 font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              />
+            )}
+          </div>
+
+          {/* Políticas de Privacidad Editor Box (Rich Text / HTML) */}
+          <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="font-bold text-slate-200 flex items-center gap-2">
+                🛡️ Políticas de Privacidad de la Landing (Rich Text / HTML)
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPrivacyEditorMode(privacyEditorMode === 'rich' ? 'code' : 'rich')}
+                  className="inline-flex items-center gap-1.5 text-[11px] bg-slate-900 border border-slate-700 text-indigo-300 hover:text-white px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
+                >
+                  {privacyEditorMode === 'rich' ? (
+                    <>
+                      <Code className="w-3.5 h-3.5 text-cyan-400" /> Código HTML
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-3.5 h-3.5 text-pink-400" /> Editor Enriquecido
+                    </>
+                  )}
+                </button>
+                {privacyPolicy && privacyPolicy.trim() !== '' ? (
+                  <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/90 px-2.5 py-0.5 rounded-full border border-emerald-800 flex items-center gap-1">
+                    ✓ Checkbox & Modal Activo
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-500 font-medium bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
+                    No mostrado (vacío)
+                  </span>
+                )}
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Diseña o pega el contenido completo de las Políticas de Privacidad. Puedes aplicar formato en negrita, listas, títulos o pegar código HTML. Se mostrará enriquecido en el modal público de todas las Landings Pages.
+            </p>
+
+            {privacyEditorMode === 'rich' ? (
+              <div className="bg-slate-900 rounded-lg overflow-hidden border border-slate-700 text-white shadow-inner">
+                <ReactQuill
+                  theme="snow"
+                  value={privacyPolicy || ''}
+                  onChange={(val) => onPrivacyPolicyChange && onPrivacyPolicyChange(val)}
+                  placeholder="Escribe aquí las Políticas de Privacidad con formato enriquecido..."
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, 3, false] }],
+                      ['bold', 'italic', 'underline', 'strike'],
+                      [{ list: 'ordered' }, { list: 'bullet' }],
+                      ['link', 'clean'],
+                    ],
+                  }}
+                />
+              </div>
+            ) : (
+              <textarea
+                rows={6}
+                value={privacyPolicy || ''}
+                onChange={(e) => onPrivacyPolicyChange && onPrivacyPolicyChange(e.target.value)}
+                placeholder="Escribe o pega código HTML para las Políticas de Privacidad..."
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-emerald-400 font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+              />
             )}
           </div>
         </div>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
-          Diseña o pega el contenido completo de los Términos y Condiciones. Puedes aplicar formato en negrita, listas, títulos o pegar código HTML. Se mostrará enriquecido en el modal público de todas las Landings Pages.
-        </p>
-
-        {termsEditorMode === 'rich' ? (
-          <div className="bg-slate-900 rounded-lg overflow-hidden border border-slate-700 text-white shadow-inner">
-            <style>{`
-              .ql-toolbar.ql-snow {
-                background-color: #0f172a !important;
-                border-color: #334155 !important;
-                border-top-left-radius: 0.5rem;
-                border-top-right-radius: 0.5rem;
-              }
-              .ql-container.ql-snow {
-                background-color: #020617 !important;
-                border-color: #334155 !important;
-                color: #ffffff !important;
-                min-height: 140px;
-                font-size: 0.85rem;
-                border-bottom-left-radius: 0.5rem;
-                border-bottom-right-radius: 0.5rem;
-              }
-              .ql-stroke { stroke: #cbd5e1 !important; }
-              .ql-fill { fill: #cbd5e1 !important; }
-              .ql-picker-label { color: #cbd5e1 !important; }
-              .ql-picker-options { background-color: #0f172a !important; color: #ffffff !important; }
-            `}</style>
-            <ReactQuill
-              theme="snow"
-              value={termsAndConditions || ''}
-              onChange={(val) => onTermsAndConditionsChange && onTermsAndConditionsChange(val)}
-              placeholder="Escribe aquí los Términos y Condiciones con formato enriquecido..."
-              modules={{
-                toolbar: [
-                  [{ header: [1, 2, 3, false] }],
-                  ['bold', 'italic', 'underline', 'strike'],
-                  [{ list: 'ordered' }, { list: 'bullet' }],
-                  ['link', 'clean'],
-                ],
-              }}
-            />
-          </div>
-        ) : (
-          <textarea
-            rows={6}
-            value={termsAndConditions || ''}
-            onChange={(e) => onTermsAndConditionsChange && onTermsAndConditionsChange(e.target.value)}
-            placeholder="Escribe o pega código HTML para los Términos y Condiciones..."
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-emerald-400 font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
-          />
-        )}
-      </div>
-
-      {/* Políticas de Privacidad Editor Box (Rich Text / HTML) */}
-      <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3 text-xs">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="font-bold text-slate-200 flex items-center gap-2">
-            🛡️ Políticas de Privacidad de la Landing (Rich Text / HTML)
-          </label>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPrivacyEditorMode(privacyEditorMode === 'rich' ? 'code' : 'rich')}
-              className="inline-flex items-center gap-1.5 text-[11px] bg-slate-900 border border-slate-700 text-indigo-300 hover:text-white px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
-            >
-              {privacyEditorMode === 'rich' ? (
-                <>
-                  <Code className="w-3.5 h-3.5 text-cyan-400" /> Código HTML
-                </>
-              ) : (
-                <>
-                  <FileText className="w-3.5 h-3.5 text-pink-400" /> Editor Enriquecido
-                </>
-              )}
-            </button>
-            {privacyPolicy && privacyPolicy.trim() !== '' ? (
-              <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/90 px-2.5 py-0.5 rounded-full border border-emerald-800 flex items-center gap-1">
-                ✓ Checkbox & Modal Activo
-              </span>
-            ) : (
-              <span className="text-[10px] text-slate-500 font-medium bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
-                No mostrado (vacío)
-              </span>
-            )}
-          </div>
-        </div>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
-          Diseña o pega el contenido completo de las Políticas de Privacidad. Puedes aplicar formato en negrita, listas, títulos o pegar código HTML. Se mostrará enriquecido en el modal público de todas las Landings Pages.
-        </p>
-
-        {privacyEditorMode === 'rich' ? (
-          <div className="bg-slate-900 rounded-lg overflow-hidden border border-slate-700 text-white shadow-inner">
-            <ReactQuill
-              theme="snow"
-              value={privacyPolicy || ''}
-              onChange={(val) => onPrivacyPolicyChange && onPrivacyPolicyChange(val)}
-              placeholder="Escribe aquí las Políticas de Privacidad con formato enriquecido..."
-              modules={{
-                toolbar: [
-                  [{ header: [1, 2, 3, false] }],
-                  ['bold', 'italic', 'underline', 'strike'],
-                  [{ list: 'ordered' }, { list: 'bullet' }],
-                  ['link', 'clean'],
-                ],
-              }}
-            />
-          </div>
-        ) : (
-          <textarea
-            rows={6}
-            value={privacyPolicy || ''}
-            onChange={(e) => onPrivacyPolicyChange && onPrivacyPolicyChange(e.target.value)}
-            placeholder="Escribe o pega código HTML para las Políticas de Privacidad..."
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-emerald-400 font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
-          />
-        )}
-      </div>
+      )}
     </div>
   );
 };

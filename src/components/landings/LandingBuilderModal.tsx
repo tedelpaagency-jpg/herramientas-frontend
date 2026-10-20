@@ -17,21 +17,126 @@ interface Props {
   onSaved: () => void;
 }
 
+export const DEFAULT_LANDING_HTML = `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario sencillo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+        }
+
+        .formulario {
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #444;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 18px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #245ee5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #143cb8;
+        }
+    </style>
+</head>
+<body>
+
+{{DYNAMIC_FORM}}
+
+</body>
+</html>`;
+
+const getDefaultBuilderSchema = (): BuilderSchema => ({
+  blocks: [
+    {
+      id: 'hero_1',
+      type: 'hero',
+      title: 'Bienvenidos a nuestra plataforma',
+      subtitle: 'Transforma tu negocio con nuestras herramientas avanzadas',
+      bg_color: '#0f172a',
+      text_color: '#ffffff',
+      button_text: 'Comenzar Ahora',
+    },
+    {
+      id: 'form_1',
+      type: 'form',
+      title: 'Formulario de Registro',
+    },
+  ],
+});
+
+const getDefaultFormSchema = (): FormSchema => ({
+  layout: 'linear',
+  title: 'Completa tu información',
+  submit_button_text: 'Enviar Registro',
+  fields: [
+    { id: 'f_name', name: 'name', label: 'Nombre Completo', type: 'text', required: true },
+    { id: 'f_email', name: 'email', label: 'Correo Electrónico', type: 'email', required: true },
+    { id: 'f_phone', name: 'phone', label: 'Teléfono', type: 'phone', required: false },
+  ],
+});
+
 export const LandingBuilderModal: React.FC<Props> = ({
   isOpen,
   onClose,
   landing,
   onSaved,
 }) => {
-  const [activeTab, setActiveTab] = useState<'blocks' | 'form' | 'html' | 'automation' | 'domain' | 'preview'>('blocks');
+  const [activeTab, setActiveTab] = useState<'blocks' | 'form' | 'html' | 'automation' | 'domain' | 'preview'>('html');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [resources, setResources] = useState<LandingAvailableResources | undefined>();
 
   // State fields
   const [title, setTitle] = useState('');
-  const [mode, setMode] = useState<'visual' | 'custom_html'>('visual');
-  const [customHtml, setCustomHtml] = useState('');
+  const [mode, setMode] = useState<'visual' | 'custom_html'>('custom_html');
+  const [customHtml, setCustomHtml] = useState(DEFAULT_LANDING_HTML);
   const [customDomain, setCustomDomain] = useState('');
   const [copiedRedirect, setCopiedRedirect] = useState(false);
   const [actionType, setActionType] = useState<ActionType>('lead');
@@ -52,35 +157,9 @@ export const LandingBuilderModal: React.FC<Props> = ({
     product_name: '',
   });
 
-  const [builderSchema, setBuilderSchema] = useState<BuilderSchema>({
-    blocks: [
-      {
-        id: 'hero_1',
-        type: 'hero',
-        title: 'Bienvenidos a nuestra plataforma',
-        subtitle: 'Transforma tu negocio con nuestras herramientas avanzadas',
-        bg_color: '#0f172a',
-        text_color: '#ffffff',
-        button_text: 'Comenzar Ahora',
-      },
-      {
-        id: 'form_1',
-        type: 'form',
-        title: 'Formulario de Registro',
-      },
-    ],
-  });
+  const [builderSchema, setBuilderSchema] = useState<BuilderSchema>(getDefaultBuilderSchema());
 
-  const [formSchema, setFormSchema] = useState<FormSchema>({
-    layout: 'linear',
-    title: 'Completa tu información',
-    submit_button_text: 'Enviar Registro',
-    fields: [
-      { id: 'f_name', name: 'name', label: 'Nombre Completo', type: 'text', required: true },
-      { id: 'f_email', name: 'email', label: 'Correo Electrónico', type: 'email', required: true },
-      { id: 'f_phone', name: 'phone', label: 'Teléfono', type: 'phone', required: false },
-    ],
-  });
+  const [formSchema, setFormSchema] = useState<FormSchema>(getDefaultFormSchema());
 
   useEffect(() => {
     if (isOpen) {
@@ -96,8 +175,12 @@ export const LandingBuilderModal: React.FC<Props> = ({
             rawHtml = landing.custom_html || '';
           }
         }
-        setMode(landing.mode === 'custom_html' || (rawHtml && rawHtml.length > 50) ? 'custom_html' : (landing.mode || 'visual'));
-        setCustomHtml(rawHtml);
+        const resolvedMode = landing.mode === 'custom_html' || (rawHtml && rawHtml.length > 50)
+          ? 'custom_html'
+          : (landing.mode || 'custom_html');
+        setMode(resolvedMode);
+        setActiveTab(resolvedMode === 'visual' ? 'blocks' : 'html');
+        setCustomHtml(rawHtml && rawHtml.trim() ? rawHtml : DEFAULT_LANDING_HTML);
         setActionType(landing.action_type || 'lead');
         setPlanId(landing.plan_id || null);
         setDefaultPassword(landing.default_password || (landing.form_schema as any)?.default_password || 'Acceso@2026');
@@ -110,16 +193,14 @@ export const LandingBuilderModal: React.FC<Props> = ({
         setSendCredentials(landing.send_credentials !== undefined ? Boolean(landing.send_credentials) : ((landing.form_schema as any)?.send_credentials !== false));
         setCredentialTemplateId(landing.credential_template_id || (landing.form_schema as any)?.credential_template_id || null);
         setCustomDomain(landing.custom_domain || '');
+        setCopiedRedirect(false);
 
-        const initialPayment = landing.payment_config || { enabled: false, currency: 'USD', amount: 0, product_name: '' };
-        const initialFormSchema = landing.form_schema || {
-          layout: 'linear',
-          fields: [
-            { id: 'f_name', name: 'name', label: 'Nombre Completo', type: 'text', required: true },
-            { id: 'f_email', name: 'email', label: 'Correo Electrónico', type: 'email', required: true },
-            { id: 'f_phone', name: 'phone', label: 'Teléfono', type: 'phone', required: false },
-          ],
-        };
+        const initialPayment = landing.payment_config
+          ? { ...landing.payment_config }
+          : { enabled: false, currency: 'USD', amount: 0, product_name: '' };
+        const initialFormSchema = landing.form_schema
+          ? { ...landing.form_schema }
+          : getDefaultFormSchema();
         const initialStripeAppearance = landing.stripe_appearance || initialPayment.stripe_appearance || initialFormSchema.stripe_appearance;
 
         if (initialStripeAppearance) {
@@ -129,7 +210,34 @@ export const LandingBuilderModal: React.FC<Props> = ({
 
         setPaymentConfig(initialPayment);
         setFormSchema(initialFormSchema);
-        if (landing.builder_schema) setBuilderSchema(landing.builder_schema);
+        setBuilderSchema(landing.builder_schema || getDefaultBuilderSchema());
+      } else {
+        // Reset state for new landing
+        setTitle('');
+        setMode('custom_html');
+        setActiveTab('html');
+        setCustomHtml(DEFAULT_LANDING_HTML);
+        setCustomDomain('');
+        setCopiedRedirect(false);
+        setActionType('lead');
+        setPlanId(null);
+        setDefaultPassword('Acceso@2026');
+        setWorkspaceId(null);
+        setStageId(null);
+        setWorkflowId(null);
+        setCourseIds([]);
+        setTermsAndConditions('');
+        setPrivacyPolicy('');
+        setSendCredentials(true);
+        setCredentialTemplateId(null);
+        setPaymentConfig({
+          enabled: false,
+          currency: 'USD',
+          amount: 0,
+          product_name: '',
+        });
+        setBuilderSchema(getDefaultBuilderSchema());
+        setFormSchema(getDefaultFormSchema());
       }
     }
   }, [isOpen, landing]);
@@ -259,7 +367,10 @@ export const LandingBuilderModal: React.FC<Props> = ({
             <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-medium">
               <button
                 type="button"
-                onClick={() => setMode('visual')}
+                onClick={() => {
+                  setMode('visual');
+                  setActiveTab('blocks');
+                }}
                 className={`px-3 py-1.5 rounded-lg transition ${
                   mode === 'visual' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
@@ -268,7 +379,10 @@ export const LandingBuilderModal: React.FC<Props> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setMode('custom_html')}
+                onClick={() => {
+                  setMode('custom_html');
+                  setActiveTab('html');
+                }}
                 className={`px-3 py-1.5 rounded-lg transition ${
                   mode === 'custom_html' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
@@ -299,6 +413,19 @@ export const LandingBuilderModal: React.FC<Props> = ({
 
         {/* Tab Navigation */}
         <div className="bg-slate-900/60 border-b border-slate-800 px-4 py-2 flex items-center gap-2 overflow-x-auto text-xs">
+          <button
+            type="button"
+            onClick={() => {
+              setMode('custom_html');
+              setActiveTab('html');
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
+              activeTab === 'html' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Code className="w-4 h-4" /> Editor HTML
+          </button>
+
           {mode === 'visual' && (
             <button
               type="button"
@@ -308,18 +435,6 @@ export const LandingBuilderModal: React.FC<Props> = ({
               }`}
             >
               <Layout className="w-4 h-4" /> Bloques Web
-            </button>
-          )}
-
-          {mode === 'custom_html' && (
-            <button
-              type="button"
-              onClick={() => setActiveTab('html')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
-                activeTab === 'html' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Code className="w-4 h-4" /> Editor HTML
             </button>
           )}
 
