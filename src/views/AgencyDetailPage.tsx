@@ -194,7 +194,14 @@ export const AgencyDetailPage: React.FC<AgencyDetailPageProps> = ({ agencyId }) 
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 self-start md:self-auto">
+          <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+            <Link
+              href="/branding?tab=domain"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-md shadow-emerald-600/20 cursor-pointer"
+            >
+              <Globe className="w-4 h-4" />
+              <span>Personalizar Marca & Portal Web</span>
+            </Link>
             <button
               onClick={openEditModal}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors shadow-md shadow-amber-600/20 cursor-pointer"

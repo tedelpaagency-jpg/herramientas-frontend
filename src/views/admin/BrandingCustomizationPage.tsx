@@ -51,7 +51,16 @@ export default function BrandingCustomizationPage({
   const [agencies, setAgencies] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(initialTargetType === 'white_label' ? (initialWhiteLabelId || null) : (initialAgencyId || null));
 
-  const [activeTab, setActiveTab] = useState<'colors' | 'typography' | 'logos' | 'info' | 'domain' | 'stripe'>('colors');
+  const [activeTab, setActiveTab] = useState<'colors' | 'typography' | 'logos' | 'info' | 'domain' | 'stripe'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'domain' || tabParam === 'portal' || tabParam === 'frontend') {
+        return 'domain';
+      }
+    }
+    return 'colors';
+  });
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);

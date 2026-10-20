@@ -332,7 +332,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (basePerms.some((p) => p.startsWith('lexvault') || p === 'view_lexvault' || p === 'manage_lexvault' || p.startsWith('contracts'))) {
       macroExpanded.push('lexvault.view', 'lexvault.create', 'lexvault.edit', 'lexvault.delete', 'view_lexvault', 'manage_lexvault', 'view_contracts', 'contracts.view');
     }
-    if (basePerms.some((p) => p === 'custom_agency_branding' || p.startsWith('branding'))) {
+    if (dashboardType === 'agency_admin' || basePerms.some((p) => p === 'custom_agency_branding' || p.startsWith('branding') || p.startsWith('estates') || p === 'manage_estates')) {
       macroExpanded.push('custom_agency_branding', 'branding.view', 'branding.manage');
     }
     if (basePerms.some((p) => p.startsWith('campaigns') || p.startsWith('marketing') || p === 'email_marketing' || p === 'view_email_marketing')) {
