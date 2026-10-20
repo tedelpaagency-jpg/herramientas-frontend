@@ -44,20 +44,33 @@ export default function BrandingCustomizationPage({
 
   const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some(r => r.name === 'super_admin');
   const isWlAdmin = user?.role === 'white_label_admin' || user?.roles?.some(r => r.name === 'white_label_admin');
+  const agencyObj = user?.agency || (user as any)?.agency_data || currentAgency;
+  const userAgencyId = user?.agency_id || agencyObj?.id || (user as any)?.agencies?.[0]?.id;
+  const isAgencyUser = Boolean(userAgencyId) && !isSuperAdmin && !isWlAdmin;
+
+  const isDomainTabRequested = typeof window !== 'undefined' && (
+    new URLSearchParams(window.location.search).get('tab') === 'domain' ||
+    new URLSearchParams(window.location.search).get('tab') === 'portal' ||
+    new URLSearchParams(window.location.search).get('tab') === 'frontend'
+  );
+
+  const defaultTargetType: 'white_label' | 'agency' = (
+    isAgencyUser || 
+    (!isSuperAdmin && !isWlAdmin) ||
+    (isDomainTabRequested && initialTargetType !== 'white_label')
+  ) ? 'agency' : initialTargetType;
   
   // Selection state
-  const [targetType, setTargetType] = useState<'white_label' | 'agency'>(initialTargetType);
+  const [targetType, setTargetType] = useState<'white_label' | 'agency'>(defaultTargetType);
   const [whiteLabels, setWhiteLabels] = useState<any[]>([]);
   const [agencies, setAgencies] = useState<any[]>([]);
-  const [selectedId, setSelectedId] = useState<number | null>(initialTargetType === 'white_label' ? (initialWhiteLabelId || null) : (initialAgencyId || null));
+  const [selectedId, setSelectedId] = useState<number | null>(
+    defaultTargetType === 'agency' ? (initialAgencyId || userAgencyId || null) : (initialWhiteLabelId || null)
+  );
 
   const [activeTab, setActiveTab] = useState<'colors' | 'typography' | 'logos' | 'info' | 'domain' | 'stripe'>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get('tab');
-      if (tabParam === 'domain' || tabParam === 'portal' || tabParam === 'frontend') {
-        return 'domain';
-      }
+    if (isDomainTabRequested) {
+      return 'domain';
     }
     return 'colors';
   });
@@ -176,7 +189,14 @@ export default function BrandingCustomizationPage({
           }
         }
 
-        if (wlList.length > 0) {
+        if ((targetKind === 'agency' || isDomainTabRequested) && agList.length > 0) {
+          const matchAg = targetId ? agList.find(a => a.id === targetId) : null;
+          const chosenAg = matchAg || agList[0];
+          setTargetType('agency');
+          setSelectedId(chosenAg.id);
+          populateForm(chosenAg, 'agency');
+          setCurrentAgency(chosenAg);
+        } else if (wlList.length > 0) {
           setTargetType('white_label');
           setSelectedId(wlList[0].id);
           populateForm(wlList[0], 'white_label');
@@ -189,14 +209,21 @@ export default function BrandingCustomizationPage({
         }
       } else {
         // Agency Admin
-        const agId = user?.agency_id || currentAgency?.id;
+        const agId = userAgencyId;
         if (agId) {
-          const ag = await adminService.getAgency(agId);
-          setTargetType('agency');
-          setSelectedId(agId);
-          setAgencies([ag]);
-          populateForm(ag, 'agency');
-          setCurrentAgency(ag);
+          let ag: any;
+          try {
+            ag = await adminService.getAgency(agId);
+          } catch {
+            ag = currentAgency || agencyObj;
+          }
+          if (ag) {
+            setTargetType('agency');
+            setSelectedId(agId);
+            setAgencies([ag]);
+            populateForm(ag, 'agency');
+            setCurrentAgency(ag);
+          }
         }
       }
     } catch (err: any) {
@@ -497,15 +524,21 @@ export default function BrandingCustomizationPage({
         <div>
           <div className="flex items-center gap-2 mb-2">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#00a884]/20 text-[#00a884] border border-[#00a884]/30">
-              MARCA BLANCA & AGENCIAS
+              {targetType === 'agency' ? 'PORTAL INMOBILIARIO & MARCA DE AGENCIA' : 'MARCA BLANCA'}
             </span>
-            <span className="text-xs text-slate-400 font-medium">Enterprise Branding Engine</span>
+            <span className="text-xs text-slate-400 font-medium">
+              {targetType === 'agency' 
+                ? `Configurando: ${form.name || currentAgency?.name || 'Tu Agencia'}` 
+                : 'Enterprise Branding Engine'}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight uppercase">
-            Personalización de Marca & Logotipos
+            {targetType === 'agency' ? 'Portal Inmobiliario & Marca de la Agencia' : 'Personalización de Marca & Logotipos'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-            Configure logotipos para modo claro, modo oscuro e isotipo de menú compacto, paletas de colores corporativas y tipografías nativas.
+            {targetType === 'agency'
+              ? 'Configura el dominio público, imagen de portada, textos de presentación, llamada a la acción y colores del portal web inmobiliario de tu agencia.'
+              : 'Configure logotipos para modo claro, modo oscuro e isotipo de menú compacto, paletas de colores corporativas y tipografías nativas.'}
           </p>
         </div>
 
@@ -679,7 +712,7 @@ export default function BrandingCustomizationPage({
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Code className="w-4 h-4" /> Dominio & SEO
+              <Globe className="w-4 h-4 text-[#00a884]" /> Dominio & Portal Inmobiliario
             </button>
             <button
               onClick={() => setActiveTab('stripe')}
@@ -1243,6 +1276,43 @@ export default function BrandingCustomizationPage({
             {activeTab === 'domain' && (
               <div className="space-y-6">
                 
+                {/* Aviso para Marcas Blancas */}
+                {targetType === 'white_label' && (
+                  <div className="p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-slate-900/40 border border-amber-500/30 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-start md:items-center gap-3">
+                      <div className="p-3 rounded-xl bg-amber-500 text-slate-950 font-bold shrink-0">
+                        <Building2 className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                          Los Portales Inmobiliarios Públicos pertenecen a las Agencias
+                        </h4>
+                        <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-xl">
+                          Cada agencia inmobiliaria cuenta con su propio sitio web público multiagencia (template <code>travel-agency-03</code>). Cada agencia propiamente puede configurarlo de forma independiente, y las Marcas Blancas pueden supervisar o ajustar los datos de sus agencias hijas seleccionándolas a continuación.
+                        </p>
+                      </div>
+                    </div>
+                    {agencies.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTargetType('agency');
+                          const firstAg = agencies[0];
+                          if (firstAg) {
+                            setSelectedId(firstAg.id);
+                            populateForm(firstAg, 'agency');
+                            setCurrentAgency(firstAg);
+                          }
+                        }}
+                        className="px-4 py-2.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-md shrink-0 flex items-center gap-2 cursor-pointer transition-all"
+                      >
+                        <Building2 className="w-4 h-4" />
+                        <span>Configurar Agencia Hija</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {/* 1. Módulo del Portal Inmobiliario Público */}
                 <div className="p-4 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 border border-emerald-500/30 rounded-2xl space-y-4">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
