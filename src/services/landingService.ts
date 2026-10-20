@@ -54,7 +54,43 @@ export const landingService = {
 
   getAvailableResources: async (): Promise<LandingAvailableResources> => {
     const response = await apiClient.get('/v1/landings/available-resources');
-    return response.data?.data || response.data;
+    const data = response.data?.data || response.data || {};
+    if (!Array.isArray(data.workspaces) || data.workspaces.length === 0) {
+      try {
+        const wsResp = await apiClient.get('/v1/workspaces-meta');
+        const wsList = wsResp.data?.data || wsResp.data || [];
+        if (Array.isArray(wsList) && wsList.length > 0) {
+          data.workspaces = wsList;
+          const extractedStages: Array<{ id: number; name: string; workspace_id: number }> = [];
+          wsList.forEach((ws: any) => {
+            if (Array.isArray(ws.stages)) {
+              ws.stages.forEach((st: any) => {
+                extractedStages.push({
+                  id: Number(st.id),
+                  workspace_id: Number(st.workspace_id || ws.id),
+                  name: st.name,
+                });
+              });
+            }
+          });
+          if (extractedStages.length > 0 && (!Array.isArray(data.stages) || data.stages.length === 0)) {
+            data.stages = extractedStages;
+          }
+        }
+      } catch {
+        // Ignore fallback error
+      }
+    }
+    return {
+      courses: Array.isArray(data.courses) ? data.courses : [],
+      workspaces: Array.isArray(data.workspaces) ? data.workspaces : [],
+      stages: Array.isArray(data.stages) ? data.stages : [],
+      workflows: Array.isArray(data.workflows) ? data.workflows : [],
+      white_labels: Array.isArray(data.white_labels) ? data.white_labels : [],
+      agencies: Array.isArray(data.agencies) ? data.agencies : [],
+      plans: Array.isArray(data.plans) ? data.plans : [],
+      credential_templates: Array.isArray(data.credential_templates) ? data.credential_templates : [],
+    };
   },
 
   createEvent: async (data: {

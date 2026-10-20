@@ -236,7 +236,21 @@ export const FormSchemaEditor: React.FC<Props> = ({
     updateSchema({ steps: updated });
   };
 
-  const filteredStages = resources?.stages.filter(s => !workspaceId || s.workspace_id === Number(workspaceId)) || [];
+  const filteredStages = useMemo(() => {
+    const flatStages = resources?.stages || [];
+    if (!workspaceId) {
+      return flatStages;
+    }
+    const byFlat = flatStages.filter(s => Number(s.workspace_id) === Number(workspaceId));
+    if (byFlat.length > 0) {
+      return byFlat;
+    }
+    const selectedWs: any = (resources?.workspaces || []).find(w => Number(w.id) === Number(workspaceId));
+    if (selectedWs && Array.isArray(selectedWs.stages)) {
+      return selectedWs.stages;
+    }
+    return [];
+  }, [resources?.stages, resources?.workspaces, workspaceId]);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-6 text-slate-100">
@@ -1201,11 +1215,15 @@ export const FormSchemaEditor: React.FC<Props> = ({
               <label className="block font-medium text-slate-300 mb-1">CRM Workspace Destino</label>
               <select
                 value={workspaceId || ''}
-                onChange={(e) => onWorkspaceChange(e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => {
+                  const newWsId = e.target.value ? Number(e.target.value) : null;
+                  onWorkspaceChange(newWsId);
+                  onStageChange(null);
+                }}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
               >
                 <option value="">-- Seleccionar Workspace --</option>
-                {resources?.workspaces.map(w => (
+                {(resources?.workspaces || []).map(w => (
                   <option key={w.id} value={w.id}>
                     {w.name}
                   </option>
