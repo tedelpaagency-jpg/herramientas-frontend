@@ -297,7 +297,7 @@ export const PublicInmobiliariaHomeView: React.FC<PublicInmobiliariaHomeViewProp
                         className="w-full text-xs sm:text-sm font-bold text-slate-800 outline-none placeholder:text-slate-400"
                       />
                       <span className="text-[11px] text-slate-400 block font-medium truncate">
-                        {agency.country || 'Ciudad o Sector'}
+                        {agency.province || agency.city || 'Ciudad o Sector'}
                       </span>
                     </div>
                   </div>
