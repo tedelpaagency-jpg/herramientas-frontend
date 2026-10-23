@@ -6,7 +6,11 @@ import { EffectFade, Navigation } from "swiper/modules";
 
 import { SwiperOptions } from "swiper/types";
 
-const TopbarSlider = () => {
+interface TopbarSliderProps {
+  agency?: any;
+}
+
+const TopbarSlider: React.FC<TopbarSliderProps> = ({ agency }) => {
      const settings: SwiperOptions = useMemo(() => {
     return {
       slidesPerView: "auto",
@@ -40,13 +44,19 @@ const TopbarSlider = () => {
             <Swiper {...settings} modules={[Navigation, EffectFade]} className="swiper top-offer-text-slider">
               <div className="swiper-wrapper">
                 <SwiperSlide className="swiper-slide">
-                  <Link href="/travel-package">One-Click Booking, Upto <strong>FLAT 30%</strong> Discount of Haneymoon Tours</Link>
+                  <Link href="/properties">
+                    {agency?.name ? `${agency.name}: ` : ''}Propiedades Exclusivas con <strong>Asesoría Legal Garantizada</strong>
+                  </Link>
                 </SwiperSlide>
                 <SwiperSlide className="swiper-slide">
-                  <Link href="/travel-package">Customize Your Trip Plan and Get <strong>Special Discounts</strong> Instantly</Link>
+                  <Link href="/properties">
+                    {agency?.cta_text || '¿Deseas vender o rentar tu inmueble? Consigna tu propiedad con los expertos'}
+                  </Link>
                 </SwiperSlide>
                 <SwiperSlide className="swiper-slide">
-                  <Link href="/travel-package">Enjoy Family Holiday Packages with <strong>Flexible Payment Options</strong></Link>
+                  <Link href="/properties?property_status=2">
+                    Nuevos Desarrollos y Casas en Venta con <strong>Financiamiento Bancario Directo</strong>
+                  </Link>
                 </SwiperSlide>
               </div>
             </Swiper>

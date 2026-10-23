@@ -1,106 +1,132 @@
-import Image from 'next/image'
-import Link from 'next/link'
-import React from 'react'
+"use client";
+import React from 'react';
+import Link from 'next/link';
+import { PublicEstateItem } from '@/services/publicInmobiliariaService';
 
-const BlogV4 = () => {
+interface BlogV4Props {
+  recentEstates?: PublicEstateItem[];
+  agency?: any;
+}
+
+const DEFAULT_ARTICLES = [
+  {
+    id: 1,
+    title: '5 Claves Fundamentales antes de Adquirir tu Primera Vivienda',
+    summary: 'Aprende a evaluar plusvalía, créditos hipotecarios y certeza legal para una inversión segura.',
+    date: '24 Octubre, 2026',
+    category: 'Guía del Comprador',
+    image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=700&q=80',
+    link: '/properties',
+  },
+  {
+    id: 2,
+    title: 'Tendencias Inmobiliarias: Por qué los Desarrollos Verticales son el Futuro',
+    summary: 'La vida en condominios con amenidades integradas maximiza el tiempo y calidad de vida.',
+    date: '18 Octubre, 2026',
+    category: 'Inversión & Plusvalía',
+    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=700&q=80',
+    link: '/properties',
+  },
+  {
+    id: 3,
+    title: 'Cómo Preparar tu Propiedad para Venderla al Máximo Valor de Mercado',
+    summary: 'Home staging, reparaciones clave y estrategia digital para un cierre rápido y rentable.',
+    date: '12 Octubre, 2026',
+    category: 'Consejos para Propietarios',
+    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=700&q=80',
+    link: '/properties',
+  },
+];
+
+const BlogV4: React.FC<BlogV4Props> = ({ recentEstates }) => {
+  const hasRecentEstates = recentEstates && recentEstates.length > 0;
+
   return (
     <div className="home4-blog-section mb-100">
       <div className="container">
         <div className="row justify-content-center mb-50 wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
           <div className="col-xl-6 col-lg-8">
             <div className="section-title text-center">
-              <h2>Travel Inspirations</h2>
-              <p>A curated list of the most popular travel packages based on different destinations.</p>
+              <h2>{hasRecentEstates ? 'Nuevas Propiedades en el Mercado' : 'Guías & Artículos Inmobiliarios'}</h2>
+              <p>
+                {hasRecentEstates
+                  ? 'Inmuebles recién incorporados a nuestro portafolio de venta y renta.'
+                  : 'Consejos de expertos, análisis de mercado y tendencias para tomar las mejores decisiones patrimoniales.'}
+              </p>
             </div>
           </div>
         </div>
+
         <div className="row g-4 mb-40">
-          <div className="col-lg-4 col-md-6 wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
-            <div className="blog-card2 two">
-              <div className="blog-img-wrap">
-                <Link href="/travel-inspiration/details" className="blog-img">
-                  <Image width={550} height={220} src="/assets/img/home3/blog-img1.jpg" alt="" />
-                </Link>
-                <Link href="/travel-inspiration" className="location">
-                  <svg width={14} height={14} viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6.83615 0C3.77766 0 1.28891 2.48879 1.28891 5.54892C1.28891 7.93837 4.6241 11.8351 6.05811 13.3994C6.25669 13.6175 6.54154 13.7411 6.83615 13.7411C7.13076 13.7411 7.41561 13.6175 7.6142 13.3994C9.04821 11.8351 12.3834 7.93833 12.3834 5.54892C12.3834 2.48879 9.89464 0 6.83615 0ZM7.31469 13.1243C7.18936 13.2594 7.02008 13.3342 6.83615 13.3342C6.65222 13.3342 6.48295 13.2594 6.35761 13.1243C4.95614 11.5959 1.69584 7.79515 1.69584 5.54896C1.69584 2.7134 4.00067 0.406933 6.83615 0.406933C9.67164 0.406933 11.9765 2.7134 11.9765 5.54896C11.9765 7.79515 8.71617 11.5959 7.31469 13.1243Z" />
-                    <path d="M6.83618 8.54529C8.4624 8.54529 9.7807 7.22698 9.7807 5.60077C9.7807 3.97456 8.4624 2.65625 6.83618 2.65625C5.20997 2.65625 3.89166 3.97456 3.89166 5.60077C3.89166 7.22698 5.20997 8.54529 6.83618 8.54529Z" />
-                  </svg>
-                  Tokyeo, Japan
-                </Link>
+          {hasRecentEstates ? (
+            recentEstates.slice(0, 3).map((estate, index) => (
+              <div key={estate.id || index} className="col-lg-4 col-md-6 wow animate fadeInDown" data-wow-delay={`${(index + 1) * 200}ms`} data-wow-duration="1500ms">
+                <div className="blog-card2 two" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <div className="blog-img-wrap" style={{ position: 'relative', height: '220px', overflow: 'hidden' }}>
+                    <Link href={`/properties/${estate.slug || estate.id}`} className="blog-img" style={{ width: '100%', height: '100%' }}>
+                      <img
+                        src={estate.image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80'}
+                        alt={estate.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </Link>
+                    <span className="location" style={{ fontSize: '11px', fontWeight: 600 }}>
+                      {estate.city || 'Ubicación Premium'}
+                    </span>
+                  </div>
+                  <div className="blog-content" style={{ flexGrow: 1 }}>
+                    <span className="blog-date" style={{ color: '#00a884', fontWeight: 700 }}>
+                      {estate.property_status === 2 ? 'En Renta' : 'En Venta'}
+                    </span>
+                    <h4>
+                      <Link href={`/properties/${estate.slug || estate.id}`}>
+                        {estate.title}
+                      </Link>
+                    </h4>
+                    <p style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {estate.short_description || estate.description || 'Excelente oportunidad patrimonial con alta plusvalía y ubicación estratégica.'}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="blog-content">
-                <Link href="/travel-inspiration" className="blog-date">24 February, 2025</Link>
-                <h4><Link href="/travel-inspiration/details">Nature, Culture &amp; Thrill: Travel Stories That Inspire.</Link></h4>
-                <p>Nature, Culture &amp; Thrill: Travel Stories Inspire is a collection of experiences from explorers.</p>
+            ))
+          ) : (
+            DEFAULT_ARTICLES.map((article, index) => (
+              <div key={article.id} className="col-lg-4 col-md-6 wow animate fadeInDown" data-wow-delay={`${(index + 1) * 200}ms`} data-wow-duration="1500ms">
+                <div className="blog-card2 two" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <div className="blog-img-wrap" style={{ position: 'relative', height: '220px', overflow: 'hidden' }}>
+                    <Link href={article.link} className="blog-img" style={{ width: '100%', height: '100%' }}>
+                      <img
+                        src={article.image}
+                        alt={article.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </Link>
+                    <span className="location" style={{ fontSize: '11px', fontWeight: 600 }}>
+                      {article.category}
+                    </span>
+                  </div>
+                  <div className="blog-content" style={{ flexGrow: 1 }}>
+                    <span className="blog-date">
+                      {article.date}
+                    </span>
+                    <h4>
+                      <Link href={article.link}>
+                        {article.title}
+                      </Link>
+                    </h4>
+                    <p>
+                      {article.summary}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="col-lg-4 col-md-6 wow animate fadeInDown" data-wow-delay="400ms" data-wow-duration="1500ms">
-            <div className="blog-card2 two">
-              <div className="blog-img-wrap">
-                <Link href="/travel-inspiration/details" className="blog-img">
-                  <Image width={550} height={220} src="/assets/img/home3/blog-img2.jpg" alt="" />
-                </Link>
-                <Link href="/travel-inspiration" className="location">
-                  <svg width={14} height={14} viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6.83615 0C3.77766 0 1.28891 2.48879 1.28891 5.54892C1.28891 7.93837 4.6241 11.8351 6.05811 13.3994C6.25669 13.6175 6.54154 13.7411 6.83615 13.7411C7.13076 13.7411 7.41561 13.6175 7.6142 13.3994C9.04821 11.8351 12.3834 7.93833 12.3834 5.54892C12.3834 2.48879 9.89464 0 6.83615 0ZM7.31469 13.1243C7.18936 13.2594 7.02008 13.3342 6.83615 13.3342C6.65222 13.3342 6.48295 13.2594 6.35761 13.1243C4.95614 11.5959 1.69584 7.79515 1.69584 5.54896C1.69584 2.7134 4.00067 0.406933 6.83615 0.406933C9.67164 0.406933 11.9765 2.7134 11.9765 5.54896C11.9765 7.79515 8.71617 11.5959 7.31469 13.1243Z" />
-                    <path d="M6.83618 8.54529C8.4624 8.54529 9.7807 7.22698 9.7807 5.60077C9.7807 3.97456 8.4624 2.65625 6.83618 2.65625C5.20997 2.65625 3.89166 3.97456 3.89166 5.60077C3.89166 7.22698 5.20997 8.54529 6.83618 8.54529Z" />
-                  </svg>
-                  Maldives
-                </Link>
-              </div>
-              <div className="blog-content">
-                <Link href="/travel-inspiration" className="blog-date">28 February, 2025</Link>
-                <h4><Link href="/travel-inspiration/details">Dream. Explore. Discover. Where Will You Go Next?</Link></h4>
-                <p>Dream. Explore. Discover. is more than just a travel motto; it’s an invitation to step out.</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-lg-4 col-md-6 wow animate fadeInDown" data-wow-delay="600ms" data-wow-duration="1500ms">
-            <div className="blog-card2 two">
-              <div className="blog-img-wrap">
-                <Link href="/travel-inspiration/details" className="blog-img">
-                  <Image width={550} height={220} src="/assets/img/home3/blog-img3.jpg" alt="" />
-                </Link>
-                <Link href="/travel-inspiration" className="location">
-                  <svg width={14} height={14} viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6.83615 0C3.77766 0 1.28891 2.48879 1.28891 5.54892C1.28891 7.93837 4.6241 11.8351 6.05811 13.3994C6.25669 13.6175 6.54154 13.7411 6.83615 13.7411C7.13076 13.7411 7.41561 13.6175 7.6142 13.3994C9.04821 11.8351 12.3834 7.93833 12.3834 5.54892C12.3834 2.48879 9.89464 0 6.83615 0ZM7.31469 13.1243C7.18936 13.2594 7.02008 13.3342 6.83615 13.3342C6.65222 13.3342 6.48295 13.2594 6.35761 13.1243C4.95614 11.5959 1.69584 7.79515 1.69584 5.54896C1.69584 2.7134 4.00067 0.406933 6.83615 0.406933C9.67164 0.406933 11.9765 2.7134 11.9765 5.54896C11.9765 7.79515 8.71617 11.5959 7.31469 13.1243Z" />
-                    <path d="M6.83618 8.54529C8.4624 8.54529 9.7807 7.22698 9.7807 5.60077C9.7807 3.97456 8.4624 2.65625 6.83618 2.65625C5.20997 2.65625 3.89166 3.97456 3.89166 5.60077C3.89166 7.22698 5.20997 8.54529 6.83618 8.54529Z" />
-                  </svg>
-                  Vietnam
-                </Link>
-              </div>
-              <div className="blog-content">
-                <Link href="/travel-inspiration" className="blog-date">05 March, 2025</Link>
-                <h4><Link href="/travel-inspiration/details">Top 10 Beaches to Visit This Summer Season.</Link></h4>
-                <p>Sun, sand, and crystal-clear waters—summer is the perfect time to escape to the world’s.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="row wow animate fadeInUp" data-wow-delay="200ms" data-wow-duration="1500ms">
-          <div className="col-lg-12 d-flex justify-content-center">
-            <Link href="/travel-inspiration" className="primary-btn1 two transparent">
-              <span>
-                View All Inspiration
-                <svg width={10} height={10} viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9.73535 1.14746C9.57033 1.97255 9.32924 3.26406 9.24902 4.66797C9.16817 6.08312 9.25559 7.5453 9.70214 8.73633C9.84754 9.12406 9.65129 9.55659 9.26367 9.70215C8.9001 9.83849 8.4969 9.67455 8.32812 9.33398L8.29785 9.26367L8.19921 8.98438C7.73487 7.5758 7.67054 5.98959 7.75097 4.58203C7.77875 4.09598 7.82525 3.62422 7.87988 3.17969L1.53027 9.53027C1.23738 9.82317 0.762615 9.82317 0.469722 9.53027C0.176829 9.23738 0.176829 8.76262 0.469722 8.46973L6.83593 2.10254C6.3319 2.16472 5.79596 2.21841 5.25 2.24902C3.8302 2.32862 2.2474 2.26906 0.958003 1.79102L0.704097 1.68945L0.635738 1.65527C0.303274 1.47099 0.157578 1.06102 0.310542 0.704102C0.463655 0.347333 0.860941 0.170391 1.22363 0.28418L1.29589 0.310547L1.48828 0.387695C2.47399 0.751207 3.79966 0.827571 5.16601 0.750977C6.60111 0.670504 7.97842 0.428235 8.86132 0.262695L9.95312 0.0585938L9.73535 1.14746Z" />
-                </svg>
-              </span>
-              <span>
-                View All Inspiration
-                <svg width={10} height={10} viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9.73535 1.14746C9.57033 1.97255 9.32924 3.26406 9.24902 4.66797C9.16817 6.08312 9.25559 7.5453 9.70214 8.73633C9.84754 9.12406 9.65129 9.55659 9.26367 9.70215C8.9001 9.83849 8.4969 9.67455 8.32812 9.33398L8.29785 9.26367L8.19921 8.98438C7.73487 7.5758 7.67054 5.98959 7.75097 4.58203C7.77875 4.09598 7.82525 3.62422 7.87988 3.17969L1.53027 9.53027C1.23738 9.82317 0.762615 9.82317 0.469722 9.53027C0.176829 9.23738 0.176829 8.76262 0.469722 8.46973L6.83593 2.10254C6.3319 2.16472 5.79596 2.21841 5.25 2.24902C3.8302 2.32862 2.2474 2.26906 0.958003 1.79102L0.704097 1.68945L0.635738 1.65527C0.303274 1.47099 0.157578 1.06102 0.310542 0.704102C0.463655 0.347333 0.860941 0.170391 1.22363 0.28418L1.29589 0.310547L1.48828 0.387695C2.47399 0.751207 3.79966 0.827571 5.16601 0.750977C6.60111 0.670504 7.97842 0.428235 8.86132 0.262695L9.95312 0.0585938L9.73535 1.14746Z" />
-                </svg>
-              </span>
-            </Link>
-          </div>
+            ))
+          )}
         </div>
       </div>
-      <Image width={114} height={91} src="/assets/img/home4/vector/blog-section-vector.svg" alt="" className="vector" />
     </div>
-  )
-}
+  );
+};
 
-export default BlogV4
+export default BlogV4;

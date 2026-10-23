@@ -47,12 +47,12 @@ const TestimonialV4 = () => {
                           <li><i className="bi bi-circle-fill" /></li>
                           <li><i className="bi bi-circle-half" /></li>
                         </ul>
-                        <h5>Average Experience</h5>
-                        <p>This was the best trip of my life! Everything was perfectly planned, from airport pickup to guided tours. The accommodations were fantastic, and the itinerary was well-balanced. Highly recommended!</p>
+                        <h5>¡Excelente Asesoría y Seguridad Legal!</h5>
+                        <p>«Encontramos nuestra casa soñada en tiempo récord. El equipo nos brindó asesoría notarial y fiscal impecable en todo momento. Proceso transparente y sin sorpresas.»</p>
                         <div className="author-area">
                           <div className="author-info">
-                            <h5>James Bonde</h5>
-                            <span>GoFly Traveler</span>
+                            <h5>Familia Mendoza R.</h5>
+                            <span>Compradores Residenciales</span>
                           </div>
                         </div>
                       </div>
@@ -86,12 +86,12 @@ const TestimonialV4 = () => {
                             </svg>
                           </li>
                         </ul>
-                        <h5>Great Experience!</h5>
-                        <p>My life's greatest journey was this one! Everything was meticulously organized, including the guided tours and airport pickup. The schedule was well-balanced, and the lodging was excellent. I heartily suggest it!</p>
+                        <h5>Venta Rápida al Mejor Precio</h5>
+                        <p>«Consigné mi departamento con ellos y lo promovieron de forma extraordinaria. Se vendió en menos de 45 días a un valor muy favorable. Gran profesionalismo.»</p>
                         <div className="author-area">
                           <div className="author-info">
-                            <h5>Selina Henry</h5>
-                            <span>GoFly Traveler</span>
+                            <h5>Ing. Carlos Valenzuela</h5>
+                            <span>Propietario Inversionista</span>
                           </div>
                         </div>
                       </div>
@@ -105,12 +105,12 @@ const TestimonialV4 = () => {
                           <li><i className="bi bi-circle-fill" /></li>
                           <li><i className="bi bi-circle-fill" /></li>
                         </ul>
-                        <h5>Excellent Tourist Place!</h5>
-                        <p>I had the most amazing trip of my life! Everything, including the guided excursions and the airport pickup, was meticulously organized. The itinerary was well-balanced, and the accommodations were excellent.</p>
+                        <h5>Atención Impecable en Renta</h5>
+                        <p>«Buscábamos oficinas corporativas para nuestra empresa y nos presentaron alternativas perfectas. Negociaron un excelente contrato de arrendamiento.»</p>
                         <div className="author-area">
                           <div className="author-info">
-                            <h5>Robert Kcarery </h5>
-                            <span>GoFly Traveler</span>
+                            <h5>Lic. Sofía Arteaga</h5>
+                            <span>Directora Comercial</span>
                           </div>
                         </div>
                       </div>
@@ -124,12 +124,12 @@ const TestimonialV4 = () => {
                           <li><i className="bi bi-circle-fill" /></li>
                           <li><i className="bi bi-circle-half" /></li>
                         </ul>
-                        <h5>Average Experience</h5>
-                        <p>This was the best trip of my life! Everything was perfectly planned, from airport pickup to guided tours. The accommodations were fantastic, and the itinerary was well-balanced. Highly recommended!</p>
+                        <h5>Gestión Notarial y Crédito Ágil</h5>
+                        <p>«Nos apoyaron con todo el trámite del crédito hipotecario bancario y la notaría. Hicieron que un proceso complejo fuera sumamente sencillo y seguro.»</p>
                         <div className="author-area">
                           <div className="author-info">
-                            <h5>James Bonde</h5>
-                            <span>GoFly Traveler</span>
+                            <h5>Arq. Roberto Garza</h5>
+                            <span>Cliente Patrimonial</span>
                           </div>
                         </div>
                       </div>

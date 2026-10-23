@@ -9,6 +9,7 @@ import {
   Check, Eye, Layout, Lock, Building2, ShieldCheck, RefreshCw, Upload, Smartphone, ExternalLink, Sun, Moon, Minimize2, Maximize2, CreditCard, Key, EyeOff, Loader2, CheckCircle2, AlertCircle, AlertTriangle
 } from 'lucide-react';
 import MediaPicker from '../../components/media/MediaPicker';
+import PortalCustomizerBuilder from './PortalCustomizerBuilder';
 
 const PRESET_PALETTES = [
   { name: 'Esmeralda Santun', primary: '#00a884', secondary: '#161a1b', button: '#00a884', menuBg: '#161a1b' },
@@ -678,84 +679,108 @@ export default function BrandingCustomizationPage({
         </div>
       )}
 
-      {/* Main 2-Column Split: Customization Form Left | Live Mockup Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left Column: Form & Tabs (7 Columns) */}
-        <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-          
-          {/* Tab Navigation */}
-          <div className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto bg-slate-50 dark:bg-slate-950">
-            <button
-              onClick={() => setActiveTab('colors')}
-              className={`px-4 py-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-                activeTab === 'colors'
-                  ? 'border-[#00a884] text-[#00a884] bg-white dark:bg-slate-900'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Palette className="w-4 h-4" /> Paleta de Colores
-            </button>
-            <button
-              onClick={() => setActiveTab('logos')}
-              className={`px-4 py-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-                activeTab === 'logos'
-                  ? 'border-[#00a884] text-[#00a884] bg-white dark:bg-slate-900'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <ImageIcon className="w-4 h-4" /> Variantes de Logotipo
-            </button>
-            <button
-              onClick={() => setActiveTab('typography')}
-              className={`px-4 py-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-                activeTab === 'typography'
-                  ? 'border-[#00a884] text-[#00a884] bg-white dark:bg-slate-900'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Type className="w-4 h-4" /> Tipografía & Estilos
-            </button>
-            <button
-              onClick={() => setActiveTab('info')}
-              className={`px-4 py-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-                activeTab === 'info'
-                  ? 'border-[#00a884] text-[#00a884] bg-white dark:bg-slate-900'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Globe className="w-4 h-4" /> Datos de Marca
-            </button>
-            <button
-              onClick={() => setActiveTab('domain')}
-              className={`px-4 py-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-                activeTab === 'domain'
-                  ? 'border-[#00a884] text-[#00a884] bg-white dark:bg-slate-900'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Globe className="w-4 h-4 text-[#00a884]" /> Dominio & Portal Inmobiliario
-            </button>
-            <button
-              onClick={() => setActiveTab('stripe')}
-              className={`px-4 py-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-                activeTab === 'stripe'
-                  ? 'border-[#00a884] text-[#00a884] bg-white dark:bg-slate-900'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <CreditCard className="w-4 h-4 text-emerald-500" /> Pasarela Stripe
-            </button>
-          </div>
+      {/* Tab Navigation */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-1.5 flex overflow-x-auto gap-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('colors')}
+          className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'colors'
+              ? 'bg-[#00a884] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Palette className="w-4 h-4" /> Paleta de Colores
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('logos')}
+          className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'logos'
+              ? 'bg-[#00a884] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
+          }`}
+        >
+          <ImageIcon className="w-4 h-4" /> Variantes de Logotipo
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('typography')}
+          className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'typography'
+              ? 'bg-[#00a884] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Type className="w-4 h-4" /> Tipografía &amp; Estilos
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('info')}
+          className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'info'
+              ? 'bg-[#00a884] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Globe className="w-4 h-4" /> Datos de Marca
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('domain')}
+          className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'domain'
+              ? 'bg-emerald-600 text-white shadow-md'
+              : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" /> Portal Inmobiliario Web
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('stripe')}
+          className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'stripe'
+              ? 'bg-[#00a884] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
+          }`}
+        >
+          <CreditCard className="w-4 h-4" /> Pasarela Stripe
+        </button>
+      </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            
-            {/* TAB 1: COLORS & THEMES */}
-            {activeTab === 'colors' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Paletas Prediseñadas Rápidas</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Haga clic en un tema corporativo para aplicarlo instantáneamente:</p>
+      {activeTab === 'domain' ? (
+        <PortalCustomizerBuilder
+          form={form}
+          setForm={setForm}
+          targetType={targetType}
+          selectedId={selectedId}
+          agencies={agencies}
+          setTargetType={setTargetType}
+          setSelectedId={setSelectedId}
+          populateForm={populateForm}
+          setCurrentAgency={setCurrentAgency}
+          handleVerifyDomain={handleVerifyDomain}
+          verifyingDomain={verifyingDomain}
+          domainVerificationResult={domainVerificationResult}
+          onSave={handleSubmit}
+          saving={saving}
+        />
+      ) : (
+        /* Main 2-Column Split: Customization Form Left | Live Mockup Right */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Column: Form & Tabs (7 Columns) */}
+          <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              
+              {/* TAB 1: COLORS & THEMES */}
+              {activeTab === 'colors' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Paletas Prediseñadas Rápidas</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Haga clic en un tema corporativo para aplicarlo instantáneamente:</p>
+
                   
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                     {PRESET_PALETTES.map((pal) => (
@@ -1294,321 +1319,7 @@ export default function BrandingCustomizationPage({
               </div>
             )}
 
-            {/* TAB 5: DOMAIN & PORTAL INMOBILIARIO */}
-            {activeTab === 'domain' && (
-              <div className="space-y-6">
-                
-                {/* Aviso para Marcas Blancas */}
-                {targetType === 'white_label' && (
-                  <div className="p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-slate-900/40 border border-amber-500/30 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div className="flex items-start md:items-center gap-3">
-                      <div className="p-3 rounded-xl bg-amber-500 text-slate-950 font-bold shrink-0">
-                        <Building2 className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">
-                          Los Portales Inmobiliarios Públicos pertenecen a las Agencias
-                        </h4>
-                        <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-xl">
-                          Cada agencia inmobiliaria cuenta con su propio sitio web público multiagencia (template <code>travel-agency-03</code>). Cada agencia propiamente puede configurarlo de forma independiente, y las Marcas Blancas pueden supervisar o ajustar los datos de sus agencias hijas seleccionándolas a continuación.
-                        </p>
-                      </div>
-                    </div>
-                    {agencies.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTargetType('agency');
-                          const firstAg = agencies[0];
-                          if (firstAg) {
-                            setSelectedId(firstAg.id);
-                            populateForm(firstAg, 'agency');
-                            setCurrentAgency(firstAg);
-                          }
-                        }}
-                        className="px-4 py-2.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-md shrink-0 flex items-center gap-2 cursor-pointer transition-all"
-                      >
-                        <Building2 className="w-4 h-4" />
-                        <span>Configurar Agencia Hija</span>
-                      </button>
-                    )}
-                  </div>
-                )}
 
-                {/* 1. Módulo del Portal Inmobiliario Público */}
-                <div className="p-4 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 border border-emerald-500/30 rounded-2xl space-y-4">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-emerald-500 text-slate-950 font-bold">
-                        <Building2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <span className="text-sm font-bold text-slate-900 dark:text-white block">
-                          Portal Web Inmobiliario Público
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          Template oficial Travel Agency 03 adaptado a bienes raíces
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Switch Habilitar Frontend Inmobiliario */}
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(form.frontend_enabled)}
-                        onChange={(e) => setForm({ ...form, frontend_enabled: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-[#00a884]"></div>
-                      <span className="ml-2 text-xs font-bold text-slate-700 dark:text-slate-300">
-                        {form.frontend_enabled ? 'Habilitado' : 'Desactivado'}
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* Estado de Publicación y Verificación */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-emerald-500/20">
-                    <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Estado de Publicación:</span>
-                      {form.frontend_enabled ? (
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Portal Público Activo</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                          <AlertCircle className="w-4 h-4" />
-                          <span>Desactivado</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Estado de Verificación DNS:</span>
-                      {form.custom_domain_verified ? (
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                          <ShieldCheck className="w-4 h-4" />
-                          <span>Dominio Verificado</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
-                          <AlertTriangle className="w-4 h-4" />
-                          <span>Verificación Pendiente</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Acceso Directo al Portal */}
-                  {form.custom_domain && (
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                      <span className="text-xs text-slate-500">
-                        URL pública del sitio: <strong className="font-mono text-slate-800 dark:text-white">{form.custom_domain}</strong>
-                      </span>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <a
-                          href={`/travel-agency-03?domain=${encodeURIComponent(
-                            form.custom_domain.replace(/^https?:\/\//i, '').split('/')[0]
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 text-xs font-bold bg-slate-800 text-white rounded-lg flex items-center gap-1.5 hover:bg-slate-900 transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Vista Previa Portal</span>
-                        </a>
-                        <a
-                          href={form.custom_domain.startsWith('http') ? form.custom_domain : `https://${form.custom_domain}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 text-xs font-bold bg-[#00a884] text-white rounded-lg flex items-center gap-1.5 hover:bg-[#008f70] transition-colors"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Abrir Sitio Inmobiliario</span>
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. Configuración del Dominio Personalizado y Verificación DNS */}
-                <div className="space-y-3">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
-                    Dominio Personalizado de la Agencia (Custom Domain):
-                  </label>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input
-                      type="text"
-                      placeholder="ej. inmobiliaria-ejemplo.com o propiedades.midominio.com"
-                      value={form.custom_domain}
-                      onChange={(e) => setForm({ ...form, custom_domain: e.target.value })}
-                      className="flex-grow px-3 py-2 text-xs font-mono font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
-                    />
-                    {targetType === 'agency' && (
-                      <button
-                        type="button"
-                        onClick={handleVerifyDomain}
-                        disabled={verifyingDomain || !form.custom_domain}
-                        className="px-4 py-2 text-xs font-bold bg-slate-800 text-white dark:bg-slate-700 rounded-lg flex items-center justify-center gap-2 hover:bg-slate-900 transition-colors shrink-0 disabled:opacity-50"
-                      >
-                        {verifyingDomain ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            <span>Verificando DNS...</span>
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            <span>Verificar DNS</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                  
-                  {domainVerificationResult && (
-                    <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
-                      domainVerificationResult.verified
-                        ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-                        : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
-                    }`}>
-                      {domainVerificationResult.verified ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
-                      <span>{domainVerificationResult.message}</span>
-                    </div>
-                  )}
-
-                  <span className="text-[10px] text-slate-400 block">
-                    Apunte su registro CNAME o tipo A a los servidores de la plataforma. La resolución se efectúa dinámicamente en cada petición entrante.
-                  </span>
-                </div>
-
-                {/* 3. Personalización Visual del Portal Inmobiliario */}
-                {targetType === 'agency' && (
-                  <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                    <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#00a884]" />
-                      Personalización de Contenidos del Sitio Público
-                    </h4>
-
-                    {/* Banner / Portada */}
-                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-slate-50 dark:bg-slate-950">
-                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase block mb-1">
-                        Imagen Principal o Banner de Portada (Hero Background):
-                      </label>
-                      <MediaPicker
-                        value={form.banner_image}
-                        type="image"
-                        buttonLabel="Seleccionar Portada Inmobiliaria"
-                        onChange={({ url }) => {
-                          setForm((prev: any) => ({
-                            ...prev,
-                            banner_image: url || prev.banner_image,
-                          }));
-                        }}
-                      />
-                    </div>
-
-                    {/* Títulos del Hero */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Título de Portada (Hero Title):</label>
-                        <input
-                          type="text"
-                          placeholder="ej. Encuentra el Inmueble de tus Sueños"
-                          value={form.hero_title}
-                          onChange={(e) => setForm({ ...form, hero_title: e.target.value })}
-                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Subtítulo de Portada (Hero Subtitle):</label>
-                        <input
-                          type="text"
-                          placeholder="ej. Propiedades exclusivas en venta y alquiler con asesoría garantizada"
-                          value={form.hero_subtitle}
-                          onChange={(e) => setForm({ ...form, hero_subtitle: e.target.value })}
-                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Sección Conócenos */}
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Título Sección «Conócenos»:</label>
-                        <input
-                          type="text"
-                          placeholder="ej. Conócenos — Tu aliado inmobiliario de confianza"
-                          value={form.about_title}
-                          onChange={(e) => setForm({ ...form, about_title: e.target.value })}
-                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Texto de Presentación de la Agencia:</label>
-                        <textarea
-                          rows={3}
-                          placeholder="Presentación de la empresa, trayectoria, valores y cobertura..."
-                          value={form.about_text}
-                          onChange={(e) => setForm({ ...form, about_text: e.target.value })}
-                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Llamada a la Acción (CTA) */}
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Texto de Llamada a la Acción (Banner de Consignación):</label>
-                      <input
-                        type="text"
-                        placeholder="ej. ¿Deseas vender o alquilar tu propiedad? Contáctanos hoy mismo."
-                        value={form.cta_text}
-                        onChange={(e) => setForm({ ...form, cta_text: e.target.value })}
-                        className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* 4. Metadatos SEO Básicos */}
-                <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Título SEO (Etiqueta &lt;title&gt;):</label>
-                    <input
-                      type="text"
-                      placeholder="ej. Inmobiliaria Ejemplo — Compra, Venta y Alquiler de Inmuebles"
-                      value={form.seo_title}
-                      onChange={(e) => setForm({ ...form, seo_title: e.target.value })}
-                      className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Meta Descripción SEO / Compartir:</label>
-                    <textarea
-                      rows={2}
-                      placeholder="Descripción que aparecerá en Google y previsualización de enlaces de WhatsApp..."
-                      value={form.seo_description}
-                      onChange={(e) => setForm({ ...form, seo_description: e.target.value })}
-                      className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Inyección de Estilos CSS Personalizados:</label>
-                    <textarea
-                      rows={3}
-                      placeholder="/* p.ej. .primary-btn1 { border-radius: 9999px; } */"
-                      value={form.custom_css}
-                      onChange={(e) => setForm({ ...form, custom_css: e.target.value })}
-                      className="w-full px-3 py-2 text-xs font-mono bg-slate-900 text-emerald-400 rounded-lg"
-                    />
-                  </div>
-                </div>
-
-              </div>
-            )}
 
             {/* TAB 6: STRIPE PAYMENT GATEWAY API KEYS */}
             {activeTab === 'stripe' && (
@@ -2367,8 +2078,8 @@ export default function BrandingCustomizationPage({
             </div>
           </div>
         </div>
-
       </div>
+    )}
 
     </div>
   );

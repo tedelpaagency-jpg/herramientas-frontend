@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import TravelAgency03Page from '@/app/travel-agency-03/page';
+import PublicPortalHomeView from '@/components/inmobiliaria/PublicPortalHomeView';
 import ClientRoot from '@/components/ClientRoot';
 import { PublicAgencyConfig } from '@/services/publicInmobiliariaService';
 
@@ -10,11 +10,17 @@ interface PublicInmobiliariaHomeViewProps {
   domainOverride?: string;
 }
 
-export const PublicInmobiliariaHomeView: React.FC<PublicInmobiliariaHomeViewProps> = () => {
+export const PublicInmobiliariaHomeView: React.FC<PublicInmobiliariaHomeViewProps> = ({
+  initialConfig,
+  domainOverride,
+}) => {
   return (
     <div className="travel-agency-03-root">
       <ClientRoot>
-        <TravelAgency03Page />
+        <PublicPortalHomeView
+          initialAgency={initialConfig}
+          domain={domainOverride}
+        />
       </ClientRoot>
     </div>
   );
