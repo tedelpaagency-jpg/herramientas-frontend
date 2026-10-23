@@ -15,7 +15,7 @@ services:
 
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.herramientas.rule=Host(`portal.yes360.academy`) || Host(`portal.trivali.pro`) || Host(`hermes.tedelpa.com`)"
+      - "traefik.http.routers.herramientas.rule=Host(`portal.yes360.academy`) || Host(`portal.trivali.pro`) || Host(`hermes.tedelpa.com`) || Host(`portal.linabilladma.com`) || Host(`inmosoft.pro`) || Host(`coactiva.sakuraflowers.pro`)"
       - "traefik.http.routers.herramientas.entrypoints=websecure"
       - "traefik.http.routers.herramientas.tls.certresolver=letsencrypt"
       - "traefik.http.services.herramientas.loadbalancer.server.port=3000"
