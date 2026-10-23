@@ -19,9 +19,10 @@ export interface StripePaymentRef {
 interface InnerProps {
   onReady?: () => void;
   appearanceConfig?: StripeAppearanceConfig | null;
+  targetWindow?: Window | null;
 }
 
-const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady, appearanceConfig }, ref) => {
+const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady, appearanceConfig, targetWindow }, ref) => {
   const stripe = useStripe();
   const elements = useElements();
   const [elementError, setElementError] = useState<string | null>(null);
@@ -36,27 +37,45 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
       setElementError(null);
 
       try {
-        const confirmParams: any = {};
-        if (billingDetails?.name || billingDetails?.email || billingDetails?.phone) {
+        const targetWin = targetWindow || (typeof window !== 'undefined' ? window : null);
+        const confirmParams: any = {
+          return_url: targetWin ? targetWin.location.href : (typeof window !== 'undefined' ? window.location.href : undefined),
+        };
+
+        const cleanName = billingDetails?.name?.trim();
+        const cleanEmail = billingDetails?.email?.trim();
+        let cleanPhone = billingDetails?.phone?.trim();
+        // Stripe strictly requires E.164 format (+[country][number]) for billing_details.phone
+        if (cleanPhone && !/^\+[1-9]\d{7,14}$/.test(cleanPhone)) {
+          cleanPhone = undefined;
+        }
+
+        if (cleanName || cleanEmail || cleanPhone) {
           confirmParams.payment_method_data = {
             billing_details: {
-              name: billingDetails.name || undefined,
-              email: billingDetails.email || undefined,
-              phone: billingDetails.phone || undefined,
+              ...(cleanName ? { name: cleanName } : {}),
+              ...(cleanEmail ? { email: cleanEmail } : {}),
+              ...(cleanPhone ? { phone: cleanPhone } : {}),
             },
           };
         }
-        if (billingDetails?.email) {
-          confirmParams.receipt_email = billingDetails.email;
+        if (cleanEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+          confirmParams.receipt_email = cleanEmail;
         }
 
         const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
-          confirmParams: Object.keys(confirmParams).length > 0 ? confirmParams : undefined,
+          confirmParams,
           redirect: 'if_required',
         });
 
         if (error) {
+          console.error('[Stripe confirmPayment error]', {
+            type: error.type,
+            code: error.code,
+            decline_code: error.decline_code,
+            message: error.message,
+          });
           const msg = error.message || 'Error al procesar el pago con la tarjeta.';
           setElementError(msg);
           return { success: false, error: msg };
@@ -366,7 +385,7 @@ export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
               </div>
             </div>
 
-            <StripeInnerCheckout ref={ref} appearanceConfig={appearanceConfig} />
+            <StripeInnerCheckout ref={ref} appearanceConfig={appearanceConfig} targetWindow={targetWindow} />
           </div>
         </Elements>
       </div>
