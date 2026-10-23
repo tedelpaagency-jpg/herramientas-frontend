@@ -259,7 +259,7 @@ export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
 
     return (
       <Elements
-        key={clientSecret}
+        key={`${publishableKey}_${clientSecret}`}
         stripe={stripePromise}
         options={{
           clientSecret,

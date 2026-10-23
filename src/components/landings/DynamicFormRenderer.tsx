@@ -54,7 +54,16 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const [isBtnHovered, setIsBtnHovered] = useState(false);
 
   // Stripe Payment State
-  const hasValidStripeKey = Boolean(stripePublishableKey && isValidStripePublishableKey(stripePublishableKey));
+  const [resolvedPublishableKey, setResolvedPublishableKey] = useState<string | null>(stripePublishableKey || null);
+
+  useEffect(() => {
+    if (stripePublishableKey) {
+      setResolvedPublishableKey(stripePublishableKey);
+    }
+  }, [stripePublishableKey]);
+
+  const activePublishableKey = resolvedPublishableKey || stripePublishableKey || null;
+  const hasValidStripeKey = Boolean(activePublishableKey && isValidStripePublishableKey(activePublishableKey));
   const [stripeElementError, setStripeElementError] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -76,6 +85,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         });
         if (isMounted && res?.client_secret) {
           setClientSecret(res.client_secret);
+          if (res.publishable_key) {
+            setResolvedPublishableKey(res.publishable_key);
+          }
         }
       } catch (err: any) {
         console.error('Error fetching Stripe PaymentIntent:', err);
@@ -850,7 +862,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
               <StripePaymentSection
                 ref={stripeRef}
                 clientSecret={clientSecret}
-                publishableKey={stripePublishableKey || null}
+                publishableKey={activePublishableKey}
                 appearanceConfig={effectiveStripeAppearance}
                 isPreview={isPreview || !landingId}
               />
