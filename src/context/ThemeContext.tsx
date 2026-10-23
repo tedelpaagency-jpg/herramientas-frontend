@@ -17,23 +17,7 @@ export const THEME_STORAGE_KEY = 'santun_theme';
 export const BRANDING_THEME_KEY = 'santun_dark_theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      if (saved === 'dark' || saved === 'light') {
-        return saved;
-      }
-      const brandingDefault = localStorage.getItem(BRANDING_THEME_KEY) as Theme | null;
-      if (brandingDefault === 'dark' || brandingDefault === 'light') {
-        return brandingDefault;
-      }
-      if (document.documentElement.classList.contains('dark')) {
-        return 'dark';
-      }
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'light';
-  });
+  const [theme, setThemeState] = useState<Theme>('light');
 
   const applyThemeToDom = (newTheme: Theme) => {
     if (typeof window === 'undefined') return;
@@ -64,13 +48,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   useEffect(() => {
-    // Initial sync with DOM and localStorage
+    // Initial sync with DOM and localStorage after hydration completes
     const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-    const currentTheme = saved || (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-    if (currentTheme !== theme) {
-      setThemeState(currentTheme);
+    const brandingDefault = localStorage.getItem(BRANDING_THEME_KEY) as Theme | null;
+    let initialTheme: Theme = 'light';
+    if (saved === 'dark' || saved === 'light') {
+      initialTheme = saved;
+    } else if (brandingDefault === 'dark' || brandingDefault === 'light') {
+      initialTheme = brandingDefault;
+    } else if (document.documentElement.classList.contains('dark')) {
+      initialTheme = 'dark';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      initialTheme = 'dark';
     }
-    applyThemeToDom(currentTheme);
+
+    setThemeState(initialTheme);
+    applyThemeToDom(initialTheme);
 
     // Cross-tab synchronization via storage event
     const handleStorage = (e: StorageEvent) => {

@@ -440,10 +440,26 @@ function PublicLandingContent() {
 }
 
 export default function PublicLandingPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="landing-standalone-root light min-h-screen bg-white text-slate-900 flex flex-col items-center justify-center p-4" style={{ colorScheme: 'light' }}>
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mb-4" />
+        <p className="text-sm text-slate-600 font-semibold">Cargando Landing Page...</p>
+      </div>
+    );
+  }
+
   return (
     <Suspense fallback={
-      <div className="landing-standalone-root light min-h-screen bg-slate-950 text-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-teal-400" />
+      <div className="landing-standalone-root light min-h-screen bg-white text-slate-900 flex flex-col items-center justify-center p-4" style={{ colorScheme: 'light' }}>
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mb-4" />
+        <p className="text-sm text-slate-600 font-semibold">Cargando Landing Page...</p>
       </div>
     }>
       <PublicLandingContent />

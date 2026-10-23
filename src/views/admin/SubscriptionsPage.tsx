@@ -6,13 +6,13 @@ import { WhiteLabel } from '../../types/whiteLabel';
 import subscriptionService from '../../services/subscriptionService';
 import adminService from '../../services/adminService';
 import whiteLabelService from '../../services/whiteLabelService';
-import userService from '../../services/userService';
 import { useAuth } from '../../context/AuthContext';
 import { 
   Key, Calendar, Clock, AlertTriangle, CheckCircle2, ShieldAlert, Plus, Search, 
-  RotateCcw, Layers, XCircle, History, ArrowRight, Building, Globe, Loader2, Filter, Eye,
-  UserCheck, User as UserIcon, ChevronLeft, ChevronRight
+  RotateCcw, Layers, XCircle, History, ArrowRight, Building, Building2, Globe, Loader2, Filter, Eye,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
+import SearchableSelect, { SearchableSelectOption } from '../../components/SearchableSelect';
 import { TableSkeleton } from '@/components/Skeleton';
 import toast from 'react-hot-toast';
 import { confirmDialog, showSuccessAlert } from '../../utils/alerts';
@@ -52,11 +52,29 @@ export const SubscriptionsPage: React.FC = () => {
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // User Search State inside Create Subscription Modal
-  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
-  const [searchedUsers, setSearchedUsers] = useState<any[]>([]);
-  const [isSearchingUsers, setIsSearchingUsers] = useState<boolean>(false);
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  // Opciones para el selector con buscador de Organización (Marca Blanca o Agencia)
+  const organizationOptions: SearchableSelectOption[] = React.useMemo(() => {
+    if (activeTab === 'white_label') {
+      return whiteLabels.map((wl) => ({
+        value: wl.id,
+        label: wl.name,
+        sublabel: [wl.email, wl.custom_domain ? `🌐 ${wl.custom_domain}` : null].filter(Boolean).join(' • ') || undefined,
+        badge: `ID #${wl.id}`,
+        icon: <Building className="w-4 h-4 text-amber-500 shrink-0" />,
+      }));
+    }
+    return agencies.map((ag) => {
+      const locationParts = [ag.city, ag.province].filter(Boolean);
+      const sub = [ag.email, locationParts.length > 0 ? locationParts.join(', ') : null].filter(Boolean).join(' • ');
+      return {
+        value: ag.id,
+        label: ag.name,
+        sublabel: sub || ag.domain || undefined,
+        badge: `ID #${ag.id}`,
+        icon: <Building2 className="w-4 h-4 text-purple-500 shrink-0" />,
+      };
+    });
+  }, [activeTab, whiteLabels, agencies]);
 
   // Pagination & Metrics State
   const [page, setPage] = useState<number>(1);
@@ -158,60 +176,11 @@ export const SubscriptionsPage: React.FC = () => {
     fetchSubscriptions();
   }, [activeTab, statusFilter, planFilter, search, page, perPage]);
 
-  const handleUserSearchChange = async (query: string) => {
-    setUserSearchQuery(query);
-    if (!query.trim() || query.trim().length < 2) {
-      setSearchedUsers([]);
-      setIsSearchingUsers(false);
-      return;
-    }
-
-    setIsSearchingUsers(true);
-    try {
-      const res = await userService.getUsers({ search: query.trim() });
-      const list = Array.isArray(res) ? res : res?.data || [];
-      setSearchedUsers(list);
-    } catch (err) {
-      console.error('Error buscando usuarios:', err);
-    } finally {
-      setIsSearchingUsers(false);
-    }
-  };
-
-  const handleSelectUserResult = (u: any) => {
-    setSelectedUser(u);
-    setSearchedUsers([]);
-    setUserSearchQuery('');
-
-    if (activeTab === 'agency') {
-      const agId = u.agency_id || u.agency?.id;
-      if (agId) {
-        setTargetEntityId(Number(agId));
-        const matchedAg = agencies.find(a => a.id === Number(agId)) || u.agency;
-        toast.success(`Agencia "${matchedAg?.name || 'asociada'}" seleccionada para ${u.name}`);
-      } else {
-        toast.error(`El usuario ${u.name} no tiene una agencia asignada.`);
-      }
-    } else {
-      const wlId = u.white_label_id || u.white_labels?.[0]?.id || u.agency?.white_label_id;
-      if (wlId) {
-        setTargetEntityId(Number(wlId));
-        const matchedWl = whiteLabels.find(w => w.id === Number(wlId)) || u.white_label;
-        toast.success(`Marca Blanca "${matchedWl?.name || 'asociada'}" seleccionada para ${u.name}`);
-      } else {
-        toast.error(`El usuario ${u.name} no tiene una Marca Blanca asignada.`);
-      }
-    }
-  };
-
   const handleOpenCreateModal = () => {
     setTargetEntityId('');
     setSelectedPlanId('');
     setStartDate(new Date().toISOString().split('T')[0]);
     setNotes('');
-    setUserSearchQuery('');
-    setSearchedUsers([]);
-    setSelectedUser(null);
     setIsCreateModalOpen(true);
   };
 
@@ -400,6 +369,17 @@ export const SubscriptionsPage: React.FC = () => {
     }
     return matched;
   };
+
+  // Opciones para el selector con buscador de Planes para la nueva suscripción
+  const planOptions: SearchableSelectOption[] = React.useMemo(() => {
+    return getAvailablePlans().map((p) => ({
+      value: p.id,
+      label: `${p.name} (${formatPlanPrice(p)})`,
+      sublabel: p.description || undefined,
+      badge: p.type === 'white_label' ? 'Marca Blanca' : 'Agencia',
+      icon: <Layers className="w-4 h-4 text-amber-500 shrink-0" />,
+    }));
+  }, [plans, activeTab]);
 
   return (
     <div className="space-y-6">
@@ -889,132 +869,87 @@ export const SubscriptionsPage: React.FC = () => {
               </div>
 
               <form onSubmit={handleCreateSubscription} className="space-y-4">
-                {/* User Search Bar */}
-                <div className="space-y-1.5 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-200/70 dark:border-amber-900/50">
-                  <label className="block text-xs font-extrabold text-amber-950 dark:text-amber-200 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <Search className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Buscar Usuario o Correo</span>
-                    </span>
-                    <span className="text-[10px] text-amber-700/80 dark:text-amber-400 font-normal">
-                      (Selecciona para auto-completar su {activeTab === 'white_label' ? 'Marca Blanca' : 'Agencia'})
-                    </span>
-                  </label>
-
-                  {selectedUser ? (
-                    <div className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-amber-300 dark:border-amber-700 shadow-xs">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 font-bold border border-emerald-500/20">
-                          <UserCheck className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-extrabold text-slate-900 dark:text-white truncate">{selectedUser.name}</p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">{selectedUser.email}</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedUser(null)}
-                        className="text-xs font-bold text-rose-600 hover:text-rose-700 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 shrink-0"
-                      >
-                        Cambiar
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Escribe correo o nombre de usuario (ej. emporio.ecu@gmail.com)..."
-                        value={userSearchQuery}
-                        onChange={(e) => handleUserSearchChange(e.target.value)}
-                        className="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-amber-300/80 dark:border-amber-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-amber-500/40"
-                      />
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      {isSearchingUsers && (
-                        <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
-                      )}
-
-                      {/* Dropdown Results */}
-                      {searchedUsers.length > 0 && (
-                        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-h-48 overflow-y-auto z-50 divide-y divide-slate-100 dark:divide-slate-800">
-                          {searchedUsers.map((u) => {
-                            const agencyName = u.agency?.name || (agencies.find(a => a.id === u.agency_id)?.name);
-                            const wlName = u.white_label?.name || u.white_labels?.[0]?.name || (whiteLabels.find(w => w.id === u.white_label_id)?.name);
-                            const orgText = activeTab === 'white_label' ? (wlName || agencyName || 'Sin Marca Blanca') : (agencyName || 'Sin Agencia');
-
-                            return (
-                              <button
-                                key={u.id}
-                                type="button"
-                                onClick={() => handleSelectUserResult(u)}
-                                className="w-full text-left p-2.5 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center justify-between gap-2 group"
-                              >
-                                <div className="min-w-0">
-                                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-amber-600">{u.name}</p>
-                                  <p className="text-[10px] text-slate-500 font-mono truncate">{u.email}</p>
-                                </div>
-                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-amber-700 dark:text-amber-400 border border-slate-200 dark:border-slate-700 shrink-0 truncate max-w-[130px]">
-                                  {orgText}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {userSearchQuery.trim().length >= 2 && !isSearchingUsers && searchedUsers.length === 0 && (
-                        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xl z-50 text-center text-xs text-slate-400">
-                          No se encontraron usuarios coincidentes.
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                {isSuperAdmin && (
+                  <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab('white_label'); setTargetEntityId(''); setSelectedPlanId(''); }}
+                      className={`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
+                        activeTab === 'white_label'
+                          ? 'bg-white dark:bg-slate-900 text-amber-600 shadow-xs'
+                          : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                      }`}
+                    >
+                      🏢 Marcas Blancas
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab('agency'); setTargetEntityId(''); setSelectedPlanId(''); }}
+                      className={`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
+                        activeTab === 'agency'
+                          ? 'bg-white dark:bg-slate-900 text-amber-600 shadow-xs'
+                          : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                      }`}
+                    >
+                      🏪 Agencias
+                    </button>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Seleccionar {activeTab === 'white_label' ? 'Marca Blanca' : 'Agencia'} *
                   </label>
-                  <select
-                    required
+                  <SearchableSelect
+                    options={organizationOptions}
                     value={targetEntityId}
-                    onChange={(e) => setTargetEntityId(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold"
-                  >
-                    <option value="">-- Seleccionar Organización --</option>
-                    {activeTab === 'white_label'
-                      ? whiteLabels.map(wl => (
-                          <option key={wl.id} value={wl.id}>
-                            {wl.name} {wl.email ? `(${wl.email})` : ''}
-                          </option>
-                        ))
-                      : agencies.map(ag => (
-                          <option key={ag.id} value={ag.id}>
-                            {ag.name} {ag.email ? `(${ag.email})` : ''}
-                          </option>
-                        ))
+                    onChange={(val) => setTargetEntityId(val ? Number(val) : '')}
+                    placeholder={`-- Buscar y seleccionar ${activeTab === 'white_label' ? 'Marca Blanca' : 'Agencia'} --`}
+                    searchPlaceholder={`Escribe nombre, correo o ID de la ${activeTab === 'white_label' ? 'marca blanca' : 'agencia'}...`}
+                    emptyMessage={`No se encontraron ${activeTab === 'white_label' ? 'marcas blancas' : 'agencias'}`}
+                    icon={activeTab === 'white_label' 
+                      ? <Building className="w-4 h-4 text-amber-500 shrink-0" />
+                      : <Building2 className="w-4 h-4 text-purple-500 shrink-0" />
                     }
-                  </select>
+                    allowClear
+                    clearLabel="-- Quitar selección --"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Plan de Suscripción *
                   </label>
-                  <select
-                    required
+                  <SearchableSelect
+                    options={planOptions}
                     value={selectedPlanId}
-                    onChange={(e) => setSelectedPlanId(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold"
-                  >
-                    <option value="">-- Seleccionar Plan --</option>
-                    {getAvailablePlans().map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({formatPlanPrice(p)})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setSelectedPlanId(val ? Number(val) : '')}
+                    placeholder="-- Buscar y seleccionar Plan --"
+                    searchPlaceholder="Buscar plan por nombre o precio..."
+                    emptyMessage="No hay planes disponibles para este tipo de organización"
+                    icon={<Layers className="w-4 h-4 text-amber-500 shrink-0" />}
+                    allowClear
+                    clearLabel="-- Quitar selección --"
+                  />
                 </div>
+
+                {selectedPlanId && (() => {
+                  const chosenPlan = plans.find(p => p.id === Number(selectedPlanId));
+                  if (!chosenPlan) return null;
+                  return (
+                    <div className="p-3 bg-amber-50/70 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs space-y-1">
+                      <p className="font-extrabold text-amber-900 dark:text-amber-200 flex items-center justify-between">
+                        <span>{chosenPlan.name}</span>
+                        <span className="px-2 py-0.5 rounded-md bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 text-[10px] font-bold uppercase">
+                          {chosenPlan.type === 'white_label' ? 'Marca Blanca' : 'Agencia'}
+                        </span>
+                      </p>
+                      <p className="text-amber-800 dark:text-amber-300 font-bold text-[11px]">
+                        Tarifa del Plan: <span className="font-black text-slate-900 dark:text-white">{formatPlanPrice(chosenPlan)}</span>
+                      </p>
+                    </div>
+                  );
+                })()}
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -1092,18 +1027,20 @@ export const SubscriptionsPage: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Plan para la Renovación *
                   </label>
-                  <select
-                    required
+                  <SearchableSelect
+                    options={getAvailablePlans(selectedSubscription?.plan_id).map((p) => ({
+                      value: p.id,
+                      label: `${p.name} (${formatPlanPrice(p)})`,
+                      sublabel: p.description || undefined,
+                      badge: p.type === 'white_label' ? 'Marca Blanca' : 'Agencia',
+                      icon: <Layers className="w-4 h-4 text-amber-500 shrink-0" />,
+                    }))}
                     value={selectedPlanId}
-                    onChange={(e) => setSelectedPlanId(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold"
-                  >
-                    {getAvailablePlans(selectedSubscription?.plan_id).map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({formatPlanPrice(p)})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setSelectedPlanId(val ? Number(val) : '')}
+                    placeholder="-- Buscar y seleccionar Plan --"
+                    searchPlaceholder="Buscar plan de renovación..."
+                    icon={<Layers className="w-4 h-4 text-amber-500 shrink-0" />}
+                  />
                 </div>
 
                 {selectedPlanId && (() => {
@@ -1179,18 +1116,20 @@ export const SubscriptionsPage: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Seleccionar Nuevo Plan *
                   </label>
-                  <select
-                    required
+                  <SearchableSelect
+                    options={getAvailablePlans(selectedSubscription?.plan_id).map((p) => ({
+                      value: p.id,
+                      label: `${p.name} (${formatPlanPrice(p)})`,
+                      sublabel: p.description || undefined,
+                      badge: p.type === 'white_label' ? 'Marca Blanca' : 'Agencia',
+                      icon: <Layers className="w-4 h-4 text-indigo-500 shrink-0" />,
+                    }))}
                     value={selectedPlanId}
-                    onChange={(e) => setSelectedPlanId(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold"
-                  >
-                    {getAvailablePlans(selectedSubscription?.plan_id).map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({formatPlanPrice(p)})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setSelectedPlanId(val ? Number(val) : '')}
+                    placeholder="-- Buscar y seleccionar Nuevo Plan --"
+                    searchPlaceholder="Buscar nuevo plan..."
+                    icon={<Layers className="w-4 h-4 text-indigo-500 shrink-0" />}
+                  />
                 </div>
 
                 {selectedPlanId && (() => {
