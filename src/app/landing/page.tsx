@@ -112,20 +112,6 @@ function CustomHtmlIframeContainer({
       setIsStyleReady(true);
     }
 
-    // Ensure Stripe.js is loaded in both parent window and iframe if payment is enabled
-    if (paymentConfig?.enabled) {
-      if (typeof document !== 'undefined' && !document.querySelector('script[src*="js.stripe.com/v3"]')) {
-        const topStripeScript = document.createElement('script');
-        topStripeScript.src = 'https://js.stripe.com/v3/';
-        document.head.appendChild(topStripeScript);
-      }
-      if (!doc.querySelector('script[src*="js.stripe.com/v3"]')) {
-        const stripeScript = doc.createElement('script');
-        stripeScript.src = 'https://js.stripe.com/v3/';
-        doc.head.appendChild(stripeScript);
-      }
-    }
-
     const updateHeight = () => {
       if (!doc || !doc.body) return;
       const height = Math.max(

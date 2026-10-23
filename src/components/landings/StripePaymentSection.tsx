@@ -180,31 +180,76 @@ export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
 
     const stripePromise = getStripePromise(publishableKey);
 
+    // Helper to sanitize CSS colors for Stripe Elements Appearance API (rejects gradients, extracts valid HEX/RGB/HSL)
+    const toValidStripeColor = (colorStr: string | undefined | null, fallback: string): string => {
+      if (!colorStr || typeof colorStr !== 'string') return fallback;
+      const trimmed = colorStr.trim();
+
+      // If it's a gradient, extract the first hex or rgb/hsl inside it
+      if (trimmed.includes('gradient')) {
+        const hexMatch = trimmed.match(/#([0-9a-fA-F]{3,8})/);
+        if (hexMatch) return hexMatch[0];
+        const rgbMatch = trimmed.match(/(rgb|hsl)a?\([^\)]+\)/i);
+        if (rgbMatch) return rgbMatch[0];
+        return fallback;
+      }
+
+      // Valid Direct Hex
+      if (/^#([0-9a-fA-F]{3,8})$/.test(trimmed)) {
+        return trimmed;
+      }
+
+      // Valid Direct rgb / rgba / hsl / hsla
+      if (/^(rgb|hsl)a?\(.+?\)$/i.test(trimmed)) {
+        return trimmed;
+      }
+
+      const anyHex = trimmed.match(/#([0-9a-fA-F]{3,8})/);
+      if (anyHex) return anyHex[0];
+
+      return fallback;
+    };
+
+    const primaryColor = toValidStripeColor(
+      appearanceConfig?.checkbox_accent_color || appearanceConfig?.button_bg_color,
+      '#0891b2'
+    );
+    const bgColor = toValidStripeColor(appearanceConfig?.input_bg_color, '#ffffff');
+    const textColor = toValidStripeColor(appearanceConfig?.input_text_color, '#0f172a');
+    const dangerColor = toValidStripeColor(appearanceConfig?.error_color, '#ef4444');
+    const borderColor = toValidStripeColor(appearanceConfig?.input_border_color, '#cbd5e1');
+    const focusBorderColor = toValidStripeColor(appearanceConfig?.input_focus_border_color, primaryColor);
+    const labelColor = toValidStripeColor(appearanceConfig?.label_color || appearanceConfig?.text_color, '#0f172a');
+
+    const borderRadiusStr = appearanceConfig?.input_border_radius
+      ? (String(appearanceConfig.input_border_radius).endsWith('px') || String(appearanceConfig.input_border_radius).endsWith('rem')
+          ? String(appearanceConfig.input_border_radius)
+          : `${appearanceConfig.input_border_radius}px`)
+      : '12px';
+
     // Compute Stripe Appearance
     const appearance: Appearance = {
       theme: (appearanceConfig?.theme === 'night' ? 'night' : appearanceConfig?.theme === 'flat' ? 'flat' : 'stripe') as any,
       variables: {
-        colorPrimary: appearanceConfig?.button_bg_color?.includes('#')
-          ? appearanceConfig.button_bg_color
-          : appearanceConfig?.checkbox_accent_color || '#10b981',
-        colorBackground: appearanceConfig?.input_bg_color || '#ffffff',
-        colorText: appearanceConfig?.input_text_color || '#0f172a',
-        colorDanger: appearanceConfig?.error_color || '#ef4444',
-        fontFamily: appearanceConfig?.font_family || 'system-ui, sans-serif',
-        borderRadius: appearanceConfig?.input_border_radius || '12px',
+        colorPrimary: primaryColor,
+        colorBackground: bgColor,
+        colorText: textColor,
+        colorDanger: dangerColor,
+        fontFamily: appearanceConfig?.font_family || 'system-ui, -apple-system, sans-serif',
+        borderRadius: borderRadiusStr,
         spacingUnit: '4px',
       },
       rules: {
         '.Input': {
-          borderColor: appearanceConfig?.input_border_color || '#cbd5e1',
+          borderColor: borderColor,
           boxShadow: 'none',
         },
         '.Input:focus': {
-          borderColor: appearanceConfig?.input_focus_border_color || '#10b981',
-          boxShadow: `0 0 0 1px ${appearanceConfig?.input_focus_border_color || '#10b981'}`,
+          borderColor: focusBorderColor,
+          boxShadow: `0 0 0 1px ${focusBorderColor}`,
         },
         '.Label': {
-          color: appearanceConfig?.label_color || appearanceConfig?.text_color || '#0f172a',
+          color: labelColor,
           fontWeight: '600',
           fontSize: '12px',
           marginBottom: '6px',

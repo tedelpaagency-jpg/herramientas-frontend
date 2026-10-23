@@ -65,17 +65,8 @@ export function prepareLandingHtml(
   // Fix common mistake where bootstrap css is loaded inside a <script> tag
   html = html.replace(/<script([^>]*?)src=["']([^"']*?)bootstrap\.bundle\.min\.css["']([^>]*?)><\/script>/gi, '<script$1src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"$3></script>');
 
-  // Fix obsolete or invalid clover/stripe.js script references to official Stripe.js v3
-  html = html.replace(/<script([^>]*?)src=["'][^"']*?clover\/stripe\.js["']([^>]*?)><\/script>/gi, '<script src="https://js.stripe.com/v3/"></script>');
-
-  // Ensure Stripe.js v3 is injected in head for custom html landings with dynamic forms
-  if (!html.includes('js.stripe.com/v3')) {
-    if (html.includes('</head>')) {
-      html = html.replace('</head>', '<script src="https://js.stripe.com/v3/"></script>\n</head>');
-    } else if (html.includes('<head>')) {
-      html = html.replace('<head>', '<head>\n<script src="https://js.stripe.com/v3/"></script>');
-    }
-  }
+  // Clean up empty or broken audio/video/source tags that cause "Content-Type HTTP de text/html no es compatible"
+  html = html.replace(/<(video|audio|source)\b([^>]*?)\bsrc=["'](?:#|\/|\s*|landing[^"']*)["']([^>]*?)>/gi, '<$1$2$3>');
 
   // 5. Replace {{DYNAMIC_FORM}} placeholder
   const placeholder = options.formPlaceholderHtml || '';
