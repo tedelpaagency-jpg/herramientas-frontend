@@ -26,6 +26,7 @@ interface Props {
   termsAndConditions?: string | null;
   privacyPolicy?: string | null;
   stripeAppearance?: StripeAppearanceConfig | null;
+  targetWindow?: Window | null;
 }
 
 export const DynamicFormRenderer: React.FC<Props> = ({
@@ -43,6 +44,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   termsAndConditions,
   privacyPolicy,
   stripeAppearance,
+  targetWindow,
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -871,6 +873,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                 publishableKey={activePublishableKey}
                 appearanceConfig={effectiveStripeAppearance}
                 isPreview={isPreview || !landingId}
+                targetWindow={targetWindow}
               />
             )}
 

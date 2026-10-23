@@ -210,6 +210,7 @@ function CustomHtmlIframeContainer({
             stripeAppearance={stripeAppearance || paymentConfig?.stripe_appearance || formSchema?.stripe_appearance}
             isFormLoading={!isStyleReady}
             loading={loading}
+            targetWindow={mountTarget?.ownerDocument?.defaultView || null}
           />
         ),
         mountTarget
@@ -427,6 +428,7 @@ function PublicLandingContent() {
               privacyPolicy={landing.privacy_policy}
               stripeAppearance={landing.stripe_appearance || landing.payment_config?.stripe_appearance || landing.form_schema?.stripe_appearance}
               loading={submitting}
+              targetWindow={typeof window !== 'undefined' ? window : null}
             />
           )}
         </div>

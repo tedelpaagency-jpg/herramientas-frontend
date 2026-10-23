@@ -103,88 +103,75 @@ interface Props {
   publishableKey: string | null;
   appearanceConfig?: StripeAppearanceConfig | null;
   isPreview?: boolean;
+  targetWindow?: Window | null;
 }
 
-// Cache loadStripe instances by publishable key
+// Cache loadStripe instances by publishable key + target window
 const stripeInstances = new Map<string, Promise<Stripe | null>>();
 
-const getStripePromise = (key: string): Promise<Stripe | null> => {
-  if (!stripeInstances.has(key)) {
-    stripeInstances.set(key, loadStripe(key));
+const getStripePromise = (key: string, win?: Window | null): Promise<Stripe | null> => {
+  const targetWin = (win || (typeof window !== 'undefined' ? window : null)) as any;
+  if (!targetWin) return Promise.resolve(null);
+
+  const isIframe = typeof window !== 'undefined' && targetWin !== window;
+  const cacheKey = `${key}_${isIframe ? 'frame' : 'top'}`;
+
+  if (!stripeInstances.has(cacheKey)) {
+    const promise = new Promise<Stripe | null>((resolve) => {
+      // 1. If targetWin already has Stripe constructor:
+      if (targetWin.Stripe) {
+        try {
+          return resolve(targetWin.Stripe(key));
+        } catch (e) {
+          console.error('Error invoking targetWin.Stripe:', e);
+        }
+      }
+
+      // 2. Ensure Stripe.js script tag exists in targetDoc
+      const targetDoc = targetWin.document;
+      if (targetDoc && !targetDoc.querySelector('script[src*="js.stripe.com"]')) {
+        const script = targetDoc.createElement('script');
+        script.src = 'https://js.stripe.com/v3/';
+        script.async = true;
+        targetDoc.head.appendChild(script);
+      }
+
+      // 3. Poll targetWin.Stripe
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (targetWin.Stripe) {
+          clearInterval(interval);
+          try {
+            resolve(targetWin.Stripe(key));
+          } catch (e) {
+            console.error('Error invoking targetWin.Stripe after poll:', e);
+            resolve(null);
+          }
+        } else if (attempts > 50) {
+          clearInterval(interval);
+          loadStripe(key).then(resolve).catch(() => resolve(null));
+        }
+      }, 50);
+    });
+
+    stripeInstances.set(cacheKey, promise);
   }
-  return stripeInstances.get(key)!;
+
+  return stripeInstances.get(cacheKey)!;
 };
 
 export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
-  ({ clientSecret, publishableKey, appearanceConfig, isPreview = false }, ref) => {
-    const containerRef = React.useRef<HTMLDivElement>(null);
-    const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
-
-    useEffect(() => {
-      if (isPreview || !publishableKey) {
-        setStripePromise(null);
-        return;
-      }
-
-      // Check the target document/window from the container DOM node (handles portaling inside an iframe)
-      const targetDoc = containerRef.current?.ownerDocument || (typeof document !== 'undefined' ? document : null);
-      const targetWin = (targetDoc?.defaultView || (typeof window !== 'undefined' ? window : null)) as any;
-
-      const promise = new Promise<Stripe | null>((resolve) => {
-        if (!targetWin) {
-          resolve(null);
-          return;
-        }
-
-        // 1. If target window already has Stripe constructor:
-        if (targetWin.Stripe) {
-          try {
-            resolve(targetWin.Stripe(publishableKey));
-            return;
-          } catch (e) {
-            console.error('Error creating Stripe instance in target window:', e);
-          }
-        }
-
-        // 2. Ensure Stripe.js script tag exists in targetDoc
-        if (targetDoc) {
-          let script = targetDoc.querySelector<HTMLScriptElement>('script[src*="js.stripe.com"]');
-          if (!script) {
-            script = targetDoc.createElement('script');
-            script.src = 'https://js.stripe.com/v3/';
-            script.async = true;
-            targetDoc.head.appendChild(script);
-          }
-        }
-
-        // 3. Poll targetWin.Stripe
-        let attempts = 0;
-        const interval = setInterval(() => {
-          attempts++;
-          if (targetWin.Stripe) {
-            clearInterval(interval);
-            try {
-              resolve(targetWin.Stripe(publishableKey));
-            } catch (e) {
-              console.error('Error invoking targetWin.Stripe:', e);
-              loadStripe(publishableKey).then(resolve).catch(() => resolve(null));
-            }
-          } else if (attempts > 50) {
-            // After 2.5s, fallback to top-level loadStripe
-            clearInterval(interval);
-            loadStripe(publishableKey).then(resolve).catch(() => resolve(null));
-          }
-        }, 50);
-      });
-
-      setStripePromise(promise);
-    }, [publishableKey, isPreview]);
+  ({ clientSecret, publishableKey, appearanceConfig, isPreview = false, targetWindow }, ref) => {
+    const stripePromise = React.useMemo(() => {
+      if (isPreview || !publishableKey) return null;
+      return getStripePromise(publishableKey, targetWindow);
+    }, [publishableKey, isPreview, targetWindow]);
 
     // If in builder preview or no live credentials yet
-    if (isPreview || !clientSecret || !publishableKey) {
+    if (isPreview || !clientSecret || !publishableKey || !stripePromise) {
       return (
         <div
-          ref={containerRef}
           className="w-full rounded-2xl border p-4 space-y-3 transition-all"
           style={{
             backgroundColor: appearanceConfig?.input_bg_color || 'rgba(255, 255, 255, 0.04)',
@@ -250,8 +237,6 @@ export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
         </div>
       );
     }
-
-    const resolvedPromise = stripePromise || getStripePromise(publishableKey);
 
     // Helper to sanitize CSS colors for Stripe Elements Appearance API (rejects gradients, extracts valid HEX/RGB/HSL)
     const toValidStripeColor = (colorStr: string | undefined | null, fallback: string): string => {
@@ -324,10 +309,10 @@ export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
     };
 
     return (
-      <div ref={containerRef} className="w-full">
+      <div className="w-full">
         <Elements
-          key={`${publishableKey}_${clientSecret}`}
-          stripe={resolvedPromise}
+          key={`${publishableKey}_${clientSecret}_${targetWindow ? 'frame' : 'top'}`}
+          stripe={stripePromise}
           options={{
             clientSecret,
             appearance,
