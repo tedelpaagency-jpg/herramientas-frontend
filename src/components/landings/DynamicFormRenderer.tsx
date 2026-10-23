@@ -280,8 +280,17 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           throw new Error('El formulario de tarjeta no está listo.');
         }
 
-        // Process payment securely with Stripe Elements & 3DS
-        const payRes = await stripeRef.current.confirmPayment();
+        // Extract customer billing details from form inputs to sync with Stripe
+        const customerName = (formData['name'] || [formData['first_name'], formData['last_name']].filter(Boolean).join(' ') || '').trim();
+        const customerEmail = (formData['email'] || '').trim();
+        const customerPhone = (formData['phone'] || '').trim();
+
+        // Process payment securely with Stripe Elements & 3DS, attaching customer details
+        const payRes = await stripeRef.current.confirmPayment({
+          name: customerName || undefined,
+          email: customerEmail || undefined,
+          phone: customerPhone || undefined,
+        });
         if (!payRes.success || !payRes.paymentIntentId) {
           throw new Error(payRes.error || 'No fue posible autorizar el pago con tu entidad bancaria.');
         }

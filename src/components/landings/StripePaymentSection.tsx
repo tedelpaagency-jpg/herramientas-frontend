@@ -6,8 +6,14 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { StripeAppearanceConfig } from '../../types/landing';
 import { Lock, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
 
+export interface StripeBillingDetails {
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
 export interface StripePaymentRef {
-  confirmPayment: () => Promise<{ success: boolean; paymentIntentId?: string; error?: string }>;
+  confirmPayment: (billingDetails?: StripeBillingDetails) => Promise<{ success: boolean; paymentIntentId?: string; error?: string }>;
 }
 
 interface InnerProps {
@@ -22,7 +28,7 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
   const [isReady, setIsReady] = useState(false);
 
   useImperativeHandle(ref, () => ({
-    confirmPayment: async () => {
+    confirmPayment: async (billingDetails?: StripeBillingDetails) => {
       if (!stripe || !elements) {
         return { success: false, error: 'La pasarela de pago segura aún se está inicializando. Por favor intenta en un segundo.' };
       }
@@ -30,8 +36,23 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
       setElementError(null);
 
       try {
+        const confirmParams: any = {};
+        if (billingDetails?.name || billingDetails?.email || billingDetails?.phone) {
+          confirmParams.payment_method_data = {
+            billing_details: {
+              name: billingDetails.name || undefined,
+              email: billingDetails.email || undefined,
+              phone: billingDetails.phone || undefined,
+            },
+          };
+        }
+        if (billingDetails?.email) {
+          confirmParams.receipt_email = billingDetails.email;
+        }
+
         const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
+          confirmParams: Object.keys(confirmParams).length > 0 ? confirmParams : undefined,
           redirect: 'if_required',
         });
 
@@ -64,6 +85,13 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
           layout: {
             type: 'tabs',
             defaultCollapsed: false,
+          },
+          fields: {
+            billingDetails: {
+              name: 'never',
+              email: 'never',
+              phone: 'never',
+            },
           },
           paymentMethodOrder: ['card'],
           wallets: {
