@@ -129,6 +129,20 @@ export const landingService = {
     return response.data;
   },
 
+  createPaymentIntent: async (
+    idOrEncodedId: string | number,
+    data?: { name?: string; email?: string; amount?: number }
+  ): Promise<{
+    client_secret: string;
+    payment_intent_id: string;
+    publishable_key: string;
+    amount: number;
+    currency: string;
+  }> => {
+    const response = await apiClient.post(`/v1/public/landings/${idOrEncodedId}/payment-intent`, data || {});
+    return response.data?.data || response.data;
+  },
+
   lookupDomain: async (domain: string): Promise<any> => {
     const response = await apiClient.get(`/v1/public/landing-domain-lookup?domain=${encodeURIComponent(domain)}`);
     return response.data?.data || response.data;

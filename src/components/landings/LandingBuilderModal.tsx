@@ -738,6 +738,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
               ) : (
                 <div className="max-w-xl mx-auto">
                   <DynamicFormRenderer
+                    isPreview={true}
                     formSchema={formSchema}
                     paymentConfig={paymentConfig}
                     termsAndConditions={termsAndConditions}

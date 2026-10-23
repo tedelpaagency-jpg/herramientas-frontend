@@ -10,6 +10,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { prepareLandingHtml } from '@/utils/landingHtmlHelper';
 
 function CustomHtmlIframeContainer({
+  landingId,
   customHtml,
   formSchema,
   paymentConfig,
@@ -21,6 +22,7 @@ function CustomHtmlIframeContainer({
   submitted,
   loading = false,
 }: {
+  landingId?: string | number | null;
   customHtml: string;
   formSchema: any;
   paymentConfig?: any;
@@ -202,6 +204,7 @@ function CustomHtmlIframeContainer({
           </div>
         ) : (
           <DynamicFormRenderer
+            landingId={landingId}
             formSchema={formSchema}
             onSubmit={onSubmit}
             className={customFormClass}
@@ -283,11 +286,8 @@ function PublicLandingContent() {
         last_name: formData.last_name || '',
         email: formData.email || '',
         phone: formData.phone || '',
+        payment_intent_id: formData.payment_intent_id || undefined,
         stripe_token: formData.stripe_token || undefined,
-        card_number: formData.card_number || undefined,
-        card_expiry: formData.card_expiry || undefined,
-        card_cvc: formData.card_cvc || undefined,
-        card_holder_name: formData.card_holder_name || undefined,
         answers: formData,
       };
 
@@ -363,6 +363,7 @@ function PublicLandingContent() {
 
     return (
       <CustomHtmlIframeContainer
+        landingId={landing.id || rawId}
         customHtml={decodedHtml}
         formSchema={landing.form_schema}
         paymentConfig={landing.payment_config}
@@ -422,6 +423,7 @@ function PublicLandingContent() {
             </div>
           ) : (
             <DynamicFormRenderer
+              landingId={landing.id || rawId}
               formSchema={landing.form_schema}
               onSubmit={handleSubmitLead}
               paymentConfig={landing.payment_config}

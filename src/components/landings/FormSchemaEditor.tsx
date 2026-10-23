@@ -978,6 +978,7 @@ export const FormSchemaEditor: React.FC<Props> = ({
               )}
 
               <DynamicFormRenderer
+                isPreview={true}
                 formSchema={previewSchema}
                 termsAndConditions={termsAndConditions}
                 privacyPolicy={privacyPolicy}
