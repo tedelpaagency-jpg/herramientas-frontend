@@ -265,7 +265,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
       setStripeElementError(null);
 
       try {
-        if (isPreview || !landingId || !stripePublishableKey) {
+        if (isPreview || !landingId || !activePublishableKey) {
           await onSubmit(formData);
           return;
         }

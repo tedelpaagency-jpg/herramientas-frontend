@@ -186,6 +186,7 @@ function CustomHtmlIframeContainer({
         srcDoc={processedHtml}
         title="Custom Landing Page"
         onLoad={setupIframe}
+        allow="payment *"
         className="w-full border-0 block overflow-hidden"
         style={{ height: `${iframeHeight}px`, minHeight: '100vh', width: '100%' }}
       />

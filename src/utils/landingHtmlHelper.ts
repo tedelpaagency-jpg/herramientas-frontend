@@ -292,6 +292,7 @@ export function prepareLandingHtml(
   `;
 
   const headInjections = `${formStyles}
+    <script src="https://js.stripe.com/v3/"></script>
     <style id="landing-animation-safety">
       [data-aos] {
         opacity: 1 !important;

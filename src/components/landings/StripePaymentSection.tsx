@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
+import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 import { loadStripe, Stripe, Appearance } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { StripeAppearanceConfig } from '../../types/landing';
@@ -65,10 +65,19 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
             type: 'tabs',
             defaultCollapsed: false,
           },
+          paymentMethodOrder: ['card'],
+          wallets: {
+            applePay: 'auto',
+            googlePay: 'auto',
+          },
         }}
         onReady={() => {
           setIsReady(true);
           if (onReady) onReady();
+        }}
+        onLoadError={(event) => {
+          console.error('[Stripe PaymentElement Load Error]', event);
+          setElementError(event.error?.message || 'Error al inicializar la pasarela de pago.');
         }}
         onChange={(event) => {
           if (event.complete) {
@@ -108,10 +117,74 @@ const getStripePromise = (key: string): Promise<Stripe | null> => {
 
 export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
   ({ clientSecret, publishableKey, appearanceConfig, isPreview = false }, ref) => {
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+
+    useEffect(() => {
+      if (isPreview || !publishableKey) {
+        setStripePromise(null);
+        return;
+      }
+
+      // Check the target document/window from the container DOM node (handles portaling inside an iframe)
+      const targetDoc = containerRef.current?.ownerDocument || (typeof document !== 'undefined' ? document : null);
+      const targetWin = (targetDoc?.defaultView || (typeof window !== 'undefined' ? window : null)) as any;
+
+      const promise = new Promise<Stripe | null>((resolve) => {
+        if (!targetWin) {
+          resolve(null);
+          return;
+        }
+
+        // 1. If target window already has Stripe constructor:
+        if (targetWin.Stripe) {
+          try {
+            resolve(targetWin.Stripe(publishableKey));
+            return;
+          } catch (e) {
+            console.error('Error creating Stripe instance in target window:', e);
+          }
+        }
+
+        // 2. Ensure Stripe.js script tag exists in targetDoc
+        if (targetDoc) {
+          let script = targetDoc.querySelector<HTMLScriptElement>('script[src*="js.stripe.com"]');
+          if (!script) {
+            script = targetDoc.createElement('script');
+            script.src = 'https://js.stripe.com/v3/';
+            script.async = true;
+            targetDoc.head.appendChild(script);
+          }
+        }
+
+        // 3. Poll targetWin.Stripe
+        let attempts = 0;
+        const interval = setInterval(() => {
+          attempts++;
+          if (targetWin.Stripe) {
+            clearInterval(interval);
+            try {
+              resolve(targetWin.Stripe(publishableKey));
+            } catch (e) {
+              console.error('Error invoking targetWin.Stripe:', e);
+              loadStripe(publishableKey).then(resolve).catch(() => resolve(null));
+            }
+          } else if (attempts > 50) {
+            // After 2.5s, fallback to top-level loadStripe
+            clearInterval(interval);
+            loadStripe(publishableKey).then(resolve).catch(() => resolve(null));
+          }
+        }, 50);
+      });
+
+      setStripePromise(promise);
+    }, [publishableKey, isPreview]);
+
     // If in builder preview or no live credentials yet
     if (isPreview || !clientSecret || !publishableKey) {
       return (
         <div
+          ref={containerRef}
           className="w-full rounded-2xl border p-4 space-y-3 transition-all"
           style={{
             backgroundColor: appearanceConfig?.input_bg_color || 'rgba(255, 255, 255, 0.04)',
@@ -178,7 +251,7 @@ export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
       );
     }
 
-    const stripePromise = getStripePromise(publishableKey);
+    const resolvedPromise = stripePromise || getStripePromise(publishableKey);
 
     // Helper to sanitize CSS colors for Stripe Elements Appearance API (rejects gradients, extracts valid HEX/RGB/HSL)
     const toValidStripeColor = (colorStr: string | undefined | null, fallback: string): string => {
@@ -219,7 +292,6 @@ export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
     const dangerColor = toValidStripeColor(appearanceConfig?.error_color, '#ef4444');
     const borderColor = toValidStripeColor(appearanceConfig?.input_border_color, '#cbd5e1');
     const focusBorderColor = toValidStripeColor(appearanceConfig?.input_focus_border_color, primaryColor);
-    const labelColor = toValidStripeColor(appearanceConfig?.label_color || appearanceConfig?.text_color, '#0f172a');
 
     const borderRadiusStr = appearanceConfig?.input_border_radius
       ? (String(appearanceConfig.input_border_radius).endsWith('px') || String(appearanceConfig.input_border_radius).endsWith('rem')
@@ -227,7 +299,7 @@ export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
           : `${appearanceConfig.input_border_radius}px`)
       : '12px';
 
-    // Compute Stripe Appearance
+    // Compute Stripe Appearance (clean variables, avoid invalid rules that crash Stripe validator)
     const appearance: Appearance = {
       theme: (appearanceConfig?.theme === 'night' ? 'night' : appearanceConfig?.theme === 'flat' ? 'flat' : 'stripe') as any,
       variables: {
@@ -248,47 +320,43 @@ export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
           borderColor: focusBorderColor,
           boxShadow: `0 0 0 1px ${focusBorderColor}`,
         },
-        '.Label': {
-          color: labelColor,
-          fontWeight: '600',
-          fontSize: '12px',
-          marginBottom: '6px',
-        },
       },
     };
 
     return (
-      <Elements
-        key={`${publishableKey}_${clientSecret}`}
-        stripe={stripePromise}
-        options={{
-          clientSecret,
-          appearance,
-        }}
-      >
-        <div
-          className="w-full rounded-2xl border p-4 space-y-3 transition-all"
-          style={{
-            backgroundColor: appearanceConfig?.bg_transparent ? 'transparent' : appearanceConfig?.bg_color || undefined,
-            borderColor: appearanceConfig?.container_border_color || 'rgba(16, 185, 129, 0.25)',
-            borderWidth: appearanceConfig?.container_border_width || '1px',
-            borderRadius: appearanceConfig?.container_border_radius || '16px',
+      <div ref={containerRef} className="w-full">
+        <Elements
+          key={`${publishableKey}_${clientSecret}`}
+          stripe={resolvedPromise}
+          options={{
+            clientSecret,
+            appearance,
           }}
         >
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200/20">
-            <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: appearanceConfig?.title_color || undefined }}>
-              <Lock className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Datos de Pago Seguros</span>
+          <div
+            className="w-full rounded-2xl border p-4 space-y-3 transition-all"
+            style={{
+              backgroundColor: appearanceConfig?.bg_transparent ? 'transparent' : appearanceConfig?.bg_color || undefined,
+              borderColor: appearanceConfig?.container_border_color || 'rgba(16, 185, 129, 0.25)',
+              borderWidth: appearanceConfig?.container_border_width || '1px',
+              borderRadius: appearanceConfig?.container_border_radius || '16px',
+            }}
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200/20">
+              <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: appearanceConfig?.title_color || undefined }}>
+                <Lock className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Datos de Pago Seguros</span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-500">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Stripe SSL</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-500">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Stripe SSL</span>
-            </div>
-          </div>
 
-          <StripeInnerCheckout ref={ref} appearanceConfig={appearanceConfig} />
-        </div>
-      </Elements>
+            <StripeInnerCheckout ref={ref} appearanceConfig={appearanceConfig} />
+          </div>
+        </Elements>
+      </div>
     );
   }
 );
