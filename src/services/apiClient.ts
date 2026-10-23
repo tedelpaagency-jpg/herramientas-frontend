@@ -3,12 +3,14 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 // Resolución dinámica del API Base URL según entorno y dominio actual (Default: santun.tedelpa.com)
 export const getApiBaseUrl = (): string => {
   if (typeof process !== 'undefined' && process.env) {
+    if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
     if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
     if (process.env.VITE_API_URL) return process.env.VITE_API_URL;
   }
   
   try {
     const metaEnv = (import.meta as any).env || {};
+    if (metaEnv.NEXT_PUBLIC_API_BASE_URL) return metaEnv.NEXT_PUBLIC_API_BASE_URL;
     if (metaEnv.NEXT_PUBLIC_API_URL) return metaEnv.NEXT_PUBLIC_API_URL;
     if (metaEnv.VITE_API_URL) return metaEnv.VITE_API_URL;
   } catch (e) {
@@ -24,11 +26,9 @@ export const getApiBaseUrl = (): string => {
       return `${protocol}//${hostname}:8000/api`;
     }
 
-    if (hostname.includes('tedelpa.com') || hostname.includes('santun')) {
-      return 'https://santun.tedelpa.com/api';
-    }
-
-    return `${window.location.origin}/api`;
+    // Todos los dominios de producción (portal.yes360.academy, portal.trivali.pro, marcas blancas y landings)
+    // se comunican con el backend centralizado de Laravel en santun.tedelpa.com
+    return 'https://santun.tedelpa.com/api';
   }
 
   return 'https://santun.tedelpa.com/api';
