@@ -19,10 +19,29 @@ export const BRANDING_THEME_KEY = 'santun_dark_theme';
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>('light');
 
+  const isPublicRoute = () => {
+    if (typeof window === 'undefined') return false;
+    const p = window.location.pathname;
+    const h = window.location.hostname;
+    return (
+      p.startsWith('/travel-agency-03') ||
+      p.startsWith('/properties') ||
+      p.startsWith('/landing') ||
+      h === 'inmosoft.pro' ||
+      h.includes('inmobiliaria')
+    );
+  };
+
   const applyThemeToDom = (newTheme: Theme) => {
     if (typeof window === 'undefined') return;
     const root = document.documentElement;
     const body = document.body;
+
+    if (isPublicRoute()) {
+      root.classList.remove('dark');
+      if (body) body.classList.remove('dark');
+      return;
+    }
 
     if (newTheme === 'dark') {
       root.classList.add('dark');
@@ -48,6 +67,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   useEffect(() => {
+    if (isPublicRoute()) {
+      applyThemeToDom('light');
+      setThemeState('light');
+      return;
+    }
+
     // Initial sync with DOM and localStorage after hydration completes
     const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
     const brandingDefault = localStorage.getItem(BRANDING_THEME_KEY) as Theme | null;

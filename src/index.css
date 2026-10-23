@@ -495,3 +495,30 @@ html.dark, .dark {
   color: #0f172a !important;
 }
 
+/* Ensure public frontend / travel-agency-03 is strictly immune to CRM dark mode */
+.travel-agency-03-root,
+html:has(.travel-agency-03-root),
+body:has(.travel-agency-03-root),
+html.dark:has(.travel-agency-03-root),
+body.dark:has(.travel-agency-03-root) {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+.travel-agency-03-root {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  --color-background: #ffffff !important;
+  --color-surface: #ffffff !important;
+  --color-text-primary: #1f2937 !important;
+  --color-text-secondary: #475569 !important;
+}
+
+.travel-agency-03-root p,
+.travel-agency-03-root span,
+.travel-agency-03-root a,
+.travel-agency-03-root li {
+  color: inherit;
+}
+
+

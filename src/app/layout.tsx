@@ -24,6 +24,17 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
+                  var p = window.location.pathname;
+                  var h = window.location.hostname;
+                  var isPublic = p.startsWith('/travel-agency-03') ||
+                                 p.startsWith('/properties') ||
+                                 p.startsWith('/landing') ||
+                                 h === 'inmosoft.pro' ||
+                                 h.includes('inmobiliaria');
+                  if (isPublic) {
+                    document.documentElement.classList.remove('dark');
+                    return;
+                  }
                   var saved = localStorage.getItem('santun_theme') || localStorage.getItem('santun_dark_theme');
                   var isDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
                   if (isDark) {
