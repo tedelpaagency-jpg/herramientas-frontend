@@ -69,11 +69,15 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoadingPaymentIntent, setIsLoadingPaymentIntent] = useState(false);
   const stripeRef = useRef<StripePaymentRef>(null);
+  const isFetchingIntentRef = useRef(false);
 
-  // Initialize PaymentIntent from backend
+  // Initialize PaymentIntent from backend (guaranteed single execution)
   useEffect(() => {
     if (!paymentConfig?.enabled || !landingId || isPreview) return;
+    if (clientSecret) return; // Ya existe un PaymentIntent cargado
+    if (isFetchingIntentRef.current) return; // Ya hay una petición en curso
 
+    isFetchingIntentRef.current = true;
     let isMounted = true;
     const fetchIntent = async () => {
       try {
@@ -97,6 +101,7 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           );
         }
       } finally {
+        isFetchingIntentRef.current = false;
         if (isMounted) {
           setIsLoadingPaymentIntent(false);
         }
@@ -107,8 +112,9 @@ export const DynamicFormRenderer: React.FC<Props> = ({
 
     return () => {
       isMounted = false;
+      isFetchingIntentRef.current = false;
     };
-  }, [paymentConfig?.enabled, landingId, isPreview, paymentConfig?.amount]);
+  }, [paymentConfig?.enabled, landingId, isPreview, paymentConfig?.amount, clientSecret]);
 
   const getFormattedTermsHtml = (raw: string | null | undefined): string => {
     if (!raw || !raw.trim()) return '';

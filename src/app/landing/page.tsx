@@ -66,27 +66,35 @@ function CustomHtmlIframeContainer({
 
     if (doc.body) {
       const height = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, doc.body.offsetHeight, 600);
-      setIframeHeight(height);
+      setIframeHeight((prev) => (Math.abs(prev - height) > 5 ? height : prev));
     }
   }, [mountTarget]);
 
-  // Immediately poll every 15ms after component mounts to find target before onLoad fires
+  // Poll gently to find target before onLoad fires, and STOP immediately once found
   useEffect(() => {
     checkAndMountTarget();
-    const timer = setInterval(() => {
-      checkAndMountTarget();
-    }, 15);
+    if (mountTarget) return;
 
-    // Fallback: guarantee form styles transition after max 350ms
+    const timer = setInterval(() => {
+      const iframeNode = iframeRef.current;
+      const doc = iframeNode?.contentDocument || iframeNode?.contentWindow?.document;
+      const el = doc?.getElementById('react-dynamic-form-container');
+      if (el) {
+        setMountTarget(el);
+        clearInterval(timer);
+      }
+    }, 50);
+
     const fallbackTimer = setTimeout(() => {
       setIsStyleReady(true);
-    }, 350);
+      clearInterval(timer);
+    }, 400);
 
     return () => {
       clearInterval(timer);
       clearTimeout(fallbackTimer);
     };
-  }, [checkAndMountTarget]);
+  }, [mountTarget, checkAndMountTarget]);
 
   const setupIframe = () => {
     checkAndMountTarget();
