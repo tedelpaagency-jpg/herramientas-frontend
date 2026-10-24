@@ -1,14 +1,19 @@
-import React from 'react';
+interface FaqV4Props {
+  agency?: any;
+}
 
-const FaqV4 = () => {
+const FaqV4: React.FC<FaqV4Props> = ({ agency }) => {
+  const faqTitle = agency?.details?.faq_title || 'Preguntas Frecuentes';
+  const faqSubtitle = agency?.details?.faq_subtitle || 'Resolvemos las dudas más comunes para que compres, vendas o rentes con total tranquilidad.';
+
   return (
     <div className="home4-faq-section mb-100">
       <div className="container">
         <div className="row justify-content-center mb-50 wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
           <div className="col-xl-6 col-lg-8">
             <div className="section-title text-center">
-              <h2>Preguntas Frecuentes</h2>
-              <p>Resolvemos las dudas más comunes para que compres, vendas o rentes con total tranquilidad.</p>
+              <h2>{faqTitle}</h2>
+              <p>{faqSubtitle}</p>
             </div>
           </div>
         </div>

@@ -9,9 +9,15 @@ interface HeroV4Props {
 const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   const [activeTab, setActiveTab] = useState<'sale' | 'rent' | 'land' | 'commercial'>('sale');
 
-  const heroTitle = agency?.hero_title || 'Encuentra la Propiedad de tus Sueños';
-  const heroSubtitle = agency?.hero_subtitle || 'Las mejores opciones en venta y renta con asesoría jurídica, notarial y crediticia garantizada.';
+  const heroTitle = agency?.hero_title || agency?.details?.hero_title || 'Encuentra la Propiedad de tus Sueños';
+  const heroSubtitle = agency?.hero_subtitle || agency?.details?.hero_subtitle || 'Las mejores opciones en venta y renta con asesoría jurídica, notarial y crediticia garantizada.';
   const bannerImage = agency?.banner_image;
+
+  const tab1 = agency?.details?.hero_tab1 || 'En Venta';
+  const tab2 = agency?.details?.hero_tab2 || 'En Renta';
+  const tab3 = agency?.details?.hero_tab3 || 'Terrenos & Lotes';
+  const tab4 = agency?.details?.hero_tab4 || 'Comercial';
+  const searchBtnText = agency?.details?.hero_search_btn || 'Buscar Propiedades';
 
   return (
     <div className="home4-banner-section mb-100">
@@ -41,7 +47,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                     <polyline points="9 22 9 12 15 12 15 22" />
                   </svg>
-                  <span>En Venta</span>
+                  <span>{tab1}</span>
                 </li>
 
                 <li
@@ -51,7 +57,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
                   </svg>
-                  <span>En Renta</span>
+                  <span>{tab2}</span>
                 </li>
 
                 <li
@@ -63,7 +69,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                     <line x1="8" y1="2" x2="8" y2="18" />
                     <line x1="16" y1="6" x2="16" y2="22" />
                   </svg>
-                  <span>Terrenos &amp; Lotes</span>
+                  <span>{tab3}</span>
                 </li>
 
                 <li
@@ -80,7 +86,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                     <line x1="15" y1="14" x2="15.01" y2="14" />
                     <line x1="9" y1="18" x2="15" y2="18" />
                   </svg>
-                  <span>Comercial</span>
+                  <span>{tab4}</span>
                 </li>
               </ul>
 

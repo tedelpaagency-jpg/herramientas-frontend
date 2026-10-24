@@ -9,7 +9,6 @@ import {
   Check, Eye, Layout, Lock, Building2, ShieldCheck, RefreshCw, Upload, Smartphone, ExternalLink, Sun, Moon, Minimize2, Maximize2, CreditCard, Key, EyeOff, Loader2, CheckCircle2, AlertCircle, AlertTriangle
 } from 'lucide-react';
 import MediaPicker from '../../components/media/MediaPicker';
-import PortalCustomizerBuilder from './PortalCustomizerBuilder';
 
 const PRESET_PALETTES = [
   { name: 'Esmeralda Santun', primary: '#00a884', secondary: '#161a1b', button: '#00a884', menuBg: '#161a1b' },
@@ -49,16 +48,18 @@ export default function BrandingCustomizationPage({
   const userAgencyId = user?.agency_id || agencyObj?.id || (user as any)?.agencies?.[0]?.id;
   const isAgencyUser = Boolean(userAgencyId) && !isSuperAdmin && !isWlAdmin;
 
-  const isDomainTabRequested = typeof window !== 'undefined' && (
-    new URLSearchParams(window.location.search).get('tab') === 'domain' ||
-    new URLSearchParams(window.location.search).get('tab') === 'portal' ||
-    new URLSearchParams(window.location.search).get('tab') === 'frontend'
-  );
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const tabParam = new URLSearchParams(window.location.search).get('tab');
+      if (tabParam === 'domain' || tabParam === 'portal' || tabParam === 'frontend') {
+        window.location.replace('/portal-inmobiliario');
+      }
+    }
+  }, []);
 
   const defaultTargetType: 'white_label' | 'agency' = (
     isAgencyUser || 
-    (!isSuperAdmin && !isWlAdmin) ||
-    (isDomainTabRequested && initialTargetType !== 'white_label')
+    (!isSuperAdmin && !isWlAdmin)
   ) ? 'agency' : initialTargetType;
   
   // Selection state
@@ -69,12 +70,7 @@ export default function BrandingCustomizationPage({
     defaultTargetType === 'agency' ? (initialAgencyId || userAgencyId || null) : (initialWhiteLabelId || null)
   );
 
-  const [activeTab, setActiveTab] = useState<'colors' | 'typography' | 'logos' | 'info' | 'domain' | 'stripe'>(() => {
-    if (isDomainTabRequested) {
-      return 'domain';
-    }
-    return 'colors';
-  });
+  const [activeTab, setActiveTab] = useState<'colors' | 'typography' | 'logos' | 'info' | 'stripe'>('colors');
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -190,7 +186,7 @@ export default function BrandingCustomizationPage({
           }
         }
 
-        if ((targetKind === 'agency' || isDomainTabRequested) && agList.length > 0) {
+        if (targetKind === 'agency' && agList.length > 0) {
           const matchAg = targetId ? agList.find(a => a.id === targetId) : null;
           const chosenAg = matchAg || agList[0];
           setTargetType('agency');
@@ -725,17 +721,14 @@ export default function BrandingCustomizationPage({
         >
           <Globe className="w-4 h-4" /> Datos de Marca
         </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('domain')}
-          className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === 'domain'
-              ? 'bg-emerald-600 text-white shadow-md'
-              : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'
-          }`}
+        <a
+          href="/portal-inmobiliario"
+          className="px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800"
+          title="Abrir el estudio independiente del Portal Inmobiliario Web"
         >
-          <Sparkles className="w-4 h-4" /> Portal Inmobiliario Web
-        </button>
+          <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Portal Inmobiliario Web
+          <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+        </a>
         <button
           type="button"
           onClick={() => setActiveTab('stripe')}
@@ -749,26 +742,8 @@ export default function BrandingCustomizationPage({
         </button>
       </div>
 
-      {activeTab === 'domain' ? (
-        <PortalCustomizerBuilder
-          form={form}
-          setForm={setForm}
-          targetType={targetType}
-          selectedId={selectedId}
-          agencies={agencies}
-          setTargetType={setTargetType}
-          setSelectedId={setSelectedId}
-          populateForm={populateForm}
-          setCurrentAgency={setCurrentAgency}
-          handleVerifyDomain={handleVerifyDomain}
-          verifyingDomain={verifyingDomain}
-          domainVerificationResult={domainVerificationResult}
-          onSave={handleSubmit}
-          saving={saving}
-        />
-      ) : (
-        /* Main 2-Column Split: Customization Form Left | Live Mockup Right */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Main 2-Column Split: Customization Form Left | Live Mockup Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* Left Column: Form & Tabs (7 Columns) */}
           <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -2079,7 +2054,6 @@ export default function BrandingCustomizationPage({
           </div>
         </div>
       </div>
-    )}
 
     </div>
   );

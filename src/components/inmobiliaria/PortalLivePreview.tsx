@@ -10,6 +10,10 @@ interface PortalLivePreviewProps {
   bannerImage?: string;
   heroTitle?: string;
   heroSubtitle?: string;
+  categoriesTitle?: string;
+  categoriesSubtitle?: string;
+  featuredTitle?: string;
+  featuredSubtitle?: string;
   aboutTitle?: string;
   aboutText?: string;
   ctaText?: string;
@@ -18,23 +22,39 @@ interface PortalLivePreviewProps {
   phone?: string;
   whatsapp?: string;
   deviceMode?: 'desktop' | 'tablet' | 'mobile';
+  details?: any;
 }
 
 export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
   agencyName = 'Inmobiliaria Premier',
   logoUrl,
   bannerImage = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1600&q=80',
-  heroTitle = 'Encuentra la Propiedad de tus Sueños',
-  heroSubtitle = 'Las mejores opciones en venta y renta con asesoría jurídica y crediticia garantizada.',
-  aboutTitle = 'Tu Aliado Inmobiliario de Confianza',
-  aboutText = 'Acompañamos a familias e inversionistas a tomar la mejor decisión patrimonial con total transparencia y seguridad notarial.',
-  ctaText = '¿Deseas vender o consignar tu inmueble? Lo comercializamos al mejor precio de mercado.',
+  heroTitle,
+  heroSubtitle,
+  categoriesTitle,
+  categoriesSubtitle,
+  featuredTitle,
+  featuredSubtitle,
+  aboutTitle,
+  aboutText,
+  ctaText,
   primaryColor = '#00a884',
   secondaryColor = '#161a1b',
   phone = '+52 55 1234 5678',
   whatsapp = '+52 55 1234 5678',
   deviceMode = 'desktop',
+  details = {},
 }) => {
+  const displayHeroTitle = heroTitle || details?.hero_title || 'Encuentra la Propiedad de tus Sueños';
+  const displayHeroSubtitle = heroSubtitle || details?.hero_subtitle || 'Las mejores opciones en venta y renta con asesoría jurídica y crediticia garantizada.';
+  const displayCatTitle = categoriesTitle || details?.categories_title || 'Categorías Principales';
+  const displayCatSubtitle = categoriesSubtitle || details?.categories_subtitle || 'Explora inmuebles por tipo de propiedad';
+  const displayFeatTitle = featuredTitle || details?.featured_title || 'Propiedades Destacadas';
+  const displayFeatSubtitle = featuredSubtitle || details?.featured_subtitle || 'Inmuebles exclusivos listos para habitar';
+  const displayAboutTitle = aboutTitle || details?.about_title || 'Tu Aliado Inmobiliario de Confianza';
+  const displayAboutText = aboutText || details?.about_text || 'Acompañamos a familias e inversionistas a tomar la mejor decisión patrimonial con total transparencia y seguridad notarial.';
+  const displayCtaText = ctaText || details?.cta_title || '¿Deseas vender o consignar tu inmueble? Lo comercializamos al mejor precio de mercado.';
+
   const containerWidth = deviceMode === 'mobile' ? 'max-w-[375px]' : deviceMode === 'tablet' ? 'max-w-[768px]' : 'w-full';
 
   return (
@@ -110,11 +130,11 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
         </span>
 
         <h1 className="text-2xl sm:text-4xl font-extrabold max-w-xl leading-tight mb-2 text-white drop-shadow-md">
-          {heroTitle}
+          {displayHeroTitle}
         </h1>
 
         <p className="text-xs sm:text-sm text-slate-200 max-w-lg mb-6 leading-relaxed drop-shadow-xs">
-          {heroSubtitle}
+          {displayHeroSubtitle}
         </p>
 
         {/* Real Estate Search Widget Mockup */}
@@ -173,8 +193,8 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
       <div className="p-5 border-b border-slate-100">
         <div className="flex justify-between items-center mb-3">
           <div>
-            <h3 className="text-sm font-extrabold text-slate-900">Categorías Principales</h3>
-            <span className="text-[11px] text-slate-500">Explora inmuebles por tipo de propiedad</span>
+            <h3 className="text-sm font-extrabold text-slate-900">{displayCatTitle}</h3>
+            <span className="text-[11px] text-slate-500">{displayCatSubtitle}</span>
           </div>
           <span className="text-xs font-bold cursor-pointer" style={{ color: primaryColor }}>
             Ver todas &rarr;
@@ -198,8 +218,8 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
       <div className="p-5 border-b border-slate-100 bg-slate-50/60">
         <div className="flex justify-between items-center mb-3">
           <div>
-            <h3 className="text-sm font-extrabold text-slate-900">Propiedades Destacadas</h3>
-            <span className="text-[11px] text-slate-500">Inmuebles exclusivos listos para habitar</span>
+            <h3 className="text-sm font-extrabold text-slate-900">{displayFeatTitle}</h3>
+            <span className="text-[11px] text-slate-500">{displayFeatSubtitle}</span>
           </div>
           <span className="text-xs font-bold cursor-pointer" style={{ color: primaryColor }}>
             Catálogo completo &rarr;
@@ -260,8 +280,8 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
         </div>
         <div className="space-y-1.5">
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Sobre Nosotros</span>
-          <h4 className="text-xs font-bold text-slate-900">{aboutTitle}</h4>
-          <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">{aboutText}</p>
+          <h4 className="text-xs font-bold text-slate-900">{displayAboutTitle}</h4>
+          <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">{displayAboutText}</p>
           <div className="flex items-center gap-4 pt-1 text-[11px] font-bold text-slate-800">
             <span>● 15+ Años de Experiencia</span>
             <span>● 3,500+ Clientes</span>
@@ -271,7 +291,7 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
 
       {/* 8. Call To Action (Consignación) */}
       <div className="p-5 text-center text-white" style={{ backgroundColor: secondaryColor }}>
-        <h4 className="text-xs sm:text-sm font-bold mb-1 text-white">{ctaText}</h4>
+        <h4 className="text-xs sm:text-sm font-bold mb-1 text-white">{displayCtaText}</h4>
         <p className="text-[10px] text-slate-300 mb-3">Atención inmediata por WhatsApp y llamada telefónica</p>
         <div className="flex justify-center gap-2">
           <a

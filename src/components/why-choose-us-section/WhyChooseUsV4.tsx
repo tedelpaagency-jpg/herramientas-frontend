@@ -11,6 +11,9 @@ interface WhyChooseUsV4Props {
 
 const WhyChooseUsV4: React.FC<WhyChooseUsV4Props> = ({ agency }) => {
   const agencyPhone = agency?.phone || agency?.whatsapp || '+52 55 1234 5678';
+  const whyTitle = agency?.details?.why_title || '¿Por Qué Elegirnos?';
+  const whySubtitle = agency?.details?.why_subtitle || 'Protegemos tu patrimonio con los más altos estándares de calidad, certeza jurídica y conocimiento del mercado local.';
+  const whyRating = agency?.details?.why_rating_text || '4.9';
 
   return (
     <>
@@ -19,13 +22,13 @@ const WhyChooseUsV4: React.FC<WhyChooseUsV4Props> = ({ agency }) => {
           <div className="row g-4 justify-content-between align-items-end mb-60 wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
             <div className="col-xxl-5 col-xl-6 col-lg-7">
               <div className="section-title">
-                <h2>¿Por Qué Elegirnos?</h2>
-                <p>Protegemos tu patrimonio con los más altos estándares de calidad, certeza jurídica y conocimiento del mercado local.</p>
+                <h2>{whyTitle}</h2>
+                <p>{whySubtitle}</p>
               </div>
             </div>
             <div className="col-lg-3 d-flex justify-content-lg-end">
               <div className="single-rating" style={{ cursor: 'default' }}>
-                <strong>4.9</strong>
+                <strong>{whyRating}</strong>
                 <div className="tripadvisor-rating">
                   <span style={{ fontWeight: 700, fontSize: '13px', color: '#161a1b', display: 'block' }}>Calificación Clientes</span>
                   <div className="rating-area" style={{ display: 'flex', gap: '3px', color: '#f59e0b', fontSize: '12px' }}>

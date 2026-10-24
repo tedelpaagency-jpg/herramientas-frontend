@@ -1,0 +1,16 @@
+'use client';
+
+import React from 'react';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Layout from '@/components/Layout';
+import PortalInmobiliarioStudioView from '@/views/admin/PortalInmobiliarioStudioView';
+
+export default function PortalInmobiliarioPage() {
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <PortalInmobiliarioStudioView />
+      </Layout>
+    </ProtectedRoute>
+  );
+}

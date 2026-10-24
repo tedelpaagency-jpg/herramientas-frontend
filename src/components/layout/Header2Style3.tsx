@@ -173,19 +173,27 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
               </li>
 
               <li>
-                <a href="#categorias">Categorías</a>
+                <Link href={pathname === '/' || pathname === '/travel-agency-03' ? '#categorias' : '/#categorias'}>
+                  Categorías
+                </Link>
               </li>
 
               <li>
-                <a href="#nosotros">Conócenos</a>
+                <Link href={pathname === '/' || pathname === '/travel-agency-03' ? '#nosotros' : '/#nosotros'}>
+                  Conócenos
+                </Link>
               </li>
 
               <li>
-                <a href="#destacadas">Destacadas</a>
+                <Link href={pathname === '/' || pathname === '/travel-agency-03' ? '#destacadas' : '/#destacadas'}>
+                  Destacadas
+                </Link>
               </li>
 
               <li>
-                <a href="#contacto">Contacto</a>
+                <Link href={pathname === '/' || pathname === '/travel-agency-03' ? '#contacto' : '/#contacto'}>
+                  Contacto
+                </Link>
               </li>
             </ul>
 

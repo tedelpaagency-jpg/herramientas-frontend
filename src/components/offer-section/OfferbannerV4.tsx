@@ -10,6 +10,10 @@ interface OfferbannerV4Props {
 }
 
 const OfferbannerV4: React.FC<OfferbannerV4Props> = ({ agency }) => {
+  const ctaBadge = agency?.details?.cta_badge || 'Servicio Exclusivo a Propietarios';
+  const ctaTitle = agency?.details?.cta_title || agency?.cta_text || '¿Quieres Vender o Rentar tu Inmueble Rápido y Seguro?';
+  const ctaBtnText = agency?.details?.cta_button_text || 'Consignar mi Inmueble';
+
   const settings: SwiperOptions = useMemo(() => {
     return {
       slidesPerView: "auto",
@@ -50,15 +54,15 @@ const OfferbannerV4: React.FC<OfferbannerV4Props> = ({ agency }) => {
                       padding: '0 40px',
                     }}>
                       <span style={{ color: '#00a884', fontWeight: 700, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-                        Servicio Exclusivo a Propietarios
+                        {ctaBadge}
                       </span>
                       <h3 style={{ color: '#ffffff', fontSize: '26px', fontWeight: 800, margin: '0 0 12px 0' }}>
-                        ¿Quieres Vender o Rentar tu Inmueble Rápido y Seguro?
+                        {ctaTitle}
                       </h3>
                       <div>
                         <Link href="/contact" className="primary-btn1" style={{ display: 'inline-flex', padding: '10px 22px' }}>
-                          <span>Consignar mi Inmueble</span>
-                          <span>Consignar mi Inmueble</span>
+                          <span>{ctaBtnText}</span>
+                          <span>{ctaBtnText}</span>
                         </Link>
                       </div>
                     </div>

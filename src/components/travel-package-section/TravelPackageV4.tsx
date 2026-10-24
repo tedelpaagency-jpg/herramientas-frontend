@@ -24,6 +24,9 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
     : DEFAULT_REAL_ESTATE_PROPERTIES;
 
   const agencyCurrency = agency?.currency || 'USD';
+  const sectionTitle = agency?.details?.featured_title || 'Propiedades Destacadas';
+  const sectionSubtitle = agency?.details?.featured_subtitle || 'Selección curada de inmuebles residenciales y comerciales con alta plusvalía y respaldo legal.';
+  const btnText = agency?.details?.featured_btn_text || 'Ver Todo el Catálogo de Propiedades';
 
   return (
     <div className="home4-travel-package-section mt-100 mb-100" id="destacadas">
@@ -31,8 +34,8 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
         <div className="row justify-content-center mb-50 wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
           <div className="col-xl-6 col-lg-8">
             <div className="section-title text-center">
-              <h2>Propiedades Destacadas</h2>
-              <p>Selección curada de inmuebles residenciales y comerciales con alta plusvalía y respaldo legal.</p>
+              <h2>{sectionTitle}</h2>
+              <p>{sectionSubtitle}</p>
             </div>
           </div>
         </div>
@@ -129,8 +132,8 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
         <div className="row mt-50">
           <div className="col-12 text-center">
             <Link href="/properties" className="primary-btn1 black-bg" style={{ display: 'inline-flex' }}>
-              <span>Ver Todo el Catálogo de Propiedades</span>
-              <span>Ver Todo el Catálogo de Propiedades</span>
+              <span>{btnText}</span>
+              <span>{btnText}</span>
             </Link>
           </div>
         </div>

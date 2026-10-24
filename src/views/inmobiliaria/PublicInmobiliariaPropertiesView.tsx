@@ -14,9 +14,10 @@ import publicInmobiliariaService, {
   PublicAgencyConfig,
   PublicEstateItem,
 } from '@/services/publicInmobiliariaService';
+import TopbarSlider from '@/components/topbar/TopbarSlider';
+import Header2Style3 from '@/components/layout/Header2Style3';
+import Footer from '@/components/layout/Footer';
 import {
-  PublicInmobiliariaFooter,
-  PublicInmobiliariaHeader,
   PublicPropertyCard,
 } from './PublicInmobiliariaLayout';
 
@@ -137,8 +138,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-      <PublicInmobiliariaHeader agency={fallbackAgency} domainParam={domainParam} />
+    <div className="min-h-screen flex flex-col bg-[#fcfcfd] text-slate-900 font-sans">
+      <TopbarSlider />
+      <Header2Style3 agency={fallbackAgency} />
 
       <div className="bg-slate-900 text-white py-10 px-4">
         <div className="max-w-7xl mx-auto">
@@ -341,7 +343,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         )}
       </main>
 
-      <PublicInmobiliariaFooter agency={fallbackAgency} domainParam={domainParam} />
+      <Footer agency={fallbackAgency} />
     </div>
   );
 };

@@ -10,12 +10,16 @@ import { DEFAULT_REAL_ESTATE_CATEGORIES } from "@/constants/realEstateDefaults";
 
 interface DestinationSectionV4Props {
   categories?: PublicEstateCategory[];
+  agency?: any;
 }
 
-const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories }) => {
+const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories, agency }) => {
   const displayCategories = (categories && categories.length > 0)
     ? categories
     : DEFAULT_REAL_ESTATE_CATEGORIES;
+
+  const sectionTitle = agency?.details?.categories_title || 'Categorías Principales';
+  const sectionSubtitle = agency?.details?.categories_subtitle || 'Descubre opciones pensadas para cada estilo de vida e inversión patrimonial.';
 
   const settings: SwiperOptions = useMemo(() => {
     return {
@@ -69,8 +73,8 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories 
         <div className="row justify-content-center mb-50 wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
           <div className="col-xl-6 col-lg-8">
             <div className="section-title text-center">
-              <h2>Categorías Principales</h2>
-              <p>Descubre opciones pensadas para cada estilo de vida e inversión patrimonial.</p>
+              <h2>{sectionTitle}</h2>
+              <p>{sectionSubtitle}</p>
             </div>
           </div>
         </div>

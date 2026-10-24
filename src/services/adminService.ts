@@ -135,6 +135,8 @@ export const adminService = {
         const val = data[key];
         if (val instanceof File) {
           formData.append(key, val);
+        } else if (typeof val === 'object') {
+          formData.append(key, JSON.stringify(val));
         } else if (val !== null && val !== undefined && val !== '') {
           formData.append(key, String(val));
         }

@@ -260,7 +260,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: 'ACM (Avalúo Comercial)', path: '/acm', icon: Calculator, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage', 'acm.view'] },
         { label: 'Propiedades e Inmuebles', path: '/estates', icon: Building2, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage'] },
-        { label: 'Portal Inmobiliario (Web)', path: '/branding?tab=domain', icon: Globe, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.manage', 'custom_agency_branding', 'branding.view'] },
+        { label: 'Portal Inmobiliario (Web)', path: '/portal-inmobiliario', icon: Globe, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.manage', 'custom_agency_branding', 'branding.view'] },
       ],
     },
     {
@@ -336,7 +336,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           : []),
         { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
         { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck, permission: ['roles.manage', 'manage_roles', 'roles.view', 'view_roles', 'roles', 'permission_groups.view', 'permission_groups.manage'] },
-        { label: isAgencyUser ? 'Personalizar Marca & Portal' : 'Personalizar Marca', path: '/branding', icon: Palette, permission: ['custom_agency_branding', 'branding.view', 'branding.manage', 'manage_estates', 'estates.manage'] },
+        { label: 'Personalizar Marca Blanca', path: '/branding', icon: Palette, permission: ['custom_agency_branding', 'branding.view', 'branding.manage'] },
         { label: 'Biblioteca de Medios', path: '/media', icon: ImageIcon, permission: ['courses.view', 'activities.view', 'agencies.view', 'media.view'] },
         ...(isSuperAdmin
           ? [

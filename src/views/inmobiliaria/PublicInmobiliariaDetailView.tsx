@@ -21,11 +21,12 @@ import publicInmobiliariaService, {
   PublicAgencyConfig,
   PublicEstateItem,
 } from '@/services/publicInmobiliariaService';
+import TopbarSlider from '@/components/topbar/TopbarSlider';
+import Header2Style3 from '@/components/layout/Header2Style3';
+import Footer from '@/components/layout/Footer';
 import {
   getEstatePrimaryImage,
   PROPERTY_TYPE_LABELS,
-  PublicInmobiliariaFooter,
-  PublicInmobiliariaHeader,
   PublicPropertyCard,
 } from './PublicInmobiliariaLayout';
 
@@ -112,7 +113,8 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   if (errorMsg || !estate) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50">
-        <PublicInmobiliariaHeader agency={fallbackAgency} domainParam={domainParam} />
+        <TopbarSlider />
+        <Header2Style3 agency={fallbackAgency} />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-8 max-w-md w-full text-center space-y-4">
             <Building2 className="w-12 h-12 text-slate-300 mx-auto" />
@@ -128,7 +130,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
             </Link>
           </div>
         </div>
-        <PublicInmobiliariaFooter agency={fallbackAgency} domainParam={domainParam} />
+        <Footer agency={fallbackAgency} />
       </div>
     );
   }
@@ -183,20 +185,30 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   ].filter((a) => Boolean(estate[a.key]));
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-      <PublicInmobiliariaHeader agency={fallbackAgency} domainParam={domainParam} />
+    <div className="min-h-screen flex flex-col bg-[#fcfcfd] text-slate-900 font-sans">
+      <TopbarSlider />
+      <Header2Style3 agency={fallbackAgency} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
-        {/* Breadcrumb */}
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <Link
-            href={withDomain('/properties')}
-            className="inline-flex items-center gap-2 text-xs font-extrabold text-slate-600 hover:text-slate-900"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Volver al Catálogo de Propiedades</span>
-          </Link>
-          <span className="text-xs font-mono text-slate-400">Ref: #{estate.id}</span>
+        {/* Breadcrumb Navigation */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <nav className="flex items-center gap-2 text-slate-500 font-medium">
+            <Link href="/" className="hover:text-emerald-600 transition-colors">Inicio</Link>
+            <span>/</span>
+            <Link href={withDomain('/properties')} className="hover:text-emerald-600 transition-colors">Propiedades</Link>
+            <span>/</span>
+            <span className="text-slate-900 font-bold truncate max-w-[200px] sm:max-w-md">{estate.title}</span>
+          </nav>
+          <div className="flex items-center gap-3">
+            <Link
+              href={withDomain('/properties')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Volver al Catálogo</span>
+            </Link>
+            <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-1 rounded">Ref: #{estate.id}</span>
+          </div>
         </div>
 
         {/* Cabecera del Inmueble */}
@@ -413,7 +425,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
         )}
       </main>
 
-      <PublicInmobiliariaFooter agency={fallbackAgency} domainParam={domainParam} />
+      <Footer agency={fallbackAgency} />
     </div>
   );
 };

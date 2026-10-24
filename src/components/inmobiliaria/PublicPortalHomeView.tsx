@@ -119,17 +119,17 @@ export default function PublicPortalHomeView({
       <TopbarSlider />
       <Header2Style3 agency={agency} />
       <HeroV4 agency={agency} />
-      <DestinationSectionV4 categories={categories} />
+      <DestinationSectionV4 categories={categories} agency={agency} />
       <TravelPackageV4 featuredEstates={featuredEstates} agency={agency} />
       <AboutV4 agency={agency} />
       <FeatureSectionV4 agency={agency} />
       <WhyChooseUsV4 agency={agency} />
-      <CounterV4 />
+      <CounterV4 agency={agency} />
       <Partner />
       <OfferbannerV4 agency={agency} />
       <TestimonialV4 />
       <BlogV4 recentEstates={recentEstates} agency={agency} />
-      <FaqV4 />
+      <FaqV4 agency={agency} />
       <Footer agency={agency} />
     </div>
   );
