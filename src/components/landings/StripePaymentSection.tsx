@@ -16,6 +16,94 @@ export interface StripePaymentRef {
   confirmPayment: (billingDetails?: StripeBillingDetails) => Promise<{ success: boolean; paymentIntentId?: string; error?: string }>;
 }
 
+export const getValidReturnUrl = (targetWin?: Window | null): string => {
+  let url = '';
+
+  // 1. Try window.top
+  try {
+    if (typeof window !== 'undefined' && window.top?.location?.href) {
+      const topHref = window.top.location.href;
+      if (!topHref.startsWith('about:') && !topHref.startsWith('blob:') && !topHref.startsWith('data:')) {
+        url = topHref;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Try window.location
+  if (!url) {
+    try {
+      if (typeof window !== 'undefined' && window.location?.href) {
+        const href = window.location.href;
+        if (!href.startsWith('about:') && !href.startsWith('blob:') && !href.startsWith('data:')) {
+          url = href;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 3. Try targetWin
+  if (!url && targetWin) {
+    try {
+      const targetHref = targetWin.location?.href;
+      if (targetHref && !targetHref.startsWith('about:') && !targetHref.startsWith('blob:') && !targetHref.startsWith('data:')) {
+        url = targetHref;
+      }
+    } catch (e) {}
+  }
+
+  // 4. Verify absolute http/https protocol
+  if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+    return url;
+  }
+
+  if (typeof window !== 'undefined' && window.location?.origin && (window.location.origin.startsWith('http://') || window.location.origin.startsWith('https://'))) {
+    return window.location.origin;
+  }
+
+  return 'https://santun.tedelpa.com';
+};
+
+export const formatToE164Phone = (rawPhone?: string | null): string | undefined => {
+  if (!rawPhone || typeof rawPhone !== 'string') return undefined;
+  const trimmed = rawPhone.trim();
+  if (!trimmed) return undefined;
+
+  // Already E.164 (e.g. +593983725228, +14155552671)
+  if (/^\+[1-9]\d{7,14}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  const digits = trimmed.replace(/\D/g, '');
+  if (!digits || digits.length < 7) return undefined;
+
+  // If starts with + but had spaces or dashes (e.g. +593 98 372 5228)
+  if (trimmed.startsWith('+')) {
+    const candidate = `+${digits}`;
+    if (/^\+[1-9]\d{7,14}$/.test(candidate)) return candidate;
+  }
+
+  // If starts with 0 (e.g. 0983725228), strip leading 0
+  const noZero = digits.startsWith('0') ? digits.substring(1) : digits;
+
+  // If digits already include known international prefix without the '+' sign
+  if (noZero.length >= 10) {
+    const knownPrefixes = ['593', '56', '52', '57', '54', '51', '58', '502', '503', '504', '505', '506', '507', '1', '34'];
+    for (const prefix of knownPrefixes) {
+      if (noZero.startsWith(prefix)) {
+        return `+${noZero}`;
+      }
+    }
+    return `+${noZero}`;
+  }
+
+  // 9 digits without country code (typical Ecuador/Chile mobile: e.g. 983725228)
+  if (noZero.length === 9) {
+    return `+593${noZero}`;
+  }
+
+  return `+${noZero}`;
+};
+
 interface InnerProps {
   onReady?: () => void;
   appearanceConfig?: StripeAppearanceConfig | null;
@@ -37,31 +125,32 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
       setElementError(null);
 
       try {
-        const targetWin = targetWindow || (typeof window !== 'undefined' ? window : null);
+        const returnUrl = getValidReturnUrl(targetWindow);
         const confirmParams: any = {
-          return_url: targetWin ? targetWin.location.href : (typeof window !== 'undefined' ? window.location.href : undefined),
+          return_url: returnUrl,
         };
 
         const cleanName = billingDetails?.name?.trim();
         const cleanEmail = billingDetails?.email?.trim();
-        let cleanPhone = billingDetails?.phone?.trim();
-        // Stripe strictly requires E.164 format (+[country][number]) for billing_details.phone
-        if (cleanPhone && !/^\+[1-9]\d{7,14}$/.test(cleanPhone)) {
-          cleanPhone = undefined;
-        }
+        const cleanPhone = formatToE164Phone(billingDetails?.phone);
 
-        if (cleanName || cleanEmail || cleanPhone) {
-          confirmParams.payment_method_data = {
-            billing_details: {
-              ...(cleanName ? { name: cleanName } : {}),
-              ...(cleanEmail ? { email: cleanEmail } : {}),
-              ...(cleanPhone ? { phone: cleanPhone } : {}),
-            },
-          };
-        }
+        // Always guarantee billing_details object is provided
+        const billingDetailsObj: Record<string, string> = {
+          name: cleanName || 'Cliente',
+        };
+
         if (cleanEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+          billingDetailsObj.email = cleanEmail;
           confirmParams.receipt_email = cleanEmail;
         }
+
+        if (cleanPhone) {
+          billingDetailsObj.phone = cleanPhone;
+        }
+
+        confirmParams.payment_method_data = {
+          billing_details: billingDetailsObj,
+        };
 
         const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
@@ -109,7 +198,7 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
             billingDetails: {
               name: 'never',
               email: 'never',
-              phone: 'never',
+              phone: 'auto',
             },
           },
           paymentMethodOrder: ['card'],

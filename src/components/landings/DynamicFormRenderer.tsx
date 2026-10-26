@@ -11,6 +11,66 @@ export const isValidStripePublishableKey = (key?: string | null): boolean => {
   return clean.startsWith('pk_test_') || clean.startsWith('pk_live_');
 };
 
+export interface CountryDialCode {
+  code: string;
+  country: string;
+  flag: string;
+  iso: string;
+  placeholder?: string;
+}
+
+export const COUNTRY_DIAL_CODES: CountryDialCode[] = [
+  { code: '+593', country: 'Ecuador', flag: '🇪🇨', iso: 'EC', placeholder: '98 372 5228' },
+  { code: '+1', country: 'Estados Unidos / Canadá', flag: '🇺🇸', iso: 'US', placeholder: '202 555 0123' },
+  { code: '+52', country: 'México', flag: '🇲🇽', iso: 'MX', placeholder: '55 1234 5678' },
+  { code: '+57', country: 'Colombia', flag: '🇨🇴', iso: 'CO', placeholder: '310 123 4567' },
+  { code: '+56', country: 'Chile', flag: '🇨🇱', iso: 'CL', placeholder: '9 1234 5678' },
+  { code: '+51', country: 'Perú', flag: '🇵🇪', iso: 'PE', placeholder: '912 345 678' },
+  { code: '+54', country: 'Argentina', flag: '🇦🇷', iso: 'AR', placeholder: '9 11 1234 5678' },
+  { code: '+34', country: 'España', flag: '🇪🇸', iso: 'ES', placeholder: '612 34 56 78' },
+  { code: '+502', country: 'Guatemala', flag: '🇬🇹', iso: 'GT', placeholder: '5123 4567' },
+  { code: '+503', country: 'El Salvador', flag: '🇸🇻', iso: 'SV', placeholder: '7123 4567' },
+  { code: '+504', country: 'Honduras', flag: '🇭🇳', iso: 'HN', placeholder: '9123 4567' },
+  { code: '+505', country: 'Nicaragua', flag: '🇳🇮', iso: 'NI', placeholder: '8123 4567' },
+  { code: '+506', country: 'Costa Rica', flag: '🇨🇷', iso: 'CR', placeholder: '8123 4567' },
+  { code: '+507', country: 'Panamá', flag: '🇵🇦', iso: 'PA', placeholder: '6123 4567' },
+  { code: '+58', country: 'Venezuela', flag: '🇻🇪', iso: 'VE', placeholder: '412 123 4567' },
+  { code: '+591', country: 'Bolivia', flag: '🇧🇴', iso: 'BO', placeholder: '7123 4567' },
+  { code: '+595', country: 'Paraguay', flag: '🇵🇾', iso: 'PY', placeholder: '981 123 456' },
+  { code: '+598', country: 'Uruguay', flag: '🇺🇾', iso: 'UY', placeholder: '94 123 456' },
+  { code: '+1809', country: 'Rep. Dominicana', flag: '🇩🇴', iso: 'DO', placeholder: '809 123 4567' },
+  { code: '+55', country: 'Brasil', flag: '🇧🇷', iso: 'BR', placeholder: '11 91234 5678' },
+  { code: '+44', country: 'Reino Unido', flag: '🇬🇧', iso: 'GB', placeholder: '7123 456789' },
+  { code: '+49', country: 'Alemania', flag: '🇩🇪', iso: 'DE', placeholder: '151 12345678' },
+  { code: '+33', country: 'Francia', flag: '🇫🇷', iso: 'FR', placeholder: '6 12 34 56 78' },
+  { code: '+39', country: 'Italia', flag: '🇮🇹', iso: 'IT', placeholder: '312 345 6789' },
+];
+
+export const parsePhoneNumber = (fullPhone: string, fallbackCode = '+593'): { code: string; national: string } => {
+  if (!fullPhone || typeof fullPhone !== 'string') return { code: fallbackCode, national: '' };
+  const trimmed = fullPhone.trim();
+
+  // Sort codes by length descending so +1809 matches before +1
+  const sortedCodes = [...COUNTRY_DIAL_CODES].sort((a, b) => b.code.length - a.code.length);
+  for (const c of sortedCodes) {
+    if (trimmed.startsWith(c.code)) {
+      let nat = trimmed.substring(c.code.length).replace(/\D/g, '');
+      if (nat.startsWith('0')) nat = nat.replace(/^0+/, '');
+      return { code: c.code, national: nat };
+    }
+  }
+
+  if (trimmed.startsWith('+')) {
+    const digits = trimmed.substring(1).replace(/\D/g, '');
+    const clean = digits.startsWith('0') ? digits.replace(/^0+/, '') : digits;
+    return { code: fallbackCode, national: clean };
+  }
+
+  const digits = trimmed.replace(/\D/g, '');
+  const clean = digits.startsWith('0') ? digits.replace(/^0+/, '') : digits;
+  return { code: fallbackCode, national: clean };
+};
+
 interface Props {
   landingId?: string | number | null;
   isPreview?: boolean;
@@ -54,6 +114,8 @@ export const DynamicFormRenderer: React.FC<Props> = ({
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [isBtnHovered, setIsBtnHovered] = useState(false);
+  const [phoneCountryCodes, setPhoneCountryCodes] = useState<Record<string, string>>({});
+  const [phoneZeroWarnings, setPhoneZeroWarnings] = useState<Record<string, boolean>>({});
 
   // Stripe Payment State
   const [resolvedPublishableKey, setResolvedPublishableKey] = useState<string | null>(stripePublishableKey || null);
@@ -184,6 +246,33 @@ export const DynamicFormRenderer: React.FC<Props> = ({
     }
   };
 
+  const handlePhoneInputChange = (field: FormFieldSchema, rawInput: string, dialCode: string) => {
+    let nationalDigits = rawInput.replace(/\D/g, '');
+    let hadLeadingZero = false;
+
+    // Detect and automatically strip leading 0 to prevent international dialing errors
+    if (nationalDigits.startsWith('0')) {
+      nationalDigits = nationalDigits.replace(/^0+/, '');
+      hadLeadingZero = true;
+    }
+
+    setPhoneZeroWarnings((prev) => ({
+      ...prev,
+      [field.name]: hadLeadingZero,
+    }));
+
+    const fullVal = nationalDigits ? `${dialCode}${nationalDigits}` : '';
+    handleInputChange(field, fullVal);
+  };
+
+  const handlePhoneCountryChange = (field: FormFieldSchema, newCode: string, currentVal: string) => {
+    setPhoneCountryCodes((prev) => ({ ...prev, [field.name]: newCode }));
+    const currentCode = phoneCountryCodes[field.name] || '+593';
+    const { national } = parsePhoneNumber(currentVal, currentCode);
+    const fullVal = national ? `${newCode}${national}` : '';
+    handleInputChange(field, fullVal);
+  };
+
   const handleFieldBlur = (field: FormFieldSchema) => {
     const required = isFieldRequired(field);
     const val = formData[field.name];
@@ -200,6 +289,14 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         setErrors((prev) => ({
           ...prev,
           [field.name]: 'Ingresa un correo electrónico válido',
+        }));
+      }
+    } else if (!isEmpty && field.type === 'phone') {
+      const digitsOnly = String(val).replace(/\D/g, '');
+      if (digitsOnly.length < 8) {
+        setErrors((prev) => ({
+          ...prev,
+          [field.name]: 'Ingresa un número telefónico válido (mínimo 7-8 dígitos)',
         }));
       }
     }
@@ -225,6 +322,11 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (typeof val === 'string' && !emailRegex.test(val.trim())) {
           newErrors[field.name] = 'Ingresa un correo electrónico válido';
+        }
+      } else if (!isEmpty && field.type === 'phone') {
+        const digitsOnly = String(val).replace(/\D/g, '');
+        if (digitsOnly.length < 8) {
+          newErrors[field.name] = 'Ingresa un número telefónico válido (mínimo 7-8 dígitos)';
         }
       }
     });
@@ -280,10 +382,38 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           throw new Error('El formulario de tarjeta no está listo.');
         }
 
-        // Extract customer billing details from form inputs to sync with Stripe
-        const customerName = (formData['name'] || [formData['first_name'], formData['last_name']].filter(Boolean).join(' ') || '').trim();
-        const customerEmail = (formData['email'] || '').trim();
-        const customerPhone = (formData['phone'] || '').trim();
+        // Extract customer billing details from form inputs (supporting multiple standard naming conventions)
+        const findFieldValue = (types: string[], names: string[]): string => {
+          for (const k of names) {
+            if (formData[k] && typeof formData[k] === 'string' && formData[k].trim()) {
+              return formData[k].trim();
+            }
+          }
+          for (const f of fields) {
+            if ((types.includes(f.type) || names.includes(f.name)) && formData[f.name]) {
+              const val = String(formData[f.name]).trim();
+              if (val) return val;
+            }
+          }
+          return '';
+        };
+
+        const customerName = (
+          findFieldValue(
+            ['text'],
+            ['name', 'nombre', 'full_name', 'nombre_completo', 'f_name', 'client_name', 'first_name']
+          ) || [formData['first_name'], formData['last_name']].filter(Boolean).join(' ')
+        ).trim();
+
+        const customerEmail = findFieldValue(
+          ['email'],
+          ['email', 'correo', 'correo_electronico', 'mail', 'f_email']
+        );
+
+        const customerPhone = findFieldValue(
+          ['phone', 'tel'],
+          ['phone', 'telefono', 'celular', 'whatsapp', 'movil', 'f_phone']
+        );
 
         // Process payment securely with Stripe Elements & 3DS, attaching customer details
         const payRes = await stripeRef.current.confirmPayment({
@@ -769,6 +899,72 @@ export const DynamicFormRenderer: React.FC<Props> = ({
                   />
                   <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`} style={subtitleStyle}>Archivos permitidos: imágenes, PDF, comprobantes de pago (Máx. 5MB)</p>
                 </div>
+              ) : field.type === 'phone' ? (
+                (() => {
+                  const rawVal = typeof formData[field.name] === 'string' ? formData[field.name] : '';
+                  const parsed = parsePhoneNumber(rawVal, phoneCountryCodes[field.name] || '+593');
+                  const selectedCode = phoneCountryCodes[field.name] || parsed.code;
+                  const national = parsed.national;
+                  const currentCountryObj = COUNTRY_DIAL_CODES.find((c) => c.code === selectedCode) || COUNTRY_DIAL_CODES[0];
+
+                  return (
+                    <div className="w-full space-y-1" style={{ width: '100%' }}>
+                      <div className="flex items-center gap-2 w-full" style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                        {/* Selector de Código de Área / País */}
+                        <div className="relative shrink-0 w-32 sm:w-40" style={{ width: '135px', flexShrink: 0 }}>
+                          <select
+                            value={selectedCode}
+                            onChange={(e) => handlePhoneCountryChange(field, e.target.value, rawVal)}
+                            className={fieldClasses}
+                            style={{
+                              ...fieldInputStyle,
+                              cursor: 'pointer',
+                              paddingRight: '1rem',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                            }}
+                            title="Selecciona el código de país"
+                          >
+                            {COUNTRY_DIAL_CODES.map((c) => (
+                              <option
+                                key={c.code + c.country}
+                                value={c.code}
+                                style={{
+                                  backgroundColor: customStyles.input_bg_color || (isDark ? '#0f172a' : '#ffffff'),
+                                  color: customStyles.input_text_color || (isDark ? '#ffffff' : '#0f172a'),
+                                }}
+                              >
+                                {c.flag} {c.code} ({c.country.split(' ')[0]})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Input de Número Nacional */}
+                        <div className="relative flex-1 min-w-0" style={{ flex: 1, minWidth: 0 }}>
+                          <input
+                            type="tel"
+                            inputMode="numeric"
+                            value={national}
+                            onChange={(e) => handlePhoneInputChange(field, e.target.value, selectedCode)}
+                            onBlur={() => handleFieldBlur(field)}
+                            placeholder={field.placeholder || currentCountryObj.placeholder || '98 372 5228'}
+                            required={required}
+                            className={fieldClasses}
+                            style={{ display: 'block', width: '100%', boxSizing: 'border-box', ...fieldInputStyle }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Notificación interactiva si se escribió un 0 inicial */}
+                      {phoneZeroWarnings[field.name] && (
+                        <p className="text-[11px] text-amber-500 font-medium flex items-center gap-1 mt-1 animate-in fade-in" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>💡 El 0 inicial fue omitido automáticamente para formato internacional ({selectedCode}).</span>
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()
               ) : (
                 <input
                   type={field.type}
