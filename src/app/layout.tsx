@@ -1,14 +1,17 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
+import { getDomainMetadata } from '@/utils/seoHelper';
 import '@/index.css';
 
-export const metadata: Metadata = {
-  title: 'SANTUN Provider Portal',
-  description: 'Plataforma de gestión empresarial conectada a Laravel.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = headers();
+  const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
+  return await getDomainMetadata(host);
+}
 
 export default function RootLayout({
   children,

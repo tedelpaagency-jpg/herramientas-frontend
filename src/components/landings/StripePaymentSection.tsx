@@ -108,9 +108,10 @@ interface InnerProps {
   onReady?: () => void;
   appearanceConfig?: StripeAppearanceConfig | null;
   targetWindow?: Window | null;
+  clientSecret?: string | null;
 }
 
-const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady, appearanceConfig, targetWindow }, ref) => {
+const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady, appearanceConfig, targetWindow, clientSecret }, ref) => {
   const stripe = useStripe();
   const elements = useElements();
   const [elementError, setElementError] = useState<string | null>(null);
@@ -125,6 +126,20 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
       setElementError(null);
 
       try {
+        // 1. Si la intención de pago ya fue completada exitosamente (ej. reintento o cobro previo),
+        // evitamos llamar a confirmPayment de nuevo, lo cual provoca error 400 Bad Request de Stripe.
+        if (clientSecret) {
+          try {
+            const { paymentIntent: existingPI } = await stripe.retrievePaymentIntent(clientSecret);
+            if (existingPI && (existingPI.status === 'succeeded' || existingPI.status === 'processing')) {
+              console.log('[Stripe] PaymentIntent ya completado con éxito:', existingPI.id);
+              return { success: true, paymentIntentId: existingPI.id };
+            }
+          } catch (e) {
+            // Continuar con confirmPayment normal
+          }
+        }
+
         const returnUrl = getValidReturnUrl(targetWindow);
         const confirmParams: any = {
           return_url: returnUrl,
@@ -134,18 +149,15 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
         const cleanEmail = billingDetails?.email?.trim();
         const cleanPhone = formatToE164Phone(billingDetails?.phone);
 
-        // Always guarantee billing_details object is provided
+        // Garantizar que todos los campos configurados como 'never' cuenten con valor
         const billingDetailsObj: Record<string, string> = {
           name: cleanName || 'Cliente',
+          phone: cleanPhone || '+593999999999',
+          email: (cleanEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) ? cleanEmail : 'cliente@portal.com',
         };
 
         if (cleanEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-          billingDetailsObj.email = cleanEmail;
           confirmParams.receipt_email = cleanEmail;
-        }
-
-        if (cleanPhone) {
-          billingDetailsObj.phone = cleanPhone;
         }
 
         confirmParams.payment_method_data = {
@@ -159,6 +171,19 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
         });
 
         if (error) {
+          // Verificar si a pesar del error devuelto por el SDK el pago ya se ejecutó en Stripe
+          if (clientSecret) {
+            try {
+              const { paymentIntent: retrievedPI } = await stripe.retrievePaymentIntent(clientSecret);
+              if (retrievedPI && (retrievedPI.status === 'succeeded' || retrievedPI.status === 'processing')) {
+                console.log('[Stripe] PaymentIntent completado en backend a pesar del mensaje devuelto:', retrievedPI.id);
+                return { success: true, paymentIntentId: retrievedPI.id };
+              }
+            } catch (e) {
+              // ignore
+            }
+          }
+
           console.error('[Stripe confirmPayment error]', {
             type: error.type,
             code: error.code,
@@ -178,6 +203,15 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
         setElementError(fallbackMsg);
         return { success: false, error: fallbackMsg };
       } catch (err: any) {
+        if (clientSecret && stripe) {
+          try {
+            const { paymentIntent: piAfterErr } = await stripe.retrievePaymentIntent(clientSecret);
+            if (piAfterErr && (piAfterErr.status === 'succeeded' || piAfterErr.status === 'processing')) {
+              return { success: true, paymentIntentId: piAfterErr.id };
+            }
+          } catch (e) {}
+        }
+
         const msg = err?.message || 'Error de conexión con la pasarela Stripe.';
         setElementError(msg);
         return { success: false, error: msg };
@@ -198,7 +232,7 @@ const StripeInnerCheckout = forwardRef<StripePaymentRef, InnerProps>(({ onReady,
             billingDetails: {
               name: 'never',
               email: 'never',
-              phone: 'auto',
+              phone: 'never',
             },
           },
           paymentMethodOrder: ['card'],
@@ -474,7 +508,12 @@ export const StripePaymentSection = forwardRef<StripePaymentRef, Props>(
               </div>
             </div>
 
-            <StripeInnerCheckout ref={ref} appearanceConfig={appearanceConfig} targetWindow={targetWindow} />
+            <StripeInnerCheckout
+              ref={ref}
+              appearanceConfig={appearanceConfig}
+              targetWindow={targetWindow}
+              clientSecret={clientSecret}
+            />
           </div>
         </Elements>
       </div>

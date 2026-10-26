@@ -1,9 +1,26 @@
-'use client';
-
 import React, { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import PublicInmobiliariaDetailView from '@/views/inmobiliaria/PublicInmobiliariaDetailView';
+import { getPropertyMetadata } from '@/utils/seoHelper';
 
-export default function PublicPropertyDetailRoutePage({ params }: { params: { slug: string } }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const headersList = headers();
+  const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
+  return await getPropertyMetadata(params.slug, host);
+}
+
+export default function PublicPropertyDetailRoutePage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const decodedSlug = decodeURIComponent(params.slug);
+
   return (
     <Suspense
       fallback={
@@ -12,8 +29,7 @@ export default function PublicPropertyDetailRoutePage({ params }: { params: { sl
         </div>
       }
     >
-      <PublicInmobiliariaDetailView slug={decodeURIComponent(params.slug)} />
+      <PublicInmobiliariaDetailView slug={decodedSlug} />
     </Suspense>
   );
 }
-

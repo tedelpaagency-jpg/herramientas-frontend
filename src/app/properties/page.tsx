@@ -1,7 +1,14 @@
-'use client';
-
 import React, { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import PublicInmobiliariaPropertiesView from '@/views/inmobiliaria/PublicInmobiliariaPropertiesView';
+import { getCatalogMetadata } from '@/utils/seoHelper';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = headers();
+  const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
+  return await getCatalogMetadata(host);
+}
 
 export default function PublicPropertiesRoutePage() {
   return (
@@ -16,4 +23,3 @@ export default function PublicPropertiesRoutePage() {
     </Suspense>
   );
 }
-

@@ -290,6 +290,24 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           ...prev,
           [field.name]: 'Ingresa un correo electrónico válido',
         }));
+      } else if (typeof val === 'string' && emailRegex.test(val.trim()) && landingId && !isPreview) {
+        landingService
+          .validateEmail(val.trim(), landingId)
+          .then((res) => {
+            if (!res.available) {
+              setErrors((prev) => ({
+                ...prev,
+                [field.name]: res.message || 'Este correo electrónico ya no está disponible.',
+              }));
+            }
+          })
+          .catch((err) => {
+            const msg = err?.response?.data?.message || 'Este correo electrónico ya no está disponible.';
+            setErrors((prev) => ({
+              ...prev,
+              [field.name]: msg,
+            }));
+          });
       }
     } else if (!isEmpty && field.type === 'phone') {
       const digitsOnly = String(val).replace(/\D/g, '');
@@ -415,6 +433,36 @@ export const DynamicFormRenderer: React.FC<Props> = ({
           ['phone', 'telefono', 'celular', 'whatsapp', 'movil', 'f_phone']
         );
 
+        // Pre-validar disponibilidad del correo electrónico en el backend ANTES de contactar a Stripe
+        if (customerEmail && landingId && !isPreview) {
+          try {
+            const emailCheck = await landingService.validateEmail(customerEmail, landingId);
+            if (!emailCheck.available) {
+              const msg = emailCheck.message || `El correo '${customerEmail}' ya no está disponible.`;
+              setStripeElementError(msg);
+              const emailField = fields.find(
+                (f) => f.type === 'email' || f.name.includes('email') || f.name.includes('correo')
+              );
+              if (emailField) {
+                setErrors((prev) => ({ ...prev, [emailField.name]: msg }));
+              }
+              setIsProcessingPayment(false);
+              return; // Detener flujo inmediatamente antes de tocar Stripe
+            }
+          } catch (valErr: any) {
+            const msg = valErr?.response?.data?.message || `El correo '${customerEmail}' ya no está disponible.`;
+            setStripeElementError(msg);
+            const emailField = fields.find(
+              (f) => f.type === 'email' || f.name.includes('email') || f.name.includes('correo')
+            );
+            if (emailField) {
+              setErrors((prev) => ({ ...prev, [emailField.name]: msg }));
+            }
+            setIsProcessingPayment(false);
+            return; // Detener flujo inmediatamente antes de tocar Stripe
+          }
+        }
+
         // Process payment securely with Stripe Elements & 3DS, attaching customer details
         const payRes = await stripeRef.current.confirmPayment({
           name: customerName || undefined,
@@ -436,6 +484,31 @@ export const DynamicFormRenderer: React.FC<Props> = ({
         setIsProcessingPayment(false);
       }
     } else {
+      const customerEmail = (formData['email'] || formData['correo'] || '').trim();
+      if (customerEmail && landingId && !isPreview) {
+        try {
+          const emailCheck = await landingService.validateEmail(customerEmail, landingId);
+          if (!emailCheck.available) {
+            const msg = emailCheck.message || `El correo '${customerEmail}' ya no está disponible.`;
+            const emailField = fields.find(
+              (f) => f.type === 'email' || f.name.includes('email') || f.name.includes('correo')
+            );
+            if (emailField) {
+              setErrors((prev) => ({ ...prev, [emailField.name]: msg }));
+            }
+            return;
+          }
+        } catch (valErr: any) {
+          const msg = valErr?.response?.data?.message || `El correo '${customerEmail}' ya no está disponible.`;
+          const emailField = fields.find(
+            (f) => f.type === 'email' || f.name.includes('email') || f.name.includes('correo')
+          );
+          if (emailField) {
+            setErrors((prev) => ({ ...prev, [emailField.name]: msg }));
+          }
+          return;
+        }
+      }
       await onSubmit(formData);
     }
   };

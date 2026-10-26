@@ -147,6 +147,17 @@ export const landingService = {
     const response = await apiClient.get(`/v1/public/landing-domain-lookup?domain=${encodeURIComponent(domain)}`);
     return response.data?.data || response.data;
   },
+
+  validateEmail: async (
+    email: string,
+    landingId?: string | number | null
+  ): Promise<{ status: string; available: boolean; message: string }> => {
+    const response = await apiClient.post('/v1/public/landings/validate-email', {
+      email,
+      landing_id: landingId,
+    });
+    return response.data;
+  },
 };
 
 export default landingService;
