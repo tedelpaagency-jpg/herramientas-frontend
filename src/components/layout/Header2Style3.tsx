@@ -121,27 +121,99 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
   };
 
   const agencyPhone = agency?.phone || agency?.whatsapp || '+52 55 1234 5678';
-  const logoUrl = agency?.logo || agency?.logo_2 || '/assets/img/header-logo2.svg';
+  const rawLogo = agency?.logo || agency?.logo_2;
+  const hasCustomLogo = Boolean(
+    rawLogo &&
+      typeof rawLogo === 'string' &&
+      rawLogo.trim() !== '' &&
+      !rawLogo.includes('header-logo2.svg') &&
+      !rawLogo.includes('header-logo.svg')
+  );
+  const logoUrl = hasCustomLogo ? rawLogo : null;
+  const primaryColor = agency?.primary_color || '#00a884';
   const agencyName = agency?.name || 'Inmobiliaria';
 
   return (
     <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`}>
       <div className="container-fluid d-flex flex-nowrap align-items-center justify-content-between">
         <div className="logo-and-menu-area">
-          <Link href="/" className="header-logo" style={{ display: 'flex', alignItems: 'center', minHeight: '50px' }}>
-            {logoUrl.endsWith('.svg') || logoUrl.startsWith('/') ? (
-              <Image width={180} height={48} src={logoUrl} alt={agencyName} style={{ maxHeight: '48px', width: 'auto', objectFit: 'contain' }} />
+          <Link href="/" className="header-logo" style={{ display: 'flex', alignItems: 'center', minHeight: '50px', textDecoration: 'none' }}>
+            {logoUrl ? (
+              <img src={logoUrl} alt={agencyName} style={{ maxHeight: '46px', maxWidth: '210px', width: 'auto', objectFit: 'contain' }} />
             ) : (
-              <img src={logoUrl} alt={agencyName} style={{ maxHeight: '48px', width: 'auto', objectFit: 'contain' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '12px',
+                    backgroundColor: primaryColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                    fontWeight: 900,
+                    fontSize: '18px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                    flexShrink: 0,
+                  }}
+                >
+                  {agencyName.charAt(0).toUpperCase()}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span
+                    style={{
+                      fontSize: '18px',
+                      fontWeight: 900,
+                      color: '#0f172a',
+                      lineHeight: 1.15,
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {agencyName}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 800,
+                      color: '#94a3b8',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                    }}
+                  >
+                    Portal Inmobiliario
+                  </span>
+                </div>
+              </div>
             )}
           </Link>
           <div className={`main-menu ${state.isSidebarOpen ? "show-menu" : ""}`}>
             <div className="mobile-logo-area d-xl-none d-flex align-items-center justify-content-between">
-              <Link href="/" className="mobile-logo-wrap">
-                {logoUrl.endsWith('.svg') || logoUrl.startsWith('/') ? (
-                  <Image width={160} height={45} src={logoUrl} alt={agencyName} style={{ maxHeight: '45px', width: 'auto', objectFit: 'contain' }} />
+              <Link href="/" className="mobile-logo-wrap" style={{ textDecoration: 'none' }}>
+                {logoUrl ? (
+                  <img src={logoUrl} alt={agencyName} style={{ maxHeight: '42px', maxWidth: '180px', width: 'auto', objectFit: 'contain' }} />
                 ) : (
-                  <img src={logoUrl} alt={agencyName} style={{ maxHeight: '45px', width: 'auto', objectFit: 'contain' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '10px',
+                        backgroundColor: primaryColor,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#ffffff',
+                        fontWeight: 900,
+                        fontSize: '16px',
+                      }}
+                    >
+                      {agencyName.charAt(0).toUpperCase()}
+                    </div>
+                    <span style={{ fontSize: '16px', fontWeight: 900, color: '#0f172a' }}>
+                      {agencyName}
+                    </span>
+                  </div>
                 )}
               </Link>
               <div className="menu-close-btn" onClick={toggleSidebar}>

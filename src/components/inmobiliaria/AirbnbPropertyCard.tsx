@@ -118,8 +118,8 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
           : 'bg-white hover:bg-slate-50/90 hover:shadow-md border border-slate-200/80 hover:border-slate-300'
       } active:scale-[0.99]`}
     >
-      {/* Carrusel de fotos compacto */}
-      <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden bg-slate-100 shadow-2xs border border-slate-200/60">
+      {/* Carrusel de fotos adaptado para 3 columnas estilo Airbnb */}
+      <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-100 shadow-2xs border border-slate-200/60">
         <img
           src={images[currentIdx]}
           alt={estate.title}

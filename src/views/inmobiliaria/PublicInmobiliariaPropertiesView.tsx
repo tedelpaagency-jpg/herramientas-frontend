@@ -62,7 +62,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     currentPage: 1,
     lastPage: 1,
     total: 0,
-    perPage: 15,
+    perPage: 18,
   });
 
   // Filter states
@@ -112,7 +112,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           price_max: searchParams?.get('price_max') || undefined,
           sort: (searchParams?.get('sort') as any) || sort,
           page: currentPage,
-          per_page: 15,
+          per_page: 18,
         });
 
         if (!active) return;
@@ -123,7 +123,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           currentPage: p?.current_page || 1,
           lastPage: p?.last_page || 1,
           total: p?.total || 0,
-          perPage: p?.per_page || 15,
+          perPage: p?.per_page || 18,
         });
 
         // Default selected estate on initial desktop load
@@ -327,9 +327,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
       <main className="w-full flex-1 flex flex-col min-h-0 bg-slate-50">
         <div className="w-full h-[calc(100vh-175px)] min-h-[580px] flex flex-col lg:flex-row overflow-hidden border-t border-slate-200">
           
-          {/* Contenedor Izquierdo: 30% con scrollbar propio para los cards pequeños */}
+          {/* Contenedor Izquierdo: 3 columnas de cards con scrollbar propio */}
           <div
-            className={`w-full lg:w-[30%] lg:min-w-[300px] lg:max-w-[420px] xl:w-[30%] h-full overflow-y-auto px-3.5 py-3 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs ${
+            className={`w-full lg:w-[58%] xl:w-[56%] 2xl:w-[54%] h-full overflow-y-auto px-3.5 sm:px-4 py-3 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs ${
               mobileView === 'map' ? 'hidden lg:flex' : 'flex'
             }`}
           >
@@ -345,11 +345,11 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               </div>
 
               {loading ? (
-                /* Shimmer Skeletons compactos */
-                <div className="flex flex-col gap-3">
-                  {[1, 2, 3, 4].map((n) => (
+                /* Shimmer Skeletons compactos en 3 columnas */
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3">
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
                     <div key={n} className="p-2 rounded-2xl border border-slate-100 space-y-2">
-                      <div className="aspect-[16/10] rounded-xl bg-slate-100 animate-pulse" />
+                      <div className="aspect-[4/3] rounded-xl bg-slate-100 animate-pulse" />
                       <div className="h-3.5 bg-slate-100 rounded w-3/4 animate-pulse" />
                       <div className="h-3 bg-slate-100 rounded w-1/2 animate-pulse" />
                       <div className="h-4 bg-slate-100 rounded w-1/3 animate-pulse" />
@@ -357,8 +357,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   ))}
                 </div>
               ) : estates.length > 0 ? (
-                /* Listado de cards más pequeños */
-                <div className="flex flex-col gap-2.5">
+                /* Listado de propiedades en 3 columnas adaptadas */
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3">
                   {estates.map((estate) => (
                     <AirbnbPropertyCard
                       key={estate.id}
@@ -440,9 +440,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
             )}
           </div>
 
-          {/* Contenedor Derecho: 70% Mapa interactivo que llena toda la altura sin dejar blanco debajo */}
+          {/* Contenedor Derecho: Mapa interactivo a pantalla completa sin espacios en blanco */}
           <div
-            className={`w-full lg:w-[70%] xl:w-[70%] h-full relative overflow-hidden bg-slate-100 flex-1 ${
+            className={`w-full lg:w-[42%] xl:w-[44%] 2xl:w-[46%] h-full relative overflow-hidden bg-slate-100 flex-1 ${
               mobileView === 'list' ? 'hidden lg:block' : 'block'
             }`}
           >
