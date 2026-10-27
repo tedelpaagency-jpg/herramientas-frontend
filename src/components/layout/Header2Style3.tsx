@@ -160,30 +160,17 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                 >
                   {agencyName.charAt(0).toUpperCase()}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span
-                    style={{
-                      fontSize: '18px',
-                      fontWeight: 900,
-                      color: '#0f172a',
-                      lineHeight: 1.15,
-                      letterSpacing: '-0.02em',
-                    }}
-                  >
-                    {agencyName}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 800,
-                      color: '#94a3b8',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.08em',
-                    }}
-                  >
-                    Portal Inmobiliario
-                  </span>
-                </div>
+                <span
+                  style={{
+                    fontSize: '20px',
+                    fontWeight: 900,
+                    color: '#0f172a',
+                    lineHeight: 1.15,
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {agencyName}
+                </span>
               </div>
             )}
           </Link>

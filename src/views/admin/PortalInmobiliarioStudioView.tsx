@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import {
   Globe, Sparkles, Building2, ShieldCheck, CheckCircle2, AlertTriangle, AlertCircle,
   RefreshCw, Loader2, ExternalLink, Eye, Image as ImageIcon, Laptop, Tablet, Smartphone,
-  Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy
+  Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
+  Target, Compass, Users
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -916,42 +917,183 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-emerald-600" /> Sección Conócenos / Historia de la Agencia
+                    <Building2 className="w-4 h-4 text-emerald-600" /> Sección Conócenos / Identidad Institucional
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Presenta la trayectoria, valores y fortalezas que transmiten seguridad a compradores y propietarios.
+                    Configura la historia, misión, visión y equipo de agentes para la página pública de Conócenos.
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                      Título de Presentación:
-                    </label>
-                    <input
-                      type="text"
-                      value={form.about_title || ''}
-                      onChange={(e) => setForm({ ...form, about_title: e.target.value })}
-                      placeholder="Ej: Somos Tu Aliado Inmobiliario de Confianza"
-                      className="w-full px-4 py-2.5 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                    />
+                <div className="space-y-6">
+                  {/* 1. Quiénes Somos */}
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
+                    <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Quiénes Somos / Presentación
+                    </h4>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                        Título de Presentación:
+                      </label>
+                      <input
+                        type="text"
+                        value={form.about_title || ''}
+                        onChange={(e) => setForm({ ...form, about_title: e.target.value })}
+                        placeholder="Ej: Somos Tu Aliado Inmobiliario de Confianza"
+                        className="w-full px-4 py-2.5 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                        Texto de Presentación e Historia:
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={form.about_text || ''}
+                        onChange={(e) => setForm({ ...form, about_text: e.target.value })}
+                        placeholder="Especialistas en la comercialización, compraventa y arrendamiento..."
+                        className="w-full px-4 py-2.5 text-xs font-medium bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1.5">
+                        Imagen de Quiénes Somos:
+                      </label>
+                      <MediaPicker
+                        value={form.details?.about_image || ''}
+                        onChange={(selected) => updateDetailField('about_image', selected?.url || '')}
+                        label="Seleccionar o Subir Imagen Quiénes Somos"
+                        type="image"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                      Texto de Presentación y Trayectoria:
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={form.about_text || ''}
-                      onChange={(e) => setForm({ ...form, about_text: e.target.value })}
-                      placeholder="Especialistas en la comercialización, compraventa y arrendamiento..."
-                      className="w-full px-4 py-2.5 text-xs font-medium bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                    />
+                  {/* 2. Misión y Visión */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Misión */}
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+                      <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                        <Target className="w-3.5 h-3.5 text-emerald-600" />
+                        Nuestra Misión
+                      </h4>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                          Título Misión:
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.mission_title || 'Nuestra Misión'}
+                          onChange={(e) => updateDetailField('mission_title', e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                          Texto Misión:
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={form.details?.mission_text || ''}
+                          onChange={(e) => updateDetailField('mission_text', e.target.value)}
+                          placeholder="Brindar soluciones inmobiliarias seguras, transparentes e innovadoras..."
+                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                          Imagen Misión:
+                        </label>
+                        <MediaPicker
+                          value={form.details?.mission_image || ''}
+                          onChange={(selected) => updateDetailField('mission_image', selected?.url || '')}
+                          label="Subir Imagen de Misión"
+                          type="image"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Visión */}
+                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+                      <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                        <Compass className="w-3.5 h-3.5 text-blue-600" />
+                        Nuestra Visión
+                      </h4>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                          Título Visión:
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.vision_title || 'Nuestra Visión'}
+                          onChange={(e) => updateDetailField('vision_title', e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                          Texto Visión:
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={form.details?.vision_text || ''}
+                          onChange={(e) => updateDetailField('vision_text', e.target.value)}
+                          placeholder="Ser la agencia inmobiliaria de referencia por excelencia, liderando con tecnología..."
+                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                          Imagen Visión:
+                        </label>
+                        <MediaPicker
+                          value={form.details?.vision_image || ''}
+                          onChange={(selected) => updateDetailField('vision_image', selected?.url || '')}
+                          label="Subir Imagen de Visión"
+                          type="image"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Valores y Equipo de Asesores */}
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
+                    <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-emerald-600" />
+                      Sección de Asesores / Agentes
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                          Título de la Sección Agentes:
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.team_title || 'Nuestro Equipo de Asesores'}
+                          onChange={(e) => updateDetailField('team_title', e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                          Subtítulo de la Sección:
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.team_subtitle || 'Expertos profesionales listos para asesorarte en cada paso'}
+                          onChange={(e) => updateDetailField('team_subtitle', e.target.value)}
+                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500 italic">
+                      * Los asesores mostrados se sincronizan automáticamente desde los usuarios y agentes registrados y activos en la plataforma para tu agencia.
+                    </p>
                   </div>
 
                   {/* Puntos Clave */}
-                  <div className="space-y-2 pt-2">
+                  <div className="space-y-2 pt-1">
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
                       Puntos de Certeza y Valor:
                     </label>
@@ -976,7 +1118,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                   </div>
 
                   {/* Estadísticas de Nosotros */}
-                  <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="grid grid-cols-2 gap-3 pt-1">
                     <div>
                       <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Años de Trayectoria:</span>
                       <div className="flex gap-2">

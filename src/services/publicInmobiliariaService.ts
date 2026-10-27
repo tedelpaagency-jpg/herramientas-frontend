@@ -37,6 +37,15 @@ export interface PublicAgencyConfig {
   is_inmosoft?: boolean;
   redirect_to_login?: boolean;
   portal_url?: string;
+  details?: Record<string, any>;
+  agents?: Array<{
+    id: number;
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    photo?: string | null;
+    role?: string | null;
+  }>;
 }
 
 export interface PublicEstateItem {

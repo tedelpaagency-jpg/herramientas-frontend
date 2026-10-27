@@ -11,6 +11,8 @@ import {
   ChevronRight,
   Map as MapIcon,
   List as ListIcon,
+  Columns,
+  LayoutGrid,
   X,
 } from 'lucide-react';
 import publicInmobiliariaService, {
@@ -84,6 +86,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
   // Mobile view toggle (list vs map)
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
+
+  // Desktop view mode toggle (split vs full list vs full map)
+  const [viewMode, setViewMode] = useState<'split' | 'list' | 'map'>('split');
 
   // Load agency config
   useEffect(() => {
@@ -301,8 +306,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               })}
             </div>
 
-            {/* Selector de ordenamiento */}
-            <div className="hidden sm:flex items-center gap-2 shrink-0">
+            {/* Selector de ordenamiento y Modo de Vista */}
+            <div className="hidden sm:flex items-center gap-2.5 shrink-0">
               <span className="text-xs font-semibold text-slate-500">Ordenar:</span>
               <select
                 value={sort}
@@ -318,6 +323,51 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 <option value="price_asc">Menor precio</option>
                 <option value="price_desc">Mayor precio</option>
               </select>
+
+              {/* Selector de Modo de Visualización en Pantallas Grandes */}
+              <div className="hidden lg:flex items-center p-1 rounded-full bg-slate-100 border border-slate-200 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('split')}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    viewMode === 'split'
+                      ? 'bg-white text-slate-900 shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Dividir pantalla: listado y mapa interactivo"
+                >
+                  <Columns className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Dividido</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    viewMode === 'list'
+                      ? 'bg-white text-slate-900 shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Ver sólo catálogo de propiedades a pantalla completa"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Solo Lista</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewMode('map')}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    viewMode === 'map'
+                      ? 'bg-white text-slate-900 shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Ocultar listado y ver sólo mapa interactivo a pantalla completa"
+                >
+                  <MapIcon className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Solo Mapa</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -327,10 +377,16 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
       <main className="w-full flex-1 flex flex-col min-h-0 bg-slate-50">
         <div className="w-full h-[calc(100vh-175px)] min-h-[580px] flex flex-col lg:flex-row overflow-hidden border-t border-slate-200">
           
-          {/* Contenedor Izquierdo: 3 columnas de cards con scrollbar propio */}
+          {/* Contenedor Izquierdo: Catálogo de propiedades */}
           <div
-            className={`w-full lg:w-[58%] xl:w-[56%] 2xl:w-[54%] h-full overflow-y-auto px-3.5 sm:px-4 py-3 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs ${
-              mobileView === 'map' ? 'hidden lg:flex' : 'flex'
+            className={`${
+              viewMode === 'map'
+                ? 'hidden'
+                : viewMode === 'list'
+                ? 'w-full h-full overflow-y-auto px-4 sm:px-8 py-4 flex flex-col justify-between bg-white'
+                : `w-full lg:w-[58%] xl:w-[56%] 2xl:w-[54%] h-full overflow-y-auto px-3.5 sm:px-4 py-3 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs ${
+                    mobileView === 'map' ? 'hidden lg:flex' : 'flex'
+                  }`
             }`}
           >
             <div className="space-y-3">
@@ -345,8 +401,14 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               </div>
 
               {loading ? (
-                /* Shimmer Skeletons compactos en 3 columnas */
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3">
+                /* Shimmer Skeletons compactos */
+                <div
+                  className={
+                    viewMode === 'list'
+                      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-4'
+                      : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3'
+                  }
+                >
                   {[1, 2, 3, 4, 5, 6].map((n) => (
                     <div key={n} className="p-2 rounded-2xl border border-slate-100 space-y-2">
                       <div className="aspect-[4/3] rounded-xl bg-slate-100 animate-pulse" />
@@ -357,8 +419,14 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   ))}
                 </div>
               ) : estates.length > 0 ? (
-                /* Listado de propiedades en 3 columnas adaptadas */
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3">
+                /* Listado de propiedades */
+                <div
+                  className={
+                    viewMode === 'list'
+                      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-4'
+                      : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3'
+                  }
+                >
                   {estates.map((estate) => (
                     <AirbnbPropertyCard
                       key={estate.id}
@@ -369,6 +437,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                       isSelected={selectedEstate?.id === estate.id}
                       onSelect={(est) => {
                         setSelectedEstate(est);
+                        if (viewMode === 'list') {
+                          setViewMode('split');
+                        }
                       }}
                       onMouseEnter={() => setHoveredEstateId(estate.id)}
                       onMouseLeave={() => setHoveredEstateId(null)}
@@ -440,12 +511,32 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
             )}
           </div>
 
-          {/* Contenedor Derecho: Mapa interactivo a pantalla completa sin espacios en blanco */}
+          {/* Contenedor Derecho: Mapa interactivo (pantalla completa o split según modo) */}
           <div
-            className={`w-full lg:w-[42%] xl:w-[44%] 2xl:w-[46%] h-full relative overflow-hidden bg-slate-100 flex-1 ${
-              mobileView === 'list' ? 'hidden lg:block' : 'block'
+            className={`${
+              viewMode === 'list'
+                ? 'hidden'
+                : viewMode === 'map'
+                ? 'w-full h-full relative overflow-hidden bg-slate-100 flex-1 block'
+                : `w-full lg:w-[42%] xl:w-[44%] 2xl:w-[46%] h-full relative overflow-hidden bg-slate-100 flex-1 ${
+                    mobileView === 'list' ? 'hidden lg:block' : 'block'
+                  }`
             }`}
           >
+            {/* Botón flotante para regresar a vista dividida cuando está en modo Solo Mapa */}
+            {viewMode === 'map' && (
+              <div className="absolute top-4 left-4 z-[1000] hidden lg:block">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('split')}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-900/95 text-white font-black text-xs shadow-xl hover:bg-slate-800 active:scale-95 transition-all cursor-pointer backdrop-blur-xs border border-white/10"
+                >
+                  <Columns className="w-4 h-4 text-emerald-400" />
+                  <span>Mostrar Lista y Mapa</span>
+                </button>
+              </div>
+            )}
+
             <PublicPropertiesSplitMap
               estates={estates}
               agency={agency}
