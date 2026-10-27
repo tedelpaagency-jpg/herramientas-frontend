@@ -25,9 +25,11 @@ const REAL_ESTATE_COLOR_PRESETS = [
 ];
 
 export const PortalInmobiliarioStudioView: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
   const isWhiteLabelAdmin = user?.role === 'white_label_admin' || user?.roles?.some((r: any) => r.name === 'white_label_admin');
+  const canView = isSuperAdmin || hasPermission(['portal_inmobiliario.view', 'portal_inmobiliario.manage', 'portal_inmobiliario']);
+  const canManage = isSuperAdmin || hasPermission(['portal_inmobiliario.manage', 'portal_inmobiliario']);
   const [agencies, setAgencies] = useState<any[]>([]);
   const [selectedAgencyId, setSelectedAgencyId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -244,6 +246,10 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!canManage) {
+      setErrorMsg('No tiene permisos para modificar la configuración del portal.');
+      return;
+    }
     if (!selectedAgencyId) {
       setErrorMsg('Selecciona una agencia primero.');
       return;
@@ -308,6 +314,22 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
     );
   }
 
+  if (!canView) {
+    return (
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/50 p-10 text-center shadow-sm max-w-xl mx-auto my-12">
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+          <Globe className="w-7 h-7" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+          Módulo Portal Inmobiliario No Contratado
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+          El portal web inmobiliario con dominio personalizado no se encuentra habilitado en la suscripción activa de su agencia. Contacte al administrador de su Marca Blanca para actualizar su plan y activar este módulo.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-20">
       {/* 1. Header Studio Banner */}
@@ -351,7 +373,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
             <button
               type="button"
               onClick={() => handleSave()}
-              disabled={saving}
+              disabled={saving || !canManage}
               className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -1293,7 +1315,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleSave()}
-                disabled={saving}
+                disabled={saving || !canManage}
                 className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

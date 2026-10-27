@@ -239,7 +239,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isItemVisible = (item: { permission?: string | string[]; path?: string }) => {
     if (isSuperAdmin) return true;
-    if (isAgencyAdmin && item.path && (item.path.startsWith('/branding') || item.path.startsWith('/agencies'))) return true;
     if (!item.permission) return true;
     return hasPermission(item.permission);
   };
@@ -260,7 +259,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: 'ACM (Avalúo Comercial)', path: '/acm', icon: Calculator, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage', 'acm.view'] },
         { label: 'Propiedades e Inmuebles', path: '/estates', icon: Building2, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage'] },
-        { label: 'Portal Inmobiliario (Web)', path: '/portal-inmobiliario', icon: Globe, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.manage', 'custom_agency_branding', 'branding.view'] },
+        { label: 'Portal Inmobiliario (Web)', path: '/portal-inmobiliario', icon: Globe, permission: ['portal_inmobiliario.view', 'portal_inmobiliario.manage', 'portal_inmobiliario'] },
       ],
     },
     {
@@ -269,21 +268,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Visas Minoristas (Formularios)', path: '/visas', icon: FileCheck, permission: ['view_visas', 'visas.view', 'manage_visas'] },
       ],
     },
-    {
-      title: 'VISAS MAYORISTAS & B2B',
-      items: [
-        ...(isWhiteLabelAdmin || isSuperAdmin
-          ? [
+    ...((isWhiteLabelAdmin || isSuperAdmin)
+      ? [
+          {
+            title: 'VISAS MAYORISTAS & B2B',
+            items: [
               { label: 'Operaciones Mayorista B2B', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view', 'manage_visas'] },
               { label: 'Agencias Afiliadas B2B', path: '/visas/mayorista/agencias', icon: Building2, permission: ['view_visas', 'visas.view', 'manage_visas'] },
               { label: 'Configurar Visas B2B', path: '/visas/tipos', icon: Layers, permission: ['view_visas', 'visas.view', 'visas.processes.manage', 'manage_visas'] },
-            ]
-          : [
-              { label: 'Portal Mayorista (B2B)', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view', 'manage_visas'] },
-              { label: 'Políticas de Visados B2B', path: '/visas/politicas', icon: FileText, permission: ['view_visas', 'visas.view', 'visas.settings.manage', 'manage_visas'] },
-            ]),
-      ],
-    },
+            ],
+          },
+        ]
+      : []),
     {
       title: 'MODULO VIAJES & PAQUETES',
       items: [
@@ -336,7 +332,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           : []),
         { label: 'Usuarios & Equipo', path: '/users', icon: UserCheck, permission: ['manage_users', 'view_users', 'users.view'] },
         { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck, permission: ['roles.manage', 'manage_roles', 'roles.view', 'view_roles', 'roles', 'permission_groups.view', 'permission_groups.manage'] },
-        { label: 'Personalizar Marca Blanca', path: '/branding', icon: Palette, permission: ['custom_agency_branding', 'branding.view', 'branding.manage'] },
+        { label: isAgencyUser ? 'Personalizar Marca Agencia' : 'Personalizar Marca Blanca', path: '/branding', icon: Palette, permission: ['custom_agency_branding', 'branding.view', 'branding.manage'] },
         { label: 'Biblioteca de Medios', path: '/media', icon: ImageIcon, permission: ['courses.view', 'activities.view', 'agencies.view', 'media.view'] },
         ...(isSuperAdmin
           ? [

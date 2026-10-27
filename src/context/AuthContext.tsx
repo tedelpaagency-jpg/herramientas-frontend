@@ -298,24 +298,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const effectivePermissions: string[] = useMemo(() => {
     if (isSuperAdmin) return ['*'];
 
-    let basePerms: string[] = [];
-    if (Array.isArray((user as any)?.effective_permissions) && (user as any).effective_permissions.length > 0) {
-      basePerms = [...(user as any).effective_permissions];
+    // Lockout: If subscription is expired, no operational permissions are available
+    if ((user as any)?.subscription?.is_expired) {
+      return [];
     }
 
-    // Always merge current agency plan permissions if available
-    const agency = (user as any)?.agency || (user as any)?.agency_data || currentAgency;
-    const plan = agency?.current_subscription?.plan || agency?.currentSubscription?.plan || agency?.plan;
-    const planPerms = Array.isArray(plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
-      ? (plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
-      : [];
-    const extractedPlanPerms = planPerms.map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim()).filter(Boolean);
-
-    if (dashboardType === 'agency_admin' || !basePerms.length) {
-      basePerms = Array.from(new Set([...basePerms, ...extractedPlanPerms]));
+    let basePerms: string[] = [];
+    if (Array.isArray((user as any)?.effective_permissions)) {
+      basePerms = [...(user as any).effective_permissions];
     } else {
-      const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase().trim());
-      basePerms = Array.from(new Set([...basePerms, ...directPerms]));
+      // Fallback only if effective_permissions was not provided
+      const agency = (user as any)?.agency || (user as any)?.agency_data || currentAgency;
+      const sub = agency?.current_subscription || agency?.currentSubscription;
+      const plan = sub?.status === 'active' ? sub?.plan : null;
+      const planPerms = Array.isArray(plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
+        ? (plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
+        : [];
+      const extractedPlanPerms = planPerms.map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim()).filter(Boolean);
+
+      if (dashboardType === 'agency_admin') {
+        basePerms = extractedPlanPerms;
+      } else {
+        const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase().trim());
+        basePerms = directPerms.filter((p: string) => extractedPlanPerms.includes(p));
+      }
     }
 
     // Macro expansions for fast client-side rendering
@@ -329,10 +335,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (basePerms.some((p) => p.startsWith('estates') || p === 'view_estates' || p === 'manage_estates')) {
       macroExpanded.push('estates.view', 'estates.create', 'estates.edit', 'estates.delete', 'view_estates', 'manage_estates');
     }
+    if (basePerms.some((p) => p.startsWith('portal_inmobiliario'))) {
+      macroExpanded.push('portal_inmobiliario', 'portal_inmobiliario.view', 'portal_inmobiliario.manage');
+    }
     if (basePerms.some((p) => p.startsWith('lexvault') || p === 'view_lexvault' || p === 'manage_lexvault' || p.startsWith('contracts'))) {
       macroExpanded.push('lexvault.view', 'lexvault.create', 'lexvault.edit', 'lexvault.delete', 'view_lexvault', 'manage_lexvault', 'view_contracts', 'contracts.view');
     }
-    if (dashboardType === 'agency_admin' || basePerms.some((p) => p === 'custom_agency_branding' || p.startsWith('branding') || p.startsWith('estates') || p === 'manage_estates')) {
+    if (basePerms.some((p) => p === 'custom_agency_branding' || p.startsWith('branding.'))) {
       macroExpanded.push('custom_agency_branding', 'branding.view', 'branding.manage');
     }
     if (basePerms.some((p) => p.startsWith('campaigns') || p.startsWith('marketing') || p === 'email_marketing' || p === 'view_email_marketing')) {
@@ -392,6 +401,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'view_email_marketing',
       ];
       basePerms = Array.from(new Set([...basePerms, ...wlAdminDefaults]));
+    } else {
+      // Security: Strip White Label administrative permissions from agency users
+      const disallowed = [
+        'manage_agencies',
+        'manage_plans',
+        'manage_subscriptions',
+        'plans.view',
+        'plans.create',
+        'plans.edit',
+        'plans.delete',
+      ];
+      basePerms = basePerms.filter((p) => !disallowed.includes(p));
     }
 
     return basePerms;
