@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Search,
-  SlidersHorizontal,
   RotateCcw,
   Building2,
   ChevronLeft,
@@ -13,14 +12,13 @@ import {
   Map as MapIcon,
   List as ListIcon,
   X,
-  Sparkles,
 } from 'lucide-react';
 import publicInmobiliariaService, {
   PublicAgencyConfig,
   PublicEstateItem,
 } from '@/services/publicInmobiliariaService';
-import { AirbnbHeader } from '@/components/inmobiliaria/AirbnbHeader';
-import { PublicInmobiliariaFooter } from '@/views/inmobiliaria/PublicInmobiliariaLayout';
+import TopbarSlider from '@/components/topbar/TopbarSlider';
+import Header2Style3 from '@/components/layout/Header2Style3';
 import { AirbnbPropertyCard } from '@/components/inmobiliaria/AirbnbPropertyCard';
 
 // Dynamically import Leaflet Map to avoid SSR issues
@@ -29,7 +27,7 @@ const PublicPropertiesSplitMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full min-h-[500px] rounded-3xl bg-slate-100 flex flex-col items-center justify-center animate-pulse border border-slate-200/80">
+      <div className="w-full h-full min-h-[500px] bg-slate-100 flex flex-col items-center justify-center animate-pulse border border-slate-200">
         <MapIcon className="w-10 h-10 text-slate-300 animate-bounce mb-2" />
         <span className="text-xs font-bold text-slate-400">Cargando mapa interactivo...</span>
       </div>
@@ -64,7 +62,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     currentPage: 1,
     lastPage: 1,
     total: 0,
-    perPage: 12,
+    perPage: 15,
   });
 
   // Filter states
@@ -114,7 +112,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           price_max: searchParams?.get('price_max') || undefined,
           sort: (searchParams?.get('sort') as any) || sort,
           page: currentPage,
-          per_page: 12,
+          per_page: 15,
         });
 
         if (!active) return;
@@ -125,7 +123,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           currentPage: p?.current_page || 1,
           lastPage: p?.last_page || 1,
           total: p?.total || 0,
-          perPage: p?.per_page || 12,
+          perPage: p?.per_page || 15,
         });
 
         // Default selected estate on initial desktop load
@@ -218,14 +216,16 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-slate-900 selection:text-white">
-      <AirbnbHeader agency={fallbackAgency} domainParam={domainParam} />
+    <div className="travel-agency-03-root min-h-screen flex flex-col bg-white text-slate-900 font-sans">
+      {/* 1. Mismo header de navegación que en la vista de inicio */}
+      <TopbarSlider agency={fallbackAgency} />
+      <Header2Style3 agency={fallbackAgency} />
 
-      {/* Barra de Filtros con Craft Emil Kowalski & Accesibilidad UX */}
-      <div className="border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-30 shadow-xs">
-        <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
-            {/* Buscador Rápido con feedback visual y botón de limpieza de campo */}
+      {/* 2. Barra de Filtros compacta */}
+      <div className="border-b border-slate-200/90 bg-white shadow-2xs z-30">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-2.5">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-2.5">
+            {/* Buscador Rápido */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -233,14 +233,14 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               }}
               className="flex items-center gap-2 w-full lg:w-auto"
             >
-              <div className="relative flex-1 sm:w-80">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <div className="relative flex-1 sm:w-72">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Ciudad, sector, palabra clave..."
-                  className="w-full pl-10 pr-9 py-2.5 rounded-full border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all duration-200 shadow-2xs"
+                  className="w-full pl-9 pr-8 py-2 rounded-full border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all shadow-2xs"
                 />
                 {search && (
                   <button
@@ -249,7 +249,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                       setSearch('');
                       applyFilters({ search: '' });
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 active:scale-90 transition-all"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 active:scale-90 transition-all"
                     aria-label="Limpiar búsqueda"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -258,7 +258,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               </div>
               <button
                 type="submit"
-                className="px-5 py-2.5 min-h-[40px] rounded-full text-xs font-black text-white bg-slate-900 hover:bg-slate-800 active:scale-95 transition-all duration-150 shadow-sm cursor-pointer"
+                className="px-4 py-2 min-h-[36px] rounded-full text-xs font-black text-white bg-slate-900 hover:bg-slate-800 active:scale-95 transition-all shadow-2xs cursor-pointer"
               >
                 Buscar
               </button>
@@ -266,7 +266,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="p-2.5 min-h-[40px] rounded-full border border-slate-200 hover:bg-slate-100 active:scale-90 text-slate-600 transition-all duration-150 cursor-pointer"
+                  className="p-2 min-h-[36px] rounded-full border border-slate-200 hover:bg-slate-100 active:scale-90 text-slate-600 transition-all cursor-pointer"
                   title="Restablecer filtros"
                   aria-label="Restablecer filtros"
                 >
@@ -275,8 +275,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               )}
             </form>
 
-            {/* Pills de filtros rápidos con micro-interacciones suaves */}
-            <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0 scrollbar-none">
+            {/* Pills de filtros rápidos */}
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0 scrollbar-none">
               {FILTER_PILLS.map((pill) => {
                 const isActive =
                   (pill.type === 'all' && !propertyStatus && !propertyType && !bedrooms) ||
@@ -289,10 +289,10 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     key={pill.label}
                     type="button"
                     onClick={() => handlePillClick(pill)}
-                    className={`px-4 py-2 min-h-[38px] rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer active:scale-95 ${
+                    className={`px-3 py-1.5 min-h-[32px] rounded-full text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer active:scale-95 ${
                       isActive
-                        ? 'bg-slate-900 text-white shadow-md'
-                        : 'bg-white text-slate-700 border border-slate-200/90 hover:border-slate-400 hover:bg-slate-50'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400 hover:bg-slate-50'
                     }`}
                   >
                     {pill.label}
@@ -301,7 +301,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               })}
             </div>
 
-            {/* Selector de ordenamiento accesible */}
+            {/* Selector de ordenamiento */}
             <div className="hidden sm:flex items-center gap-2 shrink-0">
               <span className="text-xs font-semibold text-slate-500">Ordenar:</span>
               <select
@@ -311,7 +311,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   setSort(val);
                   applyFilters({ sort: val });
                 }}
-                className="px-3.5 py-2 min-h-[38px] rounded-full border border-slate-200 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all cursor-pointer"
+                className="px-3 py-1.5 min-h-[34px] rounded-full border border-slate-200 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all cursor-pointer"
               >
                 <option value="recent">Más recientes</option>
                 <option value="featured">Destacadas</option>
@@ -323,45 +323,42 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Split View: Left Cards List + Right Sticky Leaflet Map (Imagen 1) */}
-      <main className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
-        {/* Encabezado de Resultados estilo Airbnb */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
-          <div>
-            <h1 className="text-sm sm:text-base font-extrabold text-slate-900">
-              Más de {pagination.total || estates.length} propiedades disponibles en la zona
-            </h1>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            <span>Precios con tarifas y comisiones transparentes</span>
-          </div>
-        </div>
-
-        {/* Contenedor Split: Lista a la izquierda, Mapa a la derecha */}
-        <div className="lg:grid lg:grid-cols-12 gap-8 items-start">
-          {/* Columna Izquierda: Grid de Tarjetas (Visible en mobile cuando viewMode === 'list') */}
+      {/* 3. Main Split View: 30% Propiedades (con contenedor scroll) + 70% Mapa (sin espacios en blanco) */}
+      <main className="w-full flex-1 flex flex-col min-h-0 bg-slate-50">
+        <div className="w-full h-[calc(100vh-175px)] min-h-[580px] flex flex-col lg:flex-row overflow-hidden border-t border-slate-200">
+          
+          {/* Contenedor Izquierdo: 30% con scrollbar propio para los cards pequeños */}
           <div
-            className={`lg:col-span-7 xl:col-span-7 ${
-              mobileView === 'map' ? 'hidden lg:block' : 'block'
+            className={`w-full lg:w-[30%] lg:min-w-[300px] lg:max-w-[420px] xl:w-[30%] h-full overflow-y-auto px-3.5 py-3 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs ${
+              mobileView === 'map' ? 'hidden lg:flex' : 'flex'
             }`}
           >
-            {loading ? (
-              /* Shimmer Skeletons de alta fidelidad adaptados a la tarjeta */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <div key={n} className="flex flex-col p-2.5 rounded-3xl space-y-3">
-                    <div className="aspect-[20/19] rounded-2xl bg-gradient-to-r from-slate-100 via-slate-200/60 to-slate-100 animate-pulse" />
-                    <div className="h-4 bg-slate-100 rounded-md w-3/4 animate-pulse" />
-                    <div className="h-3 bg-slate-100 rounded-md w-1/2 animate-pulse" />
-                    <div className="h-3 bg-slate-100 rounded-md w-2/3 animate-pulse" />
-                    <div className="h-5 bg-slate-100 rounded-md w-1/3 animate-pulse pt-1" />
-                  </div>
-                ))}
+            <div className="space-y-3">
+              {/* Encabezado del contenedor de tarjetas */}
+              <div className="flex items-center justify-between px-1 pt-0.5 pb-2 border-b border-slate-100">
+                <span className="text-xs font-black text-slate-800">
+                  {pagination.total || estates.length} propiedades encontradas
+                </span>
+                <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                  Haz clic para ver en mapa
+                </span>
               </div>
-            ) : estates.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+              {loading ? (
+                /* Shimmer Skeletons compactos */
+                <div className="flex flex-col gap-3">
+                  {[1, 2, 3, 4].map((n) => (
+                    <div key={n} className="p-2 rounded-2xl border border-slate-100 space-y-2">
+                      <div className="aspect-[16/10] rounded-xl bg-slate-100 animate-pulse" />
+                      <div className="h-3.5 bg-slate-100 rounded w-3/4 animate-pulse" />
+                      <div className="h-3 bg-slate-100 rounded w-1/2 animate-pulse" />
+                      <div className="h-4 bg-slate-100 rounded w-1/3 animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              ) : estates.length > 0 ? (
+                /* Listado de cards más pequeños */
+                <div className="flex flex-col gap-2.5">
                   {estates.map((estate) => (
                     <AirbnbPropertyCard
                       key={estate.id}
@@ -378,96 +375,94 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     />
                   ))}
                 </div>
-
-                {/* Paginación con botones táctiles accesibles */}
-                {pagination.lastPage > 1 && (
-                  <div className="mt-10 mb-6 flex items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      disabled={currentPage <= 1}
-                      onClick={() => {
-                        const prev = Math.max(1, currentPage - 1);
-                        setCurrentPage(prev);
-                        const params = new URLSearchParams(searchParams?.toString() || '');
-                        params.set('page', String(prev));
-                        router.push(`/properties?${params.toString()}`);
-                      }}
-                      className="p-3 min-w-[44px] min-h-[44px] rounded-full border border-slate-200 bg-white text-slate-700 disabled:opacity-30 hover:bg-slate-50 active:scale-90 transition-all duration-150 cursor-pointer shadow-2xs flex items-center justify-center"
-                      aria-label="Página anterior"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <span className="px-5 py-2.5 text-xs font-black text-slate-800">
-                      Página {pagination.currentPage} de {pagination.lastPage}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={currentPage >= pagination.lastPage}
-                      onClick={() => {
-                        const next = Math.min(pagination.lastPage, currentPage + 1);
-                        setCurrentPage(next);
-                        const params = new URLSearchParams(searchParams?.toString() || '');
-                        params.set('page', String(next));
-                        router.push(`/properties?${params.toString()}`);
-                      }}
-                      className="p-3 min-w-[44px] min-h-[44px] rounded-full border border-slate-200 bg-white text-slate-700 disabled:opacity-30 hover:bg-slate-50 active:scale-90 transition-all duration-150 cursor-pointer shadow-2xs flex items-center justify-center"
-                      aria-label="Página siguiente"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+              ) : (
+                /* Empty State compacto */
+                <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-6 text-center space-y-2 my-8">
+                  <div className="w-10 h-10 rounded-xl bg-white shadow-xs flex items-center justify-center mx-auto text-slate-400">
+                    <Building2 className="w-5 h-5" />
                   </div>
-                )}
-              </>
-            ) : (
-              /* Empty State enriquecido según leyes de UX */
-              <div className="bg-slate-50/80 rounded-3xl border border-slate-200/80 p-12 text-center space-y-4 max-w-lg mx-auto my-12">
-                <div className="w-14 h-14 rounded-2xl bg-white shadow-md flex items-center justify-center mx-auto text-slate-400">
-                  <Building2 className="w-7 h-7" />
-                </div>
-                <h3 className="text-base font-black text-slate-900">
-                  No encontramos propiedades con los filtros seleccionados
-                </h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Prueba cambiando el tipo de inmueble o limpiando los filtros para ver todo nuestro catálogo disponible.
-                </p>
-                <div className="pt-2">
+                  <h4 className="text-xs font-black text-slate-800">
+                    No encontramos propiedades
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Prueba ajustando el tipo de inmueble o limpiando los filtros.
+                  </p>
                   <button
                     type="button"
                     onClick={resetFilters}
-                    className="px-6 py-3 min-h-[44px] rounded-full text-xs font-black text-white bg-slate-900 hover:bg-slate-800 active:scale-95 transition-all duration-150 cursor-pointer shadow-md"
+                    className="text-xs font-bold text-blue-600 hover:underline pt-1"
                   >
                     Ver todas las propiedades
                   </button>
                 </div>
+              )}
+            </div>
+
+            {/* Paginación fijada en el fondo del contenedor scrollable */}
+            {pagination.lastPage > 1 && (
+              <div className="mt-4 pt-3 pb-1 border-t border-slate-100 flex items-center justify-between">
+                <button
+                  type="button"
+                  disabled={currentPage <= 1}
+                  onClick={() => {
+                    const prev = Math.max(1, currentPage - 1);
+                    setCurrentPage(prev);
+                    const params = new URLSearchParams(searchParams?.toString() || '');
+                    params.set('page', String(prev));
+                    router.push(`/properties?${params.toString()}`);
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 disabled:opacity-30 hover:bg-slate-50 active:scale-95 transition-all"
+                  aria-label="Página anterior"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5 inline mr-1" />
+                  Anterior
+                </button>
+                <span className="text-[11px] font-black text-slate-600">
+                  {pagination.currentPage} / {pagination.lastPage}
+                </span>
+                <button
+                  type="button"
+                  disabled={currentPage >= pagination.lastPage}
+                  onClick={() => {
+                    const next = Math.min(pagination.lastPage, currentPage + 1);
+                    setCurrentPage(next);
+                    const params = new URLSearchParams(searchParams?.toString() || '');
+                    params.set('page', String(next));
+                    router.push(`/properties?${params.toString()}`);
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 disabled:opacity-30 hover:bg-slate-50 active:scale-95 transition-all"
+                  aria-label="Página siguiente"
+                >
+                  Siguiente
+                  <ChevronRight className="w-3.5 h-3.5 inline ml-1" />
+                </button>
               </div>
             )}
           </div>
 
-          {/* Columna Derecha: Sticky Interactive Map (Visible en mobile cuando viewMode === 'map') */}
+          {/* Contenedor Derecho: 70% Mapa interactivo que llena toda la altura sin dejar blanco debajo */}
           <div
-            className={`lg:col-span-5 xl:col-span-5 ${
+            className={`w-full lg:w-[70%] xl:w-[70%] h-full relative overflow-hidden bg-slate-100 flex-1 ${
               mobileView === 'list' ? 'hidden lg:block' : 'block'
             }`}
           >
-            <div className="sticky top-20 h-[calc(100vh-100px)] min-h-[500px] w-full">
-              <PublicPropertiesSplitMap
-                estates={estates}
-                agency={agency}
-                selectedEstate={selectedEstate}
-                hoveredEstateId={hoveredEstateId}
-                onSelectEstate={(est) => setSelectedEstate(est)}
-                domainParam={domainParam}
-              />
-            </div>
+            <PublicPropertiesSplitMap
+              estates={estates}
+              agency={agency}
+              selectedEstate={selectedEstate}
+              hoveredEstateId={hoveredEstateId}
+              onSelectEstate={(est) => setSelectedEstate(est)}
+              domainParam={domainParam}
+            />
           </div>
         </div>
 
-        {/* Botón flotante para alternar entre Mapa y Lista en Móvil (Emil Kowalski Physics) */}
+        {/* Botón flotante móvil para alternar Lista vs Mapa */}
         <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
           <button
             type="button"
             onClick={() => setMobileView((prev) => (prev === 'list' ? 'map' : 'list'))}
-            className="flex items-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full bg-slate-900/95 backdrop-blur-md text-white font-black text-xs shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer border border-white/10"
+            className="flex items-center gap-2 px-5 py-3 min-h-[46px] rounded-full bg-slate-900 text-white font-black text-xs shadow-2xl active:scale-95 transition-all cursor-pointer border border-white/10"
           >
             {mobileView === 'list' ? (
               <>
@@ -483,8 +478,6 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           </button>
         </div>
       </main>
-
-      <PublicInmobiliariaFooter agency={fallbackAgency} domainParam={domainParam} />
     </div>
   );
 };

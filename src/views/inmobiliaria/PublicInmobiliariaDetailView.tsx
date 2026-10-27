@@ -25,7 +25,8 @@ import publicInmobiliariaService, {
   PublicAgencyConfig,
   PublicEstateItem,
 } from '@/services/publicInmobiliariaService';
-import { AirbnbHeader } from '@/components/inmobiliaria/AirbnbHeader';
+import TopbarSlider from '@/components/topbar/TopbarSlider';
+import Header2Style3 from '@/components/layout/Header2Style3';
 import {
   getEstatePrimaryImage,
   PROPERTY_TYPE_LABELS,
@@ -116,7 +117,8 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-[#fcfcfd]">
-        <AirbnbHeader agency={fallbackAgency} domainParam={domainParam} />
+        <TopbarSlider agency={fallbackAgency} />
+        <Header2Style3 agency={fallbackAgency} />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-6">
           <div className="h-5 bg-slate-200/60 rounded-md w-1/4 animate-pulse" />
           <div className="bg-white rounded-3xl border border-slate-200/80 p-8 space-y-6">
@@ -133,7 +135,8 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   if (errorMsg || !estate) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50">
-        <AirbnbHeader agency={fallbackAgency} domainParam={domainParam} />
+        <TopbarSlider agency={fallbackAgency} />
+        <Header2Style3 agency={fallbackAgency} />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-12 max-w-md w-full text-center space-y-4 shadow-xl">
             <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
@@ -210,8 +213,9 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   ].filter((a) => Boolean(estate[a.key]));
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fcfcfd] text-slate-900 font-sans selection:bg-slate-900 selection:text-white">
-      <AirbnbHeader agency={fallbackAgency} domainParam={domainParam} />
+    <div className="travel-agency-03-root min-h-screen flex flex-col bg-[#fcfcfd] text-slate-900 font-sans selection:bg-slate-900 selection:text-white">
+      <TopbarSlider agency={fallbackAgency} />
+      <Header2Style3 agency={fallbackAgency} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
         {/* Breadcrumb Navigation con botón de compartir */}

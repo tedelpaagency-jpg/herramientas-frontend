@@ -208,12 +208,13 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
     : '#';
 
   return (
-    <div className="relative w-full h-full min-h-[500px] rounded-3xl overflow-hidden border border-slate-200/90 shadow-lg">
+    <div className="relative w-full h-full overflow-hidden bg-slate-100">
       <MapContainer
         center={initialCenter}
         zoom={13}
         scrollWheelZoom={true}
-        style={{ width: '100%', height: '100%', minHeight: '500px' }}
+        style={{ width: '100%', height: '100%' }}
+        className="w-full h-full"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -391,10 +392,10 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
 
               <Link
                 href={detailHref}
-                className="inline-flex items-center justify-center gap-2 min-h-[44px] py-2.5 px-3 rounded-xl bg-[#FF5A00] hover:bg-[#e04f00] active:scale-[0.98] hover:scale-[1.01] text-white text-xs font-black shadow-md hover:shadow-orange-500/25 transition-all duration-150"
+                className="inline-flex items-center justify-center gap-1.5 min-h-[44px] py-2.5 px-3 rounded-xl bg-[#FF5A00] hover:bg-[#e04f00] active:scale-[0.98] hover:scale-[1.01] text-white text-xs font-black shadow-md hover:shadow-orange-500/25 transition-all duration-150"
               >
-                <Mail className="w-4 h-4" />
-                <span>Contactar</span>
+                <span>Ver Detalle</span>
+                <span aria-hidden="true">&rarr;</span>
               </Link>
             </div>
           </div>
