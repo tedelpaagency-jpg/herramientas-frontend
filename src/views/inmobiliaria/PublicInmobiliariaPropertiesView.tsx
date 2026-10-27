@@ -19,9 +19,8 @@ import publicInmobiliariaService, {
   PublicAgencyConfig,
   PublicEstateItem,
 } from '@/services/publicInmobiliariaService';
-import TopbarSlider from '@/components/topbar/TopbarSlider';
-import Header2Style3 from '@/components/layout/Header2Style3';
-import Footer from '@/components/layout/Footer';
+import { AirbnbHeader } from '@/components/inmobiliaria/AirbnbHeader';
+import { PublicInmobiliariaFooter } from '@/views/inmobiliaria/PublicInmobiliariaLayout';
 import { AirbnbPropertyCard } from '@/components/inmobiliaria/AirbnbPropertyCard';
 
 // Dynamically import Leaflet Map to avoid SSR issues
@@ -220,8 +219,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-slate-900 selection:text-white">
-      <TopbarSlider />
-      <Header2Style3 agency={fallbackAgency} />
+      <AirbnbHeader agency={fallbackAgency} domainParam={domainParam} />
 
       {/* Barra de Filtros con Craft Emil Kowalski & Accesibilidad UX */}
       <div className="border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-30 shadow-xs">
@@ -486,7 +484,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         </div>
       </main>
 
-      <Footer agency={fallbackAgency} />
+      <PublicInmobiliariaFooter agency={fallbackAgency} domainParam={domainParam} />
     </div>
   );
 };
