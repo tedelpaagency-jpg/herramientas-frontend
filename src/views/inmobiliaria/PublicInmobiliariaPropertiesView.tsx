@@ -391,7 +391,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
       {/* 3. Main Split View: 30% Propiedades (con contenedor scroll) + 70% Mapa (sin espacios en blanco) */}
       <main className="w-full flex-1 flex flex-col min-h-0 bg-slate-50">
-        <div className="w-full h-[calc(100dvh-130px)] min-h-[580px] flex flex-col lg:flex-row overflow-hidden border-t border-slate-200">
+        <div className="w-full h-[calc(100dvh-170px)] lg:h-[calc(100vh-140px)] min-h-[480px] lg:min-h-[580px] flex flex-col lg:flex-row overflow-hidden border-t border-slate-200">
           
           {/* Contenedor Izquierdo: Catálogo de propiedades */}
           <div
@@ -399,8 +399,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               viewMode === 'map'
                 ? 'hidden'
                 : viewMode === 'list'
-                ? 'w-full h-full overflow-y-auto px-4 sm:px-8 pt-4 pb-32 sm:pb-16 flex flex-col justify-between bg-white overscroll-contain'
-                : `w-full lg:w-[58%] xl:w-[56%] 2xl:w-[54%] h-full overflow-y-auto px-3.5 sm:px-4 pt-3 pb-32 sm:pb-12 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs overscroll-contain ${
+                ? 'w-full h-full overflow-y-auto px-4 sm:px-8 pt-4 pb-44 sm:pb-20 flex flex-col justify-between bg-white overscroll-contain'
+                : `w-full lg:w-[58%] xl:w-[56%] 2xl:w-[54%] h-full overflow-y-auto px-3.5 sm:px-4 pt-3 pb-44 sm:pb-16 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs overscroll-contain ${
                     mobileView === 'map' ? 'hidden lg:flex' : 'flex'
                   }`
             }`}
@@ -485,9 +485,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               )}
             </div>
 
-            {/* Paginación fijada en el fondo del contenedor scrollable con margen inferior para mobile */}
+            {/* Paginación fijada en el fondo del contenedor scrollable con margen inferior amplio para mobile */}
             {pagination.lastPage > 1 && (
-              <div className="mt-6 pt-4 pb-4 border-t border-slate-100 flex items-center justify-between shrink-0">
+              <div className="mt-8 pt-5 pb-6 mb-24 lg:mb-4 border-t border-slate-200/80 flex items-center justify-between shrink-0 bg-white">
                 <button
                   type="button"
                   disabled={currentPage <= 1}
@@ -498,15 +498,15 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     params.set('page', String(prev));
                     router.push(`/properties?${params.toString()}`);
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 disabled:opacity-30 hover:bg-slate-50 active:scale-95 transition-all"
+                  className="px-4 py-2 min-h-[38px] rounded-xl border border-slate-200 text-xs font-bold text-slate-800 disabled:opacity-30 hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
                   aria-label="Página anterior"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5 inline mr-1" />
-                  Anterior
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Anterior</span>
                 </button>
-                <span className="text-[11px] font-black text-slate-600">
-                  {pagination.currentPage} / {pagination.lastPage}
-                </span>
+                <div className="px-3 py-1.5 rounded-lg bg-slate-100 text-xs font-black text-slate-700">
+                  Página {pagination.currentPage} de {pagination.lastPage}
+                </div>
                 <button
                   type="button"
                   disabled={currentPage >= pagination.lastPage}
@@ -517,11 +517,11 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     params.set('page', String(next));
                     router.push(`/properties?${params.toString()}`);
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 disabled:opacity-30 hover:bg-slate-50 active:scale-95 transition-all"
+                  className="px-4 py-2 min-h-[38px] rounded-xl border border-slate-200 text-xs font-bold text-slate-800 disabled:opacity-30 hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
                   aria-label="Página siguiente"
                 >
-                  Siguiente
-                  <ChevronRight className="w-3.5 h-3.5 inline ml-1" />
+                  <span>Siguiente</span>
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             )}

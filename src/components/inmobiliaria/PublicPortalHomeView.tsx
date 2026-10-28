@@ -12,6 +12,7 @@ import publicInmobiliariaService, {
   PublicAgencyConfig,
   PublicEstateItem,
   PublicEstateCategory,
+  getCachedAgencyConfig,
 } from '@/services/publicInmobiliariaService';
 import {
   DEFAULT_FALLBACK_AGENCY,
@@ -34,7 +35,14 @@ export default function PublicPortalHomeView({
   initialCategories,
   domain,
 }: PublicPortalHomeViewProps) {
-  const [agency, setAgency] = useState<PublicAgencyConfig>(initialAgency || DEFAULT_FALLBACK_AGENCY);
+  const [agency, setAgency] = useState<PublicAgencyConfig>(() => {
+    if (initialAgency) return initialAgency;
+    if (typeof window !== 'undefined') {
+      const cached = getCachedAgencyConfig(domain);
+      if (cached) return cached;
+    }
+    return DEFAULT_FALLBACK_AGENCY;
+  });
   const [featuredEstates, setFeaturedEstates] = useState<PublicEstateItem[]>(
     initialFeaturedEstates || DEFAULT_REAL_ESTATE_PROPERTIES
   );
@@ -48,6 +56,14 @@ export default function PublicPortalHomeView({
 
   useEffect(() => {
     let isMounted = true;
+
+    // Load instantly from local storage cache if not already loaded
+    if (typeof window !== 'undefined' && !agency?.name) {
+      const cached = getCachedAgencyConfig(domain);
+      if (cached && isMounted) {
+        setAgency(cached);
+      }
+    }
 
     async function loadPortalData() {
       try {
@@ -65,11 +81,7 @@ export default function PublicPortalHomeView({
         if (!isMounted) return;
 
         if (configRes.status === 'fulfilled' && configRes.value?.data) {
-          setAgency((prev) => ({
-            ...DEFAULT_FALLBACK_AGENCY,
-            ...prev,
-            ...configRes.value.data,
-          }));
+          setAgency(configRes.value.data);
         }
 
         if (estatesRes.status === 'fulfilled' && estatesRes.value?.data?.length) {

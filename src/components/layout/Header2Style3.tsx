@@ -147,7 +147,8 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
   );
   const logoUrl = hasCustomLogo ? rawLogo : null;
   const primaryColor = effectiveAgency?.primary_color || '#00a884';
-  const agencyName = effectiveAgency?.name || effectiveAgency?.commercial_name || 'Inmobiliaria';
+  const rawName = effectiveAgency?.name || effectiveAgency?.commercial_name;
+  const agencyName = rawName || '';
 
   return (
     <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`} suppressHydrationWarning>
@@ -157,12 +158,12 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
             {logoUrl ? (
               <img
                 src={logoUrl}
-                alt={agencyName}
+                alt={agencyName || 'Logo Inmobiliaria'}
                 loading="eager"
                 decoding="sync"
                 style={{ maxHeight: '46px', maxWidth: '210px', width: 'auto', objectFit: 'contain' }}
               />
-            ) : (
+            ) : agencyName ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div
                   style={{
@@ -194,6 +195,8 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                   {agencyName}
                 </span>
               </div>
+            ) : (
+              <div style={{ width: '130px', height: '34px', borderRadius: '8px', backgroundColor: '#f1f5f9' }} />
             )}
           </Link>
           <div className={`main-menu ${state.isSidebarOpen ? "show-menu" : ""}`}>
@@ -202,12 +205,12 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                 {logoUrl ? (
                   <img
                     src={logoUrl}
-                    alt={agencyName}
+                    alt={agencyName || 'Logo Inmobiliaria'}
                     loading="eager"
                     decoding="sync"
                     style={{ maxHeight: '42px', maxWidth: '180px', width: 'auto', objectFit: 'contain' }}
                   />
-                ) : (
+                ) : agencyName ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div
                       style={{
@@ -238,6 +241,8 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                       {agencyName}
                     </span>
                   </div>
+                ) : (
+                  <div style={{ width: '110px', height: '30px', borderRadius: '8px', backgroundColor: '#f1f5f9' }} />
                 )}
               </Link>
               <div className="menu-close-btn" onClick={toggleSidebar}>

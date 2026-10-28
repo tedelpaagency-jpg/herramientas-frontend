@@ -14,6 +14,8 @@ import {
   Landmark,
   Search,
   Briefcase,
+  Trees,
+  Map,
 } from 'lucide-react';
 
 interface CustomBookingSelectProps {
@@ -65,13 +67,13 @@ const CustomBookingSelect: React.FC<CustomBookingSelectProps> = ({
         onClick={() => setIsOpen((prev) => !prev)}
         style={{ cursor: 'pointer', width: '100%' }}
       >
+        <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>{label}</span>
         <input
           type="text"
           readOnly
           value={selected.label}
-          style={{ cursor: 'pointer', border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, color: '#161a1b', fontSize: '15px', width: '100%' }}
+          style={{ cursor: 'pointer', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, color: '#0f172a', fontSize: '13.5px', width: '100%', padding: 0, marginTop: '2px', lineHeight: 1.2 }}
         />
-        <span style={{ fontSize: '12px', fontWeight: 600, color: '#7e7e7e', display: 'block' }}>{label}</span>
       </div>
       <input type="hidden" name={name} value={selected.value} />
 
@@ -153,77 +155,182 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             <p>{heroSubtitle}</p>
 
             <div className="filter-wrapper">
-              <style jsx>{`
+              <style jsx global>{`
+                .hero-booking-tabs {
+                  display: flex !important;
+                  flex-wrap: nowrap !important;
+                  overflow-x: auto !important;
+                  overflow-y: hidden !important;
+                  -webkit-overflow-scrolling: touch !important;
+                  gap: 8px !important;
+                  padding: 4px 4px 10px 4px !important;
+                  margin-bottom: -18px !important;
+                  margin-left: 20px !important;
+                  margin-right: 20px !important;
+                  scrollbar-width: none !important;
+                  position: relative !important;
+                  z-index: 10 !important;
+                }
                 .hero-booking-tabs::-webkit-scrollbar {
-                  display: none;
+                  display: none !important;
+                }
+                .hero-tab-pill {
+                  display: inline-flex !important;
+                  flex-direction: row !important;
+                  align-items: center !important;
+                  justify-content: center !important;
+                  gap: 8px !important;
+                  padding: 8px 18px !important;
+                  border-radius: 9999px !important;
+                  font-size: 13.5px !important;
+                  font-weight: 700 !important;
+                  white-space: nowrap !important;
+                  flex-shrink: 0 !important;
+                  cursor: pointer !important;
+                  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+                  background: rgba(255, 255, 255, 0.96) !important;
+                  color: #334155 !important;
+                  backdrop-filter: blur(8px) !important;
+                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+                }
+                .hero-tab-pill svg {
+                  fill: none !important;
+                  stroke: currentColor !important;
+                  stroke-width: 2.2 !important;
+                  transition: transform 0.2s ease !important;
+                }
+                .hero-tab-pill:hover {
+                  transform: translateY(-2px) !important;
+                  background: #ffffff !important;
+                  color: #0f172a !important;
+                  border-color: #cbd5e1 !important;
+                  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.09) !important;
+                }
+                .hero-tab-pill.active {
+                  background: #0f172a !important;
+                  color: #ffffff !important;
+                  border-color: #0f172a !important;
+                  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25) !important;
+                }
+                .hero-tab-pill.active svg {
+                  fill: none !important;
+                  stroke: #ffffff !important;
+                  stroke-width: 2.4 !important;
                 }
                 @media (max-width: 576px) {
                   .hero-booking-tabs {
                     margin-left: 10px !important;
                     margin-right: 10px !important;
-                    padding-left: 4px;
-                    padding-right: 4px;
+                    gap: 6px !important;
+                    padding-bottom: 8px !important;
+                    margin-bottom: -16px !important;
                   }
-                  .hero-booking-tabs .single-item {
-                    padding: 8px 14px !important;
-                    font-size: 13px !important;
+                  .hero-tab-pill {
+                    padding: 7px 13px !important;
+                    font-size: 12px !important;
+                    border-radius: 9999px !important;
+                  }
+                  .hero-tab-pill svg {
+                    width: 15px !important;
+                    height: 15px !important;
                   }
                 }
+
+                /* Rediseño compacto de los inputs del booking */
+                .filter-wrapper .filter-input-wrap {
+                  padding: 24px 28px !important;
+                  border-radius: 24px !important;
+                  background-color: #ffffff !important;
+                  box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+                }
+                @media (max-width: 767px) {
+                  .filter-wrapper .filter-input-wrap {
+                    padding: 16px 14px !important;
+                    border-radius: 18px !important;
+                  }
+                }
+                .filter-wrapper .filter-input-wrap .filter-input .single-search-box {
+                  min-height: 48px !important;
+                  height: 48px !important;
+                  padding: 4px 14px !important;
+                  border-radius: 12px !important;
+                  border: 1.5px solid #e2e8f0 !important;
+                  background-color: #f8fafc !important;
+                  display: flex !important;
+                  align-items: center !important;
+                  gap: 10px !important;
+                  transition: all 0.2s ease !important;
+                }
+                .filter-wrapper .filter-input-wrap .filter-input .single-search-box:hover,
+                .filter-wrapper .filter-input-wrap .filter-input .single-search-box:focus-within {
+                  border-color: #00a884 !important;
+                  background-color: #ffffff !important;
+                  box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.12) !important;
+                }
+                .filter-wrapper .filter-input-wrap .filter-input .single-search-box input {
+                  font-size: 13.5px !important;
+                  font-weight: 700 !important;
+                  color: #0f172a !important;
+                  padding: 0 !important;
+                  line-height: 1.2 !important;
+                }
+                .filter-wrapper .filter-input-wrap .filter-input .single-search-box span {
+                  font-size: 9.5px !important;
+                  font-weight: 800 !important;
+                  letter-spacing: 0.05em !important;
+                  text-transform: uppercase !important;
+                  color: #94a3b8 !important;
+                  margin-bottom: 1px !important;
+                  line-height: 1 !important;
+                }
+                .filter-wrapper .filter-input-wrap .filter-input .primary-btn1 {
+                  min-height: 48px !important;
+                  height: 48px !important;
+                  padding: 0 24px !important;
+                  border-radius: 12px !important;
+                  display: flex !important;
+                  align-items: center !important;
+                  justify-content: center !important;
+                  font-size: 12.5px !important;
+                  font-weight: 800 !important;
+                  letter-spacing: 0.05em !important;
+                }
               `}</style>
-              <ul
-                className="filter-item-list hero-booking-tabs"
-                style={{
-                  display: 'flex',
-                  flexWrap: 'nowrap',
-                  overflowX: 'auto',
-                  overflowY: 'hidden',
-                  WebkitOverflowScrolling: 'touch',
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none',
-                  gap: '8px',
-                  paddingBottom: '8px',
-                  marginBottom: '-16px',
-                  position: 'relative',
-                  zIndex: 10,
-                  maxWidth: '100%',
-                }}
-              >
-                <li
-                  className={`single-item ${activeTab === 'sale' ? 'active' : ''}`}
+
+              <div className="hero-booking-tabs">
+                <div
+                  className={`hero-tab-pill ${activeTab === 'sale' ? 'active' : ''}`}
                   onClick={() => setActiveTab('sale')}
-                  style={{ flexShrink: 0, whiteSpace: 'nowrap', cursor: 'pointer' }}
                 >
-                  <Home className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Home className="w-4 h-4" />
                   <span>{tab1}</span>
-                </li>
+                </div>
 
-                <li
-                  className={`single-item ${activeTab === 'rent' ? 'active' : ''}`}
+                <div
+                  className={`hero-tab-pill ${activeTab === 'rent' ? 'active' : ''}`}
                   onClick={() => setActiveTab('rent')}
-                  style={{ flexShrink: 0, whiteSpace: 'nowrap', cursor: 'pointer' }}
                 >
-                  <KeyRound className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <KeyRound className="w-4 h-4" />
                   <span>{tab2}</span>
-                </li>
+                </div>
 
-                <li
-                  className={`single-item ${activeTab === 'land' ? 'active' : ''}`}
+                <div
+                  className={`hero-tab-pill ${activeTab === 'land' ? 'active' : ''}`}
                   onClick={() => setActiveTab('land')}
-                  style={{ flexShrink: 0, whiteSpace: 'nowrap', cursor: 'pointer' }}
                 >
-                  <Landmark className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Trees className="w-4 h-4" />
                   <span>{tab3}</span>
-                </li>
+                </div>
 
-                <li
-                  className={`single-item ${activeTab === 'commercial' ? 'active' : ''}`}
+                <div
+                  className={`hero-tab-pill ${activeTab === 'commercial' ? 'active' : ''}`}
                   onClick={() => setActiveTab('commercial')}
-                  style={{ flexShrink: 0, whiteSpace: 'nowrap', cursor: 'pointer' }}
                 >
-                  <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Building2 className="w-4 h-4" />
                   <span>{tab4}</span>
-                </li>
-              </ul>
+                </div>
+              </div>
 
               <div className="filter-input-wrap">
                 {/* 1. Formulario En Venta */}
@@ -233,15 +340,15 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   {/* Ubicación */}
                   <div className="single-search-box">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', color: '#00a884' }}>
-                      <MapPin className="w-5 h-5" />
+                      <MapPin className="w-4 h-4" />
                     </div>
                     <div className="search-box-content" style={{ width: '100%' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#7e7e7e', display: 'block' }}>Ubicación</span>
+                      <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>Ubicación</span>
                       <input
                         type="text"
                         name="search"
                         placeholder="Ciudad, colonia o zona..."
-                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, color: '#161a1b', fontSize: '15px' }}
+                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, color: '#0f172a', fontSize: '13.5px', padding: 0, marginTop: '2px', lineHeight: 1.2 }}
                       />
                     </div>
                   </div>
@@ -295,15 +402,15 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   {/* Ubicación para Renta */}
                   <div className="single-search-box">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', color: '#00a884' }}>
-                      <MapPin className="w-5 h-5" />
+                      <MapPin className="w-4 h-4" />
                     </div>
                     <div className="search-box-content" style={{ width: '100%' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#7e7e7e', display: 'block' }}>Ubicación para Renta</span>
+                      <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>Ubicación para Renta</span>
                       <input
                         type="text"
                         name="search"
                         placeholder="Ciudad o zona de interés..."
-                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, color: '#161a1b', fontSize: '15px' }}
+                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, color: '#0f172a', fontSize: '13.5px', padding: 0, marginTop: '2px', lineHeight: 1.2 }}
                       />
                     </div>
                   </div>
@@ -354,15 +461,15 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   {/* Ubicación Terreno */}
                   <div className="single-search-box">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', color: '#00a884' }}>
-                      <MapPin className="w-5 h-5" />
+                      <Trees className="w-4 h-4" />
                     </div>
                     <div className="search-box-content" style={{ width: '100%' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#7e7e7e', display: 'block' }}>Zona o Municipio</span>
+                      <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>Zona o Municipio</span>
                       <input
                         type="text"
                         name="search"
                         placeholder="Ubicación del terreno..."
-                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, color: '#161a1b', fontSize: '15px' }}
+                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, color: '#0f172a', fontSize: '13.5px', padding: 0, marginTop: '2px', lineHeight: 1.2 }}
                       />
                     </div>
                   </div>
@@ -400,15 +507,15 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   {/* Ubicación Comercial */}
                   <div className="single-search-box">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', color: '#00a884' }}>
-                      <Store className="w-5 h-5" />
+                      <Store className="w-4 h-4" />
                     </div>
                     <div className="search-box-content" style={{ width: '100%' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#7e7e7e', display: 'block' }}>Zona Comercial</span>
+                      <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>Zona Comercial</span>
                       <input
                         type="text"
                         name="search"
                         placeholder="Corredor o plaza comercial..."
-                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, color: '#161a1b', fontSize: '15px' }}
+                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, color: '#0f172a', fontSize: '13.5px', padding: 0, marginTop: '2px', lineHeight: 1.2 }}
                       />
                     </div>
                   </div>

@@ -167,6 +167,23 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
       setSubmittingContact(false);
     }
   };
+  const handleWhatsAppClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!whatsappNumber) {
+      toast.error('Número de WhatsApp no configurado para este inmueble');
+      return;
+    }
+    const cleanNum = whatsappNumber.replace(/[^0-9]/g, '');
+    const textMsg = encodeURIComponent(
+      contactMessage.trim() || `¡Hola! Me interesa la propiedad "${estate?.title}" (Ref: #${estate?.id}).`
+    );
+    const waUrl = `https://api.whatsapp.com/send?phone=${cleanNum}&text=${textMsg}`;
+    if (typeof window !== 'undefined') {
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const withDomain = (path: string) => {
     if (!domainParam) return path;
     const sep = path.includes('?') ? '&' : '?';
@@ -470,147 +487,141 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
                 Contacta al anunciante
               </h3>
 
-              {contactSuccess ? (
-                <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-center space-y-2 animate-in fade-in-50 zoom-in-95">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-md">
-                    <CheckCircle2 className="w-5 h-5" />
+              {contactSuccess && (
+                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-start gap-2.5 animate-in fade-in-50 zoom-in-95">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                   </div>
-                  <h4 className="text-xs font-black text-emerald-950">¡Solicitud recibida!</h4>
-                  <p className="text-[11px] text-emerald-800 font-medium">
-                    Un asesor de <strong>{fallbackAgency.name}</strong> se comunicará contigo al teléfono o email proporcionado.
-                  </p>
+                  <div className="flex-1">
+                    <h4 className="text-xs font-black text-emerald-950">¡Solicitud recibida con éxito!</h4>
+                    <p className="text-[11px] text-emerald-800 font-medium leading-tight mt-0.5">
+                      Un asesor se comunicará contigo al teléfono o email proporcionado.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleContactSubmit} className="space-y-3">
+                {/* Email */}
+                <div>
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white"
+                    aria-label="Correo electrónico"
+                  />
+                </div>
+
+                {/* Nombre & Teléfono en 2 columnas */}
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Nombre"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white"
+                    aria-label="Nombre"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Teléfono"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white"
+                    aria-label="Teléfono"
+                  />
+                </div>
+
+                {/* Mensaje con recuadro interior */}
+                <div className="border border-slate-300 rounded-xl p-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all bg-white">
+                  <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Mensaje</label>
+                  <textarea
+                    rows={3}
+                    value={contactMessage}
+                    onChange={(e) => setContactMessage(e.target.value)}
+                    required
+                    className="w-full bg-transparent border-none outline-none text-xs font-semibold text-slate-800 resize-none leading-relaxed placeholder-slate-400"
+                    aria-label="Mensaje"
+                  />
+                </div>
+
+                {/* Checkbox Términos */}
+                <div className="pt-1 space-y-2">
+                  <label className="flex items-start gap-2 cursor-pointer select-none text-[11px] text-slate-700 font-semibold leading-tight">
+                    <input
+                      type="checkbox"
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                    />
+                    <span>
+                      Acepto los{' '}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setActiveLegalModal('terms');
+                        }}
+                        className="font-bold underline text-slate-900 hover:text-orange-600 transition-colors"
+                      >
+                        Términos y Condiciones de Uso
+                      </button>
+                      .
+                    </span>
+                  </label>
+
+                  {/* Checkbox Política de Privacidad */}
+                  <label className="flex items-start gap-2 cursor-pointer select-none text-[11px] text-slate-700 font-semibold leading-tight">
+                    <input
+                      type="checkbox"
+                      checked={acceptPrivacy}
+                      onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                    />
+                    <span>
+                      Acepto la{' '}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setActiveLegalModal('privacy');
+                        }}
+                        className="font-bold underline text-slate-900 hover:text-orange-600 transition-colors"
+                      >
+                        Política de Privacidad
+                      </button>
+                      .
+                    </span>
+                  </label>
+                </div>
+
+                {/* Botón 1: Contactar (Naranja con icono de correo) */}
+                <button
+                  type="submit"
+                  disabled={submittingContact}
+                  className="w-full min-h-[46px] py-3 px-4 rounded-xl text-xs font-black text-white bg-[#f97316] hover:bg-[#ea580c] active:scale-[0.98] shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>{submittingContact ? 'Enviando...' : 'Contactar'}</span>
+                </button>
+
+                {/* Botón 2: Contactar por WhatsApp (Verde con icono de WhatsApp) */}
+                {whatsappNumber && (
                   <button
                     type="button"
-                    onClick={() => setContactSuccess(false)}
-                    className="mt-2 text-xs font-bold text-emerald-700 underline cursor-pointer"
+                    onClick={handleWhatsAppClick}
+                    className="w-full min-h-[46px] py-3 px-4 rounded-xl text-xs font-black text-white bg-[#22c55e] hover:bg-[#16a34a] active:scale-[0.98] shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
                   >
-                    Enviar otra consulta
+                    <MessageCircle className="w-4 h-4 fill-white" />
+                    <span>Contactar por WhatsApp</span>
                   </button>
-                </div>
-              ) : (
-                <form onSubmit={handleContactSubmit} className="space-y-3">
-                  {/* Email */}
-                  <div>
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white"
-                      aria-label="Correo electrónico"
-                    />
-                  </div>
-
-                  {/* Nombre & Teléfono en 2 columnas */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      placeholder="Nombre"
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      required
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white"
-                      aria-label="Nombre"
-                    />
-                    <input
-                      type="tel"
-                      placeholder="Teléfono"
-                      value={contactPhone}
-                      onChange={(e) => setContactPhone(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white"
-                      aria-label="Teléfono"
-                    />
-                  </div>
-
-                  {/* Mensaje con recuadro interior */}
-                  <div className="border border-slate-300 rounded-xl p-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all bg-white">
-                    <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Mensaje</label>
-                    <textarea
-                      rows={3}
-                      value={contactMessage}
-                      onChange={(e) => setContactMessage(e.target.value)}
-                      required
-                      className="w-full bg-transparent border-none outline-none text-xs font-semibold text-slate-800 resize-none leading-relaxed placeholder-slate-400"
-                      aria-label="Mensaje"
-                    />
-                  </div>
-
-                  {/* Checkbox Términos */}
-                  <div className="pt-1 space-y-2">
-                    <label className="flex items-start gap-2 cursor-pointer select-none text-[11px] text-slate-700 font-semibold leading-tight">
-                      <input
-                        type="checkbox"
-                        checked={acceptTerms}
-                        onChange={(e) => setAcceptTerms(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 rounded text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
-                      />
-                      <span>
-                        Acepto los{' '}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setActiveLegalModal('terms');
-                          }}
-                          className="font-bold underline text-slate-900 hover:text-orange-600 transition-colors"
-                        >
-                          Términos y Condiciones de Uso
-                        </button>
-                        .
-                      </span>
-                    </label>
-
-                    {/* Checkbox Política de Privacidad */}
-                    <label className="flex items-start gap-2 cursor-pointer select-none text-[11px] text-slate-700 font-semibold leading-tight">
-                      <input
-                        type="checkbox"
-                        checked={acceptPrivacy}
-                        onChange={(e) => setAcceptPrivacy(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 rounded text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
-                      />
-                      <span>
-                        Acepto la{' '}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setActiveLegalModal('privacy');
-                          }}
-                          className="font-bold underline text-slate-900 hover:text-orange-600 transition-colors"
-                        >
-                          Política de Privacidad
-                        </button>
-                        .
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* Botón 1: Contactar (Naranja con icono de correo) */}
-                  <button
-                    type="submit"
-                    disabled={submittingContact}
-                    className="w-full min-h-[46px] py-3 px-4 rounded-xl text-xs font-black text-white bg-[#f97316] hover:bg-[#ea580c] active:scale-[0.98] shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    <Mail className="w-4 h-4" />
-                    <span>{submittingContact ? 'Enviando...' : 'Contactar'}</span>
-                  </button>
-                </form>
-              )}
-
-              {/* Botón 2: Contactar por WhatsApp (Verde con icono de WhatsApp) */}
-              {whatsappNumber && (
-                <a
-                  href={`https://wa.me/${whatsappNumber}?text=${whatsappText}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full min-h-[46px] py-3 px-4 rounded-xl text-xs font-black text-white bg-[#22c55e] hover:bg-[#16a34a] active:scale-[0.98] shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer text-decoration-none"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white" />
-                  <span>Contactar por WhatsApp</span>
-                </a>
-              )}
+                )}
+              </form>
 
               <div className="pt-2 border-t border-slate-100 flex items-center gap-2 text-[10px] text-slate-400 font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
