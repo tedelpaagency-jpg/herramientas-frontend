@@ -9,11 +9,14 @@ import {
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
+import { workspaceMetaService } from '@/services/workspaceMetaService';
 import { useAuth } from '@/context/AuthContext';
 import MediaPicker from '@/components/media/MediaPicker';
 import PortalLivePreview from '@/components/inmobiliaria/PortalLivePreview';
 import {
   FREE_STOCK_HERO_IMAGES,
+  DEFAULT_REAL_ESTATE_TERMS,
+  DEFAULT_REAL_ESTATE_PRIVACY,
 } from '@/constants/realEstateDefaults';
 
 const REAL_ESTATE_COLOR_PRESETS = [
@@ -41,7 +44,9 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
   // Studio tabs & device preview
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'cta' | 'domain' | 'identity' | 'seo'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'cta' | 'domain' | 'identity' | 'seo' | 'legal_crm'>('hero');
+  const [workspaces, setWorkspaces] = useState<any[]>([]);
+  const [loadingWorkspaces, setLoadingWorkspaces] = useState<boolean>(false);
 
   // Form state
   const [form, setForm] = useState<any>({
@@ -67,6 +72,9 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
     seo_title: '',
     seo_description: '',
     details: {
+      target_workspace_id: '',
+      terms_and_conditions: '',
+      privacy_policy: '',
       hero_tab1: 'En Venta',
       hero_tab2: 'En Renta',
       hero_tab3: 'Terrenos & Lotes',
@@ -167,6 +175,9 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       seo_title: ag.seo_title || `${ag.name || 'Inmobiliaria'} — Portal Oficial`,
       seo_description: ag.seo_description || `Explora las mejores propiedades en venta y alquiler con ${ag.name || 'nuestra agencia'}.`,
       details: {
+        target_workspace_id: parsedDetails?.target_workspace_id || '',
+        terms_and_conditions: parsedDetails?.terms_and_conditions || '',
+        privacy_policy: parsedDetails?.privacy_policy || '',
         hero_tab1: parsedDetails?.hero_tab1 || 'En Venta',
         hero_tab2: parsedDetails?.hero_tab2 || 'En Renta',
         hero_tab3: parsedDetails?.hero_tab3 || 'Terrenos & Lotes',
@@ -210,7 +221,27 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
     setSelectedAgencyId(id);
     const found = agencies.find((a: any) => a.id === id);
     if (found) populateAgency(found);
+    loadWorkspaces(id);
   };
+
+  const loadWorkspaces = async (agencyId: number) => {
+    if (!agencyId) return;
+    setLoadingWorkspaces(true);
+    try {
+      const list = await workspaceMetaService.getWorkspaces(agencyId);
+      setWorkspaces(Array.isArray(list) ? list : []);
+    } catch {
+      setWorkspaces([]);
+    } finally {
+      setLoadingWorkspaces(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedAgencyId) {
+      loadWorkspaces(selectedAgencyId);
+    }
+  }, [selectedAgencyId]);
 
   const updateDetailField = (key: string, value: any) => {
     setForm((prev: any) => ({
@@ -500,6 +531,17 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
             >
               <Search className="w-3.5 h-3.5" />
               <span>SEO &amp; Redes</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('legal_crm')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'legal_crm' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Legal &amp; CRM</span>
             </button>
           </div>
 
@@ -1447,6 +1489,124 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                         {form.seo_description || 'Explora nuestro catálogo selecto de inmuebles exclusivos con certeza jurídica y asesoría profesional personalizada.'}
                       </p>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* PESTAÑA 8: LEGAL & CRM (Términos, Privacidad y Conexión de Leads) */}
+            {activeTab === 'legal_crm' && (
+              <div className="space-y-6 animate-in fade-in-50 duration-200">
+                {/* 1. Vinculación con CRM / Workspaces de la Agencia */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <Target className="w-5 h-5 text-emerald-600" />
+                    <div>
+                      <h3 className="text-sm font-black text-slate-800 dark:text-white">
+                        Recepción de Prospectos en el CRM
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Configura a qué embudo de ventas o CRM llegarán automáticamente los contactos del portal.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                      Embudo / Workspace de Destino:
+                    </label>
+                    {loadingWorkspaces ? (
+                      <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                        <span>Cargando embudos de la agencia...</span>
+                      </div>
+                    ) : (
+                      <select
+                        value={form.details?.target_workspace_id || ''}
+                        onChange={(e) => updateDetailField('target_workspace_id', e.target.value)}
+                        className="w-full px-4 py-2.5 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                      >
+                        <option value="">(Por defecto) Embudo principal de la agencia</option>
+                        {workspaces.map((ws: any) => (
+                          <option key={ws.id} value={ws.id}>
+                            📊 {ws.name} ({ws.stages?.length || 0} etapas)
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                      Cada vez que un cliente llene el formulario de una propiedad o la página de contacto, el prospecto se creará como un <strong>Lead</strong> en la primera etapa de este embudo.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 2. Términos y Condiciones */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-emerald-600" />
+                      <div>
+                        <h3 className="text-sm font-black text-slate-800 dark:text-white">
+                          Términos y Condiciones de Uso
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Texto legal que aceptan los usuarios al enviar sus consultas en el portal.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => updateDetailField('terms_and_conditions', DEFAULT_REAL_ESTATE_TERMS)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer border border-emerald-200 dark:border-emerald-800"
+                    >
+                      Cargar Plantilla Estándar
+                    </button>
+                  </div>
+
+                  <div>
+                    <textarea
+                      rows={8}
+                      value={form.details?.terms_and_conditions || ''}
+                      onChange={(e) => updateDetailField('terms_and_conditions', e.target.value)}
+                      placeholder={DEFAULT_REAL_ESTATE_TERMS}
+                      className="w-full px-4 py-3 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl leading-relaxed"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Política de Privacidad */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                      <div>
+                        <h3 className="text-sm font-black text-slate-800 dark:text-white">
+                          Política de Privacidad y Tratamiento de Datos
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Normativa de protección de datos personales de tus clientes.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => updateDetailField('privacy_policy', DEFAULT_REAL_ESTATE_PRIVACY)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer border border-emerald-200 dark:border-emerald-800"
+                    >
+                      Cargar Plantilla Estándar
+                    </button>
+                  </div>
+
+                  <div>
+                    <textarea
+                      rows={8}
+                      value={form.details?.privacy_policy || ''}
+                      onChange={(e) => updateDetailField('privacy_policy', e.target.value)}
+                      placeholder={DEFAULT_REAL_ESTATE_PRIVACY}
+                      className="w-full px-4 py-3 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl leading-relaxed"
+                    />
                   </div>
                 </div>
               </div>

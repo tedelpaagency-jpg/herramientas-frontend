@@ -1,8 +1,9 @@
 "use client";
-import React, { useEffect, useReducer } from 'react';
+import React, { useEffect, useReducer, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { getCachedAgencyConfig } from "@/services/publicInmobiliariaService";
 
 interface State {
   activeMenu: string;
@@ -83,6 +84,7 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+
 interface Header2Style3Props {
   agency?: any;
 }
@@ -90,6 +92,20 @@ interface Header2Style3Props {
 const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const pathname = usePathname() as string;
+
+  // Eliminate SSR hydration mismatch by only switching to client-cached agency after mount
+  const [isMounted, setIsMounted] = useState(false);
+  const [cached, setCached] = useState<any>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (typeof window !== 'undefined') {
+      const c = getCachedAgencyConfig();
+      if (c) setCached(c);
+    }
+  }, []);
+
+  const effectiveAgency = isMounted ? (agency || cached) : agency;
 
   const handleScroll = () => {
     if (typeof window !== 'undefined') {
@@ -120,8 +136,8 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
     dispatch({ type: "TOGGLE_SIDEBAR" });
   };
 
-  const agencyPhone = agency?.phone || agency?.whatsapp || '+52 55 1234 5678';
-  const rawLogo = agency?.logo || agency?.logo_2;
+  const agencyPhone = effectiveAgency?.phone || effectiveAgency?.whatsapp || '+52 55 1234 5678';
+  const rawLogo = effectiveAgency?.logo || effectiveAgency?.logo_2;
   const hasCustomLogo = Boolean(
     rawLogo &&
       typeof rawLogo === 'string' &&
@@ -130,16 +146,22 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
       !rawLogo.includes('header-logo.svg')
   );
   const logoUrl = hasCustomLogo ? rawLogo : null;
-  const primaryColor = agency?.primary_color || '#00a884';
-  const agencyName = agency?.name || 'Inmobiliaria';
+  const primaryColor = effectiveAgency?.primary_color || '#00a884';
+  const agencyName = effectiveAgency?.name || effectiveAgency?.commercial_name || 'Inmobiliaria';
 
   return (
-    <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`}>
-      <div className="container-fluid d-flex flex-nowrap align-items-center justify-content-between">
-        <div className="logo-and-menu-area">
-          <Link href="/" className="header-logo" style={{ display: 'flex', alignItems: 'center', minHeight: '50px', textDecoration: 'none' }}>
+    <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`} suppressHydrationWarning>
+      <div className="container-fluid d-flex flex-nowrap align-items-center justify-content-between" suppressHydrationWarning>
+        <div className="logo-and-menu-area" suppressHydrationWarning>
+          <Link href="/" className="header-logo" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', minHeight: '50px', textDecoration: 'none' }}>
             {logoUrl ? (
-              <img src={logoUrl} alt={agencyName} style={{ maxHeight: '46px', maxWidth: '210px', width: 'auto', objectFit: 'contain' }} />
+              <img
+                src={logoUrl}
+                alt={agencyName}
+                loading="eager"
+                decoding="sync"
+                style={{ maxHeight: '46px', maxWidth: '210px', width: 'auto', objectFit: 'contain' }}
+              />
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div
@@ -176,9 +198,15 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
           </Link>
           <div className={`main-menu ${state.isSidebarOpen ? "show-menu" : ""}`}>
             <div className="mobile-logo-area d-xl-none d-flex align-items-center justify-content-between">
-              <Link href="/" className="mobile-logo-wrap" style={{ textDecoration: 'none' }}>
+              <Link href="/" className="mobile-logo-wrap" suppressHydrationWarning style={{ textDecoration: 'none' }}>
                 {logoUrl ? (
-                  <img src={logoUrl} alt={agencyName} style={{ maxHeight: '42px', maxWidth: '180px', width: 'auto', objectFit: 'contain' }} />
+                  <img
+                    src={logoUrl}
+                    alt={agencyName}
+                    loading="eager"
+                    decoding="sync"
+                    style={{ maxHeight: '42px', maxWidth: '180px', width: 'auto', objectFit: 'contain' }}
+                  />
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div
@@ -192,12 +220,21 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                         justifyContent: 'center',
                         color: '#ffffff',
                         fontWeight: 900,
-                        fontSize: '16px',
+                        fontSize: '15px',
+                        flexShrink: 0,
                       }}
                     >
                       {agencyName.charAt(0).toUpperCase()}
                     </div>
-                    <span style={{ fontSize: '16px', fontWeight: 900, color: '#0f172a' }}>
+                    <span
+                      style={{
+                        fontSize: '18px',
+                        fontWeight: 900,
+                        color: '#0f172a',
+                        lineHeight: 1.15,
+                        letterSpacing: '-0.02em',
+                      }}
+                    >
                       {agencyName}
                     </span>
                   </div>
@@ -209,48 +246,51 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
             </div>
             <ul className="menu-list">
               <li className={`${pathname === '/' || pathname === '/travel-agency-03' ? 'active' : ''}`}>
-                <Link href="/" className="drop-down">
+                <Link href="/" className="drop-down" onClick={() => state.isSidebarOpen && toggleSidebar()}>
                   Inicio
                 </Link>
               </li>
 
               <li className={`menu-item-has-children ${pathname.startsWith('/properties') ? 'active' : ''}`}>
-                <Link href="/properties" className="drop-down">
+                <Link href="/properties" className="drop-down" onClick={() => state.isSidebarOpen && toggleSidebar()}>
                   Propiedades
                   <i className="bi bi-caret-down-fill" />
                 </Link>
                 <i onClick={() => toggleMenu("PROPERTIES")} className={`bi bi-${state.activeMenu === "PROPERTIES" ? "dash" : "plus"} dropdown-icon`} />
                 <ul className={`sub-menu ${state.activeMenu === "PROPERTIES" ? "d-block" : "none"}`}>
-                  <li><Link href="/properties">Todas las Propiedades</Link></li>
-                  <li><Link href="/properties?property_status=1">En Venta</Link></li>
-                  <li><Link href="/properties?property_status=2">En Alquiler / Renta</Link></li>
-                  <li><Link href="/properties?property_type=1">Casas &amp; Residencias</Link></li>
-                  <li><Link href="/properties?property_type=2">Departamentos &amp; Lofts</Link></li>
-                  <li><Link href="/properties?property_type=3">Terrenos &amp; Lotes</Link></li>
-                  <li><Link href="/properties?property_type=4">Oficinas &amp; Locales</Link></li>
+                  <li><Link href="/properties" onClick={() => state.isSidebarOpen && toggleSidebar()}>Todas las Propiedades</Link></li>
+                  <li><Link href="/properties?property_status=2" onClick={() => state.isSidebarOpen && toggleSidebar()}>En Venta</Link></li>
+                  <li><Link href="/properties?property_status=1" onClick={() => state.isSidebarOpen && toggleSidebar()}>En Alquiler / Renta</Link></li>
+                  <li><Link href="/properties?property_type=1" onClick={() => state.isSidebarOpen && toggleSidebar()}>Casas &amp; Residencias</Link></li>
+                  <li><Link href="/properties?property_type=2" onClick={() => state.isSidebarOpen && toggleSidebar()}>Departamentos &amp; Lofts</Link></li>
+                  <li><Link href="/properties?property_type=3" onClick={() => state.isSidebarOpen && toggleSidebar()}>Terrenos &amp; Lotes</Link></li>
+                  <li><Link href="/properties?property_type=4" onClick={() => state.isSidebarOpen && toggleSidebar()}>Oficinas &amp; Locales</Link></li>
                 </ul>
               </li>
 
               <li>
-                <Link href={pathname === '/' || pathname === '/travel-agency-03' ? '#categorias' : '/#categorias'}>
+                <Link
+                  href="/#categorias"
+                  onClick={() => state.isSidebarOpen && toggleSidebar()}
+                >
                   Categorías
                 </Link>
               </li>
 
-              <li>
-                <Link href={pathname === '/' || pathname === '/travel-agency-03' ? '#nosotros' : '/#nosotros'}>
+              <li className={pathname === '/about' || pathname === '/conocenos' ? 'active' : ''}>
+                <Link
+                  href="/about"
+                  onClick={() => state.isSidebarOpen && toggleSidebar()}
+                >
                   Conócenos
                 </Link>
               </li>
 
-              <li>
-                <Link href={pathname === '/' || pathname === '/travel-agency-03' ? '#destacadas' : '/#destacadas'}>
-                  Destacadas
-                </Link>
-              </li>
-
-              <li>
-                <Link href={pathname === '/' || pathname === '/travel-agency-03' ? '#contacto' : '/#contacto'}>
+              <li className={pathname === '/contact' || pathname === '/contacto' ? 'active' : ''}>
+                <Link
+                  href="/contact"
+                  onClick={() => state.isSidebarOpen && toggleSidebar()}
+                >
                   Contacto
                 </Link>
               </li>

@@ -44,17 +44,17 @@ const TopbarSlider: React.FC<TopbarSliderProps> = ({ agency }) => {
             <Swiper {...settings} modules={[Navigation, EffectFade]} className="swiper top-offer-text-slider">
               <div className="swiper-wrapper">
                 <SwiperSlide className="swiper-slide">
-                  <Link href="/properties">
+                  <Link href="/properties" suppressHydrationWarning>
                     {agency?.name ? `${agency.name}: ` : ''}Propiedades Exclusivas con <strong>Asesoría Legal Garantizada</strong>
                   </Link>
                 </SwiperSlide>
                 <SwiperSlide className="swiper-slide">
-                  <Link href="/properties">
+                  <Link href="/properties" suppressHydrationWarning>
                     {agency?.cta_text || '¿Deseas vender o rentar tu inmueble? Consigna tu propiedad con los expertos'}
                   </Link>
                 </SwiperSlide>
                 <SwiperSlide className="swiper-slide">
-                  <Link href="/properties?property_status=2">
+                  <Link href="/properties?property_status=2" suppressHydrationWarning>
                     Nuevos Desarrollos y Casas en Venta con <strong>Financiamiento Bancario Directo</strong>
                   </Link>
                 </SwiperSlide>

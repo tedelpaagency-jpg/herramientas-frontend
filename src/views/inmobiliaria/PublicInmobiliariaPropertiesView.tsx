@@ -18,6 +18,7 @@ import {
 import publicInmobiliariaService, {
   PublicAgencyConfig,
   PublicEstateItem,
+  getCachedAgencyConfig,
 } from '@/services/publicInmobiliariaService';
 import TopbarSlider from '@/components/topbar/TopbarSlider';
 import Header2Style3 from '@/components/layout/Header2Style3';
@@ -90,8 +91,23 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   // Desktop view mode toggle (split vs full list vs full map)
   const [viewMode, setViewMode] = useState<'split' | 'list' | 'map'>('split');
 
-  // Load agency config
+  // Track screen size to avoid rendering Leaflet inside hidden mobile container
+  const [isDesktop, setIsDesktop] = useState<boolean>(true);
+
   useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Load agency config (use fast cached config on client mount, then refresh)
+  useEffect(() => {
+    const cached = getCachedAgencyConfig(domainParam || undefined);
+    if (cached) setAgency(cached);
+
     publicInmobiliariaService
       .getConfig(domainParam || undefined)
       .then((res) => {
@@ -375,7 +391,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
       {/* 3. Main Split View: 30% Propiedades (con contenedor scroll) + 70% Mapa (sin espacios en blanco) */}
       <main className="w-full flex-1 flex flex-col min-h-0 bg-slate-50">
-        <div className="w-full h-[calc(100vh-175px)] min-h-[580px] flex flex-col lg:flex-row overflow-hidden border-t border-slate-200">
+        <div className="w-full h-[calc(100dvh-130px)] min-h-[580px] flex flex-col lg:flex-row overflow-hidden border-t border-slate-200">
           
           {/* Contenedor Izquierdo: Catálogo de propiedades */}
           <div
@@ -383,8 +399,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               viewMode === 'map'
                 ? 'hidden'
                 : viewMode === 'list'
-                ? 'w-full h-full overflow-y-auto px-4 sm:px-8 py-4 flex flex-col justify-between bg-white'
-                : `w-full lg:w-[58%] xl:w-[56%] 2xl:w-[54%] h-full overflow-y-auto px-3.5 sm:px-4 py-3 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs ${
+                ? 'w-full h-full overflow-y-auto px-4 sm:px-8 pt-4 pb-32 sm:pb-16 flex flex-col justify-between bg-white overscroll-contain'
+                : `w-full lg:w-[58%] xl:w-[56%] 2xl:w-[54%] h-full overflow-y-auto px-3.5 sm:px-4 pt-3 pb-32 sm:pb-12 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs overscroll-contain ${
                     mobileView === 'map' ? 'hidden lg:flex' : 'flex'
                   }`
             }`}
@@ -405,8 +421,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 <div
                   className={
                     viewMode === 'list'
-                      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-4'
-                      : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3'
+                      ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-2.5 sm:gap-4'
+                      : 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2 sm:gap-3'
                   }
                 >
                   {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -423,8 +439,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 <div
                   className={
                     viewMode === 'list'
-                      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-4'
-                      : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3'
+                      ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-2.5 sm:gap-4'
+                      : 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2 sm:gap-3'
                   }
                 >
                   {estates.map((estate) => (
@@ -469,9 +485,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               )}
             </div>
 
-            {/* Paginación fijada en el fondo del contenedor scrollable */}
+            {/* Paginación fijada en el fondo del contenedor scrollable con margen inferior para mobile */}
             {pagination.lastPage > 1 && (
-              <div className="mt-4 pt-3 pb-1 border-t border-slate-100 flex items-center justify-between">
+              <div className="mt-6 pt-4 pb-4 border-t border-slate-100 flex items-center justify-between shrink-0">
                 <button
                   type="button"
                   disabled={currentPage <= 1}
@@ -537,14 +553,17 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               </div>
             )}
 
-            <PublicPropertiesSplitMap
-              estates={estates}
-              agency={agency}
-              selectedEstate={selectedEstate}
-              hoveredEstateId={hoveredEstateId}
-              onSelectEstate={(est) => setSelectedEstate(est)}
-              domainParam={domainParam}
-            />
+            {/* Render Leaflet map only when visible on desktop or active in mobile view to prevent 0x0 size / NaN LatLng errors */}
+            {(viewMode === 'map' || isDesktop || mobileView === 'map') && (
+              <PublicPropertiesSplitMap
+                estates={estates}
+                agency={agency}
+                selectedEstate={selectedEstate}
+                hoveredEstateId={hoveredEstateId}
+                onSelectEstate={(est) => setSelectedEstate(est)}
+                domainParam={domainParam}
+              />
+            )}
           </div>
         </div>
 

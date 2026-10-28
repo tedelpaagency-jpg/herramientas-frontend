@@ -274,3 +274,33 @@ export const DEFAULT_REAL_ESTATE_PROPERTIES: PublicEstateItem[] = [
     image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=900&q=80',
   },
 ];
+
+export const DEFAULT_REAL_ESTATE_TERMS = `1. Aceptación de los Términos
+Al acceder y utilizar este portal inmobiliario, usted acepta cumplir y estar legalmente sujeto a los presentes Términos y Condiciones de Uso. Si no está de acuerdo con alguno de ellos, le solicitamos abstenerse de utilizar el servicio.
+
+2. Objeto del Portal
+El portal tiene como propósito la difusión, promoción y contacto comercial para la compraventa, arrendamiento y consignación de bienes inmuebles intermediados o promovidos por nuestra agencia inmobiliaria.
+
+3. Exactitud de la Información
+Las descripciones, fotografías, planos, precios y disponibilidad de los inmuebles publicados se ofrecen a título orientativo y han sido suministrados de buena fe. Los precios y condiciones pueden modificarse sin previo aviso y están sujetos a verificación legal y disponibilidad final.
+
+4. Formulario de Contacto y Solicitud de Información
+Al remitir sus datos a través de los formularios del portal, usted autoriza a nuestros asesores inmobiliarios a comunicarse por correo electrónico, llamada telefónica o WhatsApp para brindarle la información solicitada y agendar visitas guiadas.
+
+5. Propiedad Intelectual
+Todos los contenidos, fotografías, logotipos, diseños y marcas exhibidas en este sitio web son propiedad exclusiva de la agencia inmobiliaria o cuentan con licencias autorizadas de uso, quedando prohibida su reproducción sin consentimiento expreso.`;
+
+export const DEFAULT_REAL_ESTATE_PRIVACY = `1. Responsable del Tratamiento
+Nuestra agencia inmobiliaria es responsable del tratamiento, uso y protección de los datos personales que usted nos proporcione a través de este portal web.
+
+2. Finalidad del Tratamiento de Datos
+Los datos personales recabados (nombre, correo electrónico, teléfono y mensaje de interés) serán utilizados exclusivamente para:
+- Atender y responder a sus consultas sobre inmuebles en venta o alquiler.
+- Coordinar citas y visitas guiadas a las propiedades de su interés.
+- Mantenerlo informado sobre oportunidades y novedades inmobiliarias que se ajusten a su búsqueda.
+
+3. Protección y Confidencialidad
+Implementamos medidas de seguridad técnicas, administrativas y digitales para proteger su información contra pérdida, uso indebido, acceso no autorizado o alteración. No vendemos ni compartimos sus datos con terceros con fines publicitarios ajenos a nuestra actividad inmobiliaria.
+
+4. Derechos del Titular (ARCO)
+Usted tiene derecho a conocer qué datos personales tenemos, solicitar su rectificación en caso de ser inexactos, pedir su cancelación u oponerse al tratamiento de los mismos comunicándose directamente a nuestros canales de contacto oficiales.`;

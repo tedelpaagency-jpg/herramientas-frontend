@@ -184,13 +184,31 @@ async function fetchPublicApi<T>(endpoint: string, domain?: string): Promise<T> 
   return json;
 }
 
+export const getCachedAgencyConfig = (domain?: string): PublicAgencyConfig | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const key = `inmo_cfg_${resolveEffectiveDomain(domain)}`;
+    const saved = localStorage.getItem(key) || sessionStorage.getItem(key);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch {}
+  return null;
+};
+
 export const publicInmobiliariaService = {
   getConfig: async (domain?: string): Promise<{ status: string; data: PublicAgencyConfig }> => {
     const effectiveDomain = resolveEffectiveDomain(domain);
-    return fetchPublicApi<{ status: string; data: PublicAgencyConfig }>(
+    const res = await fetchPublicApi<{ status: string; data: PublicAgencyConfig }>(
       `/v1/public/inmobiliaria/config?domain=${encodeURIComponent(effectiveDomain)}`,
       effectiveDomain
     );
+    if (res?.data && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`inmo_cfg_${effectiveDomain}`, JSON.stringify(res.data));
+      } catch {}
+    }
+    return res;
   },
 
   getFeaturedEstates: async (domain?: string, limit: number = 6): Promise<{ status: string; data: PublicEstateItem[] }> => {
@@ -251,6 +269,31 @@ export const publicInmobiliariaService = {
       `/v1/public/estates/${encodeURIComponent(slug)}?domain=${encodeURIComponent(effectiveDomain)}`,
       effectiveDomain
     );
+  },
+
+  sendContactMessage: async (
+    data: { name: string; email?: string; phone?: string; subject?: string; message: string; estate_id?: number },
+    domain?: string
+  ): Promise<{ status: string; message: string }> => {
+    const effectiveDomain = resolveEffectiveDomain(domain);
+    const apiBase = getApiBaseUrl();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+    if (effectiveDomain) {
+      headers['X-Domain'] = effectiveDomain;
+    }
+    const res = await fetch(`${apiBase}/v1/public/inmobiliaria/contact?domain=${encodeURIComponent(effectiveDomain)}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al enviar el mensaje de contacto');
+    }
+    return res.json();
   },
 };
 

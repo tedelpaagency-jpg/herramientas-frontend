@@ -19,12 +19,19 @@ import {
   Check,
   ShieldCheck,
   Calendar,
+  X,
+  Send,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import publicInmobiliariaService, {
   PublicAgencyConfig,
   PublicEstateItem,
+  getCachedAgencyConfig,
 } from '@/services/publicInmobiliariaService';
+import {
+  DEFAULT_REAL_ESTATE_TERMS,
+  DEFAULT_REAL_ESTATE_PRIVACY,
+} from '@/constants/realEstateDefaults';
 import TopbarSlider from '@/components/topbar/TopbarSlider';
 import Header2Style3 from '@/components/layout/Header2Style3';
 import {
@@ -50,8 +57,23 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Form State matching "Contacta al anunciante"
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(true);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(true);
+  const [submittingContact, setSubmittingContact] = useState(false);
+  const [contactSuccess, setContactSuccess] = useState(false);
+
+  // Legal Modal ('terms' | 'privacy' | null)
+  const [activeLegalModal, setActiveLegalModal] = useState<'terms' | 'privacy' | null>(null);
+
   useEffect(() => {
     let active = true;
+    const cached = getCachedAgencyConfig(domainParam || undefined);
+    if (cached) setAgency(cached);
     const loadDetail = async () => {
       setLoading(true);
       try {
@@ -98,6 +120,53 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   };
 
   const primaryColor = fallbackAgency.primary_color || '#00a884';
+  const isRent = Number(estate?.property_status) === 1;
+
+  // Initialize pre-filled contact message matching Plusvalia / Inmobiliaria standard (Image uploaded by user)
+  useEffect(() => {
+    if (estate && !contactMessage) {
+      const agencyDisplayName = fallbackAgency.name || fallbackAgency.commercial_name || 'el portal inmobiliario';
+      const op = isRent ? 'alquiler' : 'venta';
+      setContactMessage(`¡Hola! Quiero que se comuniquen conmigo por este inmueble en ${op} que vi en ${agencyDisplayName}.`);
+    }
+  }, [estate, isRent, fallbackAgency.name, contactMessage]);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactName.trim()) {
+      toast.error('Por favor escribe tu nombre');
+      return;
+    }
+    if (!contactEmail.trim() && !contactPhone.trim()) {
+      toast.error('Por favor escribe tu email o teléfono');
+      return;
+    }
+    if (!acceptTerms || !acceptPrivacy) {
+      toast.error('Debes aceptar los Términos y la Política de Privacidad');
+      return;
+    }
+
+    setSubmittingContact(true);
+    try {
+      await publicInmobiliariaService.sendContactMessage(
+        {
+          name: contactName.trim(),
+          email: contactEmail.trim() || undefined,
+          phone: contactPhone.trim() || undefined,
+          subject: `Interés en: ${estate?.title || 'Inmueble'} (Ref: #${estate?.id})`,
+          message: contactMessage.trim(),
+          estate_id: estate?.id,
+        },
+        domainParam || undefined
+      );
+      setContactSuccess(true);
+      toast.success('¡Consulta enviada con éxito! Un asesor se comunicará contigo.');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al enviar la consulta. Intenta nuevamente.');
+    } finally {
+      setSubmittingContact(false);
+    }
+  };
   const withDomain = (path: string) => {
     if (!domainParam) return path;
     const sep = path.includes('?') ? '&' : '?';
@@ -163,7 +232,6 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
     );
   }
 
-  const isRent = Number(estate.property_status) === 1;
   const statusLabel = isRent ? 'En Alquiler' : 'En Venta';
   const typeLabel = PROPERTY_TYPE_LABELS[Number(estate.property_type)] || 'Inmueble';
   const currency = fallbackAgency.currency || 'USD';
@@ -395,61 +463,206 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
             )}
           </div>
 
-          {/* Tarjeta de Contacto Lateral Sticky (UX Conversion Card) */}
+          {/* Tarjeta de Contacto Lateral Sticky (Formulario idéntico a la imagen subida por el usuario) */}
           <div className="lg:col-span-4">
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xl sticky top-24 space-y-5">
-              <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100">
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg shrink-0 shadow-md"
-                  style={{ backgroundColor: primaryColor }}
+            <div id="anunciante-form" className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xl sticky top-24 space-y-4">
+              <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                Contacta al anunciante
+              </h3>
+
+              {contactSuccess ? (
+                <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-center space-y-2 animate-in fade-in-50 zoom-in-95">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-md">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-xs font-black text-emerald-950">¡Solicitud recibida!</h4>
+                  <p className="text-[11px] text-emerald-800 font-medium">
+                    Un asesor de <strong>{fallbackAgency.name}</strong> se comunicará contigo al teléfono o email proporcionado.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setContactSuccess(false)}
+                    className="mt-2 text-xs font-bold text-emerald-700 underline cursor-pointer"
+                  >
+                    Enviar otra consulta
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleContactSubmit} className="space-y-3">
+                  {/* Email */}
+                  <div>
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white"
+                      aria-label="Correo electrónico"
+                    />
+                  </div>
+
+                  {/* Nombre & Teléfono en 2 columnas */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Nombre"
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      required
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white"
+                      aria-label="Nombre"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Teléfono"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white"
+                      aria-label="Teléfono"
+                    />
+                  </div>
+
+                  {/* Mensaje con recuadro interior */}
+                  <div className="border border-slate-300 rounded-xl p-2.5 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all bg-white">
+                    <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Mensaje</label>
+                    <textarea
+                      rows={3}
+                      value={contactMessage}
+                      onChange={(e) => setContactMessage(e.target.value)}
+                      required
+                      className="w-full bg-transparent border-none outline-none text-xs font-semibold text-slate-800 resize-none leading-relaxed placeholder-slate-400"
+                      aria-label="Mensaje"
+                    />
+                  </div>
+
+                  {/* Checkbox Términos */}
+                  <div className="pt-1 space-y-2">
+                    <label className="flex items-start gap-2 cursor-pointer select-none text-[11px] text-slate-700 font-semibold leading-tight">
+                      <input
+                        type="checkbox"
+                        checked={acceptTerms}
+                        onChange={(e) => setAcceptTerms(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                      />
+                      <span>
+                        Acepto los{' '}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setActiveLegalModal('terms');
+                          }}
+                          className="font-bold underline text-slate-900 hover:text-orange-600 transition-colors"
+                        >
+                          Términos y Condiciones de Uso
+                        </button>
+                        .
+                      </span>
+                    </label>
+
+                    {/* Checkbox Política de Privacidad */}
+                    <label className="flex items-start gap-2 cursor-pointer select-none text-[11px] text-slate-700 font-semibold leading-tight">
+                      <input
+                        type="checkbox"
+                        checked={acceptPrivacy}
+                        onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                      />
+                      <span>
+                        Acepto la{' '}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setActiveLegalModal('privacy');
+                          }}
+                          className="font-bold underline text-slate-900 hover:text-orange-600 transition-colors"
+                        >
+                          Política de Privacidad
+                        </button>
+                        .
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Botón 1: Contactar (Naranja con icono de correo) */}
+                  <button
+                    type="submit"
+                    disabled={submittingContact}
+                    className="w-full min-h-[46px] py-3 px-4 rounded-xl text-xs font-black text-white bg-[#f97316] hover:bg-[#ea580c] active:scale-[0.98] shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <Mail className="w-4 h-4" />
+                    <span>{submittingContact ? 'Enviando...' : 'Contactar'}</span>
+                  </button>
+                </form>
+              )}
+
+              {/* Botón 2: Contactar por WhatsApp (Verde con icono de WhatsApp) */}
+              {whatsappNumber && (
+                <a
+                  href={`https://wa.me/${whatsappNumber}?text=${whatsappText}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full min-h-[46px] py-3 px-4 rounded-xl text-xs font-black text-white bg-[#22c55e] hover:bg-[#16a34a] active:scale-[0.98] shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer text-decoration-none"
                 >
-                  {(fallbackAgency.name || 'IN').substring(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                    Comercializado por
-                  </span>
-                  <h4 className="text-sm font-black text-slate-900">{fallbackAgency.name}</h4>
-                </div>
-              </div>
+                  <MessageCircle className="w-4 h-4 fill-white" />
+                  <span>Contactar por WhatsApp</span>
+                </a>
+              )}
 
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                ¿Te interesa este inmueble? Solicita asesoría personalizada, planos o agenda una visita guiada con nuestro equipo comercial.
-              </p>
-
-              {/* Botones de acción con respuesta táctil y jerarquía UX */}
-              <div className="space-y-3 pt-1">
-                {whatsappNumber && (
-                  <a
-                    href={`https://wa.me/${whatsappNumber}?text=${whatsappText}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl text-xs font-black text-white shadow-lg shadow-emerald-500/25 hover:brightness-105 active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
-                    style={{ backgroundColor: '#25D366' }}
-                  >
-                    <MessageCircle className="w-4 h-4 fill-white" />
-                    <span>Consultar por WhatsApp</span>
-                  </a>
-                )}
-
-                {(estate.agency?.phone || fallbackAgency.phone) && (
-                  <a
-                    href={`tel:${estate.agency?.phone || fallbackAgency.phone}`}
-                    className="w-full min-h-[44px] py-3 px-4 rounded-2xl text-xs font-extrabold border border-slate-200 text-slate-800 hover:bg-slate-50 active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2"
-                  >
-                    <Phone className="w-4 h-4" style={{ color: primaryColor }} />
-                    <span>Llamar: {estate.agency?.phone || fallbackAgency.phone}</span>
-                  </a>
-                )}
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-400 font-semibold">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Atención inmediata y contacto verificado</span>
+              <div className="pt-2 border-t border-slate-100 flex items-center gap-2 text-[10px] text-slate-400 font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Atención inmediata y contacto legal verificado</span>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Modal de Términos y Condiciones / Política de Privacidad */}
+        {activeLegalModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-200">
+            <div className="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span>
+                    {activeLegalModal === 'terms'
+                      ? 'Términos y Condiciones de Uso'
+                      : 'Política de Privacidad y Tratamiento de Datos'}
+                  </span>
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setActiveLegalModal(null)}
+                  className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 transition-colors cursor-pointer"
+                  aria-label="Cerrar ventana"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto space-y-4 text-xs text-slate-600 leading-relaxed font-medium">
+                <div className="whitespace-pre-line">
+                  {activeLegalModal === 'terms'
+                    ? fallbackAgency.details?.terms_and_conditions || DEFAULT_REAL_ESTATE_TERMS
+                    : fallbackAgency.details?.privacy_policy || DEFAULT_REAL_ESTATE_PRIVACY}
+                </div>
+              </div>
+
+              <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setActiveLegalModal(null)}
+                  className="px-5 py-2 rounded-xl text-xs font-black bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition-all cursor-pointer"
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <PublicInmobiliariaFooter agency={fallbackAgency} domainParam={domainParam} />

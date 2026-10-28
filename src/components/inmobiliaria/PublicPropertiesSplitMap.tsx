@@ -33,17 +33,29 @@ export const resolveEstateGPS = (
   index: number = 0,
   baseCenter: [number, number] = [-0.9677, -80.7089] // Manta / Guayaquil default
 ): [number, number] => {
-  const lat = Number(estate.latitude);
-  const lng = Number(estate.longitude);
-  if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+  const lat = parseFloat(String(estate?.latitude));
+  const lng = parseFloat(String(estate?.longitude));
+  if (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat !== 0 &&
+    lng !== 0 &&
+    Math.abs(lat) <= 90 &&
+    Math.abs(lng) <= 180
+  ) {
     return [lat, lng];
   }
+  const safeBaseLat = Number.isFinite(baseCenter?.[0]) ? baseCenter[0] : -0.9677;
+  const safeBaseLng = Number.isFinite(baseCenter?.[1]) ? baseCenter[1] : -80.7089;
+  const safeIdx = Number(index) || 0;
   // Golden ratio spiral distribution around city center
-  const angle = (index * 137.5 * Math.PI) / 180;
-  const radius = 0.012 + ((index % 6) * 0.007);
+  const angle = (safeIdx * 137.5 * Math.PI) / 180;
+  const radius = 0.012 + ((safeIdx % 6) * 0.007);
+  const resLat = Number((safeBaseLat + radius * Math.cos(angle)).toFixed(6));
+  const resLng = Number((safeBaseLng + radius * Math.sin(angle) * 1.2).toFixed(6));
   return [
-    baseCenter[0] + radius * Math.cos(angle),
-    baseCenter[1] + radius * Math.sin(angle) * 1.2,
+    Number.isFinite(resLat) ? resLat : -0.9677,
+    Number.isFinite(resLng) ? resLng : -80.7089,
   ];
 };
 
@@ -94,16 +106,91 @@ const createPricePillIcon = (
   });
 };
 
+// Error Boundary to prevent Leaflet runtime quirks from crashing the Next.js page
+class MapErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: any) {
+    console.warn('[MapErrorBoundary] Suppressed map render issue:', error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-500 p-6 text-center">
+          <span className="text-xs font-bold text-slate-700">Mapa temporalmente no disponible</span>
+          <button
+            type="button"
+            onClick={() => this.setState({ hasError: false })}
+            className="mt-2 text-xs text-blue-600 font-semibold underline cursor-pointer"
+          >
+            Reintentar cargar mapa
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Component to invalidate size when container size changes
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    const handleResize = () => {
+      try {
+        const size = map.getSize();
+        if (size && size.x > 20 && size.y > 20) {
+          map.invalidateSize();
+        }
+      } catch {}
+    };
+
+    const timer1 = setTimeout(handleResize, 100);
+    const timer2 = setTimeout(handleResize, 500);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [map]);
+  return null;
+}
+
 // Component to fly to selected property coordinates
 function MapFlyTo({ coords }: { coords: [number, number] | null }) {
   const map = useMap();
   useEffect(() => {
-    if (coords) {
-      map.flyTo(coords, Math.max(map.getZoom(), 14), {
-        animate: true,
-        duration: 0.8,
-        easeLinearity: 0.25,
-      });
+    if (!coords) return;
+    try {
+      const size = map.getSize();
+      if (!size || size.x <= 20 || size.y <= 20) return;
+
+      if (
+        Array.isArray(coords) &&
+        coords.length === 2 &&
+        Number.isFinite(coords[0]) &&
+        Number.isFinite(coords[1]) &&
+        Math.abs(coords[0]) <= 90 &&
+        Math.abs(coords[1]) <= 180
+      ) {
+        map.flyTo(coords, Math.max(map.getZoom(), 14), {
+          animate: true,
+          duration: 0.8,
+          easeLinearity: 0.25,
+        });
+      }
+    } catch (err) {
+      console.warn('MapFlyTo error ignored:', err);
     }
   }, [coords, map]);
   return null;
@@ -113,15 +200,27 @@ function MapFlyTo({ coords }: { coords: [number, number] | null }) {
 function MapBoundsFitter({ points }: { points: [number, number][] }) {
   const map = useMap();
   useEffect(() => {
-    if (points.length > 0) {
-      try {
-        const bounds = L.latLngBounds(points);
+    try {
+      const size = map.getSize();
+      if (!size || size.x <= 20 || size.y <= 20) return;
+
+      const validPoints = (points || []).filter(
+        (p) =>
+          Array.isArray(p) &&
+          p.length === 2 &&
+          Number.isFinite(p[0]) &&
+          Number.isFinite(p[1]) &&
+          Math.abs(p[0]) <= 90 &&
+          Math.abs(p[1]) <= 180
+      );
+      if (validPoints.length > 0) {
+        const bounds = L.latLngBounds(validPoints);
         if (bounds.isValid()) {
           map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
         }
-      } catch {
-        // Fallback silently
       }
+    } catch (err) {
+      console.warn('MapBoundsFitter error ignored:', err);
     }
   }, [points, map]);
   return null;
@@ -155,7 +254,15 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
   }, [estates]);
 
   const allPoints = useMemo(() => {
-    return Array.from(estateCoords.values());
+    return Array.from(estateCoords.values()).filter(
+      (p) =>
+        Array.isArray(p) &&
+        p.length === 2 &&
+        Number.isFinite(p[0]) &&
+        Number.isFinite(p[1]) &&
+        Math.abs(p[0]) <= 90 &&
+        Math.abs(p[1]) <= 180
+    );
   }, [estateCoords]);
 
   const initialCenter: [number, number] = allPoints[0] || [-0.9677, -80.7089];
@@ -209,42 +316,45 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-slate-100">
-      <MapContainer
-        center={initialCenter}
-        zoom={13}
-        scrollWheelZoom={true}
-        style={{ width: '100%', height: '100%' }}
-        className="w-full h-full"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapErrorBoundary>
+        <MapContainer
+          center={initialCenter}
+          zoom={13}
+          scrollWheelZoom={true}
+          style={{ width: '100%', height: '100%' }}
+          className="w-full h-full"
+        >
+          <MapResizer />
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
 
-        <MapBoundsFitter points={allPoints} />
-        <MapFlyTo coords={selectedCoords} />
+          <MapBoundsFitter points={allPoints} />
+          <MapFlyTo coords={selectedCoords} />
 
-        {estates.map((estate) => {
-          const coords = estateCoords.get(estate.id);
-          if (!coords) return null;
-          const isSelected = selectedEstate?.id === estate.id;
-          const isHovered = hoveredEstateId === estate.id;
-          const icon = createPricePillIcon(estate, isSelected, isHovered);
+          {estates.map((estate) => {
+            const coords = estateCoords.get(estate.id);
+            if (!coords) return null;
+            const isSelected = selectedEstate?.id === estate.id;
+            const isHovered = hoveredEstateId === estate.id;
+            const icon = createPricePillIcon(estate, isSelected, isHovered);
 
-          return (
-            <Marker
-              key={estate.id}
-              position={coords}
-              icon={icon}
-              eventHandlers={{
-                click: () => {
-                  onSelectEstate(estate);
-                },
-              }}
-            />
-          );
-        })}
-      </MapContainer>
+            return (
+              <Marker
+                key={estate.id}
+                position={coords}
+                icon={icon}
+                eventHandlers={{
+                  click: () => {
+                    onSelectEstate(estate);
+                  },
+                }}
+              />
+            );
+          })}
+        </MapContainer>
+      </MapErrorBoundary>
 
       {/* Floating Preview Card estilo Plusvalia (Imagen 2) con Emil Kowalski Craft */}
       {selectedEstate && (
