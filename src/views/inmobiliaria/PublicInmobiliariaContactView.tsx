@@ -23,6 +23,7 @@ import publicInmobiliariaService, {
 import TopbarSlider from '@/components/topbar/TopbarSlider';
 import Header2Style3 from '@/components/layout/Header2Style3';
 import Footer from '@/components/layout/Footer';
+import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
 import { DEFAULT_FALLBACK_AGENCY } from '@/constants/realEstateDefaults';
 
 export const PublicInmobiliariaContactView: React.FC = () => {
@@ -121,6 +122,7 @@ export const PublicInmobiliariaContactView: React.FC = () => {
 
   return (
     <div className="travel-agency-03-root min-h-screen flex flex-col bg-slate-50/50 text-slate-900 font-sans selection:bg-emerald-500 selection:text-white">
+      <BrandingThemeInjector agency={effectiveAgency} />
       {/* 1. Header con Topbar slider */}
       <TopbarSlider agency={effectiveAgency} />
       <Header2Style3 agency={effectiveAgency} />

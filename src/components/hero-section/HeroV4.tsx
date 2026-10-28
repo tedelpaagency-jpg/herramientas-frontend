@@ -135,6 +135,8 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   const tab3 = agency?.details?.hero_tab3 || 'Terrenos & Lotes';
   const tab4 = agency?.details?.hero_tab4 || 'Comercial';
   const searchBtnText = agency?.details?.hero_search_btn || 'BUSCAR';
+  const primaryColor = agency?.primary_color || '#00a884';
+  const buttonColor = agency?.button_color || primaryColor;
 
   return (
     <div className="home4-banner-section mb-100">
@@ -208,10 +210,10 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.09) !important;
                 }
                 .hero-tab-pill.active {
-                  background: #0f172a !important;
+                  background: ${primaryColor} !important;
                   color: #ffffff !important;
-                  border-color: #0f172a !important;
-                  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25) !important;
+                  border-color: ${primaryColor} !important;
+                  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
                 }
                 .hero-tab-pill.active svg {
                   fill: none !important;
@@ -264,9 +266,9 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                 }
                 .filter-wrapper .filter-input-wrap .filter-input .single-search-box:hover,
                 .filter-wrapper .filter-input-wrap .filter-input .single-search-box:focus-within {
-                  border-color: #00a884 !important;
+                  border-color: ${primaryColor} !important;
                   background-color: #ffffff !important;
-                  box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.12) !important;
+                  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05) !important;
                 }
                 .filter-wrapper .filter-input-wrap .filter-input .single-search-box input {
                   font-size: 13.5px !important;
@@ -289,6 +291,9 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   height: 48px !important;
                   padding: 0 24px !important;
                   border-radius: 12px !important;
+                  background-color: ${buttonColor} !important;
+                  border-color: ${buttonColor} !important;
+                  color: #ffffff !important;
                   display: flex !important;
                   align-items: center !important;
                   justify-content: center !important;

@@ -23,6 +23,7 @@ import publicInmobiliariaService, {
 import TopbarSlider from '@/components/topbar/TopbarSlider';
 import Header2Style3 from '@/components/layout/Header2Style3';
 import { AirbnbPropertyCard } from '@/components/inmobiliaria/AirbnbPropertyCard';
+import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
 
 // Dynamically import Leaflet Map to avoid SSR issues
 const PublicPropertiesSplitMap = dynamic(
@@ -238,6 +239,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
   return (
     <div className="travel-agency-03-root min-h-screen flex flex-col bg-white text-slate-900 font-sans">
+      <BrandingThemeInjector agency={fallbackAgency} />
       {/* 1. Mismo header de navegación que en la vista de inicio */}
       <TopbarSlider agency={fallbackAgency} />
       <Header2Style3 agency={fallbackAgency} />

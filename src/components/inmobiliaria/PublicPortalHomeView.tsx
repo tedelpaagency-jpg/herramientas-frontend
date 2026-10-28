@@ -8,6 +8,7 @@ import Footer from '@/components/layout/Footer';
 import Header2Style3 from '@/components/layout/Header2Style3';
 import TopbarSlider from '@/components/topbar/TopbarSlider';
 import TravelPackageV4 from '@/components/travel-package-section/TravelPackageV4';
+import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
 import publicInmobiliariaService, {
   PublicAgencyConfig,
   PublicEstateItem,
@@ -120,6 +121,7 @@ export default function PublicPortalHomeView({
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}
     >
+      <BrandingThemeInjector agency={agency} />
       <TopbarSlider />
       <Header2Style3 agency={agency} />
       <HeroV4 agency={agency} />

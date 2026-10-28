@@ -73,6 +73,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
     seo_description: '',
     details: {
       target_workspace_id: '',
+      footer_logo: '',
       terms_and_conditions: '',
       privacy_policy: '',
       hero_tab1: 'En Venta',
@@ -176,6 +177,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       seo_description: ag.seo_description || `Explora las mejores propiedades en venta y alquiler con ${ag.name || 'nuestra agencia'}.`,
       details: {
         target_workspace_id: parsedDetails?.target_workspace_id || '',
+        footer_logo: parsedDetails?.footer_logo || ag.footer_logo || '',
         terms_and_conditions: parsedDetails?.terms_and_conditions || '',
         privacy_policy: parsedDetails?.privacy_policy || '',
         hero_tab1: parsedDetails?.hero_tab1 || 'En Venta',
@@ -1422,14 +1424,57 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                 {/* Logotipo del Portal */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
-                    Logotipo Oficial del Portal:
+                    Logotipo Oficial del Portal (Cabecera):
                   </label>
                   <MediaPicker
                     value={form.logo || ''}
                     onChange={(selected) => setForm({ ...form, logo: selected?.url || '' })}
-                    label="Subir o Cambiar Logotipo"
+                    label="Subir o Cambiar Logotipo Principal"
                     type="image"
                   />
+                </div>
+
+                {/* Logotipo del Footer */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                      Logotipo del Pie de Página (Footer):
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-medium">Opcional — Versión para fondo oscuro</span>
+                  </div>
+                  <MediaPicker
+                    value={form.details?.footer_logo || ''}
+                    onChange={(selected) =>
+                      setForm({
+                        ...form,
+                        details: {
+                          ...(form.details || {}),
+                          footer_logo: selected?.url || '',
+                        },
+                      })
+                    }
+                    label="Subir o Cambiar Logotipo del Footer"
+                    type="image"
+                  />
+                  {form.details?.footer_logo && (
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            details: {
+                              ...(form.details || {}),
+                              footer_logo: '',
+                            },
+                          })
+                        }
+                        className="text-[11px] font-bold text-rose-500 hover:underline"
+                      >
+                        Quitar logotipo del footer (usar logotipo principal)
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

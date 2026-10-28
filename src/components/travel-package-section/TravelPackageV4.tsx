@@ -177,7 +177,7 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
                           <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>
                             {isRent ? 'Renta Mensual' : 'Precio de Venta'}
                           </span>
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#00a884', letterSpacing: '-0.02em' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 800, color: agency?.primary_color || '#00a884', letterSpacing: '-0.02em' }}>
                             {formatPrice(estate.price, agencyCurrency)}
                           </span>
                         </div>
@@ -189,17 +189,18 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
                             alignItems: 'center',
                             justifyContent: 'center',
                             width: '100%',
-                            padding: '6px 10px',
-                            background: '#0284c7',
+                            padding: '7px 10px',
+                            background: agency?.primary_color || '#00a884',
                             color: '#ffffff',
                             borderRadius: '8px',
                             fontSize: '11px',
-                            fontWeight: 700,
+                            fontWeight: 800,
                             textDecoration: 'none',
-                            transition: 'background 0.15s ease',
+                            transition: 'all 0.15s ease',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
                           }}
                         >
-                          Ver Detalles ↗
+                          Ver Propiedad ↗
                         </Link>
                       </div>
 

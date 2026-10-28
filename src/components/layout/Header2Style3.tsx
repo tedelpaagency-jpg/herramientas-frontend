@@ -273,15 +273,6 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                 </ul>
               </li>
 
-              <li>
-                <Link
-                  href="/#categorias"
-                  onClick={() => state.isSidebarOpen && toggleSidebar()}
-                >
-                  Categorías
-                </Link>
-              </li>
-
               <li className={pathname === '/about' || pathname === '/conocenos' ? 'active' : ''}>
                 <Link
                   href="/about"

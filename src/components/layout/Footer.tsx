@@ -11,7 +11,13 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
   const agencyPhone = agency?.phone || agency?.whatsapp || '+52 55 1234 5678';
   const agencyEmail = agency?.email || 'contacto@inmobiliaria.com';
   const agencyAddress = [agency?.address, agency?.city, agency?.province].filter(Boolean).join(', ') || 'Av. Insurgentes Sur 1200, Ciudad de México';
-  const logoUrl = agency?.logo || agency?.logo_2 || '/assets/img/footer-logo.svg';
+  const primaryColor = agency?.primary_color || '#00a884';
+  const footerLogo =
+    agency?.details?.footer_logo ||
+    agency?.footer_logo ||
+    agency?.logo ||
+    agency?.logo_2;
+  const logoUrl = footerLogo || '';
   const rawPhone = agencyPhone.replace(/\s+/g, '').replace(/[^0-9+]/g, '');
 
   return (
@@ -20,7 +26,7 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
         <div className="footer-contact-wrap">
           <div className="inquiry-area">
             <svg width={36} height={36} viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-              <path d="M35.8703 28.2548L33.7795 22.1697C34.7873 20.1094 35.3199 17.8181 35.3235 15.5126C35.3297 11.5039 33.7788 7.71355 30.9563 4.83988C28.1332 1.96565 24.3714 0.347686 20.3636 0.284193C16.2077 0.218522 12.3015 1.79929 9.36472 4.73596C6.53295 7.56766 4.96231 11.3008 4.9126 15.29C2.12162 17.3914 0.474267 20.6676 0.479681 24.167C0.482282 25.8045 0.850861 27.4323 1.54927 28.9043L0.109064 33.0955C-0.138507 33.816 0.0423371 34.5983 0.581071 35.1371C0.960196 35.5162 1.46005 35.7181 1.9741 35.7181C2.19038 35.7181 2.4092 35.6824 2.62259 35.6091L6.81385 34.1688C8.28584 34.8673 9.91365 35.2358 11.5512 35.2384H11.5687C15.1201 35.2383 18.4213 33.5485 20.515 30.6891C22.6938 30.6317 24.8495 30.1043 26.7983 29.1509L32.8835 31.2419C33.1314 31.3274 33.3918 31.3712 33.654 31.3715C34.2649 31.3715 34.8589 31.1316 35.3095 30.6809C35.9497 30.0407 36.1645 29.1111 35.8703 28.2548Z" fill="#00a884" />
+              <path d="M35.8703 28.2548L33.7795 22.1697C34.7873 20.1094 35.3199 17.8181 35.3235 15.5126C35.3297 11.5039 33.7788 7.71355 30.9563 4.83988C28.1332 1.96565 24.3714 0.347686 20.3636 0.284193C16.2077 0.218522 12.3015 1.79929 9.36472 4.73596C6.53295 7.56766 4.96231 11.3008 4.9126 15.29C2.12162 17.3914 0.474267 20.6676 0.479681 24.167C0.482282 25.8045 0.850861 27.4323 1.54927 28.9043L0.109064 33.0955C-0.138507 33.816 0.0423371 34.5983 0.581071 35.1371C0.960196 35.5162 1.46005 35.7181 1.9741 35.7181C2.19038 35.7181 2.4092 35.6824 2.62259 35.6091L6.81385 34.1688C8.28584 34.8673 9.91365 35.2358 11.5512 35.2384H11.5687C15.1201 35.2383 18.4213 33.5485 20.515 30.6891C22.6938 30.6317 24.8495 30.1043 26.7983 29.1509L32.8835 31.2419C33.1314 31.3274 33.3918 31.3712 33.654 31.3715C34.2649 31.3715 34.8589 31.1316 35.3095 30.6809C35.9497 30.0407 36.1645 29.1111 35.8703 28.2548Z" fill={primaryColor} />
             </svg>
             <div className="content">
               <h6>¿Tienes alguna duda o consulta?</h6>
@@ -71,11 +77,11 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
           <div className="row gy-md-4 gy-5">
             <div className="col-lg-4 col-md-5 col-sm-6">
               <div className="footer-logo-and-addition-info">
-                <Link href="/" className="footer-logo" style={{ display: 'inline-block', marginBottom: '16px' }}>
-                  {logoUrl.endsWith('.svg') || logoUrl.startsWith('/') ? (
-                    <Image width={150} height={42} src={logoUrl} alt={agencyName} style={{ maxHeight: '45px', width: 'auto', objectFit: 'contain' }} />
+                <Link href="/" className="footer-logo" style={{ display: 'inline-block', marginBottom: '16px', textDecoration: 'none' }}>
+                  {logoUrl ? (
+                    <img src={logoUrl} alt={agencyName} style={{ maxHeight: '48px', maxWidth: '210px', width: 'auto', objectFit: 'contain' }} />
                   ) : (
-                    <img src={logoUrl} alt={agencyName} style={{ maxHeight: '45px', width: 'auto', objectFit: 'contain' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><div style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: primaryColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: 900, fontSize: '18px', flexShrink: 0 }}>{agencyName.charAt(0).toUpperCase()}</div><span style={{ fontSize: '20px', fontWeight: 900, color: '#ffffff', lineHeight: 1.15, letterSpacing: '-0.02em' }}>{agencyName}</span></div>
                   )}
                 </Link>
                 <div className="address-area">

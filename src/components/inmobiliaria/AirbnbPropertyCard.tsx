@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Heart,
   Star,
@@ -11,6 +12,7 @@ import {
   Maximize2,
   ShieldCheck,
   MapPin,
+  ArrowUpRight,
 } from 'lucide-react';
 import { PublicEstateItem } from '@/services/publicInmobiliariaService';
 
@@ -67,6 +69,10 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
   // Deterministic rating between 4.80 and 5.00 for authentic aesthetic
   const rating = (4.8 + ((estate.id * 17) % 21) / 100).toFixed(2);
   const reviewCount = 8 + ((estate.id * 13) % 45);
+
+  const detailHref = `/properties/${encodeURIComponent(estate.slug || String(estate.id))}${
+    domainParam ? `?domain=${encodeURIComponent(domainParam)}` : ''
+  }`;
 
   const nextImage = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -239,10 +245,10 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
           ) : null}
         </div>
 
-        {/* Fila 4: Precio destacado y llamada al mapa */}
-        <div className="pt-1 flex items-baseline justify-between gap-1 border-t border-slate-100">
+        {/* Fila 4: Precio destacado */}
+        <div className="pt-1.5 flex items-baseline justify-between gap-1 border-t border-slate-100">
           <div className="flex items-baseline gap-1">
-            <span className="text-[14px] font-black text-slate-900 tracking-tight">
+            <span className="text-[13px] sm:text-[14px] font-black text-slate-900 tracking-tight">
               ${priceFormatted} {currency}
             </span>
             <span className="text-[10px] text-slate-500 font-semibold">
@@ -250,9 +256,29 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
             </span>
           </div>
 
-          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-            <span>Ver en mapa</span>
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect?.(estate);
+            }}
+            className="text-[9.5px] sm:text-[10px] font-bold text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-full flex items-center gap-1 cursor-pointer transition-colors"
+            title="Centrar en el mapa"
+          >
+            <span>Mapa</span>
           </span>
+        </div>
+
+        {/* Fila 5: Botón Ver Propiedad */}
+        <div className="pt-1">
+          <Link
+            href={detailHref}
+            onClick={(e) => e.stopPropagation()}
+            style={{ backgroundColor: primaryColor }}
+            className="w-full py-1.5 sm:py-2 px-3 rounded-xl text-white font-black text-[11px] sm:text-xs flex items-center justify-center gap-1.5 shadow-xs hover:opacity-90 active:scale-95 transition-all text-center tracking-tight"
+          >
+            <span>Ver Propiedad</span>
+            <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
+          </Link>
         </div>
       </div>
     </div>

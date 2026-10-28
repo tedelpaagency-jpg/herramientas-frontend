@@ -34,6 +34,7 @@ import {
 } from '@/constants/realEstateDefaults';
 import TopbarSlider from '@/components/topbar/TopbarSlider';
 import Header2Style3 from '@/components/layout/Header2Style3';
+import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
 import {
   getEstatePrimaryImage,
   PROPERTY_TYPE_LABELS,
@@ -299,6 +300,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
 
   return (
     <div className="travel-agency-03-root min-h-screen flex flex-col bg-[#fcfcfd] text-slate-900 font-sans selection:bg-slate-900 selection:text-white">
+      <BrandingThemeInjector agency={fallbackAgency} />
       <TopbarSlider agency={fallbackAgency} />
       <Header2Style3 agency={fallbackAgency} />
 

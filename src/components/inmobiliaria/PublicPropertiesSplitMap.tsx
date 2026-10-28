@@ -226,6 +226,65 @@ function MapBoundsFitter({ points }: { points: [number, number][] }) {
   return null;
 }
 
+// Controller to safely manage scroll wheel zoom without hijacking page/catalog scrolling
+function MapInteractionController() {
+  const map = useMap();
+  useEffect(() => {
+    // Disable scroll wheel zoom by default so user can scroll page/cards freely
+    map.scrollWheelZoom.disable();
+
+    const container = map.getContainer();
+    const handleFocus = () => {
+      map.scrollWheelZoom.enable();
+    };
+    const handleBlur = () => {
+      map.scrollWheelZoom.disable();
+    };
+
+    container.addEventListener('click', handleFocus);
+    container.addEventListener('mouseleave', handleBlur);
+
+    return () => {
+      container.removeEventListener('click', handleFocus);
+      container.removeEventListener('mouseleave', handleBlur);
+    };
+  }, [map]);
+  return null;
+}
+
+// Custom Zoom Controls with Emil Kowalski Micro-interactions
+function MapZoomButtons() {
+  const map = useMap();
+  return (
+    <div className="leaflet-top leaflet-right" style={{ pointerEvents: 'auto', margin: '14px', zIndex: 1000 }}>
+      <div className="flex flex-col rounded-xl shadow-md overflow-hidden bg-white/95 backdrop-blur-xs border border-slate-200">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            map.zoomIn();
+          }}
+          aria-label="Acercar mapa"
+          className="w-9 h-9 flex items-center justify-center font-bold text-lg text-slate-800 hover:bg-slate-100 active:scale-90 transition-all cursor-pointer border-b border-slate-100"
+        >
+          +
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            map.zoomOut();
+          }}
+          aria-label="Alejar mapa"
+          className="w-9 h-9 flex items-center justify-center font-bold text-lg text-slate-800 hover:bg-slate-100 active:scale-90 transition-all cursor-pointer"
+        >
+          &minus;
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export interface PublicPropertiesSplitMapProps {
   estates: PublicEstateItem[];
   agency?: PublicAgencyConfig | null;
@@ -320,11 +379,14 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
         <MapContainer
           center={initialCenter}
           zoom={13}
-          scrollWheelZoom={true}
+          scrollWheelZoom={false}
+          zoomControl={false}
           style={{ width: '100%', height: '100%' }}
           className="w-full h-full"
         >
           <MapResizer />
+          <MapInteractionController />
+          <MapZoomButtons />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
