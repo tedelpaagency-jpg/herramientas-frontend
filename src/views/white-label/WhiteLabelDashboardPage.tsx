@@ -31,13 +31,14 @@ import { useAuth } from '../../context/AuthContext';
 import Portal from '../../components/Portal';
 import toast from 'react-hot-toast';
 import BrandingCustomizationPage from '../admin/BrandingCustomizationPage';
+import EstateCatalogManagementView from '../../components/admin/EstateCatalogManagementView';
 
 export const WhiteLabelDashboardPage: React.FC = () => {
   const { user, currentWhiteLabel, setCurrentWhiteLabel } = useAuth();
   const [whiteLabels, setWhiteLabels] = useState<WhiteLabel[]>([]);
   const [selectedWL, setSelectedWL] = useState<WhiteLabel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'agencies' | 'admins' | 'branding'>('agencies');
+  const [activeTab, setActiveTab] = useState<'agencies' | 'admins' | 'branding' | 'estate_catalog'>('agencies');
 
   // Modals state
   const [isAgencyModalOpen, setIsAgencyModalOpen] = useState(false);
@@ -261,6 +262,15 @@ export const WhiteLabelDashboardPage: React.FC = () => {
             <Palette className="w-4 h-4" />
             <span>Personalización y Branding</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('estate_catalog')}
+            className={`pb-3 px-3 transition-colors border-b-2 flex items-center gap-1.5 cursor-pointer ${activeTab === 'estate_catalog' ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400 font-black' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
+          >
+            <Globe className="w-4 h-4 text-emerald-600" />
+            <span>Destinos &amp; Categorías Inmobiliarias</span>
+            <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[9px] font-black uppercase">Nuevo</span>
+          </button>
         </div>
       </div>
 
@@ -408,6 +418,13 @@ export const WhiteLabelDashboardPage: React.FC = () => {
           initialTargetType="white_label"
           initialWhiteLabelId={selectedWL.id}
         />
+      )}
+
+      {/* TAB 4: ESTATE CATALOG (Países, Ciudades y Categorías con fotos) */}
+      {activeTab === 'estate_catalog' && (
+        <div className="pt-2">
+          <EstateCatalogManagementView whiteLabelId={selectedWL.id} />
+        </div>
       )}
 
       {/* AGENCY PROFILE & USERS MODAL */}

@@ -9,6 +9,7 @@ import Header2Style3 from '@/components/layout/Header2Style3';
 import TopbarSlider from '@/components/topbar/TopbarSlider';
 import TravelPackageV4 from '@/components/travel-package-section/TravelPackageV4';
 import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
+import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
 import publicInmobiliariaService, {
   PublicAgencyConfig,
   PublicEstateItem,
@@ -122,6 +123,13 @@ export default function PublicPortalHomeView({
       }}
     >
       <BrandingThemeInjector agency={agency} />
+      <PublicPortalLoader
+        isOpen={loading}
+        countryName={agency?.country_name || agency?.country}
+        countryImage={agency?.country_image}
+        agency={agency}
+        message="Un momento por favor, estamos buscando las mejores propiedades."
+      />
       <TopbarSlider agency={agency} />
       <Header2Style3 agency={agency} />
       <HeroV4 agency={agency} />

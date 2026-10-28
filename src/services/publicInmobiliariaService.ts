@@ -9,6 +9,10 @@ export interface PublicAgencyConfig {
   address?: string;
   city?: string;
   province?: string;
+  country?: string;
+  country_name?: string;
+  country_code?: string;
+  country_image?: string;
   postal_code?: string | null;
   logo?: string | null;
   logo_2?: string | null;
@@ -194,6 +198,15 @@ export const getCachedAgencyConfig = (domain?: string): PublicAgencyConfig | nul
     }
   } catch {}
   return null;
+};
+
+export const clearCachedAgencyConfig = (domain?: string): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = `inmo_cfg_${resolveEffectiveDomain(domain)}`;
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  } catch {}
 };
 
 export const publicInmobiliariaService = {

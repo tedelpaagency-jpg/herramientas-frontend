@@ -35,6 +35,7 @@ import {
 import TopbarSlider from '@/components/topbar/TopbarSlider';
 import Header2Style3 from '@/components/layout/Header2Style3';
 import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
+import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
 import {
   getEstatePrimaryImage,
   PROPERTY_TYPE_LABELS,
@@ -206,6 +207,13 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
       <div className="min-h-screen flex flex-col bg-[#fcfcfd]">
         <TopbarSlider agency={fallbackAgency} />
         <Header2Style3 agency={fallbackAgency} />
+        <PublicPortalLoader
+          isOpen={loading}
+          countryName={fallbackAgency.country_name || fallbackAgency.country}
+          countryImage={fallbackAgency.country_image}
+          agency={fallbackAgency}
+          message="Un momento por favor, estamos preparando los detalles del inmueble."
+        />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-6">
           <div className="h-5 bg-slate-200/60 rounded-md w-1/4 animate-pulse" />
           <div className="bg-white rounded-3xl border border-slate-200/80 p-8 space-y-6">

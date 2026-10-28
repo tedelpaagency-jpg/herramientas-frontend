@@ -24,6 +24,7 @@ import TopbarSlider from '@/components/topbar/TopbarSlider';
 import Header2Style3 from '@/components/layout/Header2Style3';
 import { AirbnbPropertyCard } from '@/components/inmobiliaria/AirbnbPropertyCard';
 import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
+import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
 
 // Dynamically import Leaflet Map to avoid SSR issues
 const PublicPropertiesSplitMap = dynamic(
@@ -147,11 +148,6 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           total: p?.total || 0,
           perPage: p?.per_page || 18,
         });
-
-        // Default selected estate on initial desktop load
-        if (items.length > 0 && !selectedEstate) {
-          setSelectedEstate(items[0]);
-        }
       } catch {
         if (active) setEstates([]);
       } finally {
@@ -240,6 +236,13 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   return (
     <div className="travel-agency-03-root h-[100dvh] max-h-[100dvh] flex flex-col bg-white text-slate-900 font-sans overflow-hidden">
       <BrandingThemeInjector agency={fallbackAgency} />
+      <PublicPortalLoader
+        isOpen={loading}
+        countryName={fallbackAgency.country_name || fallbackAgency.country}
+        countryImage={fallbackAgency.country_image}
+        agency={fallbackAgency}
+        message="Un momento por favor, estamos buscando las mejores propiedades."
+      />
       {/* Header y barra de filtros fijos que calculan su propia altura */}
       <div className="shrink-0 z-30 bg-white">
         <TopbarSlider agency={fallbackAgency} />

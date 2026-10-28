@@ -13,6 +13,7 @@ import { workspaceMetaService } from '@/services/workspaceMetaService';
 import { useAuth } from '@/context/AuthContext';
 import MediaPicker from '@/components/media/MediaPicker';
 import PortalLivePreview from '@/components/inmobiliaria/PortalLivePreview';
+import EstateCatalogManagementView from '@/components/admin/EstateCatalogManagementView';
 import {
   FREE_STOCK_HERO_IMAGES,
   DEFAULT_REAL_ESTATE_TERMS,
@@ -44,7 +45,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
   // Studio tabs & device preview
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'cta' | 'domain' | 'identity' | 'seo' | 'legal_crm'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'cta' | 'domain' | 'identity' | 'seo' | 'legal_crm' | 'catalog'>('hero');
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState<boolean>(false);
 
@@ -181,7 +182,14 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       seo_description: ag.seo_description || `Explora las mejores propiedades en venta y alquiler con ${ag.name || 'nuestra agencia'}.`,
       details: {
         target_workspace_id: parsedDetails?.target_workspace_id || '',
-        show_topbar: parsedDetails?.show_topbar !== undefined ? Boolean(parsedDetails.show_topbar) : true,
+        show_topbar: parsedDetails?.show_topbar !== undefined
+          ? !(
+              parsedDetails.show_topbar === false ||
+              parsedDetails.show_topbar === 'false' ||
+              parsedDetails.show_topbar === 0 ||
+              parsedDetails.show_topbar === '0'
+            )
+          : true,
         topbar_text1: parsedDetails?.topbar_text1 ?? 'Propiedades Exclusivas con Asesoría Legal Garantizada',
         topbar_text2: parsedDetails?.topbar_text2 ?? (ag.cta_text || '¿Deseas vender o rentar tu inmueble? Consigna tu propiedad con los expertos'),
         topbar_text3: parsedDetails?.topbar_text3 ?? 'Nuevos Desarrollos y Casas en Venta con Financiamiento Bancario Directo',
@@ -327,6 +335,30 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       };
 
       await adminService.updateAgency(selectedAgencyId, payload);
+
+      // Limpiar caché local para que la vista pública cargue al instante las nuevas configuraciones
+      if (typeof window !== 'undefined') {
+        try {
+          const doms = [
+            effectiveDomain,
+            'inmosoft.pro',
+            'localhost',
+            'default',
+            (form.domain || '').replace(/^https?:\/\//i, '').split('/')[0].split(':')[0].toLowerCase()
+          ].filter(Boolean);
+          doms.forEach(d => {
+            localStorage.removeItem(`inmo_cfg_${d}`);
+            sessionStorage.removeItem(`inmo_cfg_${d}`);
+          });
+        } catch {}
+      }
+
+      setAgencies((prev: any[]) =>
+        prev.map((a: any) =>
+          a.id === selectedAgencyId ? { ...a, ...payload, details: form.details } : a
+        )
+      );
+
       setSuccessMsg('¡Portal Inmobiliario actualizado con éxito! Los cambios ya se reflejan en la vista pública.');
       setTimeout(() => setSuccessMsg(null), 5000);
     } catch (err: any) {
@@ -552,6 +584,18 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Legal &amp; CRM</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('catalog')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'catalog' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Destinos &amp; Categorías</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase">WL</span>
             </button>
           </div>
 
@@ -1732,6 +1776,15 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                     />
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* PESTAÑA 9: DESTINOS & CATEGORÍAS (Países, Ciudades y Categorías de Marca Blanca) */}
+            {activeTab === 'catalog' && (
+              <div className="space-y-6 animate-in fade-in-50 duration-200">
+                <EstateCatalogManagementView
+                  whiteLabelId={agencies.find((a: any) => a.id === selectedAgencyId)?.white_label_id}
+                />
               </div>
             )}
 

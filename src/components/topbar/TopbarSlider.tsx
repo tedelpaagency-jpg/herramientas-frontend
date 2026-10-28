@@ -12,13 +12,28 @@ interface TopbarSliderProps {
 
 const TopbarSlider: React.FC<TopbarSliderProps> = ({ agency }) => {
   const rawDetails = agency?.details;
-  const details = typeof rawDetails === 'string' ? JSON.parse(rawDetails) : (rawDetails || {});
+  let details: any = {};
+  if (typeof rawDetails === 'string') {
+    try {
+      details = JSON.parse(rawDetails);
+    } catch {
+      details = {};
+    }
+  } else if (rawDetails && typeof rawDetails === 'object') {
+    details = rawDetails;
+  }
 
-  // Si show_topbar está configurado como falso, la cinta superior se oculta por completo
-  const isVisible =
-    details?.show_topbar !== false &&
-    details?.show_topbar !== '0' &&
-    details?.show_topbar !== 0;
+  // Si show_topbar está configurado como falso (en details o en agency), la cinta superior se oculta por completo
+  const topbarFlag = details?.show_topbar !== undefined
+    ? details.show_topbar
+    : (agency?.show_topbar !== undefined ? agency.show_topbar : true);
+
+  const isVisible = !(
+    topbarFlag === false ||
+    topbarFlag === 'false' ||
+    topbarFlag === 0 ||
+    topbarFlag === '0'
+  );
 
   const settings: SwiperOptions = useMemo(() => {
     return {
