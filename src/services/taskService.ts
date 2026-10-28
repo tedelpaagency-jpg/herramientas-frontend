@@ -26,6 +26,18 @@ export interface UserTaskStage {
   updated_at?: string;
 }
 
+export interface UserTaskSubtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface UserTaskImage {
+  url: string;
+  filename?: string;
+  name?: string;
+}
+
 export interface UserTask {
   id: number;
   user_id: number;
@@ -35,6 +47,8 @@ export interface UserTask {
   stage_id: number;
   title: string;
   description?: string | null;
+  images?: (UserTaskImage | string)[];
+  subtasks?: UserTaskSubtask[];
   priority: number; // 1=Baja, 2=Media, 3=Alta
   due_date?: string | null;
   status: number; // 0=Pendiente, 1=Completada
@@ -138,6 +152,15 @@ export const taskService = {
   moveTaskStage: async (taskId: number, stageId: number): Promise<UserTask> => {
     const res = await apiClient.post('/v1/tasks/move-stage', { task_id: taskId, stage_id: stageId });
     return res.data.data;
+  },
+
+  uploadTaskImage: async (file: File): Promise<{ url: string; filename: string; name?: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await apiClient.post('/v1/tasks/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data?.data;
   },
 
   toggleTaskStatus: async (id: number): Promise<UserTask> => {

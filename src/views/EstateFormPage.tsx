@@ -43,8 +43,6 @@ interface ImageItem {
   url: string;
 }
 
-const ESTATE_API_BASE = 'https://santun.tedelpa.com/api/v1';
-
 export const EstateFormPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
@@ -96,12 +94,8 @@ export const EstateFormPage: React.FC = () => {
     if (!isEditing) return;
     const fetchEstate = async () => {
       try {
-        const token = localStorage.getItem('santun_auth_token');
-        const res = await fetch(`${ESTATE_API_BASE}/estates/${id}`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
-        });
-        const json = await res.json();
-        const e: any = json.data ?? json;
+        const estateData = await estateService.getEstate(Number(id));
+        const e: any = estateData;
 
         setForm({
           title: e.title || '',
@@ -184,18 +178,8 @@ export const EstateFormPage: React.FC = () => {
     if (selectedFiles.length === 0) return;
     setIsUploadingImages(true);
     try {
-      const token = localStorage.getItem('santun_auth_token');
-      const formData = new FormData();
-      selectedFiles.forEach(f => formData.append('files[]', f));
-
-      const res = await fetch(`${ESTATE_API_BASE}/estates/upload-image`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        body: formData,
-      });
-      const json = await res.json();
-
-      const newImages: ImageItem[] = Array.isArray(json.data) ? json.data : [json.data];
+      const uploadedData = await estateService.uploadImages(selectedFiles);
+      const newImages: ImageItem[] = Array.isArray(uploadedData) ? uploadedData : [uploadedData];
       setUploadedImages(prev => [...prev, ...newImages.map((img: any) => ({
         filename: img.path || img.filename,
         url: img.url || img.path,
@@ -216,8 +200,7 @@ export const EstateFormPage: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('santun_auth_token');
-      const payload = {
+      const payload: any = {
         ...form,
         highlight: form.highlight ? 1 : 0,
         images: uploadedImages.map(img => img.filename),
@@ -227,35 +210,13 @@ export const EstateFormPage: React.FC = () => {
         }, {} as any),
       };
 
-      const url = isEditing
-        ? `${ESTATE_API_BASE}/estates/${id}`
-        : `${ESTATE_API_BASE}/estates`;
-      const method = isEditing ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      if (isEditing && uploadedImages.length > 0) {
-        const savedJson = await res.json();
-        const savedId = savedJson.data?.id ?? id;
-        await fetch(`${ESTATE_API_BASE}/estates/${savedId}/images`, {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify({ images: uploadedImages.map(img => img.filename) }),
-        });
+      if (isEditing && id) {
+        await estateService.updateEstate(Number(id), payload);
+        if (uploadedImages.length > 0) {
+          await estateService.updateImages(Number(id), uploadedImages.map(img => img.filename));
+        }
+      } else {
+        await estateService.createEstate(payload);
       }
 
       router.push('/estates');

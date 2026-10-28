@@ -25,10 +25,21 @@ import {
   ArrowLeft,
   ArrowRight,
   ExternalLink,
+  Image as ImageIcon,
+  Upload,
+  Loader2,
+  Check,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { taskService, UserTaskWorkspace, UserTaskStage, UserTask } from '../services/taskService';
+import {
+  taskService,
+  UserTaskWorkspace,
+  UserTaskStage,
+  UserTask,
+  UserTaskSubtask,
+  UserTaskImage,
+} from '../services/taskService';
 import { UserSearchSelect } from '../components/UserSearchSelect';
 import Portal from '../components/Portal';
 
@@ -79,6 +90,10 @@ export default function TasksPage() {
   const [taskPriority, setTaskPriority] = useState<number>(2);
   const [taskDueDate, setTaskDueDate] = useState<string>('');
   const [taskAssignedUserId, setTaskAssignedUserId] = useState<number | ''>('');
+  const [taskImages, setTaskImages] = useState<(UserTaskImage | string)[]>([]);
+  const [taskSubtasks, setTaskSubtasks] = useState<UserTaskSubtask[]>([]);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState<string>('');
+  const [uploadingTaskImage, setUploadingTaskImage] = useState<boolean>(false);
   const [submittingTask, setSubmittingTask] = useState<boolean>(false);
 
   // Task Edit Modal
@@ -287,6 +302,68 @@ export default function TasksPage() {
   };
 
   // --- TASK ACTIONS ---
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim()) return;
+    const newSub: UserTaskSubtask = {
+      id: `sub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      title: newSubtaskTitle.trim(),
+      completed: false,
+    };
+    setTaskSubtasks((prev) => [...prev, newSub]);
+    setNewSubtaskTitle('');
+  };
+
+  const handleToggleSubtask = (subId: string) => {
+    setTaskSubtasks((prev) =>
+      prev.map((s) => (s.id === subId ? { ...s, completed: !s.completed } : s))
+    );
+  };
+
+  const handleRemoveSubtask = (subId: string) => {
+    setTaskSubtasks((prev) => prev.filter((s) => s.id !== subId));
+  };
+
+  const handleToggleSubtaskOnCard = async (task: UserTask, subId: string) => {
+    const currentSubs = task.subtasks || [];
+    const updatedSubs = currentSubs.map((s) =>
+      s.id === subId ? { ...s, completed: !s.completed } : s
+    );
+    setTasks((prev) =>
+      prev.map((t) => (t.id === task.id ? { ...t, subtasks: updatedSubs } : t))
+    );
+    try {
+      await taskService.updateTask(task.id, { subtasks: updatedSubs });
+    } catch (e) {
+      console.error(e);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? { ...t, subtasks: currentSubs } : t))
+      );
+    }
+  };
+
+  const handleUploadTaskImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingTaskImage(true);
+    try {
+      const res = await taskService.uploadTaskImage(file);
+      if (res && res.url) {
+        setTaskImages((prev) => [...prev, res]);
+        toast.success('Imagen adjuntada a la tarea');
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Error al subir imagen');
+    } finally {
+      setUploadingTaskImage(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveTaskImage = (indexToRemove: number) => {
+    setTaskImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeWorkspace || !targetStageId || !taskTitle.trim()) {
@@ -295,19 +372,25 @@ export default function TasksPage() {
     }
     setSubmittingTask(true);
     try {
-      const created = await taskService.createTask({
+      const payload: any = {
         workspace_id: activeWorkspace.id,
         stage_id: targetStageId,
         title: taskTitle.trim(),
         description: taskDescription.trim() || undefined,
+        images: taskImages,
+        subtasks: taskSubtasks,
         priority: taskPriority,
         due_date: taskDueDate || undefined,
         assigned_user_id: taskAssignedUserId ? Number(taskAssignedUserId) : undefined,
-      });
+      };
+      const created = await taskService.createTask(payload);
       setTasks((prev) => [created, ...prev]);
       setIsAddTaskOpen(false);
       setTaskTitle('');
       setTaskDescription('');
+      setTaskImages([]);
+      setTaskSubtasks([]);
+      setNewSubtaskTitle('');
       setTaskPriority(2);
       setTaskDueDate('');
       setTaskAssignedUserId('');
@@ -328,12 +411,17 @@ export default function TasksPage() {
       const updated = await taskService.updateTask(editingTask.id, {
         title: taskTitle.trim(),
         description: taskDescription.trim() || null,
+        images: taskImages,
+        subtasks: taskSubtasks,
         priority: taskPriority,
         due_date: taskDueDate || null,
         assigned_user_id: taskAssignedUserId ? Number(taskAssignedUserId) : undefined,
       });
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
       setEditingTask(null);
+      setTaskImages([]);
+      setTaskSubtasks([]);
+      setNewSubtaskTitle('');
       toast.success('Tarea actualizada');
     } catch (err) {
       console.error(err);
@@ -978,6 +1066,9 @@ export default function TasksPage() {
                                     setTaskPriority(task.priority);
                                     setTaskDueDate(task.due_date ? String(task.due_date).substring(0, 10) : '');
                                     setTaskAssignedUserId(task.user_id || '');
+                                    setTaskImages(task.images || []);
+                                    setTaskSubtasks(task.subtasks || []);
+                                    setNewSubtaskTitle('');
                                   }}
                                   className={`text-xs font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-300 cursor-pointer leading-tight ${
                                     task.status === 1 ? 'line-through text-slate-400 dark:text-slate-500' : ''
@@ -1003,6 +1094,79 @@ export default function TasksPage() {
                               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium line-clamp-2 leading-relaxed pl-7">
                                 {task.description}
                               </p>
+                            )}
+
+                            {/* Images thumbnails preview in card */}
+                            {task.images && task.images.length > 0 && (
+                              <div className="flex items-center gap-1.5 overflow-x-auto py-1 pl-7">
+                                {task.images.map((img: any, imgIdx: number) => {
+                                  const url = typeof img === 'string' ? img : img.url;
+                                  return (
+                                    <div
+                                      key={imgIdx}
+                                      className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800"
+                                    >
+                                      <img src={url} alt="Adjunto" className="w-full h-full object-cover" />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Subtasks snippet in card */}
+                            {task.subtasks && task.subtasks.length > 0 && (
+                              <div className="pl-7 space-y-1 pt-1">
+                                <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
+                                  <span className="flex items-center gap-1">
+                                    <CheckSquare className="w-3 h-3 text-blue-500 shrink-0" />
+                                    <span>
+                                      Subtareas ({task.subtasks.filter((s) => s.completed).length}/{task.subtasks.length})
+                                    </span>
+                                  </span>
+                                  <span>
+                                    {Math.round(
+                                      (task.subtasks.filter((s) => s.completed).length / task.subtasks.length) * 100
+                                    )}
+                                    %
+                                  </span>
+                                </div>
+                                <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div
+                                    className="bg-blue-600 h-full rounded-full transition-all"
+                                    style={{
+                                      width: `${
+                                        (task.subtasks.filter((s) => s.completed).length / task.subtasks.length) * 100
+                                      }%`,
+                                    }}
+                                  />
+                                </div>
+                                <div className="space-y-0.5 pt-0.5">
+                                  {task.subtasks.slice(0, 2).map((sub) => (
+                                    <div
+                                      key={sub.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleSubtaskOnCard(task, sub.id);
+                                      }}
+                                      className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                                    >
+                                      {sub.completed ? (
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                                      ) : (
+                                        <Circle className="w-3 h-3 text-slate-400 shrink-0" />
+                                      )}
+                                      <span className={`truncate ${sub.completed ? 'line-through text-slate-400' : ''}`}>
+                                        {sub.title}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {task.subtasks.length > 2 && (
+                                    <p className="text-[9px] text-slate-400 font-bold pl-4">
+                                      +{task.subtasks.length - 2} más...
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
                             )}
 
                             {/* Task Footer Info */}
@@ -1353,7 +1517,7 @@ export default function TasksPage() {
       {(isAddTaskOpen || editingTask) && (
         <Portal>
           <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-xl w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-base font-black text-slate-900 dark:text-white">
                   {editingTask ? 'Editar Tarea' : `Nueva Tarea en "${activeWorkspace?.name}"`}
@@ -1430,6 +1594,136 @@ export default function TasksPage() {
                     placeholder="-- Mi usuario (Asignarme a mí) --"
                     size="sm"
                   />
+                </div>
+
+                {/* SUBTAREAS / CHECKLIST */}
+                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
+                      <span>
+                        Subtareas &bull; Checklist ({taskSubtasks.filter((s) => s.completed).length}/{taskSubtasks.length})
+                      </span>
+                    </label>
+                    {taskSubtasks.length > 0 && (
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {Math.round((taskSubtasks.filter((s) => s.completed).length / taskSubtasks.length) * 100)}%
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Add subtask input */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Escribe una subtarea y presiona Enter o Agregar..."
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddSubtask();
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSubtask}
+                      className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Agregar</span>
+                    </button>
+                  </div>
+
+                  {/* List of subtasks */}
+                  {taskSubtasks.length > 0 && (
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar pt-1">
+                      {taskSubtasks.map((sub) => (
+                        <div
+                          key={sub.id}
+                          className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800"
+                        >
+                          <div
+                            onClick={() => handleToggleSubtask(sub.id)}
+                            className="flex items-center gap-2 cursor-pointer flex-1 min-w-0"
+                          >
+                            {sub.completed ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                            ) : (
+                              <Circle className="w-4 h-4 text-slate-400 shrink-0" />
+                            )}
+                            <span
+                              className={`text-xs text-slate-700 dark:text-slate-300 truncate ${
+                                sub.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''
+                              }`}
+                            >
+                              {sub.title}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSubtask(sub.id)}
+                            className="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition-colors cursor-pointer"
+                            title="Eliminar subtarea"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* IMÁGENES ADJUNTAS */}
+                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Imágenes Adjuntas ({taskImages.length})</span>
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 text-xs font-bold transition-all cursor-pointer">
+                      {uploadingTaskImage ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      <span>{uploadingTaskImage ? 'Subiendo...' : 'Adjuntar Imagen'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingTaskImage}
+                        onChange={handleUploadTaskImage}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Thumbnails preview */}
+                  {taskImages.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-1 max-h-40 overflow-y-auto custom-scrollbar">
+                      {taskImages.map((img: any, idx: number) => {
+                        const url = typeof img === 'string' ? img : img.url;
+                        return (
+                          <div
+                            key={idx}
+                            className="group relative aspect-video rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800"
+                          >
+                            <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTaskImage(idx)}
+                              className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-rose-600 transition-colors cursor-pointer"
+                              title="Quitar imagen"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">

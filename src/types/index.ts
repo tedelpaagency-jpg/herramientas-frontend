@@ -238,6 +238,10 @@ export interface Estate {
   status: 'available' | 'reserved' | 'sold' | 'rented' | string | number;
   property_status?: number;
   is_verified: boolean;
+  verify?: number;
+  deletion_requested?: boolean;
+  deletion_requested_by?: number;
+  deletion_request_notes?: string;
   agency_id?: number;
   agency?: Agency;
   user_id?: number;

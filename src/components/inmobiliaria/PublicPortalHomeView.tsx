@@ -54,7 +54,9 @@ export default function PublicPortalHomeView({
   const [categories, setCategories] = useState<PublicEstateCategory[]>(
     initialCategories || DEFAULT_REAL_ESTATE_CATEGORIES
   );
-  const [loading, setLoading] = useState<boolean>(!initialAgency);
+  const [loading, setLoading] = useState<boolean>(
+    !initialAgency || !initialCategories || initialCategories.length === 0
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -95,7 +97,19 @@ export default function PublicPortalHomeView({
         }
 
         if (catsRes.status === 'fulfilled' && catsRes.value?.data?.length) {
-          setCategories(catsRes.value.data);
+          const backendCats = catsRes.value.data;
+          if (backendCats.length >= 6) {
+            setCategories(backendCats.slice(0, 6));
+          } else {
+            const combined = [...backendCats];
+            for (const def of DEFAULT_REAL_ESTATE_CATEGORIES) {
+              if (combined.length >= 6) break;
+              if (!combined.some((c: any) => c.name?.toLowerCase() === def.name?.toLowerCase() || c.id === def.id)) {
+                combined.push(def);
+              }
+            }
+            setCategories(combined.slice(0, 6));
+          }
         }
       } catch (err) {
         console.warn('Could not load dynamic real estate portal data, using defaults:', err);
@@ -104,13 +118,11 @@ export default function PublicPortalHomeView({
       }
     }
 
-    if (!initialAgency) {
-      loadPortalData();
-    }
+    loadPortalData();
     return () => {
       isMounted = false;
     };
-  }, [initialAgency, domain]);
+  }, [domain]);
 
   return (
     <div

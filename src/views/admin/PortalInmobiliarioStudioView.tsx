@@ -14,6 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import MediaPicker from '@/components/media/MediaPicker';
 import PortalLivePreview from '@/components/inmobiliaria/PortalLivePreview';
 import EstateCatalogManagementView from '@/components/admin/EstateCatalogManagementView';
+import EstateApprovalSettingsPanel from '@/components/estates/EstateApprovalSettingsPanel';
 import {
   FREE_STOCK_HERO_IMAGES,
   DEFAULT_REAL_ESTATE_TERMS,
@@ -45,7 +46,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
   // Studio tabs & device preview
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'cta' | 'domain' | 'identity' | 'seo' | 'legal_crm' | 'catalog'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'cta' | 'domain' | 'identity' | 'seo' | 'legal_crm' | 'catalog' | 'approvals'>('hero');
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState<boolean>(false);
 
@@ -596,6 +597,17 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
               <Globe className="w-3.5 h-3.5 text-emerald-400" />
               <span>Destinos &amp; Categorías</span>
               <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase">WL</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('approvals')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'approvals' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>Aprobaciones &amp; Alertas</span>
             </button>
           </div>
 
@@ -1785,6 +1797,13 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                 <EstateCatalogManagementView
                   whiteLabelId={agencies.find((a: any) => a.id === selectedAgencyId)?.white_label_id}
                 />
+              </div>
+            )}
+
+            {/* PESTAÑA 10: APROBACIONES & AUTOMATIZACIONES */}
+            {activeTab === 'approvals' && (
+              <div className="space-y-6 animate-in fade-in-50 duration-200">
+                <EstateApprovalSettingsPanel agencyId={selectedAgencyId || undefined} />
               </div>
             )}
 

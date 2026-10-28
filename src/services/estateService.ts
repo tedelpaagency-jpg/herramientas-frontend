@@ -1,6 +1,18 @@
 import apiClient from './apiClient';
 import { Estate } from '../types';
 
+export interface EstateApprovalSettings {
+  require_admin_approval_to_publish: boolean;
+  require_admin_approval_to_delete: boolean;
+  notify_on_property_upload: boolean;
+  notify_property_upload_emails: string;
+  notify_on_property_delete: boolean;
+  notify_property_delete_emails: string;
+  notify_on_user_login: boolean;
+  notify_user_login_emails: string;
+  webhook_url?: string;
+}
+
 export const estateService = {
   getEstates: async (params?: Record<string, any>): Promise<{ data: Estate[]; pagination?: any }> => {
     const response = await apiClient.get('/v1/estates', { params });
@@ -105,6 +117,10 @@ export const estateService = {
     return response.data?.data || response.data;
   },
 
+  getEstateById: async (id: number): Promise<Estate> => {
+    return estateService.getEstate(id);
+  },
+
   createEstate: async (estateData: Partial<Estate>): Promise<Estate> => {
     const response = await apiClient.post('/v1/estates', estateData);
     return response.data?.data || response.data;
@@ -115,8 +131,9 @@ export const estateService = {
     return response.data?.data || response.data;
   },
 
-  deleteEstate: async (id: number): Promise<void> => {
-    await apiClient.delete(`/v1/estates/${id}`);
+  deleteEstate: async (id: number): Promise<any> => {
+    const res = await apiClient.delete(`/v1/estates/${id}`);
+    return res.data;
   },
 
   uploadImage: async (file: File, estateId?: number): Promise<{ image_url: string; id?: number }> => {
@@ -189,6 +206,41 @@ export const estateService = {
   getCategoriesCatalog: async (params?: { agency_id?: number }): Promise<any[]> => {
     const response = await apiClient.get('/v1/estates/categories-catalog', { params });
     return response.data?.data || response.data || [];
+  },
+
+  uploadImages: async (files: File[], agencyId?: number): Promise<{ filename: string; path: string; url: string }[]> => {
+    const formData = new FormData();
+    files.forEach((f) => formData.append('files[]', f));
+    if (agencyId) {
+      formData.append('agency_id', agencyId.toString());
+    }
+    const response = await apiClient.post('/v1/estates/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const data = response.data?.data || response.data;
+    return Array.isArray(data) ? data : [data];
+  },
+
+  getSettings: async (agencyId?: number): Promise<EstateApprovalSettings> => {
+    const response = await apiClient.get('/v1/estates/settings', {
+      params: agencyId ? { agency_id: agencyId } : {},
+    });
+    return response.data?.data;
+  },
+
+  updateSettings: async (settings: Partial<EstateApprovalSettings>, agencyId?: number): Promise<EstateApprovalSettings> => {
+    const response = await apiClient.put('/v1/estates/settings', settings, {
+      params: agencyId ? { agency_id: agencyId } : {},
+    });
+    return response.data?.data;
+  },
+
+  approveDeletion: async (estateId: number): Promise<void> => {
+    await apiClient.patch(`/v1/estates/${estateId}/approve-deletion`);
+  },
+
+  rejectDeletion: async (estateId: number): Promise<void> => {
+    await apiClient.patch(`/v1/estates/${estateId}/reject-deletion`);
   },
 };
 

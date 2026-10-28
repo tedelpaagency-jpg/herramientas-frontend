@@ -33,7 +33,10 @@ import {
   Maximize2,
   BarChart3,
   Layers,
-  Tag
+  Tag,
+  ShieldCheck,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -41,6 +44,7 @@ import { EstateCanvasModal } from '@/components/EstateCanvasModal';
 import { EstateCanvaGalleryModal } from '@/components/EstateCanvaGalleryModal';
 import { EstateImageLightboxModal } from '@/components/EstateImageLightboxModal';
 import { AdvisorSearchSelect } from '@/components/AdvisorSearchSelect';
+import EstateApprovalSettingsPanel from '@/components/estates/EstateApprovalSettingsPanel';
 
 const EstatesMapView = dynamic(() => import('@/components/EstatesMapView'), { ssr: false });
 
@@ -114,6 +118,7 @@ export const EstatesPage: React.FC = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxEstate, setLightboxEstate] = useState<Estate | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const handleExpandImage = (estate: Estate, initialIndex: number = 0) => {
     setActiveMenuId(null);
@@ -241,12 +246,48 @@ export const EstatesPage: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (!confirm('¿Desea eliminar este inmueble?')) return;
     try {
-      await estateService.deleteEstate(id);
-      setEstates(estates.filter(e => e.id !== id));
-      toast.success('Inmueble eliminado con éxito');
-    } catch (err) {
+      const res: any = await estateService.deleteEstate(id);
+      if (res && res.deletion_requested) {
+        toast.success('Solicitud de baja registrada. Un administrador debe aprobar la eliminación.');
+        fetchEstates();
+      } else {
+        setEstates(estates.filter(e => e.id !== id));
+        toast.success('Inmueble eliminado con éxito');
+      }
+    } catch (err: any) {
       console.error('Error deleting estate:', err);
-      toast.error('Error al eliminar el inmueble');
+      toast.error(err?.response?.data?.message || 'Error al eliminar el inmueble');
+    }
+  };
+
+  const handleApprovePublish = async (id: number) => {
+    try {
+      await estateService.verifyEstate(id, true);
+      setEstates(estates.map(e => e.id === id ? { ...e, verify: 1 } : e));
+      toast.success('¡Propiedad verificada y aprobada para publicación web!');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al aprobar propiedad');
+    }
+  };
+
+  const handleApproveDeletion = async (id: number) => {
+    if (!confirm('¿Confirma que desea aprobar la eliminación definitiva de este inmueble?')) return;
+    try {
+      await estateService.approveDeletion(id);
+      setEstates(estates.filter(e => e.id !== id));
+      toast.success('Eliminación aprobada y ejecutada.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al aprobar eliminación');
+    }
+  };
+
+  const handleRejectDeletion = async (id: number) => {
+    try {
+      await estateService.rejectDeletion(id);
+      setEstates(estates.map(e => e.id === id ? { ...e, deletion_requested: false, deletion_request_notes: undefined } : e));
+      toast.success('Solicitud rechazada. El inmueble se mantiene activo.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al rechazar solicitud');
     }
   };
 
@@ -331,14 +372,51 @@ export const EstatesPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenCreateModal}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Agregar Inmueble</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm border border-slate-200 dark:border-slate-700 transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95"
+            title="Políticas de Aprobación & Automatizaciones de Propiedades"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>Aprobaciones &amp; Alertas</span>
+          </button>
+
+          <button
+            onClick={handleOpenCreateModal}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Agregar Inmueble</span>
+          </button>
+        </div>
       </div>
+
+      {/* Banner de Solicitudes Pendientes para Administradores */}
+      {estates.some((e) => e.verify === 0 || e.deletion_requested) && (
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-amber-900 dark:text-amber-200">
+                Atención Administrativa Requerida en Propiedades
+              </h4>
+              <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                Hay {estates.filter((e) => e.verify === 0).length} propiedades pendientes de aprobación y{' '}
+                {estates.filter((e) => e.deletion_requested).length} solicitudes de eliminación.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shrink-0 transition-all cursor-pointer"
+          >
+            Configurar Políticas
+          </button>
+        </div>
+      )}
 
       {/* Filter & View Switcher Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-4 items-center justify-between">
@@ -624,17 +702,62 @@ export const EstatesPage: React.FC = () => {
                             {estate.created_at ? new Date(estate.created_at).toLocaleDateString() : '-'}
                           </td>
 
-                          {/* Estado Badge */}
+                          {/* Estado Badge & Flujos de Aprobación */}
                           <td className="py-3.5 px-4 text-center">
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                              (estate.status as any) == 1 || estate.status === 'available'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : (estate.status as any) == 2 || estate.status === 'sold'
-                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                                : 'bg-amber-50 text-amber-700 border border-amber-200'
-                            }`}>
-                              {(estate.status as any) == 1 || estate.status === 'available' ? 'Disponible' : (estate.status as any) == 2 ? 'Vendido' : 'Alquilado'}
-                            </span>
+                            {estate.deletion_requested ? (
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-700 border border-rose-300 animate-pulse">
+                                  Baja Solicitada
+                                </span>
+                                <div className="flex items-center justify-center gap-1 pt-0.5">
+                                  <button
+                                    onClick={() => handleApproveDeletion(estate.id)}
+                                    className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-600 text-white hover:bg-rose-700 cursor-pointer shadow-2xs"
+                                    title="Aprobar y ejecutar eliminación definitiva"
+                                  >
+                                    Aprobar
+                                  </button>
+                                  <button
+                                    onClick={() => handleRejectDeletion(estate.id)}
+                                    className="px-2 py-0.5 rounded text-[10px] font-black bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 cursor-pointer shadow-2xs"
+                                    title="Rechazar solicitud de baja"
+                                  >
+                                    Rechazar
+                                  </button>
+                                </div>
+                              </div>
+                            ) : estate.verify === 0 ? (
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">
+                                  Pendiente Admin
+                                </span>
+                                <div className="pt-0.5">
+                                  <button
+                                    onClick={() => handleApprovePublish(estate.id)}
+                                    className="px-2.5 py-0.5 rounded text-[10px] font-black bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shadow-2xs"
+                                    title="Aprobar para publicar en la web"
+                                  >
+                                    Aprobar
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <span
+                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
+                                  (estate.status as any) == 1 || estate.status === 'available'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : (estate.status as any) == 2 || estate.status === 'sold'
+                                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                }`}
+                              >
+                                {(estate.status as any) == 1 || estate.status === 'available'
+                                  ? 'Disponible'
+                                  : (estate.status as any) == 2
+                                  ? 'Vendido'
+                                  : 'Alquilado'}
+                              </span>
+                            )}
                           </td>
 
                           {/* Acciones Prominentes Directas + Menú (⋮) */}
@@ -1076,6 +1199,37 @@ export const EstatesPage: React.FC = () => {
         estate={lightboxEstate}
         initialImageIndex={lightboxIndex}
       />
+
+      {/* Modal de Configuración de Aprobaciones y Automatizaciones */}
+      {isSettingsModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-3xl w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto custom-scrollbar animate-slide-up-fade">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+                  Políticas de Aprobación &amp; Automatizaciones Inmobiliarias
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-xl font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            <EstateApprovalSettingsPanel
+              agencyId={agencyFilter ? Number(agencyFilter) : (user?.agency_id || undefined)}
+              onSaved={() => {
+                fetchEstates();
+              }}
+              isModal={true}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

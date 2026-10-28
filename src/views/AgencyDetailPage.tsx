@@ -25,23 +25,38 @@ import {
   Edit3,
   X,
   AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { TableSkeleton } from '@/components/Skeleton';
+import EstateApprovalSettingsPanel from '@/components/estates/EstateApprovalSettingsPanel';
 
 interface AgencyDetailPageProps {
   agencyId: number;
 }
 
 export const AgencyDetailPage: React.FC<AgencyDetailPageProps> = ({ agencyId }) => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, hasPermission } = useAuth();
   const [agency, setAgency] = useState<Agency | null>(null);
   const [agencyUsers, setAgencyUsers] = useState<User[]>([]);
   const [agencyProperties, setAgencyProperties] = useState<Estate[]>([]);
   const [whiteLabels, setWhiteLabels] = useState<WhiteLabel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'info' | 'users' | 'properties'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'users' | 'properties' | 'estate_config'>('info');
+
+  const hasEstateAccess =
+    currentUser?.role === 'super_admin' ||
+    currentUser?.roles?.some((r: any) => r.name === 'super_admin') ||
+    hasPermission([
+      'view_estates',
+      'manage_estates',
+      'estates.view',
+      'estates.manage',
+      'estates.create',
+      'portal_inmobiliario.manage',
+      'portal_inmobiliario',
+    ]);
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -254,6 +269,19 @@ export const AgencyDetailPage: React.FC<AgencyDetailPageProps> = ({ agencyId }) 
             <Building2 className="w-4 h-4" />
             <span>Propiedades ({agencyProperties.length})</span>
           </button>
+          {hasEstateAccess && (
+            <button
+              onClick={() => setActiveTab('estate_config')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                activeTab === 'estate_config'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Aprobaciones &amp; Automatizaciones</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -469,6 +497,11 @@ export const AgencyDetailPage: React.FC<AgencyDetailPageProps> = ({ agencyId }) 
             </table>
           </div>
         </div>
+      )}
+
+      {/* Tab Panel: Aprobaciones y Automatizaciones Inmobiliarias */}
+      {activeTab === 'estate_config' && hasEstateAccess && (
+        <EstateApprovalSettingsPanel agencyId={agencyId} />
       )}
 
       {/* Modal para Editar Datos Generales y Reasignar Marca Blanca */}

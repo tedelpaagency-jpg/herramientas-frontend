@@ -8,6 +8,7 @@ import DashboardPage from '@/views/DashboardPage';
 import { useAuth } from '@/context/AuthContext';
 import publicInmobiliariaService, { PublicAgencyConfig } from '@/services/publicInmobiliariaService';
 import PublicInmobiliariaHomeView from '@/views/inmobiliaria/PublicInmobiliariaHomeView';
+import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
 
 export default function HomeClientView() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -115,13 +116,8 @@ export default function HomeClientView() {
 
   if (portalStatus === 'checking') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-500 dark:text-slate-400 text-sm animate-pulse">
-            Cargando sitio...
-          </p>
-        </div>
+      <div className="min-h-screen relative bg-slate-950 flex items-center justify-center">
+        <PublicPortalLoader isOpen={true} countryName="ECUADOR" />
       </div>
     );
   }
