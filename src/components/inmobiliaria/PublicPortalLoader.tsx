@@ -51,14 +51,14 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
       <div className="relative w-[90%] max-w-[430px] sm:max-w-[460px] bg-[#2e3036] text-white rounded-[26px] overflow-hidden shadow-2xl border border-white/10 transform transition-transform duration-300 scale-100 select-none">
         
         {/* Cabecera con Nombre del País / Destino en mayúsculas espaciadas */}
-        <div className="px-5 pt-3.5 pb-2.5 flex items-center justify-between">
+        <div className="px-5 pt-3.5 pb-3 flex items-center justify-between bg-[#2e3036]">
           <span className="text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-white/90 drop-shadow-xs">
             {displayCountry}
           </span>
         </div>
 
-        {/* Tarjeta Visual de Destino con Foto y Spinner Central */}
-        <div className="relative mx-3.5 mb-3.5 aspect-[16/11] rounded-2xl overflow-hidden shadow-inner bg-slate-900 group">
+        {/* Tarjeta Visual de Destino con Foto y Spinner Central (sin paddings en los lados) */}
+        <div className="relative w-full aspect-[16/11] overflow-hidden shadow-inner bg-slate-900 group">
           {/* Imagen de fondo */}
           <img
             src={displayImage}
@@ -81,7 +81,7 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
           </div>
 
           {/* Pie inferior interno con Logo de marca y mensaje en 3 líneas */}
-          <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between gap-3 pointer-events-none">
+          <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between gap-3 pointer-events-none">
             {/* Logo de la agencia / marca */}
             <div className="shrink-0 flex items-center">
               {logoSrc ? (
