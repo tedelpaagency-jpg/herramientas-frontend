@@ -420,20 +420,20 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
 
       {/* Floating Preview Card estilo Plusvalia (Imagen 2) con Emil Kowalski Craft */}
       {selectedEstate && (
-        <div className="absolute bottom-5 left-5 right-5 sm:right-auto sm:w-[360px] z-[1000] bg-white/95 backdrop-blur-md rounded-2xl shadow-[0_20px_50px_rgba(15,23,42,0.22)] border border-slate-200/90 overflow-hidden animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-3 duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]">
+        <div className="absolute bottom-20 sm:bottom-4 left-3 right-3 sm:left-4 sm:right-auto sm:w-[350px] max-h-[calc(100%-95px)] sm:max-h-[calc(100%-32px)] z-[1050] flex flex-col bg-white/95 backdrop-blur-md rounded-2xl shadow-[0_20px_50px_rgba(15,23,42,0.25)] border border-slate-200/90 overflow-hidden animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2 duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
           {/* Header con agencia y botones superiores */}
-          <div className="px-4 py-2.5 bg-slate-50/90 border-b border-slate-100 flex items-center justify-between">
+          <div className="px-3.5 py-2 bg-slate-50/95 border-b border-slate-100 flex items-center justify-between shrink-0">
             <span className="text-[11px] font-bold text-slate-600 truncate">
               Publicado por{' '}
               <strong className="text-slate-900 font-extrabold">
                 {selectedEstate.agency?.name || agency?.name || 'Inmobiliaria Verificada'}
               </strong>
             </span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsFavorite((prev) => !prev)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-500 active:scale-90 transition-all duration-150 cursor-pointer"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-500 active:scale-90 transition-all duration-150 cursor-pointer"
                 aria-label="Favorito"
               >
                 <Heart
@@ -445,7 +445,7 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
               <button
                 type="button"
                 onClick={() => onSelectEstate(null)}
-                className="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 active:scale-90 text-slate-700 flex items-center justify-center transition-all duration-150 cursor-pointer"
+                className="w-7 h-7 rounded-full bg-slate-200/80 hover:bg-slate-300 active:scale-90 text-slate-700 flex items-center justify-center transition-all duration-150 cursor-pointer"
                 aria-label="Cerrar vista previa (Esc)"
                 title="Cerrar (Esc)"
               >
@@ -454,8 +454,8 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
             </div>
           </div>
 
-          {/* Carrusel de fotos de la tarjeta flotante */}
-          <div className="relative aspect-[16/10] w-full bg-slate-100 overflow-hidden">
+          {/* Carrusel de fotos compacto para garantizar que los botones siempre sean visibles */}
+          <div className="relative h-32 sm:h-38 w-full bg-slate-100 overflow-hidden shrink-0">
             <Link href={detailHref} className="block w-full h-full">
               <img
                 src={selectedImages[floatingCardImgIdx]}
@@ -478,10 +478,10 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
                       (prev - 1 + selectedImages.length) % selectedImages.length
                     );
                   }}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center backdrop-blur-xs transition-all duration-150"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center backdrop-blur-xs transition-all duration-150"
                   aria-label="Foto previa"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
                 <button
                   type="button"
@@ -489,20 +489,20 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
                     e.preventDefault();
                     setFloatingCardImgIdx((prev) => (prev + 1) % selectedImages.length);
                   }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center backdrop-blur-xs transition-all duration-150"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center backdrop-blur-xs transition-all duration-150"
                   aria-label="Siguiente foto"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
 
                 {/* Puntos de fotos expansibles tipo cápsula */}
-                <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-1.5 pointer-events-none">
+                <div className="absolute bottom-1.5 left-0 right-0 flex items-center justify-center gap-1 pointer-events-none">
                   {selectedImages.slice(0, 5).map((_, idx) => (
                     <span
                       key={idx}
                       className={`rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                         idx === floatingCardImgIdx
-                          ? 'w-4 h-1.5 bg-white shadow-sm'
+                          ? 'w-3.5 h-1.5 bg-white shadow-sm'
                           : 'w-1.5 h-1.5 bg-white/60'
                       }`}
                     />
@@ -512,20 +512,20 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
             )}
           </div>
 
-          {/* Información y detalles de la propiedad (Estilo Imagen 2) */}
-          <div className="p-4 space-y-3">
+          {/* Información y detalles de la propiedad con scroll interno seguro */}
+          <div className="p-3 sm:p-3.5 space-y-2 flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {/* Precio grande destacado: USD 850 */}
-            <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-black text-slate-900 tracking-tight">
+            <div className="flex items-baseline justify-between gap-1">
+              <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 USD {Number(selectedEstate.price || 0).toLocaleString('en-US')}
               </span>
-              <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider bg-slate-100 px-2.5 py-1 rounded-full">
+              <span className="text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-full">
                 {Number(selectedEstate.property_status) === 1 ? 'Alquiler' : 'Venta'}
               </span>
             </div>
 
             {/* Especificaciones con Iconografía */}
-            <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
+            <div className="flex items-center gap-2.5 text-[11px] sm:text-xs font-semibold text-slate-600">
               <span className="flex items-center gap-1">
                 <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
                 <span>{selectedEstate.covered_area || selectedEstate.size || 78} m² tot.</span>
@@ -545,18 +545,18 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
             {/* Título o sector */}
             <Link
               href={detailHref}
-              className="block text-sm font-extrabold text-slate-900 hover:text-blue-600 truncate transition-colors"
+              className="block text-xs sm:text-sm font-extrabold text-slate-900 hover:text-blue-600 truncate transition-colors leading-snug"
             >
-              {selectedEstate.title || selectedEstate.address || 'Gran Albocentro'}
+              {selectedEstate.title || selectedEstate.address || 'Propiedad Exclusiva'}
             </Link>
 
-            {/* Botones de acción con respuesta táctil active:scale-[0.98] */}
-            <div className="pt-1 grid grid-cols-2 gap-2.5">
+            {/* Botones de acción con respuesta táctil y acceso 100% visible */}
+            <div className="pt-1 grid grid-cols-2 gap-2 shrink-0">
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 min-h-[44px] py-2.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] hover:scale-[1.01] text-white text-xs font-black shadow-md hover:shadow-emerald-500/25 transition-all duration-150"
+                className="inline-flex items-center justify-center gap-1.5 min-h-[38px] sm:min-h-[42px] py-2 px-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] hover:scale-[1.01] text-white text-xs font-black shadow-md hover:shadow-emerald-500/25 transition-all duration-150 cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4 fill-white" />
                 <span>WhatsApp</span>
@@ -564,9 +564,10 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
 
               <Link
                 href={detailHref}
-                className="inline-flex items-center justify-center gap-1.5 min-h-[44px] py-2.5 px-3 rounded-xl bg-[#FF5A00] hover:bg-[#e04f00] active:scale-[0.98] hover:scale-[1.01] text-white text-xs font-black shadow-md hover:shadow-orange-500/25 transition-all duration-150"
+                style={{ backgroundColor: agency?.primary_color || '#FF5A00' }}
+                className="inline-flex items-center justify-center gap-1 min-h-[38px] sm:min-h-[42px] py-2 px-2.5 rounded-xl hover:opacity-90 active:scale-[0.98] hover:scale-[1.01] text-white text-xs font-black shadow-md transition-all duration-150 cursor-pointer text-center"
               >
-                <span>Ver Detalle</span>
+                <span>Ver Propiedad</span>
                 <span aria-hidden="true">&rarr;</span>
               </Link>
             </div>

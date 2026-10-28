@@ -238,15 +238,16 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   };
 
   return (
-    <div className="travel-agency-03-root min-h-screen flex flex-col bg-white text-slate-900 font-sans">
+    <div className="travel-agency-03-root h-[100dvh] max-h-[100dvh] flex flex-col bg-white text-slate-900 font-sans overflow-hidden">
       <BrandingThemeInjector agency={fallbackAgency} />
-      {/* 1. Mismo header de navegación que en la vista de inicio */}
-      <TopbarSlider agency={fallbackAgency} />
-      <Header2Style3 agency={fallbackAgency} />
+      {/* Header y barra de filtros fijos que calculan su propia altura */}
+      <div className="shrink-0 z-30 bg-white">
+        <TopbarSlider agency={fallbackAgency} />
+        <Header2Style3 agency={fallbackAgency} />
 
-      {/* 2. Barra de Filtros compacta */}
-      <div className="border-b border-slate-200/90 bg-white shadow-2xs z-30">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-2.5">
+        {/* 2. Barra de Filtros compacta */}
+        <div className="border-b border-slate-200/90 bg-white shadow-2xs">
+          <div className="max-w-[1920px] mx-auto px-4 sm:px-6 py-2.5">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-2.5">
             {/* Buscador Rápido */}
             <form
@@ -390,10 +391,11 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           </div>
         </div>
       </div>
+      </div>
 
-      {/* 3. Main Split View: 30% Propiedades (con contenedor scroll) + 70% Mapa (sin espacios en blanco) */}
-      <main className="w-full flex-1 flex flex-col min-h-0 bg-slate-50">
-        <div className="w-full h-[calc(100dvh-170px)] lg:h-[calc(100vh-140px)] min-h-[480px] lg:min-h-[580px] flex flex-col lg:flex-row overflow-hidden border-t border-slate-200">
+      {/* 3. Main Split View: Ocupa el 100% de la altura restante exacta sin desbordar ni cortarse */}
+      <main className="w-full flex-1 min-h-0 flex flex-col bg-slate-50 relative overflow-hidden">
+        <div className="w-full h-full flex flex-col lg:flex-row min-h-0 overflow-hidden border-t border-slate-200">
           
           {/* Contenedor Izquierdo: Catálogo de propiedades */}
           <div
