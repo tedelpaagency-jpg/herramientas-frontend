@@ -141,28 +141,46 @@ class MapErrorBoundary extends React.Component<
 }
 
 // Component to invalidate size when container size changes
-function MapResizer() {
+function MapResizer({ viewMode }: { viewMode?: string }) {
   const map = useMap();
   useEffect(() => {
-    const handleResize = () => {
+    const container = map.getContainer();
+    if (!container) return;
+
+    const invalidate = () => {
       try {
         const size = map.getSize();
         if (size && size.x > 20 && size.y > 20) {
-          map.invalidateSize();
+          map.invalidateSize({ pan: false, debounceMoveend: true });
         }
       } catch {}
     };
 
-    const timer1 = setTimeout(handleResize, 100);
-    const timer2 = setTimeout(handleResize, 500);
-    window.addEventListener('resize', handleResize);
+    const timer1 = setTimeout(invalidate, 50);
+    const timer2 = setTimeout(invalidate, 200);
+    const timer3 = setTimeout(invalidate, 500);
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => {
+        invalidate();
+      });
+      ro.observe(container);
+      if (container.parentElement) {
+        ro.observe(container.parentElement);
+      }
+    }
+
+    window.addEventListener('resize', invalidate);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      window.removeEventListener('resize', handleResize);
+      clearTimeout(timer3);
+      ro?.disconnect();
+      window.removeEventListener('resize', invalidate);
     };
-  }, [map]);
+  }, [map, viewMode]);
   return null;
 }
 
@@ -292,6 +310,7 @@ export interface PublicPropertiesSplitMapProps {
   hoveredEstateId: number | null;
   onSelectEstate: (estate: PublicEstateItem | null) => void;
   domainParam?: string | null;
+  viewMode?: string;
 }
 
 export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> = ({
@@ -301,6 +320,7 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
   hoveredEstateId,
   onSelectEstate,
   domainParam,
+  viewMode,
 }) => {
   // Map of estateId to GPS coords
   const estateCoords = useMemo(() => {
@@ -384,7 +404,7 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
           style={{ width: '100%', height: '100%' }}
           className="w-full h-full"
         >
-          <MapResizer />
+          <MapResizer viewMode={viewMode} />
           <MapInteractionController />
           <MapZoomButtons />
           <TileLayer

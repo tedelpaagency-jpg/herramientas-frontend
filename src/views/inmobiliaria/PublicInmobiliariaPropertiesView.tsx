@@ -566,6 +566,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 hoveredEstateId={hoveredEstateId}
                 onSelectEstate={(est) => setSelectedEstate(est)}
                 domainParam={domainParam}
+                viewMode={viewMode}
               />
             )}
           </div>

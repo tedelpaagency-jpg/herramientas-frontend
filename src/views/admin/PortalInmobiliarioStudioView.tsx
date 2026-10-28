@@ -5,7 +5,7 @@ import {
   Globe, Sparkles, Building2, ShieldCheck, CheckCircle2, AlertTriangle, AlertCircle,
   RefreshCw, Loader2, ExternalLink, Eye, Image as ImageIcon, Laptop, Tablet, Smartphone,
   Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
-  Target, Compass, Users
+  Target, Compass, Users, Megaphone
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -73,6 +73,10 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
     seo_description: '',
     details: {
       target_workspace_id: '',
+      show_topbar: true,
+      topbar_text1: 'Propiedades Exclusivas con Asesoría Legal Garantizada',
+      topbar_text2: '¿Deseas vender o rentar tu inmueble? Consigna tu propiedad con los expertos',
+      topbar_text3: 'Nuevos Desarrollos y Casas en Venta con Financiamiento Bancario Directo',
       footer_logo: '',
       terms_and_conditions: '',
       privacy_policy: '',
@@ -177,6 +181,10 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       seo_description: ag.seo_description || `Explora las mejores propiedades en venta y alquiler con ${ag.name || 'nuestra agencia'}.`,
       details: {
         target_workspace_id: parsedDetails?.target_workspace_id || '',
+        show_topbar: parsedDetails?.show_topbar !== undefined ? Boolean(parsedDetails.show_topbar) : true,
+        topbar_text1: parsedDetails?.topbar_text1 ?? 'Propiedades Exclusivas con Asesoría Legal Garantizada',
+        topbar_text2: parsedDetails?.topbar_text2 ?? (ag.cta_text || '¿Deseas vender o rentar tu inmueble? Consigna tu propiedad con los expertos'),
+        topbar_text3: parsedDetails?.topbar_text3 ?? 'Nuevos Desarrollos y Casas en Venta con Financiamiento Bancario Directo',
         footer_logo: parsedDetails?.footer_logo || ag.footer_logo || '',
         terms_and_conditions: parsedDetails?.terms_and_conditions || '',
         privacy_policy: parsedDetails?.privacy_policy || '',
@@ -560,6 +568,76 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-1">
                     Personaliza los títulos principales y el fondo de alto impacto que ven los visitantes al entrar a tu portal.
                   </p>
+                </div>
+
+                {/* Cinta Superior de Anuncios (Topbar Slider) */}
+                <div className="p-4 bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/60 rounded-2xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-black text-amber-900 dark:text-amber-200 uppercase flex items-center gap-1.5">
+                        <Megaphone className="w-4 h-4 text-amber-600" /> Cinta Superior de Anuncios (Topbar)
+                      </h4>
+                      <p className="text-[11px] text-amber-700/90 dark:text-amber-300/80 mt-0.5">
+                        Barra superior rotativa para avisos, promociones, garantías o mensajes clave.
+                      </p>
+                    </div>
+
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.details?.show_topbar !== false}
+                        onChange={(e) => updateDetailField('show_topbar', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                      <span className="ml-2 text-xs font-extrabold text-amber-900 dark:text-amber-200">
+                        {form.details?.show_topbar !== false ? 'Visible' : 'Oculta'}
+                      </span>
+                    </label>
+                  </div>
+
+                  {form.details?.show_topbar !== false && (
+                    <div className="space-y-3 pt-2 border-t border-amber-200/60 dark:border-amber-800/40">
+                      <div>
+                        <label className="block text-[11px] font-bold text-amber-900 dark:text-amber-200 mb-1">
+                          Mensaje 1 (Rotación 1):
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.topbar_text1 ?? 'Propiedades Exclusivas con Asesoría Legal Garantizada'}
+                          onChange={(e) => updateDetailField('topbar_text1', e.target.value)}
+                          placeholder="Ej: Propiedades Exclusivas con Asesoría Legal Garantizada"
+                          className="w-full px-3 py-2 text-xs font-bold bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-xl text-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-amber-900 dark:text-amber-200 mb-1">
+                          Mensaje 2 (Rotación 2):
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.topbar_text2 ?? '¿Deseas vender o rentar tu inmueble? Consigna tu propiedad con los expertos'}
+                          onChange={(e) => updateDetailField('topbar_text2', e.target.value)}
+                          placeholder="Ej: ¿Deseas vender o rentar tu inmueble? Consigna tu propiedad con los expertos"
+                          className="w-full px-3 py-2 text-xs font-bold bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-xl text-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-amber-900 dark:text-amber-200 mb-1">
+                          Mensaje 3 (Rotación 3 - Opcional):
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.topbar_text3 ?? 'Nuevos Desarrollos y Casas en Venta con Financiamiento Bancario Directo'}
+                          onChange={(e) => updateDetailField('topbar_text3', e.target.value)}
+                          placeholder="Ej: Nuevos Desarrollos y Casas en Venta con Financiamiento Bancario Directo"
+                          className="w-full px-3 py-2 text-xs font-bold bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-xl text-slate-800 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">

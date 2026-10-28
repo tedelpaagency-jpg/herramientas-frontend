@@ -122,7 +122,7 @@ export default function PublicPortalHomeView({
       }}
     >
       <BrandingThemeInjector agency={agency} />
-      <TopbarSlider />
+      <TopbarSlider agency={agency} />
       <Header2Style3 agency={agency} />
       <HeroV4 agency={agency} />
       <DestinationSectionV4 categories={categories} agency={agency} />
