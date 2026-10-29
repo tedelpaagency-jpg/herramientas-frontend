@@ -1,172 +1,29 @@
 "use client";
 import React, { useRef, useState, useEffect } from 'react';
 import {
-  MapPin,
-  Building2,
-  DollarSign,
   Tag,
   KeyRound,
   Search,
-  Trees,
-  Home,
-  ArrowLeftRight,
   ChevronDown,
 } from 'lucide-react';
-
-interface CustomBookingSelectProps {
-  label: string;
-  name: string;
-  value: string;
-  onChange: (val: string) => void;
-  options: { label: string; value: string }[];
-  icon: React.ReactNode;
-  brandColor?: string;
-}
-
-const CustomBookingSelect: React.FC<CustomBookingSelectProps> = ({
-  label,
-  name,
-  value,
-  onChange,
-  options,
-  icon,
-  brandColor = '#00a884',
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const selected = options.find((o) => o.value === value) || options[0];
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSelect = (val: string) => {
-    onChange(val);
-    setIsOpen(false);
-  };
-
-  return (
-    <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
-      <div
-        onClick={() => setIsOpen((prev) => !prev)}
-        style={{
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          width: '100%',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: brandColor, flexShrink: 0 }}>
-          {icon}
-        </div>
-        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: 800,
-              color: '#94a3b8',
-              display: 'block',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              lineHeight: 1,
-            }}
-          >
-            {label}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '3px' }}>
-            <span
-              style={{
-                fontWeight: 700,
-                color: '#0f172a',
-                fontSize: '13.5px',
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {selected.label}
-            </span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-          </div>
-        </div>
-      </div>
-      <input type="hidden" name={name} value={value} />
-
-      {isOpen && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 12px)',
-            left: 0,
-            minWidth: '220px',
-            background: '#ffffff',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
-            borderRadius: '16px',
-            zIndex: 9999,
-            border: '1px solid #e2e8f0',
-            overflow: 'hidden',
-          }}
-        >
-          <ul style={{ padding: '6px 0', margin: 0, listStyle: 'none', maxHeight: '250px', overflowY: 'auto' }}>
-            {options.map((opt) => (
-              <li
-                key={opt.value}
-                onClick={() => handleSelect(opt.value)}
-                style={{
-                  padding: '10px 16px',
-                  cursor: 'pointer',
-                  transition: 'background 0.15s ease',
-                  backgroundColor: value === opt.value ? '#f0fdf4' : 'transparent',
-                }}
-              >
-                <span
-                  style={{
-                    margin: 0,
-                    fontSize: '13px',
-                    fontWeight: value === opt.value ? 800 : 600,
-                    color: value === opt.value ? brandColor : '#1e293b',
-                    display: 'block',
-                  }}
-                >
-                  {opt.label}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-};
 
 interface HeroV4Props {
   agency?: any;
 }
 
 const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
-  // Desktop Tab selector: sale | rent | land | commercial
-  const [activeTab, setActiveTab] = useState<'sale' | 'rent' | 'land' | 'commercial'>('sale');
+  // Tabs: 'sale' | 'rent' (Exact match to Image 1 & Image 2)
+  const [activeTab, setActiveTab] = useState<'sale' | 'rent'>('sale');
+  const [isTabLoading, setIsTabLoading] = useState(false);
 
   // Form field states
   const [search, setSearch] = useState('');
-  const [propertyStatus, setPropertyStatus] = useState('2'); // '2' = Venta, '1' = Alquiler, '' = Todas
+  const [propertyStatus, setPropertyStatus] = useState('2'); // '2' = Venta, '1' = Alquiler
   const [propertyType, setPropertyType] = useState('');
   const [priceMax, setPriceMax] = useState('');
 
-  const heroTitle = agency?.hero_title || agency?.details?.hero_title || 'Propiedades Immobillis';
-  const heroSubtitle = agency?.hero_subtitle || agency?.details?.hero_subtitle || 'Encuentra tu Hogar SoñadoPropied';
+  const heroTitle = agency?.hero_title || agency?.details?.hero_title || 'Tu Proximo';
+  const heroSubtitle = agency?.hero_subtitle || agency?.details?.hero_subtitle || 'Exito Inmobiliario Inicia Con Nosotros';
 
   // Media (image / video) background
   const bannerImage = agency?.banner_image || agency?.details?.banner_image;
@@ -185,82 +42,57 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
       ? bannerImage
       : '/assets/video/home4-banner-video.mp4');
 
-  const tab1 = agency?.details?.hero_tab1 || 'En Venta';
-  const tab2 = agency?.details?.hero_tab2 || 'En Renta';
-  const tab3 = agency?.details?.hero_tab3 || 'Terrenos & Lotes';
-  const tab4 = agency?.details?.hero_tab4 || 'Comercial';
-  const searchBtnText = agency?.details?.hero_search_btn || 'Buscar Propiedades';
-  const primaryColor = agency?.primary_color || '#00a884';
-  const buttonColor = agency?.button_color || primaryColor;
   const domain = agency?.domain || '';
 
-  // Synchronize Tab clicks with fields
-  const handleTabClick = (tab: 'sale' | 'rent' | 'land' | 'commercial') => {
+  // Handle Tab Switch with Spinner Loader (Exact match to Image 2)
+  const handleTabClick = (tab: 'sale' | 'rent') => {
+    if (tab === activeTab) return;
+    setIsTabLoading(true);
     setActiveTab(tab);
     if (tab === 'sale') {
       setPropertyStatus('2');
-      if (propertyType === '3' || propertyType === '4') setPropertyType('');
-    } else if (tab === 'rent') {
+    } else {
       setPropertyStatus('1');
-      if (propertyType === '3' || propertyType === '4') setPropertyType('');
-    } else if (tab === 'land') {
-      setPropertyType('3');
-    } else if (tab === 'commercial') {
-      setPropertyType('4');
     }
+    // Simulate natural fetch transition matching inmosoft
+    setTimeout(() => {
+      setIsTabLoading(false);
+    }, 450);
   };
 
-  // Synchronize mobile Operation selector with tabs
-  const handleOperationChange = (val: string) => {
-    setPropertyStatus(val);
-    if (val === '2') setActiveTab('sale');
-    else if (val === '1') setActiveTab('rent');
-  };
-
-  // Synchronize mobile Property selector with tabs
-  const handlePropertyTypeChange = (val: string) => {
-    setPropertyType(val);
-    if (val === '3') setActiveTab('land');
-    else if (val === '4') setActiveTab('commercial');
-  };
-
-  // Mobile labels
-  const operationLabel = propertyStatus === '1' ? 'Alquiler' : propertyStatus === '2' ? 'Venta' : 'Todas';
   const propertyTypeOptions = [
-    { label: 'Todas las propiedades', shortLabel: 'Todas', value: '' },
-    { label: 'Departamentos & Lofts', shortLabel: 'Depto.', value: '2' },
-    { label: 'Casas & Residencias', shortLabel: 'Casas', value: '1' },
-    { label: 'Terrenos & Lotes', shortLabel: 'Terrenos', value: '3' },
-    { label: 'Oficinas & Locales', shortLabel: 'Comercial', value: '4' },
-    { label: 'Villas & Quintas', shortLabel: 'Villas', value: '5' },
+    { label: 'Cualquiera', value: '' },
+    { label: 'Casa', value: '1' },
+    { label: 'Departamento', value: '2' },
+    { label: 'Terreno', value: '3' },
+    { label: 'Local comercial', value: '4' },
+    { label: 'Oficinas', value: '15' },
+    { label: 'Suites', value: '21' },
+    { label: 'Edificio', value: '5' },
+    { label: 'Quinta', value: '19' },
   ];
-  const typeLabel = propertyTypeOptions.find((p) => p.value === propertyType)?.shortLabel || 'Depto.';
+  const typeDisplayLabel = propertyTypeOptions.find((p) => p.value === propertyType)?.label || 'Cualquiera';
 
   const priceOptions = [
-    { label: 'Cualquier precio', value: '' },
-    { label: 'Hasta $50,000 USD', value: '50000' },
-    { label: 'Hasta $100,000 USD', value: '100000' },
-    { label: 'Hasta $200,000 USD', value: '200000' },
-    { label: 'Hasta $300,000 USD', value: '300000' },
-    { label: 'Hasta $500,000 USD', value: '500000' },
-    { label: 'Hasta $1,000,000 USD', value: '1000000' },
+    { label: 'Cualquiera', value: '' },
+    { label: 'Hasta $50k', value: '50000' },
+    { label: 'Hasta $100k', value: '100000' },
+    { label: 'Hasta $200k', value: '200000' },
+    { label: 'Hasta $300k', value: '300000' },
+    { label: 'Hasta $500k', value: '500000' },
+    { label: 'Hasta $1M+', value: '1000000' },
   ];
-  const priceLabel = priceOptions.find((p) => p.value === priceMax)?.label || 'Cualquier precio';
+  const priceDisplayLabel = priceOptions.find((p) => p.value === priceMax)?.label || 'Cualquiera';
 
   return (
     <div className="inmo-hero-wrapper px-3 sm:px-6 lg:px-12 py-3 lg:py-5">
       <style jsx global>{`
-        /* Reset any template margin conflicts */
-        .home4-banner-section .banner-content-wrap .banner-content .filter-wrapper {
-          margin-top: 0 !important;
-        }
-        @media (max-width: 576px) {
-          .home4-banner-section {
-            margin-bottom: 40px !important;
-          }
+        @keyframes inmoSpin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
 
-        /* Desktop Canvas Frame */
+        /* Hero Frame Canvas */
         .inmo-hero-canvas {
           position: relative;
           border-radius: 36px;
@@ -270,130 +102,166 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          min-height: 540px;
-          padding: 60px 24px 80px 24px;
-          box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3);
+          min-height: 520px;
+          padding: 60px 20px 70px 20px;
+          box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.35);
         }
 
         @media (max-width: 767px) {
           .inmo-hero-canvas {
-            border-radius: 28px;
+            border-radius: 24px;
+            padding: 40px 14px 40px 14px;
             min-height: auto;
-            padding: 40px 16px 0 16px;
           }
         }
 
-        /* Desktop Tabs */
-        .inmo-desktop-tab-list {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: -16px;
-          margin-left: 20px;
+        /* White Booking Card (Exact Match to Image 1) */
+        .inmo-main-booking-card {
           position: relative;
-          z-index: 20;
-        }
-        .inmo-desktop-tab-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 24px;
-          border-radius: 9999px;
-          font-size: 13.5px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-          border: 1px solid rgba(226, 232, 240, 0.9);
           background: #ffffff;
-          color: #334155;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-          user-select: none;
-        }
-        .inmo-desktop-tab-pill:hover {
-          transform: translateY(-2px);
-          color: #0f172a;
-          box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
-        }
-        .inmo-desktop-tab-pill.active {
-          background: #eab308 !important; /* Yellow like in screenshot or primaryColor */
-          color: #ffffff !important;
-          border-color: #eab308 !important;
-          box-shadow: 0 8px 24px rgba(234, 179, 8, 0.4) !important;
-        }
-        .inmo-desktop-tab-pill.active svg {
-          stroke: #ffffff !important;
+          border-radius: 24px;
+          box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.28);
+          width: 100%;
+          max-width: 1040px;
+          overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.9);
+          z-index: 10;
         }
 
-        /* Desktop Booking Card */
-        .inmo-desktop-card {
+        /* Top Tabs Row */
+        .inmo-card-tabs-bar {
           display: flex;
           align-items: center;
+          border-bottom: 1px solid #e2e8f0;
+          padding: 16px 28px 0 28px;
           background: #ffffff;
-          border-radius: 9999px;
-          padding: 12px 16px 12px 24px;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-          gap: 16px;
-          width: 100%;
-          max-width: 1080px;
+          gap: 36px;
         }
-        .inmo-desktop-field {
-          flex: 1;
-          min-width: 0;
+
+        .inmo-card-tab-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          padding: 0 0 10px 0;
+          position: relative;
+          outline: none;
+          color: #94a3b8;
+          transition: color 0.2s ease;
+          user-select: none;
+        }
+
+        .inmo-card-tab-btn.active {
+          color: #0f172a;
+        }
+
+        .inmo-card-tab-btn span {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+
+        /* Active underline bar touching the divider line */
+        .inmo-tab-active-bar {
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 58px;
+          height: 3px;
+          background-color: #0f172a;
+          border-radius: 3px 3px 0 0;
+        }
+
+        /* Form Row Desktop */
+        .inmo-card-form-grid {
+          display: grid;
+          grid-template-columns: 2fr 1.1fr 1.2fr 1.1fr auto;
+          gap: 16px;
+          padding: 24px 28px 28px 28px;
+          align-items: flex-end;
+          background: #ffffff;
+          position: relative;
+        }
+
+        @media (max-width: 991px) {
+          .inmo-card-form-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .inmo-card-form-grid {
+            grid-template-columns: 1fr;
+            padding: 20px 16px 24px 16px;
+            gap: 14px;
+          }
+          .inmo-card-tabs-bar {
+            padding: 14px 16px 0 16px;
+            justify-content: space-around;
+            gap: 0;
+          }
+        }
+
+        /* Field Labels */
+        .inmo-field-label {
+          display: block;
+          font-size: 13px;
+          font-weight: 600;
+          color: #475569;
+          margin-bottom: 6px;
+        }
+
+        /* Field Control */
+        .inmo-field-control {
+          position: relative;
+          height: 48px;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 0 14px;
+          background-color: #ffffff;
           display: flex;
           align-items: center;
-          gap: 10px;
+          justify-content: space-between;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
-        .inmo-desktop-divider {
-          width: 1px;
-          height: 36px;
-          background-color: #f1f5f9;
-          flex-shrink: 0;
+
+        .inmo-field-control:hover,
+        .inmo-field-control:focus-within {
+          border-color: #cbd5e1;
         }
-        .inmo-desktop-btn {
-          display: inline-flex;
+
+        /* Search Button */
+        .inmo-btn-search {
+          height: 48px;
+          padding: 0 28px;
+          background-color: #2b2e35;
+          color: #ffffff;
+          border: none;
+          border-radius: 12px;
+          font-size: 14.5px;
+          font-weight: 700;
+          display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          height: 52px;
-          padding: 0 32px;
-          border-radius: 9999px;
-          background-color: ${primaryColor};
-          color: #ffffff;
-          font-size: 14px;
-          font-weight: 800;
-          white-space: nowrap;
-          border: none;
           cursor: pointer;
-          box-shadow: 0 10px 24px -5px ${primaryColor}66;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
           transition: all 0.2s ease;
-          flex-shrink: 0;
-        }
-        .inmo-desktop-btn:hover {
-          transform: translateY(-1px);
-          filter: brightness(1.06);
-          box-shadow: 0 14px 28px -5px ${primaryColor}88;
-        }
-        .inmo-desktop-btn:active {
-          transform: scale(0.98);
+          white-space: nowrap;
         }
 
-        /* Responsive Visibility */
-        @media (max-width: 767px) {
-          .inmo-desktop-wrapper {
-            display: none !important;
-          }
-          .inmo-mobile-wrapper {
-            display: block !important;
-            width: 100% !important;
-          }
+        .inmo-btn-search:hover {
+          background-color: #1a1c22;
+          transform: translateY(-1px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
         }
-        @media (min-width: 768px) {
-          .inmo-desktop-wrapper {
-            display: block !important;
-          }
-          .inmo-mobile-wrapper {
-            display: none !important;
-          }
+
+        .inmo-btn-search:active {
+          transform: scale(0.98);
         }
       `}</style>
 
@@ -433,7 +301,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.72))',
+              background: 'linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.70))',
             }}
           />
         </div>
@@ -444,7 +312,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             position: 'relative',
             zIndex: 10,
             textAlign: 'center',
-            marginBottom: '36px',
+            marginBottom: '32px',
             maxWidth: '850px',
           }}
         >
@@ -455,19 +323,19 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
               fontWeight: 900,
               letterSpacing: '-0.02em',
               lineHeight: 1.15,
-              margin: '0 0 10px 0',
-              textShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              margin: '0 0 8px 0',
+              textShadow: '0 4px 12px rgba(0,0,0,0.35)',
             }}
           >
             {heroTitle}
           </h1>
           <p
             style={{
-              color: 'rgba(255, 255, 255, 0.92)',
-              fontSize: 'clamp(14px, 1.8vw, 17px)',
-              fontWeight: 500,
+              color: 'rgba(255, 255, 255, 0.95)',
+              fontSize: 'clamp(15px, 2vw, 19px)',
+              fontWeight: 600,
               margin: 0,
-              textShadow: '0 2px 8px rgba(0,0,0,0.25)',
+              textShadow: '0 2px 8px rgba(0,0,0,0.3)',
             }}
           >
             {heroSubtitle}
@@ -475,289 +343,72 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         </div>
 
         {/* ======================================================== */}
-        {/* 1. DESKTOP VIEW (Exact match to inmobiliaria.inmosoft.pro) */}
+        {/* BOOKING CARD (Exact Pixel-Perfect Match to Image 1 & 2) */}
         {/* ======================================================== */}
-        <div className="inmo-desktop-wrapper" style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: '1080px' }}>
-          {/* 4 Tabs on top of the card */}
-          <div className="inmo-desktop-tab-list">
-            <div
-              className={`inmo-desktop-tab-pill ${activeTab === 'sale' ? 'active' : ''}`}
+        <div className="inmo-main-booking-card">
+          {/* Top Tabs: VENTA and ALQUILER with active underline bar */}
+          <div className="inmo-card-tabs-bar">
+            {/* VENTA */}
+            <button
+              type="button"
+              className={`inmo-card-tab-btn ${activeTab === 'sale' ? 'active' : ''}`}
               onClick={() => handleTabClick('sale')}
             >
-              <Home className="w-4 h-4" />
-              <span>{tab1}</span>
-            </div>
+              <Tag className="w-5 h-5 mb-1" strokeWidth={2} />
+              <span>VENTA</span>
+              {activeTab === 'sale' && <div className="inmo-tab-active-bar" />}
+            </button>
 
-            <div
-              className={`inmo-desktop-tab-pill ${activeTab === 'rent' ? 'active' : ''}`}
+            {/* ALQUILER */}
+            <button
+              type="button"
+              className={`inmo-card-tab-btn ${activeTab === 'rent' ? 'active' : ''}`}
               onClick={() => handleTabClick('rent')}
             >
-              <KeyRound className="w-4 h-4" />
-              <span>{tab2}</span>
-            </div>
-
-            <div
-              className={`inmo-desktop-tab-pill ${activeTab === 'land' ? 'active' : ''}`}
-              onClick={() => handleTabClick('land')}
-            >
-              <Tag className="w-4 h-4" />
-              <span>{tab3}</span>
-            </div>
-
-            <div
-              className={`inmo-desktop-tab-pill ${activeTab === 'commercial' ? 'active' : ''}`}
-              onClick={() => handleTabClick('commercial')}
-            >
-              <Building2 className="w-4 h-4" />
-              <span>{tab4}</span>
-            </div>
+              <KeyRound className="w-5 h-5 mb-1" strokeWidth={2} />
+              <span>ALQUILER</span>
+              {activeTab === 'rent' && <div className="inmo-tab-active-bar" />}
+            </button>
           </div>
 
-          {/* Horizontal Search Bar Card */}
-          <form action="/properties" method="GET" className="inmo-desktop-card">
+          {/* Form Body with Loading Spinner Overlay (Exact match to Image 2) */}
+          <form action="/properties" method="GET" className="inmo-card-form-grid">
             {domain && <input type="hidden" name="domain" value={domain} />}
             <input type="hidden" name="property_status" value={propertyStatus} />
 
-            {/* Field 1: UBICACIÓN */}
-            <div className="inmo-desktop-field" style={{ flex: '1.2' }}>
+            {/* Loader Overlay (Matches Image 2) */}
+            {isTabLoading && (
               <div
                 style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundColor: 'rgba(255, 255, 255, 0.82)',
+                  backdropFilter: 'blur(4px)',
+                  WebkitBackdropFilter: 'blur(4px)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '9999px',
-                  padding: '8px 18px',
-                  width: '100%',
-                  backgroundColor: '#ffffff',
+                  justifyContent: 'center',
+                  zIndex: 50,
+                  borderRadius: '0 0 24px 24px',
                 }}
               >
-                <MapPin className="w-4 h-4 shrink-0" style={{ color: primaryColor }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <span
-                    style={{
-                      fontSize: '9.5px',
-                      fontWeight: 800,
-                      color: '#94a3b8',
-                      display: 'block',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      lineHeight: 1,
-                    }}
-                  >
-                    UBICACIÓN
-                  </span>
-                  <input
-                    type="text"
-                    name="search"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Ciudad, colonia o zona..."
-                    style={{
-                      width: '100%',
-                      border: 'none',
-                      background: 'transparent',
-                      outline: 'none',
-                      fontWeight: 700,
-                      color: '#0f172a',
-                      fontSize: '13.5px',
-                      padding: 0,
-                      marginTop: '2px',
-                      lineHeight: 1.2,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="inmo-desktop-divider" />
-
-            {/* Field 2: TIPO DE INMUEBLE */}
-            <div className="inmo-desktop-field">
-              <CustomBookingSelect
-                label="TIPO DE INMUEBLE"
-                name="property_type"
-                value={propertyType}
-                onChange={setPropertyType}
-                brandColor={primaryColor}
-                icon={<Building2 className="w-4 h-4" />}
-                options={propertyTypeOptions.map((o) => ({ label: o.label, value: o.value }))}
-              />
-            </div>
-
-            <div className="inmo-desktop-divider" />
-
-            {/* Field 3: PRESUPUESTO MÁXIMO */}
-            <div className="inmo-desktop-field">
-              <CustomBookingSelect
-                label="PRESUPUESTO MÁXIMO"
-                name="price_max"
-                value={priceMax}
-                onChange={setPriceMax}
-                brandColor={primaryColor}
-                icon={<DollarSign className="w-4 h-4" />}
-                options={priceOptions}
-              />
-            </div>
-
-            {/* Field 4: Search Button */}
-            <button type="submit" className="inmo-desktop-btn">
-              <Search className="w-4 h-4" />
-              <span>{searchBtnText}</span>
-            </button>
-          </form>
-        </div>
-
-        {/* ======================================================== */}
-        {/* 2. MOBILE VIEW (Pixel-perfect match to user's screenshot) */}
-        {/* ======================================================== */}
-        <div className="inmo-mobile-wrapper" style={{ position: 'relative', zIndex: 10 }}>
-          <form
-            action="/properties"
-            method="GET"
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '32px 32px 28px 28px',
-              padding: '24px 20px 24px 20px',
-              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
-              textAlign: 'left',
-              width: '100%',
-              maxWidth: '440px',
-              margin: '0 auto',
-            }}
-          >
-            {domain && <input type="hidden" name="domain" value={domain} />}
-
-            {/* Top 2 Tabs: VENTA & ALQUILER (Exact match to screenshot) */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-around',
-                borderBottom: '1px solid #f1f5f9',
-                paddingBottom: '8px',
-                marginBottom: '18px',
-              }}
-            >
-              {/* VENTA TAB */}
-              <div
-                onClick={() => handleTabClick('sale')}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  padding: '4px 16px',
-                  flex: 1,
-                  textAlign: 'center',
-                }}
-              >
-                <Tag
-                  className="w-5 h-5 mb-1"
+                <div
                   style={{
-                    color: activeTab === 'sale' ? '#0f172a' : '#94a3b8',
-                    transition: 'color 0.2s',
+                    width: '42px',
+                    height: '42px',
+                    border: '3px solid rgba(0, 0, 0, 0.08)',
+                    borderTop: '3px solid #1e293b',
+                    borderRadius: '50%',
+                    animation: 'inmoSpin 0.7s linear infinite',
                   }}
                 />
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    letterSpacing: '0.06em',
-                    color: activeTab === 'sale' ? '#0f172a' : '#94a3b8',
-                    transition: 'color 0.2s',
-                  }}
-                >
-                  VENTA
-                </span>
-                {activeTab === 'sale' ? (
-                  <div
-                    style={{
-                      width: '64px',
-                      height: '3.5px',
-                      backgroundColor: '#1e293b',
-                      borderRadius: '9999px',
-                      marginTop: '6px',
-                    }}
-                  />
-                ) : (
-                  <div style={{ height: '3.5px', marginTop: '6px' }} />
-                )}
               </div>
+            )}
 
-              {/* ALQUILER TAB */}
-              <div
-                onClick={() => handleTabClick('rent')}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  padding: '4px 16px',
-                  flex: 1,
-                  textAlign: 'center',
-                }}
-              >
-                <KeyRound
-                  className="w-5 h-5 mb-1"
-                  style={{
-                    color: activeTab === 'rent' ? '#0f172a' : '#94a3b8',
-                    transition: 'color 0.2s',
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    letterSpacing: '0.06em',
-                    color: activeTab === 'rent' ? '#0f172a' : '#94a3b8',
-                    transition: 'color 0.2s',
-                  }}
-                >
-                  ALQUILER
-                </span>
-                {activeTab === 'rent' ? (
-                  <div
-                    style={{
-                      width: '64px',
-                      height: '3.5px',
-                      backgroundColor: '#1e293b',
-                      borderRadius: '9999px',
-                      marginTop: '6px',
-                    }}
-                  />
-                ) : (
-                  <div style={{ height: '3.5px', marginTop: '6px' }} />
-                )}
-              </div>
-            </div>
-
-            {/* DESTINO */}
-            <div style={{ marginBottom: '14px' }}>
-              <label
-                style={{
-                  fontSize: '10.5px',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  color: '#94a3b8',
-                  display: 'block',
-                  marginBottom: '6px',
-                }}
-              >
-                DESTINO
-              </label>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '16px',
-                  padding: '13px 16px',
-                  backgroundColor: '#ffffff',
-                }}
-              >
+            {/* 1. Ubicación */}
+            <div>
+              <label className="inmo-field-label">Ubicación</label>
+              <div className="inmo-field-control">
                 <input
                   type="text"
                   name="search"
@@ -769,164 +420,81 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                     border: 'none',
                     background: 'transparent',
                     outline: 'none',
-                    fontSize: '14px',
+                    fontSize: '13.5px',
                     fontWeight: 500,
                     color: '#0f172a',
                     padding: 0,
                   }}
                 />
-                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
               </div>
             </div>
 
-            {/* 2 COLUMNS: OPERACIÓN & PROPIEDAD */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-              {/* OPERACIÓN */}
-              <div>
-                <label
+            {/* 2. Operación */}
+            <div>
+              <label className="inmo-field-label">Operación</label>
+              <div className="inmo-field-control">
+                <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#0f172a' }}>
+                  {activeTab === 'sale' ? 'Venta' : 'Alquiler'}
+                </span>
+                <select
+                  name="property_status"
+                  value={propertyStatus}
+                  onChange={(e) => handleTabClick(e.target.value === '1' ? 'rent' : 'sale')}
                   style={{
-                    fontSize: '10.5px',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    color: '#94a3b8',
-                    display: 'block',
-                    marginBottom: '6px',
+                    position: 'absolute',
+                    inset: 0,
+                    opacity: 0,
+                    width: '100%',
+                    height: '100%',
+                    cursor: 'pointer',
+                    zIndex: 10,
                   }}
                 >
-                  OPERACIÓN
-                </label>
-                <div
-                  style={{
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    border: '1.5px solid #e2e8f0',
-                    borderRadius: '16px',
-                    padding: '13px 14px',
-                    backgroundColor: '#ffffff',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                    <ArrowLeftRight className="w-4 h-4 text-slate-700 shrink-0" />
-                    <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
-                      {operationLabel}
-                    </span>
-                  </div>
-                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
-                  <select
-                    name="property_status"
-                    value={propertyStatus}
-                    onChange={(e) => handleOperationChange(e.target.value)}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      opacity: 0,
-                      width: '100%',
-                      height: '100%',
-                      cursor: 'pointer',
-                      zIndex: 10,
-                    }}
-                  >
-                    <option value="2">Venta</option>
-                    <option value="1">Alquiler</option>
-                    <option value="">Todas</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* PROPIEDAD */}
-              <div>
-                <label
-                  style={{
-                    fontSize: '10.5px',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    color: '#94a3b8',
-                    display: 'block',
-                    marginBottom: '6px',
-                  }}
-                >
-                  PROPIEDAD
-                </label>
-                <div
-                  style={{
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    border: '1.5px solid #e2e8f0',
-                    borderRadius: '16px',
-                    padding: '13px 14px',
-                    backgroundColor: '#ffffff',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                    <Building2 className="w-4 h-4 text-slate-700 shrink-0" />
-                    <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
-                      {typeLabel}
-                    </span>
-                  </div>
-                  <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
-                  <select
-                    name="property_type"
-                    value={propertyType}
-                    onChange={(e) => handlePropertyTypeChange(e.target.value)}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      opacity: 0,
-                      width: '100%',
-                      height: '100%',
-                      cursor: 'pointer',
-                      zIndex: 10,
-                    }}
-                  >
-                    {propertyTypeOptions.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <option value="2">Venta</option>
+                  <option value="1">Alquiler</option>
+                </select>
               </div>
             </div>
 
-            {/* PRESUPUESTO */}
-            <div style={{ marginBottom: '18px' }}>
-              <label
-                style={{
-                  fontSize: '10.5px',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  color: '#94a3b8',
-                  display: 'block',
-                  marginBottom: '6px',
-                }}
-              >
-                PRESUPUESTO
-              </label>
-              <div
-                style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '16px',
-                  padding: '13px 16px',
-                  backgroundColor: '#ffffff',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                  <DollarSign className="w-4 h-4 text-slate-700 shrink-0" />
-                  <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
-                    {priceLabel}
-                  </span>
-                </div>
+            {/* 3. Propiedad */}
+            <div>
+              <label className="inmo-field-label">Propiedad</label>
+              <div className="inmo-field-control">
+                <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {typeDisplayLabel}
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+                <select
+                  name="property_type"
+                  value={propertyType}
+                  onChange={(e) => setPropertyType(e.target.value)}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    opacity: 0,
+                    width: '100%',
+                    height: '100%',
+                    cursor: 'pointer',
+                    zIndex: 10,
+                  }}
+                >
+                  {propertyTypeOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* 4. Precio */}
+            <div>
+              <label className="inmo-field-label">Precio</label>
+              <div className="inmo-field-control">
+                <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {priceDisplayLabel}
+                </span>
                 <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
                 <select
                   name="price_max"
@@ -951,32 +519,13 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
               </div>
             </div>
 
-            {/* BUSCAR PROPIEDADES (Dark button matching screenshot) */}
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                height: '52px',
-                backgroundColor: '#2b2e35',
-                color: '#ffffff',
-                borderRadius: '18px',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                fontSize: '13.5px',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                cursor: 'pointer',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.22)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Search className="w-4 h-4 stroke-[2.5]" />
-              <span>BUSCAR PROPIEDADES</span>
-            </button>
+            {/* 5. Botón Buscar */}
+            <div>
+              <button type="submit" className="inmo-btn-search w-full sm:w-auto">
+                <Search className="w-4 h-4 stroke-[2.5]" />
+                <span>Buscar</span>
+              </button>
+            </div>
           </form>
         </div>
       </div>

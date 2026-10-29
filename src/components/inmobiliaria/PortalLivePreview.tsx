@@ -188,145 +188,68 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
                 {displayHeroSubtitle}
               </p>
 
-              {/* Real Estate Search Widget Mockup */}
-              {deviceMode === 'mobile' ? (
-                /* Mobile Booking Mockup (matches screenshot) */
-                <div className="w-full bg-white rounded-3xl p-4 shadow-2xl text-slate-800 text-left">
-                  {/* Top Mobile Tabs (Exact 2 tabs matching screenshot) */}
-                  <div className="flex items-center justify-around border-b border-slate-100 pb-2 mb-3">
-                    <div className="flex flex-col items-center">
-                      <Tag className="w-5 h-5 text-slate-800 mb-0.5" />
-                      <span className="text-[10px] font-extrabold text-slate-800 tracking-wider">VENTA</span>
-                      <div className="w-12 h-[3px] bg-slate-800 rounded-full mt-1" />
-                    </div>
-                    <div className="flex flex-col items-center opacity-60">
-                      <KeyRound className="w-5 h-5 text-slate-400 mb-0.5" />
-                      <span className="text-[10px] font-extrabold text-slate-500 tracking-wider">ALQUILER</span>
-                      <div className="h-[3px] mt-1" />
+              {/* Real Estate Search Widget Mockup (Exact Match to Image 1 & 2) */}
+              <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-white/80 overflow-hidden text-slate-800 text-left">
+                {/* Top Tabs (Exact 2 tabs VENTA & ALQUILER) */}
+                <div className="flex items-center border-b border-slate-200 px-5 pt-3 gap-6 bg-white">
+                  <div className="flex flex-col items-center pb-2 cursor-pointer">
+                    <Tag className="w-4 h-4 text-slate-800 mb-0.5" />
+                    <span className="text-[10px] font-extrabold text-slate-800 tracking-wider">VENTA</span>
+                    <div className="w-10 h-[2.5px] bg-slate-900 rounded-full mt-1.5" />
+                  </div>
+                  <div className="flex flex-col items-center pb-2 opacity-50 cursor-pointer">
+                    <KeyRound className="w-4 h-4 text-slate-400 mb-0.5" />
+                    <span className="text-[10px] font-extrabold text-slate-500 tracking-wider">ALQUILER</span>
+                    <div className="h-[2.5px] mt-1.5" />
+                  </div>
+                </div>
+
+                {/* Form Fields Row (Exact Image 1 layout) */}
+                <div className="p-4 flex flex-col sm:flex-row items-end gap-3 bg-white">
+                  {/* Ubicación */}
+                  <div className="w-full sm:flex-[1.5]">
+                    <span className="text-xs font-semibold text-slate-600 block mb-1">Ubicación</span>
+                    <div className="h-10 border border-slate-200 rounded-xl px-3 flex items-center justify-between bg-white text-xs">
+                      <span className="text-slate-400 truncate">¿En donde estas buscando?</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                     </div>
                   </div>
 
-                  {/* DESTINO */}
-                  <div className="mb-2.5">
-                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1">DESTINO</span>
-                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50/50">
-                      <span className="text-xs font-semibold text-slate-400">¿En donde estas buscando?</span>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  {/* Operación */}
+                  <div className="w-full sm:flex-1">
+                    <span className="text-xs font-semibold text-slate-600 block mb-1">Operación</span>
+                    <div className="h-10 border border-slate-200 rounded-xl px-3 flex items-center bg-white text-xs font-bold text-slate-800">
+                      Venta
                     </div>
                   </div>
 
-                  {/* OPERACIÓN & PROPIEDAD */}
-                  <div className="grid grid-cols-2 gap-2 mb-2.5">
-                    <div>
-                      <span className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1">OPERACIÓN</span>
-                      <div className="flex items-center justify-between border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50/50">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <ArrowLeftRight className="w-3.5 h-3.5 text-slate-700 shrink-0" />
-                          <span className="text-xs font-bold text-slate-800">Venta</span>
-                        </div>
-                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1">PROPIEDAD</span>
-                      <div className="flex items-center justify-between border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50/50">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <Building2 className="w-3.5 h-3.5 text-slate-700 shrink-0" />
-                          <span className="text-xs font-bold text-slate-800">Depto.</span>
-                        </div>
-                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      </div>
+                  {/* Propiedad */}
+                  <div className="w-full sm:flex-1">
+                    <span className="text-xs font-semibold text-slate-600 block mb-1">Propiedad</span>
+                    <div className="h-10 border border-slate-200 rounded-xl px-3 flex items-center justify-between bg-white text-xs font-bold text-slate-800">
+                      <span>Cualquiera</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                     </div>
                   </div>
 
-                  {/* PRESUPUESTO */}
-                  <div className="mb-3">
-                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1">PRESUPUESTO</span>
-                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50/50">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <DollarSign className="w-3.5 h-3.5 text-slate-700 shrink-0" />
-                        <span className="text-xs font-bold text-slate-800">Cualquier precio</span>
-                      </div>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  {/* Precio */}
+                  <div className="w-full sm:flex-1">
+                    <span className="text-xs font-semibold text-slate-600 block mb-1">Precio</span>
+                    <div className="h-10 border border-slate-200 rounded-xl px-3 flex items-center bg-white text-xs font-bold text-slate-800">
+                      Cualquiera
                     </div>
                   </div>
 
-                  {/* Dark capsule button */}
+                  {/* Botón Buscar */}
                   <button
                     type="button"
-                    className="w-full h-11 bg-[#2b2e35] text-white rounded-xl font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md"
+                    className="w-full sm:w-auto h-10 px-5 bg-[#2b2e35] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-sm"
                   >
                     <Search className="w-3.5 h-3.5" />
-                    <span>BUSCAR PROPIEDADES</span>
+                    <span>Buscar</span>
                   </button>
                 </div>
-              ) : (
-                /* Desktop Booking Mockup (matches inmobiliaria.inmosoft.pro) */
-                <div className="w-full max-w-2xl text-slate-800">
-                  {/* Top Tabs */}
-                  <div className="flex items-center gap-2 mb-[-12px] ml-4 relative z-10">
-                    <span
-                      className="px-4 py-2 rounded-full text-white text-xs font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
-                      style={{ backgroundColor: primaryColor }}
-                    >
-                      <Home className="w-3.5 h-3.5" />
-                      <span>En Venta</span>
-                    </span>
-                    <span className="px-4 py-2 rounded-full bg-white text-slate-700 text-xs font-bold shadow-sm border border-slate-200 flex items-center gap-1.5 cursor-pointer">
-                      <KeyRound className="w-3.5 h-3.5" />
-                      <span>En Renta</span>
-                    </span>
-                    <span className="px-4 py-2 rounded-full bg-white text-slate-700 text-xs font-bold shadow-sm border border-slate-200 flex items-center gap-1.5 cursor-pointer hidden sm:flex">
-                      <Trees className="w-3.5 h-3.5" />
-                      <span>Terrenos & Lotes</span>
-                    </span>
-                    <span className="px-4 py-2 rounded-full bg-white text-slate-700 text-xs font-bold shadow-sm border border-slate-200 flex items-center gap-1.5 cursor-pointer hidden sm:flex">
-                      <Building2 className="w-3.5 h-3.5" />
-                      <span>Comercial</span>
-                    </span>
-                  </div>
-
-                  {/* Card container */}
-                  <div className="bg-white rounded-3xl p-3 shadow-2xl border border-slate-100 flex flex-col sm:flex-row items-center gap-2 text-left">
-                    {/* Ubicación */}
-                    <div className="flex-1 px-3 py-1.5 border-b sm:border-b-0 sm:border-r border-slate-100 w-full">
-                      <span className="text-[9px] font-black uppercase text-slate-400 block tracking-wider">UBICACIÓN</span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: primaryColor }} />
-                        <span className="text-xs font-bold text-slate-700 truncate">Ciudad, colonia o zona...</span>
-                      </div>
-                    </div>
-
-                    {/* Tipo de Inmueble */}
-                    <div className="flex-1 px-3 py-1.5 border-b sm:border-b-0 sm:border-r border-slate-100 w-full hidden sm:block">
-                      <span className="text-[9px] font-black uppercase text-slate-400 block tracking-wider">TIPO DE INMUEBLE</span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Building2 className="w-3.5 h-3.5 shrink-0" style={{ color: primaryColor }} />
-                        <span className="text-xs font-bold text-slate-700 truncate">Todas las propiedades</span>
-                      </div>
-                    </div>
-
-                    {/* Presupuesto */}
-                    <div className="flex-1 px-3 py-1.5 w-full hidden sm:block">
-                      <span className="text-[9px] font-black uppercase text-slate-400 block tracking-wider">PRESUPUESTO MÁXIMO</span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <DollarSign className="w-3.5 h-3.5 shrink-0" style={{ color: primaryColor }} />
-                        <span className="text-xs font-bold text-slate-700 truncate">Cualquier precio</span>
-                      </div>
-                    </div>
-
-                    {/* Button */}
-                    <button
-                      type="button"
-                      className="w-full sm:w-auto px-6 py-3 rounded-full text-white font-black text-xs shrink-0 flex items-center justify-center gap-2 shadow-lg"
-                      style={{ backgroundColor: primaryColor }}
-                    >
-                      <Search className="w-3.5 h-3.5" />
-                      <span>Buscar Propiedades</span>
-                    </button>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         );
