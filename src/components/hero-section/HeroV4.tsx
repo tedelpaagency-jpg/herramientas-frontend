@@ -1,43 +1,41 @@
 "use client";
 import React, { useRef, useState, useEffect } from 'react';
-import Link from 'next/link';
 import {
   MapPin,
   Building2,
-  Home,
   DollarSign,
-  Bed,
-  Maximize2,
-  Store,
   Tag,
   KeyRound,
-  Landmark,
   Search,
-  Briefcase,
   Trees,
-  Map,
+  Home,
+  ArrowLeftRight,
+  ChevronDown,
 } from 'lucide-react';
 
 interface CustomBookingSelectProps {
   label: string;
   name: string;
-  defaultValue?: string;
+  value: string;
+  onChange: (val: string) => void;
   options: { label: string; value: string }[];
   icon: React.ReactNode;
+  brandColor?: string;
 }
 
 const CustomBookingSelect: React.FC<CustomBookingSelectProps> = ({
   label,
   name,
-  defaultValue = '',
+  value,
+  onChange,
   options,
   icon,
+  brandColor = '#00a884',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState(
-    options.find((o) => o.value === defaultValue) || options[0]
-  );
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((o) => o.value === value) || options[0];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -52,14 +50,14 @@ const CustomBookingSelect: React.FC<CustomBookingSelectProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelect = (opt: { label: string; value: string }) => {
-    setSelected(opt);
+  const handleSelect = (val: string) => {
+    onChange(val);
     setIsOpen(false);
   };
 
   return (
     <div className="single-search-box" ref={dropdownRef} style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', color: '#00a884' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', color: brandColor }}>
         {icon}
       </div>
       <div
@@ -67,54 +65,63 @@ const CustomBookingSelect: React.FC<CustomBookingSelectProps> = ({
         onClick={() => setIsOpen((prev) => !prev)}
         style={{ cursor: 'pointer', width: '100%' }}
       >
-        <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>{label}</span>
-        <input
-          type="text"
-          readOnly
-          value={selected.label}
-          style={{ cursor: 'pointer', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, color: '#0f172a', fontSize: '13.5px', width: '100%', padding: 0, marginTop: '2px', lineHeight: 1.2 }}
-        />
+        <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>
+          {label}
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '2px' }}>
+          <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13.5px', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {selected.label}
+          </span>
+          <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
+        </div>
       </div>
-      <input type="hidden" name={name} value={selected.value} />
+      <input type="hidden" name={name} value={value} />
 
-      <div
-        className={`custom-select-wrap two ${isOpen ? 'active' : ''}`}
-        style={{
-          position: 'absolute',
-          top: isOpen ? 'calc(100% + 12px)' : '100%',
-          left: 0,
-          minWidth: '220px',
-          background: '#ffffff',
-          boxShadow: '0 12px 32px rgba(0,0,0,0.14)',
-          borderRadius: '14px',
-          zIndex: 9999,
-          opacity: isOpen ? 1 : 0,
-          visibility: isOpen ? 'visible' : 'hidden',
-          transition: 'all 0.25s ease',
-          border: '1px solid #e2e8f0',
-          overflow: 'hidden',
-        }}
-      >
-        <ul className="option-list" style={{ padding: '6px 0', margin: 0, listStyle: 'none', maxHeight: '240px', overflowY: 'auto' }}>
-          {options.map((opt) => (
-            <li
-              key={opt.value}
-              className={`single-item ${selected.value === opt.value ? 'selected' : ''}`}
-              onClick={() => handleSelect(opt)}
-              style={{
-                padding: '9px 16px',
-                cursor: 'pointer',
-                transition: 'background 0.15s ease',
-                backgroundColor: selected.value === opt.value ? '#f0fdf4' : 'transparent',
-              }}
-            >
-              <h6 style={{ margin: 0, fontSize: '13px', fontWeight: selected.value === opt.value ? 800 : 600, color: selected.value === opt.value ? '#00a884' : '#1e293b' }}>
-                {opt.label}
-              </h6>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {isOpen && (
+        <div
+          className="custom-select-wrap two active"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 10px)',
+            left: 0,
+            minWidth: '220px',
+            background: '#ffffff',
+            boxShadow: '0 16px 36px rgba(0,0,0,0.16)',
+            borderRadius: '16px',
+            zIndex: 9999,
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+          }}
+        >
+          <ul className="option-list" style={{ padding: '6px 0', margin: 0, listStyle: 'none', maxHeight: '250px', overflowY: 'auto' }}>
+            {options.map((opt) => (
+              <li
+                key={opt.value}
+                className={`single-item ${value === opt.value ? 'selected' : ''}`}
+                onClick={() => handleSelect(opt.value)}
+                style={{
+                  padding: '9px 16px',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                  backgroundColor: value === opt.value ? '#f0fdf4' : 'transparent',
+                }}
+              >
+                <span
+                  style={{
+                    margin: 0,
+                    fontSize: '13px',
+                    fontWeight: value === opt.value ? 800 : 600,
+                    color: value === opt.value ? brandColor : '#1e293b',
+                    display: 'block',
+                  }}
+                >
+                  {opt.label}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
@@ -124,18 +131,23 @@ interface HeroV4Props {
 }
 
 const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
+  // Tab selector: sale | rent | land | commercial
   const [activeTab, setActiveTab] = useState<'sale' | 'rent' | 'land' | 'commercial'>('sale');
+
+  // Form field states
+  const [search, setSearch] = useState('');
+  const [propertyStatus, setPropertyStatus] = useState('2'); // '2' = Venta, '1' = Alquiler, '' = Todas
+  const [propertyType, setPropertyType] = useState('');
+  const [priceMax, setPriceMax] = useState('');
 
   const heroTitle = agency?.hero_title || agency?.details?.hero_title || 'Encuentra la Propiedad de tus Sueños';
   const heroSubtitle = agency?.hero_subtitle || agency?.details?.hero_subtitle || 'Las mejores opciones en venta y renta con asesoría jurídica, notarial y crediticia garantizada.';
-  
-  // Soporte de Fondo: Imagen o Video
+
+  // Media (image / video) background
   const bannerImage = agency?.banner_image || agency?.details?.banner_image;
   const bannerVideo = agency?.banner_video || agency?.details?.banner_video;
   const rawMediaType = agency?.details?.hero_media_type;
 
-  // Auto-detección:
-  // Si hero_media_type === 'video' o si hay bannerVideo o si la URL de bannerImage termina en formato de video (.mp4, .webm, .mov)
   const isVideo =
     rawMediaType === 'video' ||
     (!rawMediaType && Boolean(bannerVideo)) ||
@@ -152,12 +164,66 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   const tab2 = agency?.details?.hero_tab2 || 'En Renta';
   const tab3 = agency?.details?.hero_tab3 || 'Terrenos & Lotes';
   const tab4 = agency?.details?.hero_tab4 || 'Comercial';
-  const searchBtnText = agency?.details?.hero_search_btn || 'BUSCAR';
+  const searchBtnText = agency?.details?.hero_search_btn || 'Buscar Propiedades';
   const primaryColor = agency?.primary_color || '#00a884';
   const buttonColor = agency?.button_color || primaryColor;
+  const domain = agency?.domain || '';
+
+  // Synchronize Tab clicks with fields
+  const handleTabClick = (tab: 'sale' | 'rent' | 'land' | 'commercial') => {
+    setActiveTab(tab);
+    if (tab === 'sale') {
+      setPropertyStatus('2');
+      if (propertyType === '3' || propertyType === '4') setPropertyType('');
+    } else if (tab === 'rent') {
+      setPropertyStatus('1');
+      if (propertyType === '3' || propertyType === '4') setPropertyType('');
+    } else if (tab === 'land') {
+      setPropertyType('3');
+    } else if (tab === 'commercial') {
+      setPropertyType('4');
+    }
+  };
+
+  // Synchronize mobile Operation selector with tabs
+  const handleOperationChange = (val: string) => {
+    setPropertyStatus(val);
+    if (val === '2') setActiveTab('sale');
+    else if (val === '1') setActiveTab('rent');
+  };
+
+  // Synchronize mobile Property selector with tabs
+  const handlePropertyTypeChange = (val: string) => {
+    setPropertyType(val);
+    if (val === '3') setActiveTab('land');
+    else if (val === '4') setActiveTab('commercial');
+  };
+
+  // Mobile labels
+  const operationLabel = propertyStatus === '1' ? 'Alquiler' : propertyStatus === '2' ? 'Venta' : 'Todas';
+  const propertyTypeOptions = [
+    { label: 'Todas las propiedades', shortLabel: 'Todas', value: '' },
+    { label: 'Casas & Residencias', shortLabel: 'Casas', value: '1' },
+    { label: 'Departamentos & Lofts', shortLabel: 'Depto.', value: '2' },
+    { label: 'Terrenos & Lotes', shortLabel: 'Terrenos', value: '3' },
+    { label: 'Oficinas & Locales', shortLabel: 'Comercial', value: '4' },
+    { label: 'Villas & Quintas', shortLabel: 'Villas', value: '5' },
+  ];
+  const typeLabel = propertyTypeOptions.find((p) => p.value === propertyType)?.shortLabel || 'Todas';
+
+  const priceOptions = [
+    { label: 'Cualquier precio', value: '' },
+    { label: 'Hasta $100,000 USD', value: '100000' },
+    { label: 'Hasta $200,000 USD', value: '200000' },
+    { label: 'Hasta $300,000 USD', value: '300000' },
+    { label: 'Hasta $500,000 USD', value: '500000' },
+    { label: 'Hasta $1,000,000 USD', value: '1000000' },
+  ];
+  const priceLabel = priceOptions.find((p) => p.value === priceMax)?.label || 'Cualquier precio';
 
   return (
     <div className="home4-banner-section mb-100">
+      {/* Background: Video or High-Res Image */}
       <div
         className="banner-video-area"
         style={
@@ -180,7 +246,6 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
               src={videoSrc}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
-            {/* Capa de contraste cinematográfico para resaltar los textos y buscador */}
             <div
               style={{
                 position: 'absolute',
@@ -199,396 +264,681 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             <h1>{heroTitle}</h1>
             <p>{heroSubtitle}</p>
 
-            <div className="filter-wrapper">
+            {/* BOOKING CONTAINER */}
+            <div className="filter-wrapper" style={{ marginTop: '30px' }}>
               <style jsx global>{`
-                .hero-booking-tabs {
-                  display: flex !important;
-                  flex-wrap: nowrap !important;
-                  overflow-x: auto !important;
-                  overflow-y: hidden !important;
-                  -webkit-overflow-scrolling: touch !important;
-                  gap: 8px !important;
-                  padding: 4px 4px 10px 4px !important;
-                  margin-bottom: -18px !important;
-                  margin-left: 20px !important;
-                  margin-right: 20px !important;
-                  scrollbar-width: none !important;
-                  position: relative !important;
-                  z-index: 10 !important;
+                /* Desktop Tab Pills */
+                .hero-booking-desktop-tabs {
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  margin-bottom: -18px;
+                  margin-left: 24px;
+                  position: relative;
+                  z-index: 10;
                 }
-                .hero-booking-tabs::-webkit-scrollbar {
-                  display: none !important;
+                .hero-desktop-tab-pill {
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 10px 22px;
+                  border-radius: 9999px;
+                  font-size: 13.5px;
+                  font-weight: 700;
+                  white-space: nowrap;
+                  cursor: pointer;
+                  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                  border: 1px solid rgba(226, 232, 240, 0.9);
+                  background: #ffffff;
+                  color: #334155;
+                  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
                 }
-                .hero-tab-pill {
-                  display: inline-flex !important;
-                  flex-direction: row !important;
-                  align-items: center !important;
-                  justify-content: center !important;
-                  gap: 8px !important;
-                  padding: 8px 18px !important;
-                  border-radius: 9999px !important;
-                  font-size: 13.5px !important;
-                  font-weight: 700 !important;
-                  white-space: nowrap !important;
-                  flex-shrink: 0 !important;
-                  cursor: pointer !important;
-                  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-                  border: 1px solid rgba(226, 232, 240, 0.9) !important;
-                  background: rgba(255, 255, 255, 0.96) !important;
-                  color: #334155 !important;
-                  backdrop-filter: blur(8px) !important;
-                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+                .hero-desktop-tab-pill:hover {
+                  transform: translateY(-2px);
+                  background: #ffffff;
+                  color: #0f172a;
+                  border-color: #cbd5e1;
+                  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
                 }
-                .hero-tab-pill svg {
-                  fill: none !important;
-                  stroke: currentColor !important;
-                  stroke-width: 2.2 !important;
-                  transition: transform 0.2s ease !important;
-                }
-                .hero-tab-pill:hover {
-                  transform: translateY(-2px) !important;
-                  background: #ffffff !important;
-                  color: #0f172a !important;
-                  border-color: #cbd5e1 !important;
-                  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.09) !important;
-                }
-                .hero-tab-pill.active {
+                .hero-desktop-tab-pill.active {
                   background: ${primaryColor} !important;
                   color: #ffffff !important;
                   border-color: ${primaryColor} !important;
                   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
                 }
-                .hero-tab-pill.active svg {
-                  fill: none !important;
+                .hero-desktop-tab-pill.active svg {
                   stroke: #ffffff !important;
-                  stroke-width: 2.4 !important;
-                }
-                @media (max-width: 576px) {
-                  .hero-booking-tabs {
-                    margin-left: 10px !important;
-                    margin-right: 10px !important;
-                    gap: 6px !important;
-                    padding-bottom: 8px !important;
-                    margin-bottom: -16px !important;
-                  }
-                  .hero-tab-pill {
-                    padding: 7px 13px !important;
-                    font-size: 12px !important;
-                    border-radius: 9999px !important;
-                  }
-                  .hero-tab-pill svg {
-                    width: 15px !important;
-                    height: 15px !important;
-                  }
                 }
 
-                /* Rediseño compacto de los inputs del booking */
-                .filter-wrapper .filter-input-wrap {
-                  padding: 24px 28px !important;
-                  border-radius: 24px !important;
-                  background-color: #ffffff !important;
-                  box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+                /* Desktop Card Layout */
+                .desktop-booking-box {
+                  display: flex;
+                  align-items: center;
+                  background: #ffffff;
+                  border-radius: 28px;
+                  padding: 16px 20px;
+                  box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.04);
+                  gap: 12px;
                 }
+                .desktop-booking-box .booking-field-cell {
+                  flex: 1;
+                  min-width: 0;
+                  padding: 6px 14px;
+                  border-right: 1px solid #f1f5f9;
+                }
+                .desktop-booking-box .booking-field-cell:last-of-type {
+                  border-right: none;
+                }
+                .desktop-booking-box .booking-search-btn {
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 8px;
+                  height: 52px;
+                  padding: 0 28px;
+                  border-radius: 9999px;
+                  background-color: ${buttonColor};
+                  color: #ffffff;
+                  font-size: 13.5px;
+                  font-weight: 800;
+                  white-space: nowrap;
+                  border: none;
+                  cursor: pointer;
+                  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+                  transition: all 0.2s ease;
+                  flex-shrink: 0;
+                }
+                .desktop-booking-box .booking-search-btn:hover {
+                  transform: translateY(-1px);
+                  filter: brightness(1.05);
+                  box-shadow: 0 14px 28px -5px rgba(0, 0, 0, 0.25);
+                }
+                .desktop-booking-box .booking-search-btn:active {
+                  transform: scale(0.98);
+                }
+
+                /* Responsive switcher */
                 @media (max-width: 767px) {
-                  .filter-wrapper .filter-input-wrap {
-                    padding: 16px 14px !important;
-                    border-radius: 18px !important;
+                  .desktop-booking-section {
+                    display: none !important;
+                  }
+                  .mobile-booking-section {
+                    display: block !important;
                   }
                 }
-                .filter-wrapper .filter-input-wrap .filter-input .single-search-box {
-                  min-height: 48px !important;
-                  height: 48px !important;
-                  padding: 4px 14px !important;
-                  border-radius: 12px !important;
-                  border: 1.5px solid #e2e8f0 !important;
-                  background-color: #f8fafc !important;
-                  display: flex !important;
-                  align-items: center !important;
-                  gap: 10px !important;
-                  transition: all 0.2s ease !important;
-                }
-                .filter-wrapper .filter-input-wrap .filter-input .single-search-box:hover,
-                .filter-wrapper .filter-input-wrap .filter-input .single-search-box:focus-within {
-                  border-color: ${primaryColor} !important;
-                  background-color: #ffffff !important;
-                  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05) !important;
-                }
-                .filter-wrapper .filter-input-wrap .filter-input .single-search-box input {
-                  font-size: 13.5px !important;
-                  font-weight: 700 !important;
-                  color: #0f172a !important;
-                  padding: 0 !important;
-                  line-height: 1.2 !important;
-                }
-                .filter-wrapper .filter-input-wrap .filter-input .single-search-box span {
-                  font-size: 9.5px !important;
-                  font-weight: 800 !important;
-                  letter-spacing: 0.05em !important;
-                  text-transform: uppercase !important;
-                  color: #94a3b8 !important;
-                  margin-bottom: 1px !important;
-                  line-height: 1 !important;
-                }
-                .filter-wrapper .filter-input-wrap .filter-input .primary-btn1 {
-                  min-height: 48px !important;
-                  height: 48px !important;
-                  padding: 0 24px !important;
-                  border-radius: 12px !important;
-                  background-color: ${buttonColor} !important;
-                  border-color: ${buttonColor} !important;
-                  color: #ffffff !important;
-                  display: flex !important;
-                  align-items: center !important;
-                  justify-content: center !important;
-                  font-size: 12.5px !important;
-                  font-weight: 800 !important;
-                  letter-spacing: 0.05em !important;
+                @media (min-width: 768px) {
+                  .desktop-booking-section {
+                    display: block !important;
+                  }
+                  .mobile-booking-section {
+                    display: none !important;
+                  }
                 }
               `}</style>
 
-              <div className="hero-booking-tabs">
-                <div
-                  className={`hero-tab-pill ${activeTab === 'sale' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('sale')}
-                >
-                  <Home className="w-4 h-4" />
-                  <span>{tab1}</span>
+              {/* ======================================================== */}
+              {/* 1. DESKTOP BOOKING (Exact match to inmobiliaria.inmosoft.pro) */}
+              {/* ======================================================== */}
+              <div className="desktop-booking-section">
+                {/* 4 Tabs right on top of card */}
+                <div className="hero-booking-desktop-tabs">
+                  <div
+                    className={`hero-desktop-tab-pill ${activeTab === 'sale' ? 'active' : ''}`}
+                    onClick={() => handleTabClick('sale')}
+                  >
+                    <Home className="w-4 h-4" />
+                    <span>{tab1}</span>
+                  </div>
+
+                  <div
+                    className={`hero-desktop-tab-pill ${activeTab === 'rent' ? 'active' : ''}`}
+                    onClick={() => handleTabClick('rent')}
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    <span>{tab2}</span>
+                  </div>
+
+                  <div
+                    className={`hero-desktop-tab-pill ${activeTab === 'land' ? 'active' : ''}`}
+                    onClick={() => handleTabClick('land')}
+                  >
+                    <Trees className="w-4 h-4" />
+                    <span>{tab3}</span>
+                  </div>
+
+                  <div
+                    className={`hero-desktop-tab-pill ${activeTab === 'commercial' ? 'active' : ''}`}
+                    onClick={() => handleTabClick('commercial')}
+                  >
+                    <Building2 className="w-4 h-4" />
+                    <span>{tab4}</span>
+                  </div>
                 </div>
 
-                <div
-                  className={`hero-tab-pill ${activeTab === 'rent' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('rent')}
-                >
-                  <KeyRound className="w-4 h-4" />
-                  <span>{tab2}</span>
-                </div>
+                {/* Desktop Form Card */}
+                <form action="/properties" method="GET" className="desktop-booking-box">
+                  {domain && <input type="hidden" name="domain" value={domain} />}
+                  <input type="hidden" name="property_status" value={propertyStatus} />
 
-                <div
-                  className={`hero-tab-pill ${activeTab === 'land' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('land')}
-                >
-                  <Trees className="w-4 h-4" />
-                  <span>{tab3}</span>
-                </div>
+                  {/* 1. Ubicación */}
+                  <div className="booking-field-cell">
+                    <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>
+                      UBICACIÓN
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                      <MapPin className="w-4 h-4 shrink-0" style={{ color: primaryColor }} />
+                      <input
+                        type="text"
+                        name="search"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Ciudad, colonia o zona..."
+                        style={{
+                          width: '100%',
+                          border: 'none',
+                          background: 'transparent',
+                          outline: 'none',
+                          fontWeight: 700,
+                          color: '#0f172a',
+                          fontSize: '13.5px',
+                          padding: 0,
+                          lineHeight: 1.2,
+                        }}
+                      />
+                    </div>
+                  </div>
 
-                <div
-                  className={`hero-tab-pill ${activeTab === 'commercial' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('commercial')}
-                >
-                  <Building2 className="w-4 h-4" />
-                  <span>{tab4}</span>
-                </div>
+                  {/* 2. Tipo de Inmueble */}
+                  <div className="booking-field-cell">
+                    <CustomBookingSelect
+                      label="TIPO DE INMUEBLE"
+                      name="property_type"
+                      value={propertyType}
+                      onChange={setPropertyType}
+                      brandColor={primaryColor}
+                      icon={<Building2 className="w-4 h-4" />}
+                      options={propertyTypeOptions.map((o) => ({ label: o.label, value: o.value }))}
+                    />
+                  </div>
+
+                  {/* 3. Presupuesto Máximo */}
+                  <div className="booking-field-cell">
+                    <CustomBookingSelect
+                      label="PRESUPUESTO MÁXIMO"
+                      name="price_max"
+                      value={priceMax}
+                      onChange={setPriceMax}
+                      brandColor={primaryColor}
+                      icon={<DollarSign className="w-4 h-4" />}
+                      options={priceOptions}
+                    />
+                  </div>
+
+                  {/* 4. Botón Buscar */}
+                  <button type="submit" className="booking-search-btn">
+                    <Search className="w-4 h-4" />
+                    <span>{searchBtnText}</span>
+                  </button>
+                </form>
               </div>
 
-              <div className="filter-input-wrap">
-                {/* 1. Formulario En Venta */}
-                <form action="/properties" method="GET" className={`filter-input ${activeTab === 'sale' ? 'show' : ''}`}>
-                  <input type="hidden" name="property_status" value="2" />
+              {/* ======================================================== */}
+              {/* 2. MOBILE BOOKING (Pixel-perfect match to user's screenshot) */}
+              {/* ======================================================== */}
+              <div className="mobile-booking-section">
+                <form
+                  action="/properties"
+                  method="GET"
+                  style={{
+                    backgroundColor: '#ffffff',
+                    borderRadius: '28px',
+                    padding: '20px 18px 22px 18px',
+                    boxShadow: '0 20px 45px -10px rgba(0,0,0,0.18)',
+                    textAlign: 'left',
+                  }}
+                >
+                  {domain && <input type="hidden" name="domain" value={domain} />}
 
-                  {/* Ubicación */}
-                  <div className="single-search-box">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', color: '#00a884' }}>
-                      <MapPin className="w-4 h-4" />
-                    </div>
-                    <div className="search-box-content" style={{ width: '100%' }}>
-                      <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>Ubicación</span>
-                      <input
-                        type="text"
-                        name="search"
-                        placeholder="Ciudad, colonia o zona..."
-                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, color: '#0f172a', fontSize: '13.5px', padding: 0, marginTop: '2px', lineHeight: 1.2 }}
+                  {/* Top Mobile Tabs Row: Icon on top, Text underneath, Active indicator bar */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-around',
+                      borderBottom: '1px solid #f1f5f9',
+                      paddingBottom: '8px',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    {/* VENTA */}
+                    <div
+                      onClick={() => handleTabClick('sale')}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        flex: 1,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Tag
+                        className="w-5 h-5 mb-1"
+                        style={{
+                          color: activeTab === 'sale' ? '#0f172a' : '#94a3b8',
+                          transition: 'color 0.2s',
+                        }}
                       />
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          letterSpacing: '0.04em',
+                          color: activeTab === 'sale' ? '#0f172a' : '#94a3b8',
+                          transition: 'color 0.2s',
+                        }}
+                      >
+                        VENTA
+                      </span>
+                      {activeTab === 'sale' ? (
+                        <div
+                          style={{
+                            width: '42px',
+                            height: '3.5px',
+                            backgroundColor: '#1e293b',
+                            borderRadius: '9999px',
+                            marginTop: '6px',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ height: '3.5px', marginTop: '6px' }} />
+                      )}
+                    </div>
+
+                    {/* ALQUILER */}
+                    <div
+                      onClick={() => handleTabClick('rent')}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        flex: 1,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <KeyRound
+                        className="w-5 h-5 mb-1"
+                        style={{
+                          color: activeTab === 'rent' ? '#0f172a' : '#94a3b8',
+                          transition: 'color 0.2s',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          letterSpacing: '0.04em',
+                          color: activeTab === 'rent' ? '#0f172a' : '#94a3b8',
+                          transition: 'color 0.2s',
+                        }}
+                      >
+                        ALQUILER
+                      </span>
+                      {activeTab === 'rent' ? (
+                        <div
+                          style={{
+                            width: '42px',
+                            height: '3.5px',
+                            backgroundColor: '#1e293b',
+                            borderRadius: '9999px',
+                            marginTop: '6px',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ height: '3.5px', marginTop: '6px' }} />
+                      )}
+                    </div>
+
+                    {/* TERRENOS */}
+                    <div
+                      onClick={() => handleTabClick('land')}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        flex: 1,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Trees
+                        className="w-5 h-5 mb-1"
+                        style={{
+                          color: activeTab === 'land' ? '#0f172a' : '#94a3b8',
+                          transition: 'color 0.2s',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          letterSpacing: '0.04em',
+                          color: activeTab === 'land' ? '#0f172a' : '#94a3b8',
+                          transition: 'color 0.2s',
+                        }}
+                      >
+                        TERRENOS
+                      </span>
+                      {activeTab === 'land' ? (
+                        <div
+                          style={{
+                            width: '42px',
+                            height: '3.5px',
+                            backgroundColor: '#1e293b',
+                            borderRadius: '9999px',
+                            marginTop: '6px',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ height: '3.5px', marginTop: '6px' }} />
+                      )}
+                    </div>
+
+                    {/* COMERCIAL */}
+                    <div
+                      onClick={() => handleTabClick('commercial')}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        flex: 1,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Building2
+                        className="w-5 h-5 mb-1"
+                        style={{
+                          color: activeTab === 'commercial' ? '#0f172a' : '#94a3b8',
+                          transition: 'color 0.2s',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          letterSpacing: '0.04em',
+                          color: activeTab === 'commercial' ? '#0f172a' : '#94a3b8',
+                          transition: 'color 0.2s',
+                        }}
+                      >
+                        COMERCIAL
+                      </span>
+                      {activeTab === 'commercial' ? (
+                        <div
+                          style={{
+                            width: '42px',
+                            height: '3.5px',
+                            backgroundColor: '#1e293b',
+                            borderRadius: '9999px',
+                            marginTop: '6px',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ height: '3.5px', marginTop: '6px' }} />
+                      )}
                     </div>
                   </div>
 
-                  {/* Tipo de Inmueble Select */}
-                  <CustomBookingSelect
-                    label="Tipo de Inmueble"
-                    name="property_type"
-                    icon={<Building2 className="w-5 h-5" />}
-                    options={[
-                      { label: 'Todas las propiedades', value: '' },
-                      { label: 'Casas & Residencias', value: '1' },
-                      { label: 'Departamentos & Lofts', value: '2' },
-                      { label: 'Terrenos & Lotes', value: '3' },
-                      { label: 'Oficinas & Locales', value: '4' },
-                      { label: 'Villas & Quintas', value: '5' },
-                    ]}
-                  />
-
-                  {/* Presupuesto Máximo Select */}
-                  <CustomBookingSelect
-                    label="Presupuesto Máximo"
-                    name="price_max"
-                    icon={<DollarSign className="w-5 h-5" />}
-                    options={[
-                      { label: 'Cualquier precio', value: '' },
-                      { label: 'Hasta $150,000 USD', value: '150000' },
-                      { label: 'Hasta $300,000 USD', value: '300000' },
-                      { label: 'Hasta $500,000 USD', value: '500000' },
-                      { label: 'Hasta $1,000,000 USD', value: '1000000' },
-                      { label: 'Más de $1,000,000 USD', value: '2000000' },
-                    ]}
-                  />
-
-                  <button type="submit" className="primary-btn1">
-                    <span>
-                      <Search className="w-4 h-4 inline mr-1" />
-                      {searchBtnText}
-                    </span>
-                    <span>
-                      <Search className="w-4 h-4 inline mr-1" />
-                      {searchBtnText}
-                    </span>
-                  </button>
-                </form>
-
-                {/* 2. Formulario En Renta */}
-                <form action="/properties" method="GET" className={`filter-input ${activeTab === 'rent' ? 'show' : ''}`}>
-                  <input type="hidden" name="property_status" value="1" />
-
-                  {/* Ubicación para Renta */}
-                  <div className="single-search-box">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', color: '#00a884' }}>
-                      <MapPin className="w-4 h-4" />
-                    </div>
-                    <div className="search-box-content" style={{ width: '100%' }}>
-                      <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>Ubicación para Renta</span>
+                  {/* DESTINO */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <label
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: '#94a3b8',
+                        display: 'block',
+                        marginBottom: '6px',
+                      }}
+                    >
+                      DESTINO
+                    </label>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        border: '1.5px solid #e2e8f0',
+                        borderRadius: '16px',
+                        padding: '12px 14px',
+                        backgroundColor: '#ffffff',
+                      }}
+                    >
                       <input
                         type="text"
                         name="search"
-                        placeholder="Ciudad o zona de interés..."
-                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, color: '#0f172a', fontSize: '13.5px', padding: 0, marginTop: '2px', lineHeight: 1.2 }}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="¿En donde estas buscando?"
+                        style={{
+                          width: '100%',
+                          border: 'none',
+                          background: 'transparent',
+                          outline: 'none',
+                          fontSize: '13.5px',
+                          fontWeight: 600,
+                          color: '#0f172a',
+                          padding: 0,
+                        }}
                       />
+                      <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
                     </div>
                   </div>
 
-                  {/* Inmueble en Renta Select */}
-                  <CustomBookingSelect
-                    label="Inmueble en Renta"
-                    name="property_type"
-                    icon={<Building2 className="w-5 h-5" />}
-                    options={[
-                      { label: 'Departamentos y Casas', value: '' },
-                      { label: 'Departamentos Amueblados', value: '2' },
-                      { label: 'Casas en Privada', value: '1' },
-                      { label: 'Oficinas / Locales', value: '4' },
-                    ]}
-                  />
-
-                  {/* Recámaras Select */}
-                  <CustomBookingSelect
-                    label="Recámaras"
-                    name="bedrooms"
-                    icon={<Bed className="w-5 h-5" />}
-                    options={[
-                      { label: 'Cualquier número', value: '' },
-                      { label: '1+ Recámara', value: '1' },
-                      { label: '2+ Recámaras', value: '2' },
-                      { label: '3+ Recámaras', value: '3' },
-                      { label: '4+ Recámaras', value: '4' },
-                    ]}
-                  />
-
-                  <button type="submit" className="primary-btn1">
-                    <span>
-                      <Search className="w-4 h-4 inline mr-1" />
-                      BUSCAR RENTAS
-                    </span>
-                    <span>
-                      <Search className="w-4 h-4 inline mr-1" />
-                      BUSCAR RENTAS
-                    </span>
-                  </button>
-                </form>
-
-                {/* 3. Formulario Terrenos */}
-                <form action="/properties" method="GET" className={`filter-input ${activeTab === 'land' ? 'show' : ''}`}>
-                  <input type="hidden" name="property_type" value="3" />
-
-                  {/* Ubicación Terreno */}
-                  <div className="single-search-box">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', color: '#00a884' }}>
-                      <Trees className="w-4 h-4" />
+                  {/* 2 COLUMNS: OPERACIÓN & PROPIEDAD */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                    {/* OPERACIÓN */}
+                    <div>
+                      <label
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.08em',
+                          color: '#94a3b8',
+                          display: 'block',
+                          marginBottom: '6px',
+                        }}
+                      >
+                        OPERACIÓN
+                      </label>
+                      <div
+                        style={{
+                          position: 'relative',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          border: '1.5px solid #e2e8f0',
+                          borderRadius: '16px',
+                          padding: '12px 12px',
+                          backgroundColor: '#ffffff',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                          <ArrowLeftRight className="w-4 h-4 text-slate-700 shrink-0" />
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                            {operationLabel}
+                          </span>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+                        <select
+                          name="property_status"
+                          value={propertyStatus}
+                          onChange={(e) => handleOperationChange(e.target.value)}
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            opacity: 0,
+                            width: '100%',
+                            height: '100%',
+                            cursor: 'pointer',
+                            zIndex: 10,
+                          }}
+                        >
+                          <option value="2">Venta</option>
+                          <option value="1">Alquiler</option>
+                          <option value="">Todas</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="search-box-content" style={{ width: '100%' }}>
-                      <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>Zona o Municipio</span>
-                      <input
-                        type="text"
-                        name="search"
-                        placeholder="Ubicación del terreno..."
-                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, color: '#0f172a', fontSize: '13.5px', padding: 0, marginTop: '2px', lineHeight: 1.2 }}
-                      />
+
+                    {/* PROPIEDAD */}
+                    <div>
+                      <label
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.08em',
+                          color: '#94a3b8',
+                          display: 'block',
+                          marginBottom: '6px',
+                        }}
+                      >
+                        PROPIEDAD
+                      </label>
+                      <div
+                        style={{
+                          position: 'relative',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          border: '1.5px solid #e2e8f0',
+                          borderRadius: '16px',
+                          padding: '12px 12px',
+                          backgroundColor: '#ffffff',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                          <Building2 className="w-4 h-4 text-slate-700 shrink-0" />
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                            {typeLabel}
+                          </span>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+                        <select
+                          name="property_type"
+                          value={propertyType}
+                          onChange={(e) => handlePropertyTypeChange(e.target.value)}
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            opacity: 0,
+                            width: '100%',
+                            height: '100%',
+                            cursor: 'pointer',
+                            zIndex: 10,
+                          }}
+                        >
+                          {propertyTypeOptions.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Superficie Mínima Select */}
-                  <CustomBookingSelect
-                    label="Superficie Mínima"
-                    name="size_min"
-                    icon={<Maximize2 className="w-5 h-5" />}
-                    options={[
-                      { label: 'Cualquier superficie', value: '' },
-                      { label: 'Desde 200 m²', value: '200' },
-                      { label: 'Desde 500 m²', value: '500' },
-                      { label: 'Desde 1,000 m² (1 Hectárea)', value: '1000' },
-                      { label: 'Macro lotes (5,000+ m²)', value: '5000' },
-                    ]}
-                  />
-
-                  <button type="submit" className="primary-btn1">
-                    <span>
-                      <Search className="w-4 h-4 inline mr-1" />
-                      BUSCAR TERRENOS
-                    </span>
-                    <span>
-                      <Search className="w-4 h-4 inline mr-1" />
-                      BUSCAR TERRENOS
-                    </span>
-                  </button>
-                </form>
-
-                {/* 4. Formulario Comercial */}
-                <form action="/properties" method="GET" className={`filter-input ${activeTab === 'commercial' ? 'show' : ''}`}>
-                  <input type="hidden" name="property_type" value="4" />
-
-                  {/* Ubicación Comercial */}
-                  <div className="single-search-box">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', color: '#00a884' }}>
-                      <Store className="w-4 h-4" />
-                    </div>
-                    <div className="search-box-content" style={{ width: '100%' }}>
-                      <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#94a3b8', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1 }}>Zona Comercial</span>
-                      <input
-                        type="text"
-                        name="search"
-                        placeholder="Corredor o plaza comercial..."
-                        style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, color: '#0f172a', fontSize: '13.5px', padding: 0, marginTop: '2px', lineHeight: 1.2 }}
-                      />
+                  {/* PRESUPUESTO */}
+                  <div style={{ marginBottom: '18px' }}>
+                    <label
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: '#94a3b8',
+                        display: 'block',
+                        marginBottom: '6px',
+                      }}
+                    >
+                      PRESUPUESTO
+                    </label>
+                    <div
+                      style={{
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        border: '1.5px solid #e2e8f0',
+                        borderRadius: '16px',
+                        padding: '12px 14px',
+                        backgroundColor: '#ffffff',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                        <DollarSign className="w-4 h-4 text-slate-700 shrink-0" />
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                          {priceLabel}
+                        </span>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+                      <select
+                        name="price_max"
+                        value={priceMax}
+                        onChange={(e) => setPriceMax(e.target.value)}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          opacity: 0,
+                          width: '100%',
+                          height: '100%',
+                          cursor: 'pointer',
+                          zIndex: 10,
+                        }}
+                      >
+                        {priceOptions.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
-                  {/* Modalidad Select */}
-                  <CustomBookingSelect
-                    label="Modalidad"
-                    name="property_status"
-                    icon={<Tag className="w-5 h-5" />}
-                    options={[
-                      { label: 'En Venta o Renta', value: '' },
-                      { label: 'En Venta', value: '2' },
-                      { label: 'En Renta', value: '1' },
-                    ]}
-                  />
-
-                  <button type="submit" className="primary-btn1">
-                    <span>
-                      <Search className="w-4 h-4 inline mr-1" />
-                      BUSCAR LOCALES
-                    </span>
-                    <span>
-                      <Search className="w-4 h-4 inline mr-1" />
-                      BUSCAR LOCALES
-                    </span>
+                  {/* BOTÓN BUSCAR PROPIEDADES (Dark capsule button like in mobile screenshot) */}
+                  <button
+                    type="submit"
+                    style={{
+                      width: '100%',
+                      height: '50px',
+                      backgroundColor: '#2b2e35',
+                      color: '#ffffff',
+                      borderRadius: '16px',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      cursor: 'pointer',
+                      boxShadow: '0 8px 20px rgba(0,0,0,0.22)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Search className="w-4 h-4 stroke-[2.5]" />
+                    <span>BUSCAR PROPIEDADES</span>
                   </button>
                 </form>
               </div>

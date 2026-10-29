@@ -1,7 +1,27 @@
 'use client';
 
-import React from 'react';
-import { ExternalLink, Search, Phone, CheckCircle2, ShieldCheck, Heart, MapPin, Bed, Bath, Maximize2, User } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  ExternalLink,
+  Search,
+  Phone,
+  CheckCircle2,
+  ShieldCheck,
+  Heart,
+  MapPin,
+  Bed,
+  Bath,
+  Maximize2,
+  User,
+  Tag,
+  KeyRound,
+  Trees,
+  Building2,
+  DollarSign,
+  ArrowLeftRight,
+  ChevronDown,
+  Home,
+} from 'lucide-react';
 import { DEFAULT_REAL_ESTATE_CATEGORIES, DEFAULT_REAL_ESTATE_PROPERTIES } from '@/constants/realEstateDefaults';
 
 interface PortalLivePreviewProps {
@@ -169,39 +189,149 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
               </p>
 
               {/* Real Estate Search Widget Mockup */}
-              <div className="w-full max-w-lg bg-white rounded-2xl p-2 shadow-2xl text-slate-800">
-                <div className="flex items-center border-b border-slate-100 pb-1.5 mb-2 gap-2 px-2 text-xs font-bold">
-                  <span className="px-2.5 py-1 rounded-md text-white shadow-xs cursor-pointer" style={{ backgroundColor: primaryColor }}>
-                    Comprar
-                  </span>
-                  <span className="px-2.5 py-1 text-slate-500 hover:text-slate-800 cursor-pointer">
-                    Rentar
-                  </span>
-                  <span className="px-2.5 py-1 text-slate-500 hover:text-slate-800 cursor-pointer hidden sm:inline">
-                    Terrenos
-                  </span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center gap-2 p-1">
-                  <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl flex-grow w-full text-xs">
-                    <Search className="w-4 h-4 text-slate-400 shrink-0" />
-                    <input
-                      type="text"
-                      placeholder="Ciudad, colonia o código postal..."
-                      className="bg-transparent outline-none w-full text-slate-700 text-xs font-medium"
-                      readOnly
-                    />
+              {deviceMode === 'mobile' ? (
+                /* Mobile Booking Mockup (matches screenshot) */
+                <div className="w-full bg-white rounded-3xl p-4 shadow-2xl text-slate-800 text-left">
+                  {/* Top Mobile Tabs */}
+                  <div className="flex items-center justify-around border-b border-slate-100 pb-2 mb-3">
+                    <div className="flex flex-col items-center">
+                      <Tag className="w-4 h-4 text-slate-800 mb-0.5" />
+                      <span className="text-[10px] font-extrabold text-slate-800 tracking-wider">VENTA</span>
+                      <div className="w-8 h-[2.5px] bg-slate-800 rounded-full mt-1" />
+                    </div>
+                    <div className="flex flex-col items-center opacity-50">
+                      <KeyRound className="w-4 h-4 text-slate-400 mb-0.5" />
+                      <span className="text-[10px] font-extrabold text-slate-500 tracking-wider">ALQUILER</span>
+                      <div className="h-[2.5px] mt-1" />
+                    </div>
+                    <div className="flex flex-col items-center opacity-50">
+                      <Trees className="w-4 h-4 text-slate-400 mb-0.5" />
+                      <span className="text-[10px] font-extrabold text-slate-500 tracking-wider">TERRENOS</span>
+                      <div className="h-[2.5px] mt-1" />
+                    </div>
                   </div>
 
+                  {/* DESTINO */}
+                  <div className="mb-2.5">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1">DESTINO</span>
+                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50/50">
+                      <span className="text-xs font-semibold text-slate-400">¿En donde estas buscando?</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* OPERACIÓN & PROPIEDAD */}
+                  <div className="grid grid-cols-2 gap-2 mb-2.5">
+                    <div>
+                      <span className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1">OPERACIÓN</span>
+                      <div className="flex items-center justify-between border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50/50">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <ArrowLeftRight className="w-3.5 h-3.5 text-slate-700 shrink-0" />
+                          <span className="text-xs font-bold text-slate-800">Venta</span>
+                        </div>
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1">PROPIEDAD</span>
+                      <div className="flex items-center justify-between border border-slate-200 rounded-xl px-2.5 py-2 bg-slate-50/50">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Building2 className="w-3.5 h-3.5 text-slate-700 shrink-0" />
+                          <span className="text-xs font-bold text-slate-800">Depto.</span>
+                        </div>
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PRESUPUESTO */}
+                  <div className="mb-3">
+                    <span className="text-[9px] font-extrabold uppercase text-slate-400 block mb-1">PRESUPUESTO</span>
+                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50/50">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <DollarSign className="w-3.5 h-3.5 text-slate-700 shrink-0" />
+                        <span className="text-xs font-bold text-slate-800">Cualquier precio</span>
+                      </div>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    </div>
+                  </div>
+
+                  {/* Dark capsule button */}
                   <button
                     type="button"
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-white font-bold text-xs shrink-0 flex items-center justify-center gap-1.5 shadow-md"
-                    style={{ backgroundColor: primaryColor }}
+                    className="w-full h-11 bg-[#2b2e35] text-white rounded-xl font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md"
                   >
-                    <span>Buscar</span>
+                    <Search className="w-3.5 h-3.5" />
+                    <span>BUSCAR PROPIEDADES</span>
                   </button>
                 </div>
-              </div>
+              ) : (
+                /* Desktop Booking Mockup (matches inmobiliaria.inmosoft.pro) */
+                <div className="w-full max-w-2xl text-slate-800">
+                  {/* Top Tabs */}
+                  <div className="flex items-center gap-2 mb-[-12px] ml-4 relative z-10">
+                    <span
+                      className="px-4 py-2 rounded-full text-white text-xs font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      <Home className="w-3.5 h-3.5" />
+                      <span>En Venta</span>
+                    </span>
+                    <span className="px-4 py-2 rounded-full bg-white text-slate-700 text-xs font-bold shadow-sm border border-slate-200 flex items-center gap-1.5 cursor-pointer">
+                      <KeyRound className="w-3.5 h-3.5" />
+                      <span>En Renta</span>
+                    </span>
+                    <span className="px-4 py-2 rounded-full bg-white text-slate-700 text-xs font-bold shadow-sm border border-slate-200 flex items-center gap-1.5 cursor-pointer hidden sm:flex">
+                      <Trees className="w-3.5 h-3.5" />
+                      <span>Terrenos & Lotes</span>
+                    </span>
+                    <span className="px-4 py-2 rounded-full bg-white text-slate-700 text-xs font-bold shadow-sm border border-slate-200 flex items-center gap-1.5 cursor-pointer hidden sm:flex">
+                      <Building2 className="w-3.5 h-3.5" />
+                      <span>Comercial</span>
+                    </span>
+                  </div>
+
+                  {/* Card container */}
+                  <div className="bg-white rounded-3xl p-3 shadow-2xl border border-slate-100 flex flex-col sm:flex-row items-center gap-2 text-left">
+                    {/* Ubicación */}
+                    <div className="flex-1 px-3 py-1.5 border-b sm:border-b-0 sm:border-r border-slate-100 w-full">
+                      <span className="text-[9px] font-black uppercase text-slate-400 block tracking-wider">UBICACIÓN</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: primaryColor }} />
+                        <span className="text-xs font-bold text-slate-700 truncate">Ciudad, colonia o zona...</span>
+                      </div>
+                    </div>
+
+                    {/* Tipo de Inmueble */}
+                    <div className="flex-1 px-3 py-1.5 border-b sm:border-b-0 sm:border-r border-slate-100 w-full hidden sm:block">
+                      <span className="text-[9px] font-black uppercase text-slate-400 block tracking-wider">TIPO DE INMUEBLE</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Building2 className="w-3.5 h-3.5 shrink-0" style={{ color: primaryColor }} />
+                        <span className="text-xs font-bold text-slate-700 truncate">Todas las propiedades</span>
+                      </div>
+                    </div>
+
+                    {/* Presupuesto */}
+                    <div className="flex-1 px-3 py-1.5 w-full hidden sm:block">
+                      <span className="text-[9px] font-black uppercase text-slate-400 block tracking-wider">PRESUPUESTO MÁXIMO</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <DollarSign className="w-3.5 h-3.5 shrink-0" style={{ color: primaryColor }} />
+                        <span className="text-xs font-bold text-slate-700 truncate">Cualquier precio</span>
+                      </div>
+                    </div>
+
+                    {/* Button */}
+                    <button
+                      type="button"
+                      className="w-full sm:w-auto px-6 py-3 rounded-full text-white font-black text-xs shrink-0 flex items-center justify-center gap-2 shadow-lg"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      <span>Buscar Propiedades</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
