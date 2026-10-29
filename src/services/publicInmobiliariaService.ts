@@ -118,9 +118,11 @@ export interface PublicEstateFilterParams {
   property_type?: string | number;
   bedrooms?: string | number;
   bathrooms?: string | number;
+  parking?: string | number;
   price_min?: string | number;
   price_max?: string | number;
   size_min?: string | number;
+  size_max?: string | number;
   city?: string;
   sort?: 'recent' | 'price_asc' | 'price_desc' | 'featured';
   page?: number;

@@ -304,8 +304,8 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
                       padding: '8px 10px',
                       borderRadius: '4px',
                       cursor: 'pointer',
-                      backgroundColor: isSelected ? accentColor : idx === 0 && !isSelected ? accentColor : '#ffffff',
-                      color: isSelected || (idx === 0 && !isSelected) ? '#ffffff' : accentColor,
+                      backgroundColor: isSelected ? accentColor : '#ffffff',
+                      color: isSelected ? '#ffffff' : '#0f172a',
                       transition: 'background-color 0.1s ease',
                       marginBottom: '2px',
                     }}
@@ -593,7 +593,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   ];
 
   return (
-    <div className="inmo-hero-wrapper px-3 sm:px-6 py-4 lg:py-6" style={{ maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
+    <div className="inmo-hero-wrapper px-3 sm:px-6 py-4 lg:py-6" style={{ maxWidth: '1410px', margin: '0 auto', width: '100%' }}>
       <style jsx global>{`
         @keyframes inmoSpin {
           0% { transform: rotate(0deg); }
@@ -614,7 +614,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           padding: 60px 24px 80px 24px;
           box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.4);
           width: 100%;
-          max-width: 1220px;
+          max-width: 1342px;
           margin: 0 auto;
         }
 
@@ -640,7 +640,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           border-radius: 24px;
           box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.32);
           width: 100%;
-          max-width: 1120px;
+          max-width: 1008px;
           overflow: visible !important;
           border: 1px solid rgba(255, 255, 255, 0.9);
           z-index: 20;

@@ -159,14 +159,8 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
       `}} />
 
-      {/* Fondo desenfocado simulando la página web detrás */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-20 blur-lg scale-110"
-          style={{ backgroundImage: `url(${displayImage})` }}
-        />
-        <div className="absolute inset-0 bg-black/40" />
-      </div>
+      {/* Backdrop oscuro con desenfoque limpio (sin imagen duplicada de fondo) */}
+      <div className="absolute inset-0 z-0 pointer-events-none bg-black/75 backdrop-blur-md" />
 
       {/* Contenedor Principal (Modal) - Con degradados y bordes del color primario */}
       <div

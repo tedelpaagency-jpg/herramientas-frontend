@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -15,11 +15,17 @@ import {
   LayoutGrid,
   X,
   ChevronDown,
+  ChevronUp,
   SlidersHorizontal,
   Bell,
   Check,
   Sparkles,
   Loader2,
+  Home,
+  BedDouble,
+  Bath,
+  Car,
+  Maximize2,
 } from 'lucide-react';
 import publicInmobiliariaService, {
   PublicAgencyConfig,
@@ -46,19 +52,67 @@ const PublicPropertiesSplitMap = dynamic(
   }
 );
 
-// Quick filter pills matching Airbnb style
-const FILTER_PILLS = [
-  { label: 'Todos', type: 'all', value: '' },
-  { label: 'En Alquiler', type: 'property_status', value: '1' },
-  { label: 'En Venta', type: 'property_status', value: '2' },
-  { label: 'Departamentos', type: 'property_type', value: '2' },
-  { label: 'Casas', type: 'property_type', value: '1' },
-  { label: 'Suites / Lofts', type: 'property_type', value: '2' },
-  { label: 'Terrenos', type: 'property_type', value: '3' },
-  { label: 'Comercial', type: 'property_type', value: '4' },
-  { label: '1+ Hab.', type: 'bedrooms', value: '1' },
-  { label: '2+ Hab.', type: 'bedrooms', value: '2' },
-  { label: '3+ Hab.', type: 'bedrooms', value: '3' },
+// Ciudades iniciales idénticas al booking
+const INITIAL_CITIES: { id: number; name: string; province: string; image: string }[] = [
+  {
+    id: 1,
+    name: 'Quito',
+    province: 'Pichincha',
+    image: 'https://images.unsplash.com/photo-1589802829985-817e51171b92?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 2,
+    name: 'Puerto Quito',
+    province: 'Pichincha',
+    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 3,
+    name: 'Guayaquil',
+    province: 'Guayas',
+    image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 4,
+    name: 'Cuenca',
+    province: 'Azuay',
+    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 5,
+    name: 'Manta',
+    province: 'Manabí',
+    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 6,
+    name: 'Salinas',
+    province: 'Santa Elena',
+    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 7,
+    name: 'Quevedo',
+    province: 'Los Ríos',
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 8,
+    name: 'Ambato',
+    province: 'Tungurahua',
+    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400&q=80',
+  },
+];
+
+// Presets rápidos de rangos de precio
+const PRICE_RANGE_PRESETS = [
+  { label: 'Cualquier precio', min: '', max: '' },
+  { label: 'Hasta $50,000', min: '', max: '50000' },
+  { label: '$50,000 - $100,000', min: '50000', max: '100000' },
+  { label: '$100,000 - $200,000', min: '100000', max: '200000' },
+  { label: '$200,000 - $350,000', min: '200000', max: '350000' },
+  { label: '$350,000 - $500,000', min: '350000', max: '500000' },
+  { label: 'Más de $500,000', min: '500000', max: '' },
 ];
 
 export const PublicInmobiliariaPropertiesView: React.FC = () => {
@@ -66,7 +120,12 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   const searchParams = useSearchParams();
   const domainParam = searchParams?.get('domain') || null;
 
-  const [agency, setAgency] = useState<PublicAgencyConfig | null>(null);
+  const [agency, setAgency] = useState<PublicAgencyConfig | null>(() => {
+    if (typeof window !== 'undefined') {
+      return getCachedAgencyConfig(domainParam || undefined);
+    }
+    return null;
+  });
   const [estates, setEstates] = useState<PublicEstateItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [pagination, setPagination] = useState({
@@ -82,6 +141,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   const [propertyType, setPropertyType] = useState<string>(searchParams?.get('property_type') || '');
   const [bedrooms, setBedrooms] = useState<string>(searchParams?.get('bedrooms') || '');
   const [bathrooms, setBathrooms] = useState<string>(searchParams?.get('bathrooms') || '');
+  const [parking, setParking] = useState<string>(searchParams?.get('parking') || '');
+  const [sizeMin, setSizeMin] = useState<string>(searchParams?.get('size_min') || '');
+  const [sizeMax, setSizeMax] = useState<string>(searchParams?.get('size_max') || '');
   const [priceMin, setPriceMin] = useState<string>(searchParams?.get('price_min') || '');
   const [priceMax, setPriceMax] = useState<string>(searchParams?.get('price_max') || '');
   const [sort, setSort] = useState<'recent' | 'price_asc' | 'price_desc' | 'featured'>(
@@ -106,6 +168,25 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   const [tempPriceMax, setTempPriceMax] = useState<string>(priceMax);
   const [searchInputVal, setSearchInputVal] = useState<string>('');
 
+  // Estados temporales para el modal de Más Filtros
+  const [tempBathrooms, setTempBathrooms] = useState<string>(bathrooms);
+  const [tempParking, setTempParking] = useState<string>(parking);
+  const [tempSizeMin, setTempSizeMin] = useState<string>(sizeMin);
+  const [tempSizeMax, setTempSizeMax] = useState<string>(sizeMax);
+  const [tempPropertyType, setTempPropertyType] = useState<string>(propertyType);
+  const [tempPropertyStatus, setTempPropertyStatus] = useState<string>(propertyStatus);
+  const [tempSort, setTempSort] = useState<string>(sort);
+
+  // Estados para el selector de ciudades con debounce de 2 segundos (idéntico al booking)
+  const [citiesList, setCitiesList] = useState(INITIAL_CITIES);
+  const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
+  const [citySearchInput, setCitySearchInput] = useState('');
+  const [debouncedCityQuery, setDebouncedCityQuery] = useState('');
+  const [isCityDebouncing, setIsCityDebouncing] = useState(false);
+  const cityDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const cityContainerRef = useRef<HTMLDivElement>(null);
+  const priceContainerRef = useRef<HTMLDivElement>(null);
+
   // Sync state with URL searchParams (e.g. browser back/forward, links)
   useEffect(() => {
     const s = searchParams?.get('search') || '';
@@ -115,6 +196,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     setPropertyType(searchParams?.get('property_type') || '');
     setBedrooms(searchParams?.get('bedrooms') || '');
     setBathrooms(searchParams?.get('bathrooms') || '');
+    setParking(searchParams?.get('parking') || '');
+    setSizeMin(searchParams?.get('size_min') || '');
+    setSizeMax(searchParams?.get('size_max') || '');
     const pMin = searchParams?.get('price_min') || '';
     const pMax = searchParams?.get('price_max') || '';
     setPriceMin(pMin);
@@ -124,6 +208,19 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     setSort((searchParams?.get('sort') as any) || 'recent');
     setCurrentPage(Number(searchParams?.get('page')) || 1);
   }, [searchParams]);
+
+  // Sincronizar estados temporales cuando se abre Más Filtros
+  useEffect(() => {
+    if (isMoreFiltersOpen) {
+      setTempBathrooms(bathrooms);
+      setTempParking(parking);
+      setTempSizeMin(sizeMin);
+      setTempSizeMax(sizeMax);
+      setTempPropertyType(propertyType);
+      setTempPropertyStatus(propertyStatus);
+      setTempSort(sort);
+    }
+  }, [isMoreFiltersOpen, bathrooms, parking, sizeMin, sizeMax, propertyType, propertyStatus, sort]);
 
   // Mobile view toggle (list vs map)
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
@@ -156,6 +253,119 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
       .catch(() => {});
   }, [domainParam]);
 
+  // Cargar ciudades disponibles desde el backend para el selector interactivo
+  useEffect(() => {
+    let isMounted = true;
+    publicInmobiliariaService
+      .getCities(domainParam || undefined)
+      .then((res) => {
+        if (isMounted && res?.data && res.data.length > 0) {
+          const formatted = res.data.map((c: any, idx: number) => ({
+            id: c.id || idx + 10,
+            name: c.name || c.city || 'Ciudad',
+            province: c.province || c.name || '',
+            image: c.image || 'https://images.unsplash.com/photo-1589802829985-817e51171b92?auto=format&fit=crop&w=400&q=80',
+          }));
+          setCitiesList((prev) => {
+            const combined = [...prev];
+            formatted.forEach((item) => {
+              if (!combined.some((x) => x.name.toLowerCase() === item.name.toLowerCase())) {
+                combined.push(item);
+              }
+            });
+            return combined;
+          });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [domainParam]);
+
+  // Cerrar popovers y menús al hacer clic fuera del contenedor
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (cityContainerRef.current && !cityContainerRef.current.contains(e.target as Node)) {
+        setIsCityDropdownOpen(false);
+      }
+      if (priceContainerRef.current && !priceContainerRef.current.contains(e.target as Node)) {
+        setIsPricePopoverOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Manejador del buscador de ciudades con debounce de 2 segundos (exacto al booking)
+  const handleCitySearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setCitySearchInput(val);
+    if (cityDebounceTimerRef.current) {
+      clearTimeout(cityDebounceTimerRef.current);
+    }
+    if (!val.trim()) {
+      setIsCityDebouncing(false);
+      setDebouncedCityQuery('');
+      return;
+    }
+    setIsCityDebouncing(true);
+    cityDebounceTimerRef.current = setTimeout(() => {
+      setDebouncedCityQuery(val.trim());
+      setIsCityDebouncing(false);
+    }, 2000);
+  };
+
+  const filteredCities = citiesList.filter((item) => {
+    if (!debouncedCityQuery) return true;
+    const q = debouncedCityQuery.toLowerCase();
+    return item.name.toLowerCase().includes(q) || item.province.toLowerCase().includes(q);
+  });
+
+  const handleSelectCity = (cityName: string) => {
+    setSearch(cityName);
+    setSearchInputVal(cityName);
+    setIsCityDropdownOpen(false);
+    applyFilters({ search: cityName });
+  };
+
+  // Helper para el texto dinámico del botón de precios
+  const getPriceButtonLabel = () => {
+    if (!priceMin && !priceMax) return 'Precio';
+    const match = PRICE_RANGE_PRESETS.find(p => p.min === priceMin && p.max === priceMax);
+    if (match && match.label !== 'Cualquier precio') return match.label;
+    if (priceMin && priceMax) return `$${Number(priceMin).toLocaleString()} - $${Number(priceMax).toLocaleString()}`;
+    if (priceMin) return `Desde $${Number(priceMin).toLocaleString()}`;
+    if (priceMax) return `Hasta $${Number(priceMax).toLocaleString()}`;
+    return 'Precio';
+  };
+
+  const handleSelectPricePreset = (min: string, max: string) => {
+    setPriceMin(min);
+    setPriceMax(max);
+    setTempPriceMin(min);
+    setTempPriceMax(max);
+    setIsPricePopoverOpen(false);
+    applyFilters({ price_min: min, price_max: max });
+  };
+
+  const handleApplyCustomPrice = () => {
+    setPriceMin(tempPriceMin);
+    setPriceMax(tempPriceMax);
+    setIsPricePopoverOpen(false);
+    applyFilters({ price_min: tempPriceMin, price_max: tempPriceMax });
+  };
+
+  const handleClearPrice = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setPriceMin('');
+    setPriceMax('');
+    setTempPriceMin('');
+    setTempPriceMax('');
+    setIsPricePopoverOpen(false);
+    applyFilters({ price_min: '', price_max: '' });
+  };
+
   // Load estates
   useEffect(() => {
     let active = true;
@@ -169,6 +379,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           property_type: searchParams?.get('property_type') || undefined,
           bedrooms: searchParams?.get('bedrooms') || undefined,
           bathrooms: searchParams?.get('bathrooms') || undefined,
+          parking: searchParams?.get('parking') || undefined,
+          size_min: searchParams?.get('size_min') || undefined,
+          size_max: searchParams?.get('size_max') || undefined,
           price_min: searchParams?.get('price_min') || undefined,
           price_max: searchParams?.get('price_max') || undefined,
           sort: (searchParams?.get('sort') as any) || sort,
@@ -208,6 +421,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     const pt = customParams?.property_type !== undefined ? customParams.property_type : propertyType;
     const b = customParams?.bedrooms !== undefined ? customParams.bedrooms : bedrooms;
     const ba = customParams?.bathrooms !== undefined ? customParams.bathrooms : bathrooms;
+    const park = customParams?.parking !== undefined ? customParams.parking : parking;
+    const sMin = customParams?.size_min !== undefined ? customParams.size_min : sizeMin;
+    const sMax = customParams?.size_max !== undefined ? customParams.size_max : sizeMax;
     const pMin = customParams?.price_min !== undefined ? customParams.price_min : priceMin;
     const pMax = customParams?.price_max !== undefined ? customParams.price_max : priceMax;
     const srt = customParams?.sort !== undefined ? customParams.sort : sort;
@@ -217,6 +433,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     if (pt) params.set('property_type', pt);
     if (b) params.set('bedrooms', b);
     if (ba) params.set('bathrooms', ba);
+    if (park) params.set('parking', park);
+    if (sMin) params.set('size_min', sMin);
+    if (sMax) params.set('size_max', sMax);
     if (pMin) params.set('price_min', pMin);
     if (pMax) params.set('price_max', pMax);
     if (srt) params.set('sort', srt);
@@ -262,52 +481,49 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     }
   };
 
-  const handlePillClick = (pill: typeof FILTER_PILLS[0]) => {
-    if (pill.type === 'all') {
-      setPropertyStatus('');
-      setPropertyType('');
-      setBedrooms('');
-      applyFilters({ property_status: '', property_type: '', bedrooms: '' });
-    } else if (pill.type === 'property_status') {
-      const nextVal = propertyStatus === pill.value ? '' : pill.value;
-      setPropertyStatus(nextVal);
-      applyFilters({ property_status: nextVal });
-    } else if (pill.type === 'property_type') {
-      const nextVal = propertyType === pill.value ? '' : pill.value;
-      setPropertyType(nextVal);
-      applyFilters({ property_type: nextVal });
-    } else if (pill.type === 'bedrooms') {
-      const nextVal = bedrooms === pill.value ? '' : pill.value;
-      setBedrooms(nextVal);
-      applyFilters({ bedrooms: nextVal });
-    }
-  };
-
   const resetFilters = () => {
     setSearch('');
+    setSearchInputVal('');
+    setCitySearchInput('');
+    setDebouncedCityQuery('');
     setPropertyStatus('');
     setPropertyType('');
     setBedrooms('');
     setBathrooms('');
+    setParking('');
+    setSizeMin('');
+    setSizeMax('');
     setPriceMin('');
     setPriceMax('');
+    setTempPriceMin('');
+    setTempPriceMax('');
+    setTempBathrooms('');
+    setTempParking('');
+    setTempSizeMin('');
+    setTempSizeMax('');
+    setTempPropertyType('');
+    setTempPropertyStatus('');
     setSort('recent');
     setCurrentPage(1);
     setSelectedEstate(null);
+    setIsPricePopoverOpen(false);
+    setIsMoreFiltersOpen(false);
+    setIsCityDropdownOpen(false);
     router.push(domainParam ? `/properties?domain=${encodeURIComponent(domainParam)}` : '/properties');
   };
 
   const hasActiveFilters = Boolean(
-    search.trim() || propertyStatus || propertyType || bedrooms || priceMin || priceMax
+    search.trim() || propertyStatus || propertyType || bedrooms || bathrooms || parking || priceMin || priceMax || sizeMin || sizeMax || (sort && sort !== 'recent')
   );
 
-  const primaryColor = agency?.primary_color || '#00a884';
-  const filterBorderColor = agency?.details?.filter_border_color || primaryColor || '#eab308';
+  const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#e2b728';
+  const filterBorderColor = agency?.details?.filter_border_color || primaryColor || '#e2b728';
   const fallbackAgency: PublicAgencyConfig = agency || {
     id: 0,
     name: 'Portal Inmobiliario',
     frontend_enabled: true,
-    primary_color: '#00a884',
+    primary_color: primaryColor,
+    show_topbar: false,
   };
 
   return (
@@ -328,80 +544,137 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         <TopbarSlider agency={fallbackAgency} />
         <Header2Style3 agency={fallbackAgency} />
 
-        {/* Barra de Filtros estilo Plusvalia / Airbnb (con bordes de branding personalizados y micro-interacciones) */}
-        <div className="border-b border-slate-200/90 bg-white shadow-2xs relative">
-          {/* Backdrop para cerrar popovers al hacer clic afuera */}
-          {(isPricePopoverOpen || isMoreFiltersOpen) && (
-            <div
-              className="fixed inset-0 z-40 bg-transparent"
-              onClick={() => {
-                setIsPricePopoverOpen(false);
-                setIsMoreFiltersOpen(false);
-              }}
-            />
-          )}
-
+        {/* Barra de Filtros con Estilizado del Booking y Bordes de Branding */}
+        <div className="border-b border-slate-200/90 bg-white shadow-2xs relative z-40">
           <div className="max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex-nowrap">
+            <div className="flex items-center gap-2 overflow-x-auto lg:overflow-visible pb-1 sm:pb-0 scrollbar-none flex-nowrap relative">
               
-              {/* 1. Buscador con Chip de Tag y Borde de Branding */}
-              <div
-                style={{
-                  borderColor: filterBorderColor,
-                  borderWidth: '1.5px',
-                }}
-                className="relative flex items-center h-[42px] rounded-2xl bg-white px-3 py-1 shadow-2xs transition-all shrink-0 w-56 sm:w-64 focus-within:ring-2 focus-within:ring-slate-900/10"
-              >
-                {search ? (
-                  <span
-                    style={{
-                      backgroundColor: `${filterBorderColor}18`,
-                      color: '#0f172a',
-                    }}
-                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-black mr-1.5 shrink-0"
+              {/* 1. Selector de Ciudad / Ubicación estilo Booking interactivo */}
+              <div ref={cityContainerRef} className="relative shrink-0 w-60 sm:w-72">
+                <div
+                  onClick={() => {
+                    setIsPricePopoverOpen(false);
+                    setIsCityDropdownOpen(!isCityDropdownOpen);
+                  }}
+                  style={{
+                    borderColor: (search || isCityDropdownOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                    borderWidth: '1.5px',
+                    backgroundColor: search ? `${filterBorderColor}12` : '#ffffff',
+                  }}
+                  className="h-[42px] px-3 rounded-2xl flex items-center justify-between gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                    {search ? (
+                      <span
+                        style={{
+                          backgroundColor: `${filterBorderColor}25`,
+                          color: '#0f172a',
+                        }}
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-black truncate"
+                      >
+                        <span className="truncate max-w-[130px]">{search}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSearch('');
+                            setSearchInputVal('');
+                            setCitySearchInput('');
+                            setDebouncedCityQuery('');
+                            applyFilters({ search: '' });
+                          }}
+                          className="text-white bg-slate-500 hover:bg-slate-700 rounded-full w-3.5 h-3.5 flex items-center justify-center p-0.5 cursor-pointer"
+                          title="Quitar ubicación"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </span>
+                    ) : (
+                      <span className="text-xs font-semibold text-slate-400 truncate">
+                        ¿En dónde estás buscando?
+                      </span>
+                    )}
+                  </div>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
+                </div>
+
+                {/* Dropdown de Ciudades (Diseño idéntico al booking con 2s debounce) */}
+                {isCityDropdownOpen && (
+                  <div
+                    className="absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[99999] animate-in fade-in-0 zoom-in-95 duration-150"
                   >
-                    <span className="truncate max-w-[90px]">{search}</span>
+                    {/* Input buscador con debounce de 2 segundos */}
+                    <div className="relative mb-2">
+                      <input
+                        type="text"
+                        value={citySearchInput}
+                        onChange={handleCitySearchChange}
+                        placeholder="Buscar ciudad o provincia..."
+                        autoFocus
+                        className="w-full h-9 pl-3 pr-8 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                      />
+                      {isCityDebouncing ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      ) : (
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      )}
+                    </div>
+
+                    {/* Opción Todas las ubicaciones */}
                     <button
                       type="button"
                       onClick={() => {
                         setSearch('');
                         setSearchInputVal('');
+                        setCitySearchInput('');
+                        setDebouncedCityQuery('');
+                        setIsCityDropdownOpen(false);
                         applyFilters({ search: '' });
                       }}
-                      className="text-white bg-slate-500 hover:bg-slate-700 rounded-full w-3.5 h-3.5 flex items-center justify-center p-0.5 cursor-pointer"
-                      title="Quitar filtro de ubicación"
+                      className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center justify-between mb-1 transition-colors cursor-pointer"
                     >
-                      <X className="w-2.5 h-2.5" />
+                      <span>Todas las ubicaciones</span>
+                      {!search && <Check className="w-3.5 h-3.5 text-emerald-600" />}
                     </button>
-                  </span>
-                ) : null}
-                <input
-                  type="text"
-                  value={searchInputVal}
-                  onChange={(e) => setSearchInputVal(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const val = searchInputVal.trim();
-                      setSearch(val);
-                      applyFilters({ search: val });
-                    }
-                  }}
-                  placeholder={search ? '' : 'Ciudad, zona, sector...'}
-                  className="flex-grow bg-transparent text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none min-w-[60px]"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const val = searchInputVal.trim();
-                    setSearch(val);
-                    applyFilters({ search: val });
-                  }}
-                  className="text-slate-400 hover:text-slate-800 p-1 cursor-pointer shrink-0"
-                  title="Buscar"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
+
+                    {/* Lista scrollable de ciudades */}
+                    <div className="max-h-56 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                      {filteredCities.length > 0 ? (
+                        filteredCities.map((city) => {
+                          const isSelected = search.toLowerCase() === city.name.toLowerCase();
+                          return (
+                            <div
+                              key={`${city.id}-${city.name}`}
+                              onClick={() => handleSelectCity(city.name)}
+                              style={isSelected ? { backgroundColor: `${filterBorderColor}20` } : {}}
+                              className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition-colors ${
+                                isSelected ? 'font-black' : 'hover:bg-slate-100'
+                              }`}
+                            >
+                              <img
+                                src={city.image}
+                                alt={city.name}
+                                className="w-7 h-7 rounded-lg object-cover shrink-0 shadow-2xs"
+                                loading="lazy"
+                              />
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-xs font-bold text-slate-800 uppercase tracking-wide truncate">
+                                  {city.name} ({city.province})
+                                </span>
+                              </div>
+                              {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="py-4 text-center text-xs text-slate-400">
+                          No se encontraron ciudades
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 2. Filtro Operación (Alquilar / Comprar) */}
@@ -414,16 +687,16 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     applyFilters({ property_status: val });
                   }}
                   style={{
-                    borderColor: filterBorderColor,
+                    borderColor: propertyStatus ? filterBorderColor : 'rgba(0,0,0,0.18)',
                     borderWidth: '1.5px',
                     backgroundColor: propertyStatus ? `${filterBorderColor}14` : '#ffffff',
                     color: propertyStatus ? '#0f172a' : '#1e293b',
                   }}
-                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 hover:border-slate-400"
                 >
                   <option value="">Operación</option>
-                  <option value="1">Alquilar</option>
-                  <option value="2">Comprar</option>
+                  <option value="1">En Renta / Alquiler</option>
+                  <option value="2">En Venta</option>
                 </select>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
@@ -438,20 +711,20 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     applyFilters({ property_type: val });
                   }}
                   style={{
-                    borderColor: filterBorderColor,
+                    borderColor: propertyType ? filterBorderColor : 'rgba(0,0,0,0.18)',
                     borderWidth: '1.5px',
                     backgroundColor: propertyType ? `${filterBorderColor}14` : '#ffffff',
                     color: propertyType ? '#0f172a' : '#1e293b',
                   }}
-                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 hover:border-slate-400"
                 >
                   <option value="">Inmueble</option>
-                  <option value="1">Casas</option>
-                  <option value="2">Departamentos</option>
-                  <option value="3">Terrenos / Lotes</option>
-                  <option value="4">Comercial / Oficinas</option>
-                  <option value="5">Suites / Lofts</option>
-                  <option value="6">Villas / Quintas</option>
+                  <option value="1">Casas & Residencias</option>
+                  <option value="2">Departamentos & Lofts</option>
+                  <option value="3">Terrenos & Lotes</option>
+                  <option value="4">Comercial & Oficinas</option>
+                  <option value="5">Suites</option>
+                  <option value="6">Villas & Casas de Campo</option>
                 </select>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
@@ -466,12 +739,12 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     applyFilters({ bedrooms: val });
                   }}
                   style={{
-                    borderColor: filterBorderColor,
+                    borderColor: bedrooms ? filterBorderColor : 'rgba(0,0,0,0.18)',
                     borderWidth: '1.5px',
                     backgroundColor: bedrooms ? `${filterBorderColor}14` : '#ffffff',
                     color: bedrooms ? '#0f172a' : '#1e293b',
                   }}
-                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 hover:border-slate-400"
                 >
                   <option value="">Habitaciones</option>
                   <option value="1">1+ hab.</option>
@@ -482,43 +755,28 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
 
-              {/* 5. Filtro Precio (con Popover desplegable y botón de limpieza rápida) */}
-              <div className="relative shrink-0">
+              {/* 5. Filtro Precio por Rangos Funcional */}
+              <div ref={priceContainerRef} className="relative shrink-0">
                 <button
                   type="button"
                   onClick={() => {
-                    setIsMoreFiltersOpen(false);
+                    setIsCityDropdownOpen(false);
                     setIsPricePopoverOpen(!isPricePopoverOpen);
                     setTempPriceMin(priceMin);
                     setTempPriceMax(priceMax);
                   }}
                   style={{
-                    borderColor: (priceMin || priceMax || isPricePopoverOpen) ? filterBorderColor : 'rgba(0,0,0,0.15)',
+                    borderColor: (priceMin || priceMax || isPricePopoverOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
                     borderWidth: '1.5px',
                     backgroundColor: (priceMin || priceMax) ? `${filterBorderColor}14` : '#ffffff',
                     color: (priceMin || priceMax) ? '#0f172a' : '#1e293b',
                   }}
-                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400"
+                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
                 >
-                  <span>
-                    {priceMin && priceMax
-                      ? `$${Number(priceMin).toLocaleString()} - $${Number(priceMax).toLocaleString()}`
-                      : priceMin
-                      ? `Desde $${Number(priceMin).toLocaleString()}`
-                      : priceMax
-                      ? `Hasta $${Number(priceMax).toLocaleString()}`
-                      : 'Precio'}
-                  </span>
+                  <span>{getPriceButtonLabel()}</span>
                   {(priceMin || priceMax) ? (
                     <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPriceMin('');
-                        setPriceMax('');
-                        setTempPriceMin('');
-                        setTempPriceMax('');
-                        applyFilters({ price_min: '', price_max: '' });
-                      }}
+                      onClick={handleClearPrice}
                       className="w-4 h-4 rounded-full bg-slate-200/90 hover:bg-slate-300 text-slate-800 flex items-center justify-center p-0.5 ml-0.5 cursor-pointer"
                       title="Quitar filtro de precio"
                     >
@@ -530,213 +788,141 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 </button>
 
                 {isPricePopoverOpen && (
-                  <div className="absolute left-0 sm:left-auto top-full mt-2 w-72 p-4 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                  <div className="absolute left-0 sm:left-auto top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[99999] animate-in fade-in-0 zoom-in-95 duration-150">
                     <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
-                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Rango de Precios (USD)</span>
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Rangos de Precio (USD)</span>
                       <button
                         type="button"
                         onClick={() => setIsPricePopoverOpen(false)}
                         className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      <div>
-                        <span className="text-[10px] text-slate-500 font-bold block mb-1">Mínimo:</span>
-                        <input
-                          type="number"
-                          placeholder="$0"
-                          value={tempPriceMin}
-                          onChange={(e) => setTempPriceMin(e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-500 font-bold block mb-1">Máximo:</span>
-                        <input
-                          type="number"
-                          placeholder="Sin límite"
-                          value={tempPriceMax}
-                          onChange={(e) => setTempPriceMax(e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Presets rápidos de precios */}
-                    <div className="grid grid-cols-2 gap-1.5 mb-3">
-                      {[
-                        { label: '< $50k', min: '', max: '50000' },
-                        { label: '$50k - $150k', min: '50000', max: '150000' },
-                        { label: '$150k - $300k', min: '150000', max: '300000' },
-                        { label: '> $300k', min: '300000', max: '' },
-                      ].map((preset) => {
-                        const isSelected = tempPriceMin === preset.min && tempPriceMax === preset.max;
+                    {/* Presets rápidos de rangos de precio con 1 tap */}
+                    <div className="space-y-1 mb-3.5">
+                      {PRICE_RANGE_PRESETS.map((preset) => {
+                        const isSelected = (!priceMin && !priceMax && !preset.min && !preset.max) ||
+                          (priceMin === preset.min && priceMax === preset.max);
                         return (
                           <button
                             key={preset.label}
                             type="button"
-                            onClick={() => {
-                              setTempPriceMin(preset.min);
-                              setTempPriceMax(preset.max);
-                            }}
-                            style={isSelected ? { backgroundColor: `${filterBorderColor}20`, borderColor: filterBorderColor, color: '#0f172a' } : {}}
-                            className={`px-2 py-1.5 rounded-lg text-[11px] font-bold text-center transition-all cursor-pointer border ${
-                              isSelected ? 'font-black' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                            onClick={() => handleSelectPricePreset(preset.min, preset.max)}
+                            style={isSelected ? {
+                              backgroundColor: `${filterBorderColor}18`,
+                              borderColor: filterBorderColor,
+                              color: '#0f172a',
+                            } : {}}
+                            className={`w-full px-3 py-2 rounded-xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer border ${
+                              isSelected
+                                ? 'shadow-xs font-black'
+                                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80'
                             }`}
                           >
-                            {preset.label}
+                            <span>{preset.label}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
                           </button>
                         );
                       })}
                     </div>
 
+                    {/* Rango personalizado manual */}
+                    <div className="pt-2.5 border-t border-slate-100 mb-3">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                        O escribe un rango personalizado:
+                      </span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-bold block mb-1">Mínimo:</span>
+                          <input
+                            type="number"
+                            placeholder="$0"
+                            value={tempPriceMin}
+                            onChange={(e) => setTempPriceMin(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-bold block mb-1">Máximo:</span>
+                          <input
+                            type="number"
+                            placeholder="Sin límite"
+                            value={tempPriceMax}
+                            onChange={(e) => setTempPriceMax(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
                       <button
                         type="button"
-                        onClick={() => {
-                          setTempPriceMin('');
-                          setTempPriceMax('');
-                          setPriceMin('');
-                          setPriceMax('');
-                          setIsPricePopoverOpen(false);
-                          applyFilters({ price_min: '', price_max: '' });
-                        }}
+                        onClick={handleClearPrice}
                         className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
                       >
                         Limpiar
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setPriceMin(tempPriceMin);
-                          setPriceMax(tempPriceMax);
-                          setIsPricePopoverOpen(false);
-                          applyFilters({ price_min: tempPriceMin, price_max: tempPriceMax });
-                        }}
+                        onClick={handleApplyCustomPrice}
                         style={{ backgroundColor: primaryColor }}
                         className="px-4 py-2 rounded-xl text-xs font-black text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
                       >
-                        Aplicar
+                        Aplicar rango
                       </button>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* 6. Botón Más filtros (Baños, Ordenamiento, Limpieza) */}
+              {/* 6. Botón Más filtros (Abre Modal Completo de Filtros Avanzados) */}
               <div className="relative shrink-0">
                 <button
                   type="button"
                   onClick={() => {
+                    setIsCityDropdownOpen(false);
                     setIsPricePopoverOpen(false);
-                    setIsMoreFiltersOpen(!isMoreFiltersOpen);
+                    setIsMoreFiltersOpen(true);
                   }}
                   style={{
-                    borderColor: (bathrooms || sort !== 'recent' || isMoreFiltersOpen) ? filterBorderColor : 'rgba(0,0,0,0.15)',
+                    borderColor: (bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) ? filterBorderColor : 'rgba(0,0,0,0.18)',
                     borderWidth: '1.5px',
-                    backgroundColor: (bathrooms || sort !== 'recent') ? `${filterBorderColor}14` : '#ffffff',
-                    color: (bathrooms || sort !== 'recent') ? '#0f172a' : '#1e293b',
+                    backgroundColor: (bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) ? `${filterBorderColor}14` : '#ffffff',
+                    color: (bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) ? '#0f172a' : '#1e293b',
                   }}
-                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400"
+                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5 opacity-70" />
                   <span>Más filtros</span>
-                  {(bathrooms || sort !== 'recent') && (
+                  {(bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) && (
                     <span
                       style={{ backgroundColor: filterBorderColor }}
                       className="w-2 h-2 rounded-full"
                     />
                   )}
                 </button>
-
-                {isMoreFiltersOpen && (
-                  <div className="absolute left-0 sm:left-auto right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
-                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
-                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Filtros Adicionales</h4>
-                      <button
-                        type="button"
-                        onClick={() => setIsMoreFiltersOpen(false)}
-                        className="text-slate-400 hover:text-slate-700 cursor-pointer p-0.5"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Baños */}
-                    <div className="mb-3.5">
-                      <span className="text-xs font-bold text-slate-700 block mb-1.5">Baños:</span>
-                      <div className="flex items-center gap-1.5">
-                        {['', '1', '2', '3', '4'].map((b) => {
-                          const isSelected = bathrooms === b;
-                          return (
-                            <button
-                              key={b}
-                              type="button"
-                              onClick={() => {
-                                setBathrooms(b);
-                                applyFilters({ bathrooms: b });
-                              }}
-                              style={isSelected ? { backgroundColor: primaryColor, color: '#ffffff' } : {}}
-                              className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'shadow-xs font-black'
-                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                              }`}
-                            >
-                              {b ? `${b}+` : 'Todos'}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Ordenamiento */}
-                    <div className="mb-3.5">
-                      <span className="text-xs font-bold text-slate-700 block mb-1.5">Ordenar por:</span>
-                      <select
-                        value={sort}
-                        onChange={(e) => {
-                          const val = e.target.value as any;
-                          setSort(val);
-                          applyFilters({ sort: val });
-                        }}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 cursor-pointer"
-                      >
-                        <option value="recent">Más recientes</option>
-                        <option value="featured">Destacadas</option>
-                        <option value="price_asc">Menor precio</option>
-                        <option value="price_desc">Mayor precio</option>
-                      </select>
-                    </div>
-
-                    <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          resetFilters();
-                          setIsMoreFiltersOpen(false);
-                        }}
-                        className="text-xs font-bold text-rose-500 hover:underline cursor-pointer"
-                      >
-                        Restablecer todos
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsMoreFiltersOpen(false)}
-                        style={{ backgroundColor: primaryColor }}
-                        className="px-4 py-1.5 rounded-xl text-xs font-black text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
-                      >
-                        Listo
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* 7. Botón Crear alerta */}
+              {/* 7. Botón directo de Resetear / Limpiar Filtros */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  style={{
+                    borderColor: `${filterBorderColor}70`,
+                  }}
+                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer bg-slate-50 hover:bg-rose-50 hover:text-rose-600 text-slate-700 border shadow-2xs shrink-0 active:scale-95"
+                  title="Restablecer todos los filtros"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Resetear</span>
+                </button>
+              )}
+
+              {/* 8. Botón Crear alerta */}
               <div className="shrink-0">
                 <button
                   type="button"
@@ -746,7 +932,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     setAlertError(null);
                   }}
                   style={{
-                    borderColor: 'rgba(0, 0, 0, 0.15)',
+                    borderColor: 'rgba(0, 0, 0, 0.18)',
                     borderWidth: '1.5px',
                   }}
                   className="h-[42px] px-3.5 rounded-2xl text-slate-800 bg-white hover:border-slate-400 hover:bg-slate-50 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
@@ -755,18 +941,6 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   <Bell className="w-3.5 h-3.5 text-slate-600" />
                 </button>
               </div>
-
-              {/* Reset rápido si hay filtros activos */}
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="h-[40px] w-[40px] rounded-xl border border-slate-200 hover:bg-slate-100 active:scale-90 text-slate-500 hover:text-slate-800 transition-all flex items-center justify-center shrink-0 cursor-pointer"
-                  title="Restablecer todos los filtros"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              )}
 
               {/* Selector de Modo de Visualización en Pantallas Grandes */}
               <div className="hidden xl:flex items-center ml-auto p-1 rounded-xl bg-slate-100 border border-slate-200 shrink-0">
@@ -1016,6 +1190,244 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           </button>
         </div>
       </main>
+
+      {/* Modal Más Filtros Avanzados (Completamente responsivo, estilo Airbnb / Plusvalia) */}
+      {isMoreFiltersOpen && (
+        <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in-0 duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 p-5 sm:p-6 relative animate-in zoom-in-95 duration-200 flex flex-col">
+            {/* Header del Modal */}
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <div
+                  style={{ backgroundColor: `${filterBorderColor}20`, color: filterBorderColor }}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center font-bold"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Filtros Avanzados</h3>
+                  <p className="text-[11px] text-slate-400">Refina tu búsqueda por características, áreas y más</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMoreFiltersOpen(false)}
+                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1 rounded-full hover:bg-slate-100 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Contenido Scrollable */}
+            <div className="space-y-4 overflow-y-auto pr-1 flex-1 scrollbar-thin">
+              {/* 1. Tipo de Operación */}
+              <div>
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Operación</span>
+                <div className="flex items-center gap-2">
+                  {[
+                    { label: 'Todas', value: '' },
+                    { label: 'En Venta', value: '2' },
+                    { label: 'En Renta', value: '1' },
+                  ].map((op) => {
+                    const isSelected = tempPropertyStatus === op.value;
+                    return (
+                      <button
+                        key={op.label}
+                        type="button"
+                        onClick={() => setTempPropertyStatus(op.value)}
+                        style={isSelected ? { backgroundColor: filterBorderColor, color: '#ffffff', borderColor: filterBorderColor } : {}}
+                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'shadow-xs font-black'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {op.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Tipo de Inmueble */}
+              <div>
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Tipo de Inmueble</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { label: 'Todos', value: '' },
+                    { label: 'Casas', value: '1' },
+                    { label: 'Departamentos', value: '2' },
+                    { label: 'Terrenos / Lotes', value: '3' },
+                    { label: 'Comercial', value: '4' },
+                    { label: 'Suites / Lofts', value: '5' },
+                    { label: 'Villas / Quintas', value: '6' },
+                  ].map((t) => {
+                    const isSelected = tempPropertyType === t.value;
+                    return (
+                      <button
+                        key={t.label}
+                        type="button"
+                        onClick={() => setTempPropertyType(t.value)}
+                        style={isSelected ? { backgroundColor: `${filterBorderColor}18`, borderColor: filterBorderColor, color: '#0f172a' } : {}}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border text-left transition-all cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? 'shadow-xs font-black'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        <span className="truncate">{t.label}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. Baños */}
+              <div>
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Baños</span>
+                <div className="flex items-center gap-1.5">
+                  {['', '1', '2', '3', '4'].map((b) => {
+                    const isSelected = tempBathrooms === b;
+                    return (
+                      <button
+                        key={b}
+                        type="button"
+                        onClick={() => setTempBathrooms(b)}
+                        style={isSelected ? { backgroundColor: filterBorderColor, color: '#ffffff', borderColor: filterBorderColor } : {}}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'shadow-xs font-black'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {b ? `${b}+` : 'Todos'}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 4. Estacionamientos / Garajes */}
+              <div>
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Estacionamientos / Parqueos</span>
+                <div className="flex items-center gap-1.5">
+                  {['', '1', '2', '3'].map((pk) => {
+                    const isSelected = tempParking === pk;
+                    return (
+                      <button
+                        key={pk}
+                        type="button"
+                        onClick={() => setTempParking(pk)}
+                        style={isSelected ? { backgroundColor: filterBorderColor, color: '#ffffff', borderColor: filterBorderColor } : {}}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'shadow-xs font-black'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {pk ? `${pk}+` : 'Todos'}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 5. Rango de Superficie / Área (m²) */}
+              <div>
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Superficie / Área Construida (m²)</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-[10px] text-slate-500 font-bold block mb-1">Mínimo m²:</span>
+                    <input
+                      type="number"
+                      placeholder="0 m²"
+                      value={tempSizeMin}
+                      onChange={(e) => setTempSizeMin(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 font-bold block mb-1">Máximo m²:</span>
+                    <input
+                      type="number"
+                      placeholder="Sin límite"
+                      value={tempSizeMax}
+                      onChange={(e) => setTempSizeMax(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 6. Ordenamiento */}
+              <div>
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Ordenar resultados</span>
+                <select
+                  value={tempSort}
+                  onChange={(e) => setTempSort(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 cursor-pointer"
+                >
+                  <option value="recent">Más recientes</option>
+                  <option value="featured">Propiedades destacadas</option>
+                  <option value="price_asc">Menor precio primero</option>
+                  <option value="price_desc">Mayor precio primero</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Footer de Acciones del Modal */}
+            <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  resetFilters();
+                  setIsMoreFiltersOpen(false);
+                }}
+                className="text-xs font-bold text-rose-500 hover:text-rose-700 flex items-center gap-1.5 cursor-pointer p-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Resetear todo</span>
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsMoreFiltersOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPropertyStatus(tempPropertyStatus);
+                    setPropertyType(tempPropertyType);
+                    setBathrooms(tempBathrooms);
+                    setParking(tempParking);
+                    setSizeMin(tempSizeMin);
+                    setSizeMax(tempSizeMax);
+                    setSort(tempSort as any);
+                    setIsMoreFiltersOpen(false);
+                    applyFilters({
+                      property_status: tempPropertyStatus,
+                      property_type: tempPropertyType,
+                      bathrooms: tempBathrooms,
+                      parking: tempParking,
+                      size_min: tempSizeMin,
+                      size_max: tempSizeMax,
+                      sort: tempSort,
+                    });
+                  }}
+                  style={{ backgroundColor: primaryColor }}
+                  className="px-6 py-2.5 rounded-xl text-xs font-black text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md"
+                >
+                  Aplicar filtros
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Crear Alerta (Estilo Plusvalia) */}
       {isAlertModalOpen && (

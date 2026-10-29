@@ -48,7 +48,7 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
   const sectionTitle = agency?.details?.categories_title || 'Categorías Principales';
   const sectionSubtitle = agency?.details?.categories_subtitle || 'Descubre opciones pensadas para cada estilo de vida e inversión patrimonial.';
   const rawColor = agency?.primary_color || agency?.details?.primary_color;
-  const primaryColor = (!rawColor || rawColor.toLowerCase() === '#00a884') ? '#e2b728' : rawColor;
+  const primaryColor = rawColor || '#00a884';
   const buttonColor = primaryColor;
 
   const settings: SwiperOptions = useMemo(() => {

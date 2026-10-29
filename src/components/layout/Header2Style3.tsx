@@ -147,7 +147,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
   );
   const logoUrl = hasCustomLogo ? rawLogo : null;
   const rawColor = effectiveAgency?.primary_color || effectiveAgency?.details?.primary_color;
-  const primaryColor = (!rawColor || rawColor.toLowerCase() === '#00a884') ? '#e2b728' : rawColor;
+  const primaryColor = rawColor || '#00a884';
   const buttonColor = primaryColor;
   const rawName = effectiveAgency?.name || effectiveAgency?.commercial_name;
   const agencyName = rawName || '';
