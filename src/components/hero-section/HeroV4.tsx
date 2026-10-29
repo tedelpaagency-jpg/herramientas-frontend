@@ -128,7 +128,25 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
   const heroTitle = agency?.hero_title || agency?.details?.hero_title || 'Encuentra la Propiedad de tus Sueños';
   const heroSubtitle = agency?.hero_subtitle || agency?.details?.hero_subtitle || 'Las mejores opciones en venta y renta con asesoría jurídica, notarial y crediticia garantizada.';
-  const bannerImage = agency?.banner_image;
+  
+  // Soporte de Fondo: Imagen o Video
+  const bannerImage = agency?.banner_image || agency?.details?.banner_image;
+  const bannerVideo = agency?.banner_video || agency?.details?.banner_video;
+  const rawMediaType = agency?.details?.hero_media_type;
+
+  // Auto-detección:
+  // Si hero_media_type === 'video' o si hay bannerVideo o si la URL de bannerImage termina en formato de video (.mp4, .webm, .mov)
+  const isVideo =
+    rawMediaType === 'video' ||
+    (!rawMediaType && Boolean(bannerVideo)) ||
+    (Boolean(bannerImage) && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(bannerImage)) ||
+    (!rawMediaType && !bannerImage);
+
+  const videoSrc =
+    bannerVideo ||
+    (bannerImage && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(bannerImage)
+      ? bannerImage
+      : '/assets/video/home4-banner-video.mp4');
 
   const tab1 = agency?.details?.hero_tab1 || 'En Venta';
   const tab2 = agency?.details?.hero_tab2 || 'En Renta';
@@ -140,13 +158,38 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
   return (
     <div className="home4-banner-section mb-100">
-      <div className="banner-video-area" style={bannerImage ? {
-        backgroundImage: `linear-gradient(rgba(10, 15, 29, 0.55), rgba(10, 15, 29, 0.7)), url(${bannerImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      } : {}}>
-        {!bannerImage && (
-          <video autoPlay loop muted playsInline src="/assets/video/home4-banner-video.mp4" />
+      <div
+        className="banner-video-area"
+        style={
+          !isVideo && bannerImage
+            ? {
+                backgroundImage: `linear-gradient(rgba(10, 15, 29, 0.55), rgba(10, 15, 29, 0.72)), url(${bannerImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }
+            : { position: 'relative', overflow: 'hidden' }
+        }
+      >
+        {isVideo && (
+          <>
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              src={videoSrc}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            {/* Capa de contraste cinematográfico para resaltar los textos y buscador */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(rgba(10, 15, 29, 0.52), rgba(10, 15, 29, 0.70))',
+                pointerEvents: 'none',
+              }}
+            />
+          </>
         )}
       </div>
 

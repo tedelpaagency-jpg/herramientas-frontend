@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import Image from "next/image";
@@ -12,6 +12,15 @@ interface DestinationSectionV4Props {
   categories?: PublicEstateCategory[];
   agency?: any;
 }
+
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  'casas-residencias': 'Residencias familiares, urbanizaciones privadas y villas de descanso.',
+  'departamentos-condos': 'Suites modernas, condominios céntricos y departamentos familiares.',
+  'terrenos-lotes': 'Solares de alta plusvalía y macro-lotes listos para desarrollo inmobiliario.',
+  'oficinas-corporativos': 'Espacios empresariales, consultorios y edificios comerciales.',
+  'villas-quintas': 'Propiedades campestres, quintas vacacionales y casas de campo exclusivas.',
+  'penthouses-lujo': 'Exclusivas propiedades de alta gama con acabados premium y vistas panorámicas.',
+};
 
 const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories, agency }) => {
   const displayCategories = useMemo(() => {
@@ -30,6 +39,11 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
     }
     return list.slice(0, 6);
   }, [categories]);
+
+  // Estado para la tarjeta activa en cuadrícula móvil (por defecto la 6ta, idéntico a la referencia)
+  const [activeCategoryId, setActiveCategoryId] = useState<number | string | null>(() => {
+    return displayCategories[5]?.id ?? 6;
+  });
 
   const sectionTitle = agency?.details?.categories_title || 'Categorías Principales';
   const sectionSubtitle = agency?.details?.categories_subtitle || 'Descubre opciones pensadas para cada estilo de vida e inversión patrimonial.';
@@ -97,50 +111,59 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
           </div>
         </div>
 
-        {/* VISTA MÓVIL: Cuadrícula interactiva de 2 columnas (Exactamente como en la referencia) */}
+        {/* VISTA MÓVIL: Cuadrícula interactiva de 2 columnas (Exactamente como en la referencia de la captura) */}
         <div className="md:hidden grid grid-cols-2 gap-3 sm:gap-4 mb-6">
           {displayCategories.map((cat, index) => {
             const fallbackImg = DEFAULT_REAL_ESTATE_CATEGORIES[index % DEFAULT_REAL_ESTATE_CATEGORIES.length].image;
             const imgSrc = cat.image || fallbackImg;
             const categoryUrl = `/properties?property_type=${cat.id}`;
+            const isActive = activeCategoryId === cat.id;
+            const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '') as string;
+            const description = (cat as any).description || CATEGORY_DESCRIPTIONS[slug] || 'Propiedades seleccionadas con los más altos estándares de calidad.';
 
             return (
               <Link
                 key={cat.id || index}
                 href={categoryUrl}
-                className="group relative block aspect-[4/4.8] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md transition-all duration-300 ease-out active:scale-[0.97] active:border-cyan-400 active:shadow-[0_0_15px_rgba(34,211,238,0.35)] text-decoration-none"
+                onClick={(e) => {
+                  if (!isActive) {
+                    e.preventDefault();
+                    setActiveCategoryId(cat.id);
+                  }
+                }}
+                className={`group relative block aspect-[1/1.05] sm:aspect-[1/1] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md transition-all duration-300 ease-out text-decoration-none select-none ${
+                  isActive
+                    ? 'border-2 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.35)] ring-1 ring-cyan-400/50'
+                    : 'border border-white/10 hover:border-white/20 active:scale-[0.98]'
+                }`}
               >
                 {/* Imagen de fondo con zoom fluido */}
                 <img
                   src={imgSrc}
                   alt={cat.name}
-                  className="w-full h-full object-cover object-center filter brightness-[0.90] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-110"
+                  className="w-full h-full object-cover object-center filter brightness-[0.85] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-105"
                   loading="lazy"
                 />
 
                 {/* Viñeta degradada oscura para contraste de texto */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/15 pointer-events-none" />
+                <div
+                  className={`absolute inset-0 transition-opacity duration-300 pointer-events-none ${
+                    isActive
+                      ? 'bg-gradient-to-t from-cyan-950/95 via-black/50 to-transparent'
+                      : 'bg-gradient-to-t from-black/90 via-black/40 to-transparent'
+                  }`}
+                />
 
-                {/* Badge superior con cantidad disponible */}
-                <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9px] font-bold text-white border border-white/10 shadow-xs">
-                  {cat.count || 0} disponibles
-                </div>
-
-                {/* Botón flecha pequeño superior derecho */}
-                <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center shadow-xs">
-                  <svg width={9} height={9} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 13C5.94664 8.05336 13 1 13 1M13 1C10.1852 1.52778 6.69444 2.58333 3 1M13 1C12.4722 3.63889 11.4167 6.77778 13 11" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                </div>
-
-                {/* Contenido inferior: Nombre de Categoría */}
-                <div className="absolute bottom-3 left-3 right-3 text-left pointer-events-none">
-                  <h5 className="text-xs sm:text-[13px] font-black text-white leading-tight drop-shadow-md mb-0.5 group-hover:text-cyan-300 transition-colors">
+                {/* Contenido inferior: Título limpio y descripción al estar activa */}
+                <div className="absolute bottom-3.5 left-3.5 right-3.5 text-left pointer-events-none">
+                  <h5 className="text-[13px] sm:text-[14px] font-bold text-white leading-snug drop-shadow-md mb-0">
                     {cat.name}
                   </h5>
-                  <span className="text-[10px] font-medium text-slate-300 group-hover:text-white transition-colors">
-                    Explorar &rarr;
-                  </span>
+                  {isActive && (
+                    <p className="text-[10.5px] sm:text-xs text-white/90 leading-tight font-normal mt-1.5 drop-shadow-xs line-clamp-3 animate-in fade-in duration-300">
+                      {description}
+                    </p>
+                  )}
                 </div>
               </Link>
             );

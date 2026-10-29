@@ -113,65 +113,103 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
       </div>
 
       {/* 3. Hero Section (Dynamic Banner + Real Estate Search) */}
-      <div
-        className="relative px-6 py-14 sm:py-20 text-white text-center flex flex-col items-center justify-center overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.75)), url(${bannerImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          minHeight: '340px',
-        }}
-      >
-        <span
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider mb-3 shadow-sm text-white"
-          style={{ backgroundColor: primaryColor }}
-        >
-          Portal Oficial • Bienes Raíces
-        </span>
+      {(() => {
+        const rawMediaType = details?.hero_media_type;
+        const bannerVideo = details?.banner_video;
+        const isVideo =
+          rawMediaType === 'video' ||
+          (!rawMediaType && Boolean(bannerVideo)) ||
+          (Boolean(bannerImage) && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(bannerImage)) ||
+          (!rawMediaType && !bannerImage);
 
-        <h1 className="text-2xl sm:text-4xl font-extrabold max-w-xl leading-tight mb-2 text-white drop-shadow-md">
-          {displayHeroTitle}
-        </h1>
+        const videoSrc =
+          bannerVideo ||
+          (bannerImage && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(bannerImage)
+            ? bannerImage
+            : '/assets/video/home4-banner-video.mp4');
 
-        <p className="text-xs sm:text-sm text-slate-200 max-w-lg mb-6 leading-relaxed drop-shadow-xs">
-          {displayHeroSubtitle}
-        </p>
+        return (
+          <div
+            className="relative px-6 py-14 sm:py-20 text-white text-center flex flex-col items-center justify-center overflow-hidden"
+            style={
+              !isVideo && bannerImage
+                ? {
+                    backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.75)), url(${bannerImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    minHeight: '340px',
+                  }
+                : { minHeight: '340px', position: 'relative' }
+            }
+          >
+            {isVideo && (
+              <>
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  src={videoSrc}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/50 to-slate-950/70 pointer-events-none" />
+              </>
+            )}
 
-        {/* Real Estate Search Widget Mockup */}
-        <div className="w-full max-w-lg bg-white rounded-2xl p-2 shadow-2xl text-slate-800">
-          <div className="flex items-center border-b border-slate-100 pb-1.5 mb-2 gap-2 px-2 text-xs font-bold">
-            <span className="px-2.5 py-1 rounded-md text-white shadow-xs cursor-pointer" style={{ backgroundColor: primaryColor }}>
-              Comprar
-            </span>
-            <span className="px-2.5 py-1 text-slate-500 hover:text-slate-800 cursor-pointer">
-              Rentar
-            </span>
-            <span className="px-2.5 py-1 text-slate-500 hover:text-slate-800 cursor-pointer hidden sm:inline">
-              Terrenos
-            </span>
-          </div>
+            <div className="relative z-10 flex flex-col items-center w-full">
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider mb-3 shadow-sm text-white"
+                style={{ backgroundColor: primaryColor }}
+              >
+                Portal Oficial • Bienes Raíces
+              </span>
 
-          <div className="flex flex-col sm:flex-row items-center gap-2 p-1">
-            <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl flex-grow w-full text-xs">
-              <Search className="w-4 h-4 text-slate-400 shrink-0" />
-              <input
-                type="text"
-                placeholder="Ciudad, colonia o código postal..."
-                className="bg-transparent outline-none w-full text-slate-700 text-xs font-medium"
-                readOnly
-              />
+              <h1 className="text-2xl sm:text-4xl font-extrabold max-w-xl leading-tight mb-2 text-white drop-shadow-md">
+                {displayHeroTitle}
+              </h1>
+
+              <p className="text-xs sm:text-sm text-slate-200 max-w-lg mb-6 leading-relaxed drop-shadow-xs">
+                {displayHeroSubtitle}
+              </p>
+
+              {/* Real Estate Search Widget Mockup */}
+              <div className="w-full max-w-lg bg-white rounded-2xl p-2 shadow-2xl text-slate-800">
+                <div className="flex items-center border-b border-slate-100 pb-1.5 mb-2 gap-2 px-2 text-xs font-bold">
+                  <span className="px-2.5 py-1 rounded-md text-white shadow-xs cursor-pointer" style={{ backgroundColor: primaryColor }}>
+                    Comprar
+                  </span>
+                  <span className="px-2.5 py-1 text-slate-500 hover:text-slate-800 cursor-pointer">
+                    Rentar
+                  </span>
+                  <span className="px-2.5 py-1 text-slate-500 hover:text-slate-800 cursor-pointer hidden sm:inline">
+                    Terrenos
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-2 p-1">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl flex-grow w-full text-xs">
+                    <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="Ciudad, colonia o código postal..."
+                      className="bg-transparent outline-none w-full text-slate-700 text-xs font-medium"
+                      readOnly
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-white font-bold text-xs shrink-0 flex items-center justify-center gap-1.5 shadow-md"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    <span>Buscar</span>
+                  </button>
+                </div>
+              </div>
             </div>
-
-            <button
-              type="button"
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-white font-bold text-xs shrink-0 flex items-center justify-center gap-1.5 shadow-md"
-              style={{ backgroundColor: primaryColor }}
-            >
-              <span>Buscar</span>
-            </button>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* 4. Value Propositions Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-50 border-b border-slate-100 text-slate-700">

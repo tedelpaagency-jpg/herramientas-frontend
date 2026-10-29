@@ -60,6 +60,45 @@ export const FREE_STOCK_HERO_IMAGES: FreeStockImage[] = [
   }
 ];
 
+export interface FreeStockVideo {
+  id: string;
+  name: string;
+  url: string;
+  poster?: string;
+  description: string;
+}
+
+export const FREE_STOCK_HERO_VIDEOS: FreeStockVideo[] = [
+  {
+    id: 'video-home4-banner',
+    name: 'Ciudad & Rascacielos Inmobiliarios (Oficial)',
+    url: '/assets/video/home4-banner-video.mp4',
+    poster: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=75',
+    description: 'Tomas urbanas cinemáticas de alta definición integradas en la plantilla.'
+  },
+  {
+    id: 'video-modern-building',
+    name: 'Edificio Residencial & Fachadas de Cristal',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-modern-apartment-building-exterior-42861-large.mp4',
+    poster: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=75',
+    description: 'Perspectiva contemporánea de arquitectura residencial con acabados en cristal.'
+  },
+  {
+    id: 'video-luxury-house',
+    name: 'Residencia Vanguardista con Piscina',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-luxury-modern-house-with-a-pool-42862-large.mp4',
+    poster: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=400&q=75',
+    description: 'Casa de alta gama iluminada con alberca exterior de estilo resort.'
+  },
+  {
+    id: 'video-aerial-suburb',
+    name: 'Condominios & Urbanización Privada',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-a-residential-suburb-with-houses-and-trees-42863-large.mp4',
+    poster: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=400&q=75',
+    description: 'Tomas aéreas con dron de desarrollos y residencias arboladas.'
+  }
+];
+
 export const FREE_STOCK_ABOUT_IMAGES: FreeStockImage[] = [
   {
     id: 'about-handshake-keys',
