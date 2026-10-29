@@ -5,7 +5,352 @@ import {
   KeyRound,
   Search,
   ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
+import publicInmobiliariaService, { PublicEstateCity } from '@/services/publicInmobiliariaService';
+
+// Default cities with images (matching screenshot: QUITO, PUERTO QUITO, etc.)
+const INITIAL_CITIES: { id: number; name: string; province: string; image: string }[] = [
+  {
+    id: 1,
+    name: 'Quito',
+    province: 'Pichincha',
+    image: 'https://images.unsplash.com/photo-1589802829985-817e51171b92?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 2,
+    name: 'Puerto Quito',
+    province: 'Pichincha',
+    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 3,
+    name: 'Guayaquil',
+    province: 'Guayas',
+    image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 4,
+    name: 'Cuenca',
+    province: 'Azuay',
+    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 5,
+    name: 'Manta',
+    province: 'Manabí',
+    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 6,
+    name: 'Salinas',
+    province: 'Santa Elena',
+    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 7,
+    name: 'Quevedo',
+    province: 'Los Ríos',
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 8,
+    name: 'Ambato',
+    province: 'Tungurahua',
+    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400&q=80',
+  },
+];
+
+interface LocationCitySelectProps {
+  value: string;
+  onChange: (val: string) => void;
+  domain?: string;
+}
+
+const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange, domain }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [isDebouncing, setIsDebouncing] = useState(false);
+  const [citiesList, setCitiesList] = useState(INITIAL_CITIES);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load cities from backend if available
+  useEffect(() => {
+    let isMounted = true;
+    publicInmobiliariaService
+      .getCities(domain)
+      .then((res) => {
+        if (isMounted && res?.data && res.data.length > 0) {
+          const formatted = res.data.map((c: any, idx: number) => ({
+            id: c.id || idx + 10,
+            name: c.name || c.city || 'Ciudad',
+            province: c.province || c.name || '',
+            image: c.image || 'https://images.unsplash.com/photo-1589802829985-817e51171b92?auto=format&fit=crop&w=400&q=80',
+          }));
+          setCitiesList((prev) => {
+            const combined = [...prev];
+            formatted.forEach((item) => {
+              if (!combined.some((x) => x.name.toLowerCase() === item.name.toLowerCase())) {
+                combined.push(item);
+              }
+            });
+            return combined;
+          });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [domain]);
+
+  // Click outside to close
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Focus input when opened
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    } else {
+      setSearchInput('');
+      setDebouncedQuery('');
+      setIsDebouncing(false);
+    }
+  }, [isOpen]);
+
+  // Handle typing with 2-second debounce
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchInput(val);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (!val.trim()) {
+      setIsDebouncing(false);
+      setDebouncedQuery('');
+      return;
+    }
+
+    setIsDebouncing(true);
+
+    // Exact 2-second wait after last keystroke
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedQuery(val.trim());
+      setIsDebouncing(false);
+    }, 2000);
+  };
+
+  // Filter cities based on debounced query
+  const filteredCities = citiesList.filter((item) => {
+    if (!debouncedQuery) return true;
+    const q = debouncedQuery.toLowerCase();
+    const cityMatch = item.name.toLowerCase().includes(q);
+    const provMatch = item.province.toLowerCase().includes(q);
+    return cityMatch || provMatch;
+  });
+
+  const handleSelectCity = (city: { name: string; province: string }) => {
+    const label = `${city.name.toUpperCase()} (${city.province.toUpperCase()})`;
+    onChange(city.name);
+    setIsOpen(false);
+  };
+
+  const displayText = value ? value : '¿En donde estas buscando?';
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+      {/* Field Control Box (Trigger) */}
+      <div
+        onClick={() => setIsOpen((prev) => !prev)}
+        style={{
+          height: '48px',
+          border: '1px solid #e2e8f0',
+          borderRadius: isOpen ? '12px 12px 0 0' : '12px',
+          padding: '0 14px',
+          backgroundColor: '#ffffff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          userSelect: 'none',
+          transition: 'all 0.15s ease',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '13.5px',
+            fontWeight: value ? 600 : 400,
+            color: value ? '#0f172a' : '#94a3b8',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {displayText}
+        </span>
+        {isOpen ? (
+          <ChevronUp className="w-4 h-4 text-slate-500 shrink-0 ml-1" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+        )}
+      </div>
+
+      <input type="hidden" name="search" value={value} />
+
+      {/* Dropdown Menu (Exact match to uploaded image) */}
+      {isOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            backgroundColor: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderTop: 'none',
+            borderRadius: '0 0 12px 12px',
+            boxShadow: '0 15px 30px rgba(0, 0, 0, 0.18)',
+            zIndex: 9999,
+            padding: '8px 8px 6px 8px',
+            minWidth: '260px',
+          }}
+        >
+          {/* Inner Search Box */}
+          <div style={{ marginBottom: '8px' }}>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchInput}
+              onChange={handleInputChange}
+              placeholder="Buscar ciudad o provincia..."
+              style={{
+                width: '100%',
+                height: '36px',
+                border: '1.5px solid #94a3b8',
+                borderRadius: '6px',
+                padding: '0 10px',
+                fontSize: '13px',
+                color: '#0f172a',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          {/* 2-Second Debounce Indicator */}
+          {isDebouncing && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 8px',
+                fontSize: '11px',
+                color: '#64748b',
+                backgroundColor: '#f8fafc',
+                borderRadius: '6px',
+                marginBottom: '6px',
+              }}
+            >
+              <div
+                style={{
+                  width: '12px',
+                  height: '12px',
+                  border: '2px solid #cbd5e1',
+                  borderTop: '2px solid #3b82f6',
+                  borderRadius: '50%',
+                  animation: 'inmoSpin 0.6s linear infinite',
+                }}
+              />
+              <span>Buscando en 2 seg...</span>
+            </div>
+          )}
+
+          {/* Results List */}
+          <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+            {filteredCities.length > 0 ? (
+              filteredCities.map((city, idx) => {
+                const isSelected = highlightedIndex === idx;
+                const formattedName = `${city.name.toUpperCase()} (${city.province.toUpperCase()})`;
+
+                return (
+                  <div
+                    key={city.id}
+                    onMouseEnter={() => setHighlightedIndex(idx)}
+                    onClick={() => handleSelectCity(city)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '8px 10px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      backgroundColor: isSelected ? '#3b82f6' : idx === 0 && !isSelected ? '#3b82f6' : '#ffffff',
+                      color: isSelected || (idx === 0 && !isSelected) ? '#ffffff' : '#2563eb',
+                      transition: 'background-color 0.1s ease',
+                      marginBottom: '2px',
+                    }}
+                  >
+                    {/* Thumbnail Image */}
+                    <img
+                      src={city.image}
+                      alt={city.name}
+                      style={{
+                        width: '26px',
+                        height: '20px',
+                        objectFit: 'cover',
+                        borderRadius: '3px',
+                        flexShrink: 0,
+                        border: '1px solid rgba(0,0,0,0.1)',
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                    {/* City & Province Label */}
+                    <span
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        letterSpacing: '0.02em',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {formattedName}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{ padding: '12px 10px', textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
+                No se encontraron ciudades
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface HeroV4Props {
   agency?: any;
@@ -123,7 +468,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.28);
           width: 100%;
           max-width: 1040px;
-          overflow: hidden;
+          overflow: visible;
           border: 1px solid rgba(255, 255, 255, 0.9);
           z-index: 10;
         }
@@ -136,6 +481,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           padding: 16px 28px 0 28px;
           background: #ffffff;
           gap: 36px;
+          border-radius: 24px 24px 0 0;
         }
 
         .inmo-card-tab-btn {
@@ -185,6 +531,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           align-items: flex-end;
           background: #ffffff;
           position: relative;
+          border-radius: 0 0 24px 24px;
         }
 
         @media (max-width: 991px) {
@@ -405,29 +752,14 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
               </div>
             )}
 
-            {/* 1. Ubicación */}
-            <div>
+            {/* 1. Ubicación (Select2-style Search with 2s Debounce matching Screenshot) */}
+            <div style={{ position: 'relative' }}>
               <label className="inmo-field-label">Ubicación</label>
-              <div className="inmo-field-control">
-                <input
-                  type="text"
-                  name="search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="¿En donde estas buscando?"
-                  style={{
-                    width: '100%',
-                    border: 'none',
-                    background: 'transparent',
-                    outline: 'none',
-                    fontSize: '13.5px',
-                    fontWeight: 500,
-                    color: '#0f172a',
-                    padding: 0,
-                  }}
-                />
-                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
-              </div>
+              <LocationCitySelect
+                value={search}
+                onChange={(val) => setSearch(val)}
+                domain={domain}
+              />
             </div>
 
             {/* 2. Operación */}

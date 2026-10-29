@@ -207,10 +207,10 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
                 {/* Form Fields Row (Exact Image 1 layout) */}
                 <div className="p-4 flex flex-col sm:flex-row items-end gap-3 bg-white">
                   {/* Ubicación */}
-                  <div className="w-full sm:flex-[1.5]">
+                  <div className="w-full sm:flex-[1.5] relative">
                     <span className="text-xs font-semibold text-slate-600 block mb-1">Ubicación</span>
-                    <div className="h-10 border border-slate-200 rounded-xl px-3 flex items-center justify-between bg-white text-xs">
-                      <span className="text-slate-400 truncate">¿En donde estas buscando?</span>
+                    <div className="h-10 border border-slate-200 rounded-xl px-3 flex items-center justify-between bg-white text-xs cursor-pointer">
+                      <span className="text-slate-800 font-semibold truncate">QUITO (PICHINCHA)</span>
                       <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                     </div>
                   </div>
