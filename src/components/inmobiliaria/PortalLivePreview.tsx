@@ -192,22 +192,17 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
               {deviceMode === 'mobile' ? (
                 /* Mobile Booking Mockup (matches screenshot) */
                 <div className="w-full bg-white rounded-3xl p-4 shadow-2xl text-slate-800 text-left">
-                  {/* Top Mobile Tabs */}
+                  {/* Top Mobile Tabs (Exact 2 tabs matching screenshot) */}
                   <div className="flex items-center justify-around border-b border-slate-100 pb-2 mb-3">
                     <div className="flex flex-col items-center">
-                      <Tag className="w-4 h-4 text-slate-800 mb-0.5" />
+                      <Tag className="w-5 h-5 text-slate-800 mb-0.5" />
                       <span className="text-[10px] font-extrabold text-slate-800 tracking-wider">VENTA</span>
-                      <div className="w-8 h-[2.5px] bg-slate-800 rounded-full mt-1" />
+                      <div className="w-12 h-[3px] bg-slate-800 rounded-full mt-1" />
                     </div>
-                    <div className="flex flex-col items-center opacity-50">
-                      <KeyRound className="w-4 h-4 text-slate-400 mb-0.5" />
+                    <div className="flex flex-col items-center opacity-60">
+                      <KeyRound className="w-5 h-5 text-slate-400 mb-0.5" />
                       <span className="text-[10px] font-extrabold text-slate-500 tracking-wider">ALQUILER</span>
-                      <div className="h-[2.5px] mt-1" />
-                    </div>
-                    <div className="flex flex-col items-center opacity-50">
-                      <Trees className="w-4 h-4 text-slate-400 mb-0.5" />
-                      <span className="text-[10px] font-extrabold text-slate-500 tracking-wider">TERRENOS</span>
-                      <div className="h-[2.5px] mt-1" />
+                      <div className="h-[3px] mt-1" />
                     </div>
                   </div>
 
