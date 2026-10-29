@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ExternalLink, Search, Phone, CheckCircle2, ShieldCheck, Heart, MapPin, Bed, Bath, Maximize2 } from 'lucide-react';
+import { ExternalLink, Search, Phone, CheckCircle2, ShieldCheck, Heart, MapPin, Bed, Bath, Maximize2, User } from 'lucide-react';
 import { DEFAULT_REAL_ESTATE_CATEGORIES, DEFAULT_REAL_ESTATE_PROPERTIES } from '@/constants/realEstateDefaults';
 
 interface PortalLivePreviewProps {
@@ -88,27 +88,23 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
           )}
         </div>
 
-        {/* Navigation Items (Desktop) */}
-        <div className="hidden md:flex items-center gap-5 text-xs font-semibold text-slate-700">
+        {/* Navigation Items (Desktop Centered) */}
+        <div className="hidden md:flex items-center justify-center gap-6 text-xs font-semibold text-slate-700 flex-grow">
           <span className="cursor-pointer" style={{ color: primaryColor }}>Inicio</span>
-          <span className="cursor-pointer hover:text-slate-900">En Venta</span>
-          <span className="cursor-pointer hover:text-slate-900">En Renta</span>
-          <span className="cursor-pointer hover:text-slate-900">Terrenos</span>
+          <span className="cursor-pointer hover:text-slate-900">Propiedades</span>
           <span className="cursor-pointer hover:text-slate-900">Conócenos</span>
+          <span className="cursor-pointer hover:text-slate-900">Contacto</span>
         </div>
 
-        {/* Action Button */}
-        <div className="flex items-center gap-2">
-          <a
-            href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-1.5 rounded-lg text-white text-xs font-bold shadow-xs hover:opacity-90 transition-opacity flex items-center gap-1.5"
+        {/* Action Button: Acceso Agentes */}
+        <div className="flex items-center gap-2 shrink-0">
+          <span
+            className="px-4 py-1.5 rounded-full text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
             style={{ backgroundColor: primaryColor }}
           >
-            <Phone className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Contactar</span>
-          </a>
+            <User className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Acceso Agentes</span>
+          </span>
         </div>
       </div>
 
