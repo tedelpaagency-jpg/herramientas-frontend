@@ -77,13 +77,13 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
       <div className="px-5 py-3.5 bg-white border-b border-slate-100 flex items-center justify-between gap-4 sticky top-0 z-10 shadow-xs">
         <div className="flex items-center gap-3">
           {logoUrl ? (
-            <img src={logoUrl} alt={agencyName} className="h-8 max-w-[140px] object-contain" />
+            <img src={logoUrl} alt={agencyName} className="h-11 sm:h-12 max-w-[200px] object-contain transition-all" />
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm shadow-sm" style={{ backgroundColor: primaryColor }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-base shadow-sm" style={{ backgroundColor: primaryColor }}>
                 {agencyName.charAt(0)}
               </div>
-              <span className="font-bold text-sm tracking-tight text-slate-900">{agencyName}</span>
+              <span className="font-black text-base tracking-tight text-slate-900">{agencyName}</span>
             </div>
           )}
         </div>

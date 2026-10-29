@@ -156,6 +156,10 @@ export const DEFAULT_FALLBACK_AGENCY: PublicAgencyConfig = {
   frontend_enabled: true,
   currency: 'USD',
   properties_count: 0,
+  details: {
+    loader_text_color: '#ffffff',
+    loader_duration: 2.5,
+  },
 };
 
 export const DEFAULT_REAL_ESTATE_CATEGORIES: PublicEstateCategory[] = [

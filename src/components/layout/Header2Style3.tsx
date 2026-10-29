@@ -154,30 +154,30 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
     <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`} suppressHydrationWarning>
       <div className="container-fluid d-flex flex-nowrap align-items-center justify-content-between" suppressHydrationWarning>
         <div className="logo-and-menu-area" suppressHydrationWarning>
-          <Link href="/" className="header-logo" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', minHeight: '50px', textDecoration: 'none' }}>
+          <Link href="/" className="header-logo" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', minHeight: '62px', textDecoration: 'none' }}>
             {logoUrl ? (
               <img
                 src={logoUrl}
                 alt={agencyName || 'Logo Inmobiliaria'}
                 loading="eager"
                 decoding="sync"
-                style={{ maxHeight: '46px', maxWidth: '210px', width: 'auto', objectFit: 'contain' }}
+                style={{ maxHeight: '64px', maxWidth: '280px', width: 'auto', height: 'auto', objectFit: 'contain', transition: 'all 0.2s ease-in-out' }}
               />
             ) : agencyName ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div
                   style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '12px',
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '14px',
                     backgroundColor: primaryColor,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#ffffff',
                     fontWeight: 900,
-                    fontSize: '18px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                    fontSize: '22px',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
                     flexShrink: 0,
                   }}
                 >
@@ -185,7 +185,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                 </div>
                 <span
                   style={{
-                    fontSize: '20px',
+                    fontSize: '23px',
                     fontWeight: 900,
                     color: '#0f172a',
                     lineHeight: 1.15,
@@ -196,7 +196,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                 </span>
               </div>
             ) : (
-              <div style={{ width: '130px', height: '34px', borderRadius: '8px', backgroundColor: '#f1f5f9' }} />
+              <div style={{ width: '150px', height: '44px', borderRadius: '8px', backgroundColor: '#f1f5f9' }} />
             )}
           </Link>
           <div className={`main-menu ${state.isSidebarOpen ? "show-menu" : ""}`}>
@@ -208,22 +208,22 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                     alt={agencyName || 'Logo Inmobiliaria'}
                     loading="eager"
                     decoding="sync"
-                    style={{ maxHeight: '42px', maxWidth: '180px', width: 'auto', objectFit: 'contain' }}
+                    style={{ maxHeight: '52px', maxWidth: '220px', width: 'auto', height: 'auto', objectFit: 'contain' }}
                   />
                 ) : agencyName ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div
                       style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '10px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '12px',
                         backgroundColor: primaryColor,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#ffffff',
                         fontWeight: 900,
-                        fontSize: '15px',
+                        fontSize: '18px',
                         flexShrink: 0,
                       }}
                     >
@@ -231,7 +231,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                     </div>
                     <span
                       style={{
-                        fontSize: '18px',
+                        fontSize: '20px',
                         fontWeight: 900,
                         color: '#0f172a',
                         lineHeight: 1.15,

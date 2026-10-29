@@ -13,6 +13,7 @@ import { workspaceMetaService } from '@/services/workspaceMetaService';
 import { useAuth } from '@/context/AuthContext';
 import MediaPicker from '@/components/media/MediaPicker';
 import PortalLivePreview from '@/components/inmobiliaria/PortalLivePreview';
+import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
 import EstateCatalogManagementView from '@/components/admin/EstateCatalogManagementView';
 import EstateApprovalSettingsPanel from '@/components/estates/EstateApprovalSettingsPanel';
 import {
@@ -48,6 +49,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
   // Studio tabs & device preview
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'cta' | 'domain' | 'identity' | 'seo' | 'legal_crm' | 'catalog' | 'approvals'>('hero');
+  const [showLoaderPreview, setShowLoaderPreview] = useState<boolean>(false);
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState<boolean>(false);
 
@@ -1768,6 +1770,116 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Configuración de la Pantalla de Carga (Loader) */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-emerald-600" /> Pantalla de Carga (Loader de Bienvenida)
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Personaliza los degradados dinámicos con tu color de marca, el color de la tipografía y el tiempo de duración que se mostrará la tarjeta de carga a los visitantes.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Color del Texto del Loader */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                        Color del Texto del Loader:
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={form.details?.loader_text_color || '#ffffff'}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              details: {
+                                ...(form.details || {}),
+                                loader_text_color: e.target.value,
+                              },
+                            })
+                          }
+                          className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={form.details?.loader_text_color || '#ffffff'}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              details: {
+                                ...(form.details || {}),
+                                loader_text_color: e.target.value,
+                              },
+                            })
+                          }
+                          placeholder="#ffffff"
+                          className="flex-grow px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        Afecta al texto del país (ej: ECUADOR), al mensaje descriptivo y al spinner.
+                      </span>
+                    </div>
+
+                    {/* Tiempo de duración del loader */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                          Tiempo de Duración del Loader:
+                        </label>
+                        <span className="text-xs font-black text-emerald-600">
+                          {((Number(form.details?.loader_duration) || 2.5) > 20
+                            ? (Number(form.details?.loader_duration) / 1000).toFixed(1)
+                            : (Number(form.details?.loader_duration) || 2.5).toFixed(1))}s
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="8"
+                        step="0.5"
+                        value={
+                          (Number(form.details?.loader_duration) || 2.5) > 20
+                            ? Number(form.details?.loader_duration) / 1000
+                            : Number(form.details?.loader_duration) || 2.5
+                        }
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            details: {
+                              ...(form.details || {}),
+                              loader_duration: parseFloat(e.target.value),
+                            },
+                          })
+                        }
+                        className="w-full accent-emerald-600 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[10px] text-slate-400 font-semibold mt-1">
+                        <span>1s (Rápido)</span>
+                        <span>2.5s (Recomendado)</span>
+                        <span>5s</span>
+                        <span>8s (Extenso)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Previsualización interactiva del loader */}
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <div className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                      Ver cómo luce con tus degradados de marca (<span className="font-bold" style={{ color: form.primary_color }}>{form.primary_color}</span>) y texto ({form.details?.loader_text_color || '#ffffff'}).
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowLoaderPreview(true)}
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Probar Loader
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -2084,6 +2196,29 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         </div>
 
       </div>
+      {showLoaderPreview && (
+        <div onClick={() => setShowLoaderPreview(false)}>
+          <PublicPortalLoader
+            isOpen={true}
+            countryName={form.country_name || form.country || 'Ecuador'}
+            countryImage={form.country_image}
+            brandColor={form.primary_color || '#00a884'}
+            textColor={form.details?.loader_text_color || '#ffffff'}
+            duration={
+              (Number(form.details?.loader_duration) || 2.5) > 20
+                ? Number(form.details?.loader_duration)
+                : (Number(form.details?.loader_duration) || 2.5) * 1000
+            }
+            logoUrl={form.logo}
+            agency={{
+              ...form,
+              primary_color: form.primary_color,
+              details: form.details,
+            }}
+          />
+        </div>
+      )}
+
     </div>
   );
 };

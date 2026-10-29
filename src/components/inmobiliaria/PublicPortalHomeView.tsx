@@ -139,6 +139,9 @@ export default function PublicPortalHomeView({
         isOpen={loading}
         countryName={agency?.country_name || agency?.country}
         countryImage={agency?.country_image}
+        brandColor={agency?.primary_color}
+        textColor={agency?.details?.loader_text_color}
+        duration={agency?.details?.loader_duration}
         agency={agency}
         message="Un momento por favor, estamos buscando las mejores propiedades."
       />
