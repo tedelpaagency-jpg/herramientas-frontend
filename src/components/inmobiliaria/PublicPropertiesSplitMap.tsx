@@ -59,11 +59,12 @@ export const resolveEstateGPS = (
   ];
 };
 
-// Custom HTML price-pill icon matching Image 1 (Airbnb) and Image 2 (Plusvalia) with Emil Kowalski transitions
+// Custom HTML price-pill icon matching Airbnb & Plusvalia with Emil Kowalski transitions
 const createPricePillIcon = (
   estate: PublicEstateItem,
   isSelected: boolean,
-  isHovered: boolean
+  isHovered: boolean,
+  agency?: PublicAgencyConfig | null
 ) => {
   const price = Number(estate.price || 0);
   const priceFormatted =
@@ -73,20 +74,26 @@ const createPricePillIcon = (
       ? `$${Math.round(price / 1000)}k`
       : `$${price}`;
 
+  const defaultBg = agency?.details?.map_pin_bg_color || '#ffffff';
+  const defaultText = agency?.details?.map_pin_text_color || '#0f172a';
+  const activeBg =
+    agency?.details?.map_pin_active_bg_color || agency?.primary_color || '#0f172a';
+  const activeText = agency?.details?.map_pin_active_text_color || '#ffffff';
+
   const isDark = isSelected;
-  const bg = isDark ? '#0f172a' : isHovered ? '#1e293b' : '#ffffff';
-  const text = isDark || isHovered ? '#ffffff' : '#0f172a';
+  const bg = isDark ? activeBg : isHovered ? activeBg : defaultBg;
+  const text = isDark ? activeText : isHovered ? activeText : defaultText;
   const border = isDark
-    ? '2px solid #ffffff'
+    ? `2px solid ${activeText === '#ffffff' ? '#ffffff' : activeBg}`
     : isHovered
-    ? '1.5px solid #0f172a'
+    ? `1.5px solid ${activeBg}`
     : '1px solid rgba(0, 0, 0, 0.12)';
   const shadow = isDark
-    ? '0 8px 24px rgba(15, 23, 42, 0.65)'
+    ? '0 8px 24px rgba(15, 23, 42, 0.50)'
     : isHovered
-    ? '0 6px 18px rgba(0, 0, 0, 0.25)'
+    ? '0 6px 18px rgba(0, 0, 0, 0.22)'
     : '0 2px 8px rgba(0, 0, 0, 0.10)';
-  const scale = isSelected ? 'scale(1.2)' : isHovered ? 'scale(1.12)' : 'scale(1)';
+  const scale = isSelected ? 'scale(1.15)' : isHovered ? 'scale(1.08)' : 'scale(1)';
   const zIndex = isSelected ? 9999 : isHovered ? 999 : 100;
 
   const html = `
@@ -303,6 +310,273 @@ function MapZoomButtons() {
   );
 }
 
+// Handler to close card when tapping map background
+function MapBackgroundClickHandler({ onMapClick }: { onMapClick: () => void }) {
+  const map = useMap();
+  useEffect(() => {
+    const handleMapClick = () => {
+      onMapClick();
+    };
+    map.on('click', handleMapClick);
+    return () => {
+      map.off('click', handleMapClick);
+    };
+  }, [map, onMapClick]);
+  return null;
+}
+
+// Compact card anchored directly BELOW the tapped price bubble (Airbnb style)
+function AnchoredMapPropertyCard({
+  estate,
+  coords,
+  onClose,
+  agency,
+  domainParam,
+}: {
+  estate: PublicEstateItem;
+  coords: [number, number];
+  onClose: () => void;
+  agency?: PublicAgencyConfig | null;
+  domainParam?: string | null;
+}) {
+  const map = useMap();
+  const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({
+    width: 400,
+    height: 500,
+  });
+  const [imgIdx, setImgIdx] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
+  // Sync pixel coordinates with map moves/zooms/resizes
+  useEffect(() => {
+    const update = () => {
+      try {
+        const pt = map.latLngToContainerPoint(coords);
+        setPoint({ x: pt.x, y: pt.y });
+        const container = map.getContainer();
+        if (container) {
+          setContainerSize({
+            width: container.clientWidth,
+            height: container.clientHeight,
+          });
+        }
+      } catch {}
+    };
+
+    update();
+    map.on('move', update);
+    map.on('zoom', update);
+    map.on('viewreset', update);
+    map.on('resize', update);
+
+    return () => {
+      map.off('move', update);
+      map.off('zoom', update);
+      map.off('viewreset', update);
+      map.off('resize', update);
+    };
+  }, [map, coords]);
+
+  // Prevent clicks or drags inside the card from propagating to the Leaflet map
+  useEffect(() => {
+    if (cardRef.current) {
+      L.DomEvent.disableClickPropagation(cardRef.current);
+      L.DomEvent.disableScrollPropagation(cardRef.current);
+    }
+  }, []);
+
+  // When card appears, ensure it is comfortably in view without hiding below viewport edge
+  useEffect(() => {
+    try {
+      const container = map.getContainer();
+      if (!container) return;
+      const h = container.clientHeight;
+      const pt = map.latLngToContainerPoint(coords);
+      // Card is ~240px tall and sits below the pin (at pt.y + 6)
+      if (pt.y + 250 > h) {
+        map.panBy([0, pt.y + 250 - h + 24], { animate: true, duration: 0.3 });
+      } else if (pt.y < 40) {
+        map.panBy([0, pt.y - 60], { animate: true, duration: 0.3 });
+      }
+    } catch {}
+  }, [map, coords]);
+
+  // Reset img index when estate changes
+  useEffect(() => {
+    setImgIdx(0);
+    setIsFavorite(false);
+  }, [estate.id]);
+
+  const images = useMemo(() => getEstateImages(estate), [estate]);
+
+  if (!point) return null;
+
+  const cardWidth = containerSize.width < 340 ? 220 : 250;
+  const halfCard = cardWidth / 2;
+  const padding = 10;
+
+  // Clamp horizontal position so the card never overflows map boundaries
+  let left = point.x - halfCard;
+  if (left < padding) {
+    left = padding;
+  } else if (left + cardWidth > containerSize.width - padding) {
+    left = containerSize.width - cardWidth - padding;
+  }
+
+  // Calculate arrow pointer position relative to card left so it always points to the pin above
+  const arrowLeft = Math.max(16, Math.min(cardWidth - 16, point.x - left));
+
+  const detailHref = `/properties/${encodeURIComponent(estate.slug || String(estate.id))}${
+    domainParam ? `?domain=${encodeURIComponent(domainParam)}` : ''
+  }`;
+
+  const bedrooms = estate.bedrooms || 1;
+  const bathrooms = estate.bathrooms || 1;
+  const area = estate.covered_area || estate.size || 80;
+  const isRental = Number(estate.property_status) === 1;
+
+  return (
+    <div
+      ref={cardRef}
+      style={{
+        position: 'absolute',
+        top: `${point.y + 6}px`,
+        left: `${left}px`,
+        width: `${cardWidth}px`,
+        zIndex: 1000,
+        pointerEvents: 'auto',
+      }}
+      className="flex flex-col bg-white rounded-2xl shadow-[0_12px_36px_rgba(15,23,42,0.22)] border border-slate-200/90 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-180 ease-out select-none"
+    >
+      {/* Little arrow at the top pointing up to the price bubble */}
+      <div
+        style={{ left: `${arrowLeft}px` }}
+        className="absolute -top-1.5 -translate-x-1/2 w-3 h-3 bg-white border-t border-l border-slate-200/90 rotate-45 z-20 pointer-events-none"
+      />
+
+      {/* Photo with mini carousel & close button */}
+      <div className="relative h-28 sm:h-32 w-full bg-slate-100 overflow-hidden shrink-0 group/cardimg">
+        <Link href={detailHref} className="block w-full h-full">
+          <img
+            src={images[imgIdx]}
+            alt={estate.title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover/cardimg:scale-105"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src =
+                'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80';
+            }}
+          />
+        </Link>
+
+        {/* Top bar over photo: Status / Heart / Close button */}
+        <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
+          <span className="pointer-events-auto px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-white/95 text-slate-800 shadow-xs backdrop-blur-xs">
+            {isRental ? 'Alquiler' : 'Venta'}
+          </span>
+
+          <div className="flex items-center gap-1 pointer-events-auto">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsFavorite((prev) => !prev);
+              }}
+              className="w-6 h-6 rounded-full bg-black/50 hover:bg-black/70 active:scale-90 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer"
+              aria-label="Favorito"
+            >
+              <Heart
+                className={`w-3.5 h-3.5 ${
+                  isFavorite ? 'fill-rose-500 text-rose-500' : 'text-white'
+                }`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer"
+              aria-label="Cerrar vista previa"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Carousel arrows */}
+        {images.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setImgIdx((prev) => (prev - 1 + images.length) % images.length);
+              }}
+              className="absolute left-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-black/55 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center backdrop-blur-xs transition-all z-10 cursor-pointer"
+              aria-label="Foto anterior"
+            >
+              <ChevronLeft className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setImgIdx((prev) => (prev + 1) % images.length);
+              }}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-black/55 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center backdrop-blur-xs transition-all z-10 cursor-pointer"
+              aria-label="Siguiente foto"
+            >
+              <ChevronRight className="w-3 h-3" />
+            </button>
+
+            {/* Carousel dots */}
+            <div className="absolute bottom-1.5 left-0 right-0 flex items-center justify-center gap-1 pointer-events-none z-10">
+              {images.slice(0, 5).map((_, idx) => (
+                <span
+                  key={idx}
+                  className={`rounded-full transition-all duration-200 ${
+                    idx === imgIdx ? 'w-3 h-1 bg-white shadow-xs' : 'w-1 h-1 bg-white/60'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Card Info (Foto, Titulo, 1 linea de detalle, Precio) */}
+      <Link href={detailHref} className="p-2.5 block hover:bg-slate-50/60 transition-colors">
+        {/* Titulo (1 linea) */}
+        <h4 className="text-xs font-bold text-slate-900 truncate leading-snug">
+          {estate.title || estate.address || 'Propiedad'}
+        </h4>
+
+        {/* 1 linea de detalle */}
+        <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+          {bedrooms} hab · {bathrooms} ba · {area} m²{estate.city ? ` · ${estate.city}` : ''}
+        </p>
+
+        {/* Precio */}
+        <div className="mt-1.5 flex items-baseline justify-between gap-1">
+          <span className="text-xs sm:text-sm font-black text-slate-900 tracking-tight">
+            USD {Number(estate.price || 0).toLocaleString('en-US')}
+            {isRental && <span className="text-[10px] font-semibold text-slate-500 ml-0.5">/ mes</span>}
+          </span>
+          <span
+            style={{ color: agency?.primary_color || '#FF5A00' }}
+            className="text-[10px] font-black hover:underline inline-flex items-center gap-0.5"
+          >
+            Ver &rarr;
+          </span>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
 export interface PublicPropertiesSplitMapProps {
   estates: PublicEstateItem[];
   agency?: PublicAgencyConfig | null;
@@ -346,11 +620,7 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
 
   const initialCenter: [number, number] = allPoints[0] || [-0.9677, -80.7089];
 
-  // Carousel index for floating card
-  const [floatingCardImgIdx, setFloatingCardImgIdx] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  // Close floating card on Escape key (a11y)
+  // Close card on Escape key (a11y)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && selectedEstate) {
@@ -361,37 +631,7 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedEstate, onSelectEstate]);
 
-  // Reset image index when selected estate changes
-  useEffect(() => {
-    setFloatingCardImgIdx(0);
-    setIsFavorite(false);
-  }, [selectedEstate?.id]);
-
-  const selectedImages = selectedEstate ? getEstateImages(selectedEstate) : [];
   const selectedCoords = selectedEstate ? estateCoords.get(selectedEstate.id) || null : null;
-
-  // Contact info for WhatsApp
-  const whatsappNumber =
-    selectedEstate?.agency?.whatsapp ||
-    selectedEstate?.agency?.phone ||
-    agency?.whatsapp ||
-    agency?.phone ||
-    '';
-  const cleanPhone = whatsappNumber.replace(/[^0-9]/g, '');
-  const whatsappMsg = selectedEstate
-    ? encodeURIComponent(
-        `Hola, me interesa la propiedad "${selectedEstate.title}" (Ref: #${selectedEstate.id}) que vi en el catálogo.`
-      )
-    : '';
-  const whatsappUrl = cleanPhone
-    ? `https://wa.me/${cleanPhone}?text=${whatsappMsg}`
-    : '#';
-
-  const detailHref = selectedEstate
-    ? `/properties/${encodeURIComponent(selectedEstate.slug || String(selectedEstate.id))}${
-        domainParam ? `?domain=${encodeURIComponent(domainParam)}` : ''
-      }`
-    : '#';
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-slate-100">
@@ -407,6 +647,7 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
           <MapResizer viewMode={viewMode} />
           <MapInteractionController />
           <MapZoomButtons />
+          <MapBackgroundClickHandler onMapClick={() => onSelectEstate(null)} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -420,7 +661,7 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
             if (!coords) return null;
             const isSelected = selectedEstate?.id === estate.id;
             const isHovered = hoveredEstateId === estate.id;
-            const icon = createPricePillIcon(estate, isSelected, isHovered);
+            const icon = createPricePillIcon(estate, isSelected, isHovered, agency);
 
             return (
               <Marker
@@ -428,172 +669,27 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
                 position={coords}
                 icon={icon}
                 eventHandlers={{
-                  click: () => {
+                  click: (e) => {
+                    L.DomEvent.stopPropagation(e);
                     onSelectEstate(estate);
                   },
                 }}
               />
             );
           })}
+
+          {/* Compact Card anchored directly BELOW the tapped price bubble (Airbnb style) */}
+          {selectedEstate && selectedCoords && (
+            <AnchoredMapPropertyCard
+              estate={selectedEstate}
+              coords={selectedCoords}
+              onClose={() => onSelectEstate(null)}
+              agency={agency}
+              domainParam={domainParam}
+            />
+          )}
         </MapContainer>
       </MapErrorBoundary>
-
-      {/* Floating Preview Card estilo Plusvalia (Imagen 2) con Emil Kowalski Craft */}
-      {selectedEstate && (
-        <div className="absolute bottom-20 sm:bottom-4 left-3 right-3 sm:left-4 sm:right-auto sm:w-[350px] max-h-[calc(100%-95px)] sm:max-h-[calc(100%-32px)] z-[1050] flex flex-col bg-white/95 backdrop-blur-md rounded-2xl shadow-[0_20px_50px_rgba(15,23,42,0.25)] border border-slate-200/90 overflow-hidden animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2 duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
-          {/* Header con agencia y botones superiores */}
-          <div className="px-3.5 py-2 bg-slate-50/95 border-b border-slate-100 flex items-center justify-between shrink-0">
-            <span className="text-[11px] font-bold text-slate-600 truncate">
-              Publicado por{' '}
-              <strong className="text-slate-900 font-extrabold">
-                {selectedEstate.agency?.name || agency?.name || 'Inmobiliaria Verificada'}
-              </strong>
-            </span>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsFavorite((prev) => !prev)}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-500 active:scale-90 transition-all duration-150 cursor-pointer"
-                aria-label="Favorito"
-              >
-                <Heart
-                  className={`w-4 h-4 transition-transform duration-150 ${
-                    isFavorite ? 'fill-rose-500 text-rose-500 scale-110' : 'text-slate-400'
-                  }`}
-                />
-              </button>
-              <button
-                type="button"
-                onClick={() => onSelectEstate(null)}
-                className="w-7 h-7 rounded-full bg-slate-200/80 hover:bg-slate-300 active:scale-90 text-slate-700 flex items-center justify-center transition-all duration-150 cursor-pointer"
-                aria-label="Cerrar vista previa (Esc)"
-                title="Cerrar (Esc)"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Carrusel de fotos compacto para garantizar que los botones siempre sean visibles */}
-          <div className="relative h-32 sm:h-38 w-full bg-slate-100 overflow-hidden shrink-0">
-            <Link href={detailHref} className="block w-full h-full">
-              <img
-                src={selectedImages[floatingCardImgIdx]}
-                alt={selectedEstate.title}
-                className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1000&q=80';
-                }}
-              />
-            </Link>
-
-            {selectedImages.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setFloatingCardImgIdx((prev) =>
-                      (prev - 1 + selectedImages.length) % selectedImages.length
-                    );
-                  }}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center backdrop-blur-xs transition-all duration-150"
-                  aria-label="Foto previa"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setFloatingCardImgIdx((prev) => (prev + 1) % selectedImages.length);
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center backdrop-blur-xs transition-all duration-150"
-                  aria-label="Siguiente foto"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-
-                {/* Puntos de fotos expansibles tipo cápsula */}
-                <div className="absolute bottom-1.5 left-0 right-0 flex items-center justify-center gap-1 pointer-events-none">
-                  {selectedImages.slice(0, 5).map((_, idx) => (
-                    <span
-                      key={idx}
-                      className={`rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                        idx === floatingCardImgIdx
-                          ? 'w-3.5 h-1.5 bg-white shadow-sm'
-                          : 'w-1.5 h-1.5 bg-white/60'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Información y detalles de la propiedad con scroll interno seguro */}
-          <div className="p-3 sm:p-3.5 space-y-2 flex-1 min-h-0 overflow-y-auto overscroll-contain">
-            {/* Precio grande destacado: USD 850 */}
-            <div className="flex items-baseline justify-between gap-1">
-              <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                USD {Number(selectedEstate.price || 0).toLocaleString('en-US')}
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-full">
-                {Number(selectedEstate.property_status) === 1 ? 'Alquiler' : 'Venta'}
-              </span>
-            </div>
-
-            {/* Especificaciones con Iconografía */}
-            <div className="flex items-center gap-2.5 text-[11px] sm:text-xs font-semibold text-slate-600">
-              <span className="flex items-center gap-1">
-                <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
-                <span>{selectedEstate.covered_area || selectedEstate.size || 78} m² tot.</span>
-              </span>
-              <span>·</span>
-              <span className="flex items-center gap-1">
-                <Bath className="w-3.5 h-3.5 text-slate-400" />
-                <span>{selectedEstate.bathrooms || 1} ba.</span>
-              </span>
-              <span>·</span>
-              <span className="flex items-center gap-1">
-                <Bed className="w-3.5 h-3.5 text-slate-400" />
-                <span>{selectedEstate.bedrooms || 3} hab.</span>
-              </span>
-            </div>
-
-            {/* Título o sector */}
-            <Link
-              href={detailHref}
-              className="block text-xs sm:text-sm font-extrabold text-slate-900 hover:text-blue-600 truncate transition-colors leading-snug"
-            >
-              {selectedEstate.title || selectedEstate.address || 'Propiedad Exclusiva'}
-            </Link>
-
-            {/* Botones de acción con respuesta táctil y acceso 100% visible */}
-            <div className="pt-1 grid grid-cols-2 gap-2 shrink-0">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-1.5 min-h-[38px] sm:min-h-[42px] py-2 px-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] hover:scale-[1.01] text-white text-xs font-black shadow-md hover:shadow-emerald-500/25 transition-all duration-150 cursor-pointer"
-              >
-                <MessageCircle className="w-4 h-4 fill-white" />
-                <span>WhatsApp</span>
-              </a>
-
-              <Link
-                href={detailHref}
-                style={{ backgroundColor: agency?.primary_color || '#FF5A00' }}
-                className="inline-flex items-center justify-center gap-1 min-h-[38px] sm:min-h-[42px] py-2 px-2.5 rounded-xl hover:opacity-90 active:scale-[0.98] hover:scale-[1.01] text-white text-xs font-black shadow-md transition-all duration-150 cursor-pointer text-center"
-              >
-                <span>Ver Propiedad</span>
-                <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

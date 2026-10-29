@@ -19,6 +19,7 @@ import {
   Bell,
   Check,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import publicInmobiliariaService, {
   PublicAgencyConfig,
@@ -96,11 +97,33 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   const [isPricePopoverOpen, setIsPricePopoverOpen] = useState<boolean>(false);
   const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState<boolean>(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState<boolean>(false);
+  const [alertName, setAlertName] = useState<string>('');
   const [alertContact, setAlertContact] = useState<string>('');
+  const [alertSubmitting, setAlertSubmitting] = useState<boolean>(false);
+  const [alertError, setAlertError] = useState<string | null>(null);
   const [alertSuccess, setAlertSuccess] = useState<boolean>(false);
   const [tempPriceMin, setTempPriceMin] = useState<string>(priceMin);
   const [tempPriceMax, setTempPriceMax] = useState<string>(priceMax);
   const [searchInputVal, setSearchInputVal] = useState<string>('');
+
+  // Sync state with URL searchParams (e.g. browser back/forward, links)
+  useEffect(() => {
+    const s = searchParams?.get('search') || '';
+    setSearch(s);
+    setSearchInputVal(s);
+    setPropertyStatus(searchParams?.get('property_status') || '');
+    setPropertyType(searchParams?.get('property_type') || '');
+    setBedrooms(searchParams?.get('bedrooms') || '');
+    setBathrooms(searchParams?.get('bathrooms') || '');
+    const pMin = searchParams?.get('price_min') || '';
+    const pMax = searchParams?.get('price_max') || '';
+    setPriceMin(pMin);
+    setPriceMax(pMax);
+    setTempPriceMin(pMin);
+    setTempPriceMax(pMax);
+    setSort((searchParams?.get('sort') as any) || 'recent');
+    setCurrentPage(Number(searchParams?.get('page')) || 1);
+  }, [searchParams]);
 
   // Mobile view toggle (list vs map)
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
@@ -184,6 +207,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     const stat = customParams?.property_status !== undefined ? customParams.property_status : propertyStatus;
     const pt = customParams?.property_type !== undefined ? customParams.property_type : propertyType;
     const b = customParams?.bedrooms !== undefined ? customParams.bedrooms : bedrooms;
+    const ba = customParams?.bathrooms !== undefined ? customParams.bathrooms : bathrooms;
     const pMin = customParams?.price_min !== undefined ? customParams.price_min : priceMin;
     const pMax = customParams?.price_max !== undefined ? customParams.price_max : priceMax;
     const srt = customParams?.sort !== undefined ? customParams.sort : sort;
@@ -192,13 +216,50 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     if (stat) params.set('property_status', stat);
     if (pt) params.set('property_type', pt);
     if (b) params.set('bedrooms', b);
-    if (bathrooms) params.set('bathrooms', bathrooms);
+    if (ba) params.set('bathrooms', ba);
     if (pMin) params.set('price_min', pMin);
     if (pMax) params.set('price_max', pMax);
     if (srt) params.set('sort', srt);
     params.set('page', '1');
     setCurrentPage(1);
     router.push(`/properties?${params.toString()}`);
+  };
+
+  const handleCreateAlert = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const contactVal = alertContact.trim();
+    if (!contactVal) {
+      setAlertError('Por favor ingresa tu correo electrónico o número de WhatsApp.');
+      return;
+    }
+    setAlertSubmitting(true);
+    setAlertError(null);
+
+    try {
+      const isEmail = contactVal.includes('@');
+      const criteriaLines = [
+        `Operación: ${propertyStatus === '1' ? 'Alquiler' : propertyStatus === '2' ? 'Venta' : 'Todas'}`,
+        propertyType ? `Tipo de Inmueble: ${propertyType === '1' ? 'Casas' : propertyType === '2' ? 'Departamentos' : propertyType === '3' ? 'Terrenos' : 'Comercial'}` : null,
+        search ? `Ubicación / Sector: ${search}` : null,
+        (priceMin || priceMax) ? `Rango de Precio: ${priceMin || '0'} - ${priceMax || 'Max'} USD` : null,
+        bedrooms ? `Habitaciones: ${bedrooms}+` : null,
+        bathrooms ? `Baños: ${bathrooms}+` : null,
+      ].filter(Boolean).join('\n• ');
+
+      await publicInmobiliariaService.sendContactMessage({
+        name: alertName.trim() || (isEmail ? contactVal.split('@')[0] : 'Cliente Interesado'),
+        email: isEmail ? contactVal : undefined,
+        phone: !isEmail ? contactVal : undefined,
+        subject: 'Alerta de Búsqueda de Inmuebles',
+        message: `El cliente ha activado una alerta para nuevas propiedades con estos criterios:\n• ${criteriaLines}\n\nContacto registrado: ${contactVal}`,
+      }, domainParam || undefined);
+
+      setAlertSuccess(true);
+    } catch (err: any) {
+      setAlertError(err.message || 'No se pudo activar la alerta. Inténtalo nuevamente.');
+    } finally {
+      setAlertSubmitting(false);
+    }
   };
 
   const handlePillClick = (pill: typeof FILTER_PILLS[0]) => {
@@ -241,6 +302,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   );
 
   const primaryColor = agency?.primary_color || '#00a884';
+  const filterBorderColor = agency?.details?.filter_border_color || primaryColor || '#eab308';
   const fallbackAgency: PublicAgencyConfig = agency || {
     id: 0,
     name: 'Portal Inmobiliario',
@@ -266,15 +328,38 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         <TopbarSlider agency={fallbackAgency} />
         <Header2Style3 agency={fallbackAgency} />
 
-        {/* Barra de Filtros estilo Plusvalia (Reemplazo moderno de tabs por filtros avanzados) */}
-        <div className="border-b border-slate-200/90 bg-white shadow-2xs">
+        {/* Barra de Filtros estilo Plusvalia / Airbnb (con bordes de branding personalizados y micro-interacciones) */}
+        <div className="border-b border-slate-200/90 bg-white shadow-2xs relative">
+          {/* Backdrop para cerrar popovers al hacer clic afuera */}
+          {(isPricePopoverOpen || isMoreFiltersOpen) && (
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={() => {
+                setIsPricePopoverOpen(false);
+                setIsMoreFiltersOpen(false);
+              }}
+            />
+          )}
+
           <div className="max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5">
             <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex-nowrap">
               
-              {/* 1. Buscador con Chip de Tag (como [Manabí ⨉] 🔍 de Plusvalia) */}
-              <div className="relative flex items-center min-h-[40px] rounded-xl border border-slate-300 bg-white px-2.5 py-1 shadow-2xs hover:border-slate-400 focus-within:border-slate-800 focus-within:ring-2 focus-within:ring-slate-900/10 transition-all shrink-0 w-52 sm:w-64">
+              {/* 1. Buscador con Chip de Tag y Borde de Branding */}
+              <div
+                style={{
+                  borderColor: filterBorderColor,
+                  borderWidth: '1.5px',
+                }}
+                className="relative flex items-center h-[42px] rounded-2xl bg-white px-3 py-1 shadow-2xs transition-all shrink-0 w-56 sm:w-64 focus-within:ring-2 focus-within:ring-slate-900/10"
+              >
                 {search ? (
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-xs font-bold text-slate-800 mr-1.5 shrink-0">
+                  <span
+                    style={{
+                      backgroundColor: `${filterBorderColor}18`,
+                      color: '#0f172a',
+                    }}
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-black mr-1.5 shrink-0"
+                  >
                     <span className="truncate max-w-[90px]">{search}</span>
                     <button
                       type="button"
@@ -283,7 +368,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                         setSearchInputVal('');
                         applyFilters({ search: '' });
                       }}
-                      className="text-white bg-slate-400 hover:bg-slate-600 rounded-full w-3.5 h-3.5 flex items-center justify-center p-0.5 cursor-pointer"
+                      className="text-white bg-slate-500 hover:bg-slate-700 rounded-full w-3.5 h-3.5 flex items-center justify-center p-0.5 cursor-pointer"
                       title="Quitar filtro de ubicación"
                     >
                       <X className="w-2.5 h-2.5" />
@@ -303,7 +388,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     }
                   }}
                   placeholder={search ? '' : 'Ciudad, zona, sector...'}
-                  className="flex-grow bg-transparent text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none min-w-[60px]"
+                  className="flex-grow bg-transparent text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none min-w-[60px]"
                 />
                 <button
                   type="button"
@@ -315,7 +400,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   className="text-slate-400 hover:text-slate-800 p-1 cursor-pointer shrink-0"
                   title="Buscar"
                 >
-                  <Search className="w-3.5 h-3.5" />
+                  <Search className="w-4 h-4" />
                 </button>
               </div>
 
@@ -328,17 +413,19 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     setPropertyStatus(val);
                     applyFilters({ property_status: val });
                   }}
-                  className={`appearance-none h-[40px] pl-3.5 pr-8 rounded-xl border text-xs font-bold bg-white transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 ${
-                    propertyStatus
-                      ? 'border-slate-900 text-slate-900 bg-slate-50'
-                      : 'border-slate-300 text-slate-700 hover:border-slate-400'
-                  }`}
+                  style={{
+                    borderColor: filterBorderColor,
+                    borderWidth: '1.5px',
+                    backgroundColor: propertyStatus ? `${filterBorderColor}14` : '#ffffff',
+                    color: propertyStatus ? '#0f172a' : '#1e293b',
+                  }}
+                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 >
                   <option value="">Operación</option>
                   <option value="1">Alquilar</option>
                   <option value="2">Comprar</option>
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
 
               {/* 3. Filtro Tipo de Inmueble */}
@@ -350,11 +437,13 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     setPropertyType(val);
                     applyFilters({ property_type: val });
                   }}
-                  className={`appearance-none h-[40px] pl-3.5 pr-8 rounded-xl border text-xs font-bold bg-white transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 ${
-                    propertyType
-                      ? 'border-slate-900 text-slate-900 bg-slate-50'
-                      : 'border-slate-300 text-slate-700 hover:border-slate-400'
-                  }`}
+                  style={{
+                    borderColor: filterBorderColor,
+                    borderWidth: '1.5px',
+                    backgroundColor: propertyType ? `${filterBorderColor}14` : '#ffffff',
+                    color: propertyType ? '#0f172a' : '#1e293b',
+                  }}
+                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 >
                   <option value="">Inmueble</option>
                   <option value="1">Casas</option>
@@ -364,7 +453,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   <option value="5">Suites / Lofts</option>
                   <option value="6">Villas / Quintas</option>
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
 
               {/* 4. Filtro Habitaciones */}
@@ -376,11 +465,13 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     setBedrooms(val);
                     applyFilters({ bedrooms: val });
                   }}
-                  className={`appearance-none h-[40px] pl-3.5 pr-8 rounded-xl border text-xs font-bold bg-white transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 ${
-                    bedrooms
-                      ? 'border-slate-900 text-slate-900 bg-slate-50'
-                      : 'border-slate-300 text-slate-700 hover:border-slate-400'
-                  }`}
+                  style={{
+                    borderColor: filterBorderColor,
+                    borderWidth: '1.5px',
+                    backgroundColor: bedrooms ? `${filterBorderColor}14` : '#ffffff',
+                    color: bedrooms ? '#0f172a' : '#1e293b',
+                  }}
+                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 >
                   <option value="">Habitaciones</option>
                   <option value="1">1+ hab.</option>
@@ -388,83 +479,118 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   <option value="3">3+ hab.</option>
                   <option value="4">4+ hab.</option>
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
 
-              {/* 5. Filtro Precio (con Popover desplegable y borde resaltado con el color de marca cuando está activo, igual a la captura) */}
+              {/* 5. Filtro Precio (con Popover desplegable y botón de limpieza rápida) */}
               <div className="relative shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIsPricePopoverOpen(!isPricePopoverOpen)}
-                  className={`h-[40px] px-3.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-2xs ${
-                    priceMin || priceMax
-                      ? 'border-amber-500 text-amber-700 bg-amber-50/50 ring-1 ring-amber-500/30 font-black'
-                      : 'border-slate-300 text-slate-700 bg-white hover:border-slate-400'
-                  }`}
-                  style={
-                    (priceMin || priceMax)
-                      ? {
-                          borderColor: primaryColor || '#ea580c',
-                          color: primaryColor || '#ea580c',
-                          boxShadow: `0 0 0 1px ${primaryColor || '#ea580c'}`,
-                        }
-                      : {}
-                  }
+                  onClick={() => {
+                    setIsMoreFiltersOpen(false);
+                    setIsPricePopoverOpen(!isPricePopoverOpen);
+                    setTempPriceMin(priceMin);
+                    setTempPriceMax(priceMax);
+                  }}
+                  style={{
+                    borderColor: (priceMin || priceMax || isPricePopoverOpen) ? filterBorderColor : 'rgba(0,0,0,0.15)',
+                    borderWidth: '1.5px',
+                    backgroundColor: (priceMin || priceMax) ? `${filterBorderColor}14` : '#ffffff',
+                    color: (priceMin || priceMax) ? '#0f172a' : '#1e293b',
+                  }}
+                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400"
                 >
                   <span>
-                    {priceMin || priceMax
-                      ? `${priceMin ? `$${Number(priceMin).toLocaleString()}` : '$0'} - ${priceMax ? `$${Number(priceMax).toLocaleString()}` : 'Max'}`
+                    {priceMin && priceMax
+                      ? `$${Number(priceMin).toLocaleString()} - $${Number(priceMax).toLocaleString()}`
+                      : priceMin
+                      ? `Desde $${Number(priceMin).toLocaleString()}`
+                      : priceMax
+                      ? `Hasta $${Number(priceMax).toLocaleString()}`
                       : 'Precio'}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                  {(priceMin || priceMax) ? (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPriceMin('');
+                        setPriceMax('');
+                        setTempPriceMin('');
+                        setTempPriceMax('');
+                        applyFilters({ price_min: '', price_max: '' });
+                      }}
+                      className="w-4 h-4 rounded-full bg-slate-200/90 hover:bg-slate-300 text-slate-800 flex items-center justify-center p-0.5 ml-0.5 cursor-pointer"
+                      title="Quitar filtro de precio"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </span>
+                  ) : (
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isPricePopoverOpen ? 'rotate-180' : ''}`} />
+                  )}
                 </button>
 
                 {isPricePopoverOpen && (
-                  <div className="absolute left-0 sm:left-auto top-full mt-2 w-72 p-3.5 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 animate-in fade-in-50 zoom-in-95">
-                    <div className="text-xs font-bold text-slate-800 mb-2">Rango de Precios (USD)</div>
+                  <div className="absolute left-0 sm:left-auto top-full mt-2 w-72 p-4 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Rango de Precios (USD)</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsPricePopoverOpen(false)}
+                        className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-2 mb-3">
                       <div>
-                        <span className="text-[10px] text-slate-500 font-semibold block mb-0.5">Desde:</span>
+                        <span className="text-[10px] text-slate-500 font-bold block mb-1">Mínimo:</span>
                         <input
                           type="number"
-                          placeholder="Mínimo"
+                          placeholder="$0"
                           value={tempPriceMin}
                           onChange={(e) => setTempPriceMin(e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold focus:outline-none focus:border-slate-900"
+                          className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
                         />
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-500 font-semibold block mb-0.5">Hasta:</span>
+                        <span className="text-[10px] text-slate-500 font-bold block mb-1">Máximo:</span>
                         <input
                           type="number"
-                          placeholder="Máximo"
+                          placeholder="Sin límite"
                           value={tempPriceMax}
                           onChange={(e) => setTempPriceMax(e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold focus:outline-none focus:border-slate-900"
+                          className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
                         />
                       </div>
                     </div>
 
-                    {/* Presets de precios */}
+                    {/* Presets rápidos de precios */}
                     <div className="grid grid-cols-2 gap-1.5 mb-3">
                       {[
                         { label: '< $50k', min: '', max: '50000' },
                         { label: '$50k - $150k', min: '50000', max: '150000' },
                         { label: '$150k - $300k', min: '150000', max: '300000' },
                         { label: '> $300k', min: '300000', max: '' },
-                      ].map((preset) => (
-                        <button
-                          key={preset.label}
-                          type="button"
-                          onClick={() => {
-                            setTempPriceMin(preset.min);
-                            setTempPriceMax(preset.max);
-                          }}
-                          className="px-2 py-1 rounded-md text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 text-center transition-all cursor-pointer"
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
+                      ].map((preset) => {
+                        const isSelected = tempPriceMin === preset.min && tempPriceMax === preset.max;
+                        return (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              setTempPriceMin(preset.min);
+                              setTempPriceMax(preset.max);
+                            }}
+                            style={isSelected ? { backgroundColor: `${filterBorderColor}20`, borderColor: filterBorderColor, color: '#0f172a' } : {}}
+                            className={`px-2 py-1.5 rounded-lg text-[11px] font-bold text-center transition-all cursor-pointer border ${
+                              isSelected ? 'font-black' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
                     </div>
 
                     <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
@@ -478,7 +604,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           setIsPricePopoverOpen(false);
                           applyFilters({ price_min: '', price_max: '' });
                         }}
-                        className="text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
+                        className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
                       >
                         Limpiar
                       </button>
@@ -490,7 +616,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           setIsPricePopoverOpen(false);
                           applyFilters({ price_min: tempPriceMin, price_max: tempPriceMax });
                         }}
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition-all cursor-pointer"
+                        style={{ backgroundColor: primaryColor }}
+                        className="px-4 py-2 rounded-xl text-xs font-black text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
                       >
                         Aplicar
                       </button>
@@ -499,60 +626,75 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 )}
               </div>
 
-              {/* 6. Botón Más filtros */}
+              {/* 6. Botón Más filtros (Baños, Ordenamiento, Limpieza) */}
               <div className="relative shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIsMoreFiltersOpen(!isMoreFiltersOpen)}
-                  className={`h-[40px] px-3.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 bg-white transition-all cursor-pointer shadow-2xs ${
-                    bathrooms || sort !== 'recent'
-                      ? 'border-slate-900 text-slate-900 bg-slate-50'
-                      : 'border-slate-300 text-slate-700 hover:border-slate-400'
-                  }`}
+                  onClick={() => {
+                    setIsPricePopoverOpen(false);
+                    setIsMoreFiltersOpen(!isMoreFiltersOpen);
+                  }}
+                  style={{
+                    borderColor: (bathrooms || sort !== 'recent' || isMoreFiltersOpen) ? filterBorderColor : 'rgba(0,0,0,0.15)',
+                    borderWidth: '1.5px',
+                    backgroundColor: (bathrooms || sort !== 'recent') ? `${filterBorderColor}14` : '#ffffff',
+                    color: (bathrooms || sort !== 'recent') ? '#0f172a' : '#1e293b',
+                  }}
+                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400"
                 >
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-slate-600" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 opacity-70" />
                   <span>Más filtros</span>
+                  {(bathrooms || sort !== 'recent') && (
+                    <span
+                      style={{ backgroundColor: filterBorderColor }}
+                      className="w-2 h-2 rounded-full"
+                    />
+                  )}
                 </button>
 
                 {isMoreFiltersOpen && (
-                  <div className="absolute left-0 sm:left-auto right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 animate-in fade-in-50 zoom-in-95">
+                  <div className="absolute left-0 sm:left-auto right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
                     <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
-                      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Filtros Adicionales</h4>
+                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Filtros Adicionales</h4>
                       <button
                         type="button"
                         onClick={() => setIsMoreFiltersOpen(false)}
-                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer p-0.5"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
 
                     {/* Baños */}
-                    <div className="mb-3">
+                    <div className="mb-3.5">
                       <span className="text-xs font-bold text-slate-700 block mb-1.5">Baños:</span>
                       <div className="flex items-center gap-1.5">
-                        {['', '1', '2', '3', '4'].map((b) => (
-                          <button
-                            key={b}
-                            type="button"
-                            onClick={() => {
-                              setBathrooms(b);
-                              applyFilters({ bathrooms: b });
-                            }}
-                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                              bathrooms === b
-                                ? 'bg-slate-900 text-white'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                            }`}
-                          >
-                            {b ? `${b}+` : 'Todos'}
-                          </button>
-                        ))}
+                        {['', '1', '2', '3', '4'].map((b) => {
+                          const isSelected = bathrooms === b;
+                          return (
+                            <button
+                              key={b}
+                              type="button"
+                              onClick={() => {
+                                setBathrooms(b);
+                                applyFilters({ bathrooms: b });
+                              }}
+                              style={isSelected ? { backgroundColor: primaryColor, color: '#ffffff' } : {}}
+                              className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'shadow-xs font-black'
+                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                              }`}
+                            >
+                              {b ? `${b}+` : 'Todos'}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
                     {/* Ordenamiento */}
-                    <div className="mb-3">
+                    <div className="mb-3.5">
                       <span className="text-xs font-bold text-slate-700 block mb-1.5">Ordenar por:</span>
                       <select
                         value={sort}
@@ -561,7 +703,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           setSort(val);
                           applyFilters({ sort: val });
                         }}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 cursor-pointer"
                       >
                         <option value="recent">Más recientes</option>
                         <option value="featured">Destacadas</option>
@@ -570,21 +712,22 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
                       <button
                         type="button"
                         onClick={() => {
                           resetFilters();
                           setIsMoreFiltersOpen(false);
                         }}
-                        className="text-xs font-semibold text-rose-500 hover:underline cursor-pointer"
+                        className="text-xs font-bold text-rose-500 hover:underline cursor-pointer"
                       >
                         Restablecer todos
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsMoreFiltersOpen(false)}
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition-all cursor-pointer"
+                        style={{ backgroundColor: primaryColor }}
+                        className="px-4 py-1.5 rounded-xl text-xs font-black text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
                       >
                         Listo
                       </button>
@@ -593,15 +736,20 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 )}
               </div>
 
-              {/* 7. Botón Crear alerta (Exactamente como en la referencia Plusvalia) */}
+              {/* 7. Botón Crear alerta */}
               <div className="shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     setIsAlertModalOpen(true);
                     setAlertSuccess(false);
+                    setAlertError(null);
                   }}
-                  className="h-[40px] px-3.5 rounded-xl border border-slate-300 text-slate-800 bg-white hover:border-slate-400 hover:bg-slate-50 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                  style={{
+                    borderColor: 'rgba(0, 0, 0, 0.15)',
+                    borderWidth: '1.5px',
+                  }}
+                  className="h-[42px] px-3.5 rounded-2xl text-slate-800 bg-white hover:border-slate-400 hover:bg-slate-50 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                 >
                   <span>Crear alerta</span>
                   <Bell className="w-3.5 h-3.5 text-slate-600" />
@@ -871,11 +1019,14 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
       {/* Modal Crear Alerta (Estilo Plusvalia) */}
       {isAlertModalOpen && (
-        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in-50 zoom-in-95">
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in-0 duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                <div
+                  style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center font-bold"
+                >
                   <Bell className="w-4 h-4" />
                 </div>
                 <h3 className="text-sm font-black text-slate-900">Crear Alerta Inmobiliaria</h3>
@@ -883,7 +1034,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsAlertModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1 rounded-full hover:bg-slate-100 transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -891,66 +1042,136 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
             {alertSuccess ? (
               <div className="text-center py-6">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center mb-3">
-                  <Check className="w-6 h-6" />
+                <div
+                  style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                  className="w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3"
+                >
+                  <Check className="w-7 h-7" />
                 </div>
                 <h4 className="text-base font-black text-slate-900 mb-1">¡Alerta Creada con Éxito!</h4>
-                <p className="text-xs text-slate-500 mb-4">
-                  Te avisaremos directamente por WhatsApp o Email apenas ingrese una propiedad que coincida con tus criterios de búsqueda.
+                <p className="text-xs text-slate-600 mb-2 leading-relaxed">
+                  Hemos registrado tus preferencias y enviado la confirmación a <strong>{alertContact}</strong>.
+                </p>
+                <p className="text-[11px] text-slate-400 mb-5 leading-normal">
+                  Te notificaremos de inmediato por correo y WhatsApp apenas ingrese una propiedad con estos criterios al catálogo de <strong>{fallbackAgency.name}</strong>.
                 </p>
                 <button
                   type="button"
                   onClick={() => setIsAlertModalOpen(false)}
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition-all cursor-pointer"
+                  style={{ backgroundColor: primaryColor }}
+                  className="px-6 py-2.5 rounded-xl text-xs font-black text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md"
                 >
-                  Entendido
+                  Entendido, volver al catálogo
                 </button>
               </div>
             ) : (
-              <div>
-                <p className="text-xs text-slate-600 mb-3">
+              <form onSubmit={handleCreateAlert}>
+                <p className="text-xs text-slate-600 mb-3 leading-relaxed">
                   Recibe notificaciones inmediatas cada vez que se publique una propiedad con estas características:
                 </p>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 space-y-1 mb-4">
-                  <div>• Operación: <strong>{propertyStatus === '1' ? 'Alquiler' : propertyStatus === '2' ? 'Venta' : 'Todas'}</strong></div>
-                  {propertyType && <div>• Inmueble: <strong>{propertyType === '1' ? 'Casas' : propertyType === '2' ? 'Departamentos' : propertyType}</strong></div>}
-                  {search && <div>• Ubicación / Sector: <strong>{search}</strong></div>}
-                  {(priceMin || priceMax) && <div>• Rango Precio: <strong>{priceMin || '0'} - {priceMax || 'Max'} USD</strong></div>}
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 space-y-1.5 mb-4">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 font-medium">Operación:</span>
+                    <strong className="text-slate-900">{propertyStatus === '1' ? 'Alquiler' : propertyStatus === '2' ? 'Venta' : 'Todas'}</strong>
+                  </div>
+                  {propertyType && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Inmueble:</span>
+                      <strong className="text-slate-900">{propertyType === '1' ? 'Casas' : propertyType === '2' ? 'Departamentos' : propertyType === '3' ? 'Terrenos' : 'Comercial'}</strong>
+                    </div>
+                  )}
+                  {search && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Ubicación / Sector:</span>
+                      <strong className="text-slate-900">{search}</strong>
+                    </div>
+                  )}
+                  {(priceMin || priceMax) && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Rango Precio:</span>
+                      <strong className="text-slate-900">{priceMin || '0'} - {priceMax || 'Max'} USD</strong>
+                    </div>
+                  )}
+                  {bedrooms && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Habitaciones:</span>
+                      <strong className="text-slate-900">{bedrooms}+ hab.</strong>
+                    </div>
+                  )}
+                  {bathrooms && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Baños:</span>
+                      <strong className="text-slate-900">{bathrooms}+ ba.</strong>
+                    </div>
+                  )}
                 </div>
 
-                <div className="mb-4">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Tu WhatsApp o Correo Electrónico:
-                  </label>
-                  <input
-                    type="text"
-                    value={alertContact}
-                    onChange={(e) => setAlertContact(e.target.value)}
-                    placeholder="Ej: +593 99 999 9999 o cliente@email.com"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
-                  />
+                {alertError && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold mb-3">
+                    {alertError}
+                  </div>
+                )}
+
+                <div className="space-y-3 mb-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Nombre Completo (Opcional):
+                    </label>
+                    <input
+                      type="text"
+                      value={alertName}
+                      onChange={(e) => setAlertName(e.target.value)}
+                      placeholder="Ej: Carlos Andrade"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Tu WhatsApp o Correo Electrónico <span className="text-rose-500">*</span>:
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={alertContact}
+                      onChange={(e) => {
+                        setAlertContact(e.target.value);
+                        if (alertError) setAlertError(null);
+                      }}
+                      placeholder="Ej: +593 99 999 9999 o cliente@email.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      Enviaremos la plantilla de confirmación y nuevas propiedades a este contacto.
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => setIsAlertModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
-                    type="button"
-                    onClick={() => {
-                      if (!alertContact.trim()) return;
-                      setAlertSuccess(true);
-                    }}
-                    className="px-5 py-2 rounded-xl text-xs font-black text-white bg-slate-900 hover:bg-slate-800 transition-all cursor-pointer shadow-xs"
+                    type="submit"
+                    disabled={alertSubmitting}
+                    style={{ backgroundColor: primaryColor }}
+                    className="px-6 py-2.5 rounded-xl text-xs font-black text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    Activar Alerta
+                    {alertSubmitting ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Activando...</span>
+                      </>
+                    ) : (
+                      <span>Activar Alerta</span>
+                    )}
                   </button>
                 </div>
-              </div>
+              </form>
             )}
           </div>
         </div>

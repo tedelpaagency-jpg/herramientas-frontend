@@ -5,7 +5,7 @@ import {
   Globe, Sparkles, Building2, ShieldCheck, CheckCircle2, AlertTriangle, AlertCircle,
   RefreshCw, Loader2, ExternalLink, Eye, Image as ImageIcon, Laptop, Tablet, Smartphone,
   Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
-  Target, Compass, Users, Megaphone, Video, Play
+  Target, Compass, Users, Megaphone, Video, Play, MapPin, SlidersHorizontal
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -115,6 +115,13 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       counter3_label: 'Familias Satisfechas',
       counter4_num: '99',
       counter4_label: 'Tasa de Satisfacción',
+      loader_text_color: '#ffffff',
+      loader_duration: 2.5,
+      map_pin_bg_color: '#ffffff',
+      map_pin_text_color: '#0f172a',
+      map_pin_active_bg_color: '#0f172a',
+      map_pin_active_text_color: '#ffffff',
+      filter_border_color: '#00a884',
       cta_badge: 'Servicio Exclusivo a Propietarios',
       cta_title: '¿Quieres Vender o Rentar tu Inmueble Rápido y Seguro?',
       cta_button_text: 'Consignar mi Inmueble',
@@ -232,6 +239,13 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         counter3_label: parsedDetails?.counter3_label || 'Familias Satisfechas',
         counter4_num: parsedDetails?.counter4_num || '99',
         counter4_label: parsedDetails?.counter4_label || 'Tasa de Satisfacción',
+        loader_text_color: parsedDetails?.loader_text_color || '#ffffff',
+        loader_duration: parsedDetails?.loader_duration !== undefined ? Number(parsedDetails.loader_duration) : 2.5,
+        map_pin_bg_color: parsedDetails?.map_pin_bg_color || '#ffffff',
+        map_pin_text_color: parsedDetails?.map_pin_text_color || '#0f172a',
+        map_pin_active_bg_color: parsedDetails?.map_pin_active_bg_color || ag.primary_color || '#0f172a',
+        map_pin_active_text_color: parsedDetails?.map_pin_active_text_color || '#ffffff',
+        filter_border_color: parsedDetails?.filter_border_color || ag.primary_color || '#00a884',
         cta_badge: parsedDetails?.cta_badge || 'Servicio Exclusivo a Propietarios',
         cta_title: parsedDetails?.cta_title || '¿Quieres Vender o Rentar tu Inmueble Rápido y Seguro?',
         cta_button_text: parsedDetails?.cta_button_text || 'Consignar mi Inmueble',
@@ -1878,6 +1892,214 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                     >
                       <Eye className="w-3.5 h-3.5" /> Probar Loader
                     </button>
+                  </div>
+                </div>
+
+                {/* Configuración de las Burbujas de Precio en el Mapa */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-emerald-600" /> Burbuja de Precio en el Mapa
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Personaliza el color de fondo y de texto de las burbujas de precio en el mapa interactivo (tanto en estado normal como cuando el visitante las toca).
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Color de fondo normal */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                        Fondo de la Burbuja:
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={form.details?.map_pin_bg_color || '#ffffff'}
+                          onChange={(e) => updateDetailField('map_pin_bg_color', e.target.value)}
+                          className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={form.details?.map_pin_bg_color || '#ffffff'}
+                          onChange={(e) => updateDetailField('map_pin_bg_color', e.target.value)}
+                          placeholder="#ffffff"
+                          className="flex-grow px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        Fondo por defecto de los botones/pines de precio.
+                      </span>
+                    </div>
+
+                    {/* Color del texto normal */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                        Texto del Precio:
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={form.details?.map_pin_text_color || '#0f172a'}
+                          onChange={(e) => updateDetailField('map_pin_text_color', e.target.value)}
+                          className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={form.details?.map_pin_text_color || '#0f172a'}
+                          onChange={(e) => updateDetailField('map_pin_text_color', e.target.value)}
+                          placeholder="#0f172a"
+                          className="flex-grow px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        Color de la cifra y divisa (ej: $250k USD).
+                      </span>
+                    </div>
+
+                    {/* Color de fondo activo/tocado */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                        Fondo al Tocar (Seleccionado):
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={form.details?.map_pin_active_bg_color || form.primary_color || '#0f172a'}
+                          onChange={(e) => updateDetailField('map_pin_active_bg_color', e.target.value)}
+                          className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={form.details?.map_pin_active_bg_color || form.primary_color || '#0f172a'}
+                          onChange={(e) => updateDetailField('map_pin_active_bg_color', e.target.value)}
+                          placeholder="#0f172a"
+                          className="flex-grow px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        Fondo que resalta la propiedad cuando se toca.
+                      </span>
+                    </div>
+
+                    {/* Color del texto activo/tocado */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                        Texto al Tocar (Seleccionado):
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={form.details?.map_pin_active_text_color || '#ffffff'}
+                          onChange={(e) => updateDetailField('map_pin_active_text_color', e.target.value)}
+                          className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={form.details?.map_pin_active_text_color || '#ffffff'}
+                          onChange={(e) => updateDetailField('map_pin_active_text_color', e.target.value)}
+                          placeholder="#ffffff"
+                          className="flex-grow px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        Color del texto al resaltar la propiedad.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Vista previa en vivo de las burbujas */}
+                  <div className="p-3 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-around gap-4">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Estado Normal</span>
+                      <div
+                        style={{
+                          backgroundColor: form.details?.map_pin_bg_color || '#ffffff',
+                          color: form.details?.map_pin_text_color || '#0f172a',
+                          borderColor: 'rgba(0, 0, 0, 0.12)',
+                        }}
+                        className="px-3 py-1.5 rounded-full font-extrabold text-xs shadow-md border flex items-center justify-center"
+                      >
+                        $185k USD
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Estado Tocado (Activo)</span>
+                      <div
+                        style={{
+                          backgroundColor: form.details?.map_pin_active_bg_color || form.primary_color || '#0f172a',
+                          color: form.details?.map_pin_active_text_color || '#ffffff',
+                        }}
+                        className="px-3.5 py-1.5 rounded-full font-extrabold text-xs shadow-lg ring-2 ring-white/60 scale-105 flex items-center justify-center"
+                      >
+                        $234k USD
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configuración del Borde de los Filtros e Inputs */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <SlidersHorizontal className="w-4 h-4 text-emerald-600" /> Borde de Filtros e Inputs (Branding)
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Personaliza el color del borde de los filtros del listado (buscador, operación, tipo, habitaciones, precio y más filtros).
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                        Color del Borde de Filtros:
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={form.details?.filter_border_color || form.primary_color || '#00a884'}
+                          onChange={(e) => updateDetailField('filter_border_color', e.target.value)}
+                          className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={form.details?.filter_border_color || form.primary_color || '#00a884'}
+                          onChange={(e) => updateDetailField('filter_border_color', e.target.value)}
+                          placeholder="#00a884"
+                          className="flex-grow px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        Por defecto utiliza el color primario de la marca.
+                      </span>
+                    </div>
+
+                    {/* Previsualización del botón filtro con el borde de marca */}
+                    <div className="flex flex-col justify-end">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase mb-1">Vista Previa:</span>
+                      <div className="flex items-center gap-2">
+                        <div
+                          style={{
+                            borderColor: form.details?.filter_border_color || form.primary_color || '#00a884',
+                            borderWidth: '1.5px',
+                          }}
+                          className="h-[38px] px-3.5 rounded-xl border bg-white flex items-center gap-1.5 text-xs font-bold text-slate-800 shadow-2xs"
+                        >
+                          <span>Operación ▾</span>
+                        </div>
+                        <div
+                          style={{
+                            borderColor: form.details?.filter_border_color || form.primary_color || '#00a884',
+                            borderWidth: '1.5px',
+                            backgroundColor: `${form.details?.filter_border_color || form.primary_color || '#00a884'}15`,
+                            color: form.details?.filter_border_color || form.primary_color || '#00a884',
+                          }}
+                          className="h-[38px] px-3.5 rounded-xl border flex items-center gap-1.5 text-xs font-black shadow-xs"
+                        >
+                          <span>Precio Activo ▾</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
