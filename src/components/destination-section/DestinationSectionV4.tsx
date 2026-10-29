@@ -47,6 +47,8 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
 
   const sectionTitle = agency?.details?.categories_title || 'Categorías Principales';
   const sectionSubtitle = agency?.details?.categories_subtitle || 'Descubre opciones pensadas para cada estilo de vida e inversión patrimonial.';
+  const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#00a884';
+  const buttonColor = agency?.button_color || agency?.details?.button_color || primaryColor;
 
   const settings: SwiperOptions = useMemo(() => {
     return {
@@ -111,13 +113,12 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
           </div>
         </div>
 
-        {/* VISTA MÓVIL: Cuadrícula interactiva de 2 columnas (Exactamente como en la referencia de la captura) */}
+        {/* VISTA MÓVIL: Cuadrícula interactiva de 2 columnas (Tarjetas más largas con texto siempre visible) */}
         <div className="md:hidden grid grid-cols-2 gap-3 sm:gap-4 mb-6">
           {displayCategories.map((cat, index) => {
             const fallbackImg = DEFAULT_REAL_ESTATE_CATEGORIES[index % DEFAULT_REAL_ESTATE_CATEGORIES.length].image;
             const imgSrc = cat.image || fallbackImg;
             const categoryUrl = `/properties?property_type=${cat.id}`;
-            const isActive = activeCategoryId === cat.id;
             const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '') as string;
             const description = (cat as any).description || CATEGORY_DESCRIPTIONS[slug] || 'Propiedades seleccionadas con los más altos estándares de calidad.';
 
@@ -125,52 +126,43 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
               <Link
                 key={cat.id || index}
                 href={categoryUrl}
-                onClick={(e) => {
-                  if (!isActive) {
-                    e.preventDefault();
-                    setActiveCategoryId(cat.id);
-                  }
-                }}
-                className={`group relative block aspect-[1/1.05] sm:aspect-[1/1] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md transition-all duration-300 ease-out text-decoration-none select-none ${
-                  isActive
-                    ? 'border-2 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.35)] ring-1 ring-cyan-400/50'
-                    : 'border border-white/10 hover:border-white/20 active:scale-[0.98]'
-                }`}
+                className="group relative block min-h-[220px] aspect-[3/4] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md transition-all duration-300 ease-out text-decoration-none select-none border border-white/10 hover:border-emerald-400 active:scale-[0.98]"
               >
                 {/* Imagen de fondo con zoom fluido */}
                 <img
                   src={imgSrc}
                   alt={cat.name}
-                  className="w-full h-full object-cover object-center filter brightness-[0.85] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-105"
+                  className="w-full h-full object-cover object-center filter brightness-[0.82] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-105"
                   loading="lazy"
                 />
 
-                {/* Viñeta degradada oscura para contraste de texto */}
-                <div
-                  className={`absolute inset-0 transition-opacity duration-300 pointer-events-none ${
-                    isActive
-                      ? 'bg-gradient-to-t from-cyan-950/95 via-black/50 to-transparent'
-                      : 'bg-gradient-to-t from-black/90 via-black/40 to-transparent'
-                  }`}
-                />
+                {/* Viñeta degradada oscura permanente para legibilidad */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none" />
 
-                {/* Contenido inferior: Título limpio y descripción al estar activa */}
-                <div className="absolute bottom-3.5 left-3.5 right-3.5 text-left pointer-events-none">
-                  <h5 className="text-[13px] sm:text-[14px] font-bold text-white leading-snug drop-shadow-md mb-0">
+                {/* Badge superior con cantidad disponible */}
+                <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9.5px] font-bold text-white border border-white/15 shadow-xs">
+                  {cat.count || 0} inmuebles
+                </div>
+
+                {/* Contenido inferior: Siempre visible */}
+                <div className="absolute bottom-3 left-3 right-3 text-left pointer-events-none">
+                  <h5 className="text-[14px] font-black text-white leading-tight drop-shadow-md mb-1">
                     {cat.name}
                   </h5>
-                  {isActive && (
-                    <p className="text-[10.5px] sm:text-xs text-white/90 leading-tight font-normal mt-1.5 drop-shadow-xs line-clamp-3 animate-in fade-in duration-300">
-                      {description}
-                    </p>
-                  )}
+                  <p className="text-[10px] text-white/90 leading-tight font-normal line-clamp-2 drop-shadow-xs mb-1.5">
+                    {description}
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400">
+                    <span>Ver inmuebles</span>
+                    <span>→</span>
+                  </span>
                 </div>
               </Link>
             );
           })}
         </div>
 
-        {/* VISTA ESCRITORIO Y TABLET: Carrusel / Slider dinámico */}
+        {/* VISTA ESCRITORIO Y TABLET: Carrusel con tarjetas más largas y texto siempre visible */}
         <div className="hidden md:block">
           <div className="destination-slider-area mb-4">
             <Swiper {...settings} modules={[Navigation, Pagination, Autoplay]} className="swiper home3-destination-slider !pb-4">
@@ -179,43 +171,49 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
                   const fallbackImg = DEFAULT_REAL_ESTATE_CATEGORIES[index % DEFAULT_REAL_ESTATE_CATEGORIES.length].image;
                   const imgSrc = cat.image || fallbackImg;
                   const categoryUrl = `/properties?property_type=${cat.id}`;
+                  const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '') as string;
+                  const description = (cat as any).description || CATEGORY_DESCRIPTIONS[slug] || 'Propiedades exclusivas con alta plusvalía y asesoría notarial.';
 
                   return (
                     <SwiperSlide key={cat.id || index} className="swiper-slide !h-auto">
                       <Link
                         href={categoryUrl}
-                        className="group relative block h-[155px] sm:h-[165px] md:h-[175px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-xs hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 ease-out transform hover:-translate-y-1.5 cursor-pointer text-decoration-none"
+                        className="group relative block h-[280px] sm:h-[300px] md:h-[320px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-md hover:shadow-2xl hover:shadow-emerald-500/15 transition-all duration-300 ease-out transform hover:-translate-y-1.5 cursor-pointer text-decoration-none"
                       >
                         {/* Imagen con zoom animado al hover */}
                         <img
                           src={imgSrc}
                           alt={cat.name}
-                          className="w-full h-full object-cover object-center filter brightness-[0.92] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-110"
+                          className="w-full h-full object-cover object-center filter brightness-[0.85] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-110"
                           loading="lazy"
                         />
 
-                        {/* Viñeta degradada sutil */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10 opacity-85 group-hover:opacity-95 transition-opacity duration-300 pointer-events-none" />
+                        {/* Viñeta degradada oscura permanente de alto contraste */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10 opacity-90 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                         {/* Badge superior con cantidad disponible */}
-                        <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-bold text-white border border-white/10 group-hover:bg-emerald-600/90 group-hover:border-emerald-400/50 transition-all duration-300 shadow-xs">
+                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10.5px] font-bold text-white border border-white/15 group-hover:bg-emerald-600/90 group-hover:border-emerald-400/50 transition-all duration-300 shadow-xs">
                           {cat.count || 0} disponibles
                         </div>
 
                         {/* Botón flecha animado con rotación suave */}
-                        <div className="absolute top-2.5 right-2.5 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-110 group-hover:rotate-45 shadow-md">
-                          <svg width={10} height={10} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <div className="absolute top-3 right-3 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-110 group-hover:rotate-45 shadow-md">
+                          <svg width={11} height={11} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
                             <path d="M1 13C5.94664 8.05336 13 1 13 1M13 1C10.1852 1.52778 6.69444 2.58333 3 1M13 1C12.4722 3.63889 11.4167 6.77778 13 11" strokeWidth="2" strokeLinecap="round" />
                           </svg>
                         </div>
 
-                        {/* Contenido inferior: Título de Categoría */}
-                        <div className="absolute bottom-2.5 left-3 right-3 text-left pointer-events-none">
-                          <h5 className="text-xs sm:text-[13px] font-extrabold text-white group-hover:text-emerald-300 transition-colors duration-200 truncate leading-snug drop-shadow-sm mb-0">
+                        {/* Contenido inferior: Título, Descripción y enlace SIEMPRE VISIBLES */}
+                        <div className="absolute bottom-4 left-4 right-4 text-left pointer-events-none z-10">
+                          <h5 className="text-[15px] sm:text-[16px] font-black text-white group-hover:text-emerald-300 transition-colors duration-200 leading-snug drop-shadow-md mb-1">
                             {cat.name}
                           </h5>
-                          <span className="text-[10px] font-medium text-slate-300/90 group-hover:text-white transition-colors">
-                            Explorar inmuebles
+                          <p className="text-[11px] sm:text-[11.5px] text-white/90 leading-tight font-normal line-clamp-2 drop-shadow-xs mb-2">
+                            {description}
+                          </p>
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold transition-colors" style={{ color: buttonColor }}>
+                            <span>Explorar inmuebles</span>
+                            <span>→</span>
                           </span>
                         </div>
                       </Link>

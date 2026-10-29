@@ -65,6 +65,7 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
   deviceMode = 'desktop',
   details = {},
 }) => {
+  const buttonColor = details?.button_color || primaryColor;
   const displayHeroTitle = heroTitle || details?.hero_title || 'Encuentra la Propiedad de tus Sueños';
   const displayHeroSubtitle = heroSubtitle || details?.hero_subtitle || 'Las mejores opciones en venta y renta con asesoría jurídica y crediticia garantizada.';
   const displayCatTitle = categoriesTitle || details?.categories_title || 'Categorías Principales';
@@ -116,13 +117,13 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
           <span className="cursor-pointer hover:text-slate-900">Contacto</span>
         </div>
 
-        {/* Action Button: Acceso Agentes */}
+        {/* Action Button: Acceso Agentes (Emerald rounded-lg matching screenshot) */}
         <div className="flex items-center gap-2 shrink-0">
           <span
-            className="px-4 py-1.5 rounded-full text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
-            style={{ backgroundColor: primaryColor }}
+            className="px-3.5 py-1.5 rounded-[10px] text-white text-xs font-extrabold shadow-sm flex items-center gap-1.5 cursor-pointer"
+            style={{ backgroundColor: buttonColor }}
           >
-            <User className="w-3.5 h-3.5" />
+            <User className="w-3.5 h-3.5 text-white" />
             <span className="hidden sm:inline">Acceso Agentes</span>
           </span>
         </div>
@@ -243,7 +244,8 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
                   {/* Botón Buscar */}
                   <button
                     type="button"
-                    className="w-full sm:w-auto h-10 px-5 bg-[#2b2e35] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-sm"
+                    className="w-full sm:w-auto h-10 px-5 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-sm"
+                    style={{ backgroundColor: buttonColor }}
                   >
                     <Search className="w-3.5 h-3.5" />
                     <span>Buscar</span>
@@ -381,7 +383,7 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm flex items-center gap-1.5"
-            style={{ backgroundColor: primaryColor }}
+            style={{ backgroundColor: buttonColor }}
           >
             <Phone className="w-3.5 h-3.5" />
             <span>Contactar Asesor</span>

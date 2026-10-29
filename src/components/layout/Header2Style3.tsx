@@ -147,6 +147,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
   );
   const logoUrl = hasCustomLogo ? rawLogo : null;
   const primaryColor = effectiveAgency?.primary_color || '#00a884';
+  const buttonColor = effectiveAgency?.button_color || effectiveAgency?.primary_color || '#00a884';
   const rawName = effectiveAgency?.name || effectiveAgency?.commercial_name;
   const agencyName = rawName || '';
 
@@ -300,47 +301,48 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
 
             <Link
               href="/login"
-              className="primary-btn1 d-xl-none d-flex align-items-center justify-content-center gap-2 mt-4"
+              className="d-xl-none d-flex align-items-center justify-content-center gap-2 mt-4"
               style={{
-                backgroundColor: primaryColor || '#00a884',
-                borderRadius: '9999px',
-                padding: '12px 20px',
-                fontWeight: 700,
-                fontSize: '14px',
+                backgroundColor: buttonColor,
+                borderRadius: '10px',
+                padding: '11px 20px',
+                fontWeight: 800,
+                fontSize: '13.5px',
                 color: '#ffffff',
                 border: 'none',
                 textDecoration: 'none',
+                boxShadow: `0 4px 12px ${buttonColor}40`,
               }}
             >
-              <svg width={15} height={15} viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7.50105 7.78913C9.64392 7.78913 11.3956 6.03744 11.3956 3.89456C11.3956 1.75169 9.64392 0 7.50105 0C5.35818 0 3.60652 1.75169 3.60652 3.89456C3.60652 6.03744 5.35821 7.78913 7.50105 7.78913ZM14.1847 10.9014C14.0827 10.6463 13.9467 10.4082 13.7936 10.1871C13.0113 9.0306 11.8038 8.2653 10.4433 8.07822C10.2732 8.06123 10.0861 8.09522 9.95007 8.19727C9.23578 8.72448 8.38546 8.99658 7.50108 8.99658C6.61671 8.99658 5.76638 8.72448 5.05209 8.19727C4.91603 8.09522 4.72895 8.04421 4.5589 8.07822C3.19835 8.2653 1.97387 9.0306 1.20857 10.1871C1.05551 10.4082 0.919443 10.6633 0.817424 10.9014C0.766415 11.0034 0.783407 11.1225 0.834416 11.2245C0.970484 11.4626 1.14054 11.7007 1.2936 11.9048C1.53168 12.2279 1.78679 12.517 2.07592 12.7891C2.31401 13.0272 2.58611 13.2483 2.85824 13.4694C4.20177 14.4728 5.81742 15 7.48409 15C9.15076 15 10.7664 14.4728 12.1099 13.4694C12.382 13.2653 12.6541 13.0272 12.8923 12.7891C13.1644 12.517 13.4365 12.2279 13.6746 11.9048C13.8446 11.6837 13.9977 11.4626 14.1338 11.2245C14.2188 11.1225 14.2358 11.0034 14.1847 10.9014Z" />
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
               </svg>
               <span>Acceso Agentes</span>
             </Link>
           </div>
         </div>
 
-        {/* 3. Lado Derecho: Botón Acceso Agentes (Pill verde) y Menú Hamburguesa Móvil */}
+        {/* 3. Lado Derecho: Botón Acceso Agentes (Verde Esmeralda con esquinas redondeadas) */}
         <div className="nav-right d-flex align-items-center justify-content-end gap-3 shrink-0" style={{ flex: '0 0 auto', minWidth: '180px' }}>
           <Link
             href="/login"
-            className="primary-btn1 d-xl-inline-flex d-none align-items-center gap-2"
+            className="d-xl-inline-flex d-none align-items-center gap-2"
             style={{
-              backgroundColor: primaryColor || '#00a884',
-              borderRadius: '9999px',
-              padding: '10px 22px',
-              fontWeight: 700,
-              fontSize: '13px',
+              backgroundColor: buttonColor,
+              borderRadius: '10px',
+              padding: '8px 18px',
+              fontWeight: 800,
+              fontSize: '13.5px',
               color: '#ffffff',
               border: 'none',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              boxShadow: `0 4px 12px ${buttonColor}40`,
               textDecoration: 'none',
               transition: 'all 0.2s ease-in-out',
               whiteSpace: 'nowrap',
             }}
           >
-            <svg width={14} height={14} viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path d="M7.50105 7.78913C9.64392 7.78913 11.3956 6.03744 11.3956 3.89456C11.3956 1.75169 9.64392 0 7.50105 0C5.35818 0 3.60652 1.75169 3.60652 3.89456C3.60652 6.03744 5.35821 7.78913 7.50105 7.78913ZM14.1847 10.9014C14.0827 10.6463 13.9467 10.4082 13.7936 10.1871C13.0113 9.0306 11.8038 8.2653 10.4433 8.07822C10.2732 8.06123 10.0861 8.09522 9.95007 8.19727C9.23578 8.72448 8.38546 8.99658 7.50108 8.99658C6.61671 8.99658 5.76638 8.72448 5.05209 8.19727C4.91603 8.09522 4.72895 8.04421 4.5589 8.07822C3.19835 8.2653 1.97387 9.0306 1.20857 10.1871C1.05551 10.4082 0.919443 10.6633 0.817424 10.9014C0.766415 11.0034 0.783407 11.1225 0.834416 11.2245C0.970484 11.4626 1.14054 11.7007 1.2936 11.9048C1.53168 12.2279 1.78679 12.517 2.07592 12.7891C2.31401 13.0272 2.58611 13.2483 2.85824 13.4694C4.20177 14.4728 5.81742 15 7.48409 15C9.15076 15 10.7664 14.4728 12.1099 13.4694C12.382 13.2653 12.6541 13.0272 12.8923 12.7891C13.1644 12.517 13.4365 12.2279 13.6746 11.9048C13.8446 11.6837 13.9977 11.4626 14.1338 11.2245C14.2188 11.1225 14.2358 11.0034 14.1847 10.9014Z" />
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
             </svg>
             <span>Acceso Agentes</span>
           </Link>

@@ -27,6 +27,7 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
   const sectionTitle = agency?.details?.featured_title || 'Propiedades Destacadas';
   const sectionSubtitle = agency?.details?.featured_subtitle || 'Selección curada de inmuebles residenciales y comerciales con alta plusvalía y respaldo legal.';
   const btnText = agency?.details?.featured_btn_text || 'Ver Todo el Catálogo de Propiedades';
+  const buttonColor = agency?.button_color || agency?.primary_color || agency?.details?.button_color || agency?.details?.primary_color || '#00a884';
 
   return (
     <div className="home4-travel-package-section mt-100 mb-100" id="destacadas">
@@ -246,7 +247,16 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
 
         <div className="row mt-50">
           <div className="col-12 text-center">
-            <Link href="/properties" className="primary-btn1 black-bg" style={{ display: 'inline-flex' }}>
+            <Link
+              href="/properties"
+              className="primary-btn1"
+              style={{
+                display: 'inline-flex',
+                backgroundColor: buttonColor,
+                borderColor: buttonColor,
+                boxShadow: `0 8px 24px ${buttonColor}40`,
+              }}
+            >
               <span>{btnText}</span>
               <span>{btnText}</span>
             </Link>

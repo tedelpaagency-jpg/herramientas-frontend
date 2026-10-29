@@ -6,6 +6,7 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  Check,
 } from 'lucide-react';
 import publicInmobiliariaService, { PublicEstateCity } from '@/services/publicInmobiliariaService';
 
@@ -65,9 +66,10 @@ interface LocationCitySelectProps {
   value: string;
   onChange: (val: string) => void;
   domain?: string;
+  accentColor?: string;
 }
 
-const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange, domain }) => {
+const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange, domain, accentColor = '#00a884' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -167,7 +169,6 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
   });
 
   const handleSelectCity = (city: { name: string; province: string }) => {
-    const label = `${city.name.toUpperCase()} (${city.province.toUpperCase()})`;
     onChange(city.name);
     setIsOpen(false);
   };
@@ -274,7 +275,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
                   width: '12px',
                   height: '12px',
                   border: '2px solid #cbd5e1',
-                  borderTop: '2px solid #3b82f6',
+                  borderTop: `2px solid ${accentColor}`,
                   borderRadius: '50%',
                   animation: 'inmoSpin 0.6s linear infinite',
                 }}
@@ -302,8 +303,8 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
                       padding: '8px 10px',
                       borderRadius: '4px',
                       cursor: 'pointer',
-                      backgroundColor: isSelected ? '#3b82f6' : idx === 0 && !isSelected ? '#3b82f6' : '#ffffff',
-                      color: isSelected || (idx === 0 && !isSelected) ? '#ffffff' : '#2563eb',
+                      backgroundColor: isSelected ? accentColor : idx === 0 && !isSelected ? accentColor : '#ffffff',
+                      color: isSelected || (idx === 0 && !isSelected) ? '#ffffff' : accentColor,
                       transition: 'background-color 0.1s ease',
                       marginBottom: '2px',
                     }}
@@ -352,6 +353,146 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
   );
 };
 
+// Professional Popover Select Component for Operación, Propiedad, Precio
+interface ProfessionalBookingSelectProps {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  options: { label: string; value: string }[];
+  name: string;
+  hasCaret?: boolean;
+  accentColor?: string;
+}
+
+const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
+  label,
+  value,
+  onChange,
+  options,
+  name,
+  hasCaret = true,
+  accentColor = '#00a884',
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedOpt = options.find((o) => o.value === value) || options[0];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+      <label className="inmo-field-label">{label}</label>
+      <div
+        onClick={() => setIsOpen((prev) => !prev)}
+        style={{
+          height: '48px',
+          border: '1px solid #e2e8f0',
+          borderRadius: isOpen ? '12px 12px 0 0' : '12px',
+          padding: '0 14px',
+          backgroundColor: '#ffffff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          userSelect: 'none',
+          transition: 'all 0.15s ease',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '13.5px',
+            fontWeight: 600,
+            color: '#0f172a',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {selectedOpt?.label}
+        </span>
+        {hasCaret && (
+          <ChevronDown
+            className="w-4 h-4 text-slate-400 shrink-0 ml-1 transition-transform"
+            style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          />
+        )}
+      </div>
+
+      <input type="hidden" name={name} value={value} />
+
+      {isOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            backgroundColor: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderTop: 'none',
+            borderRadius: '0 0 14px 14px',
+            boxShadow: '0 16px 36px -4px rgba(0, 0, 0, 0.16)',
+            zIndex: 9999,
+            padding: '6px',
+            maxHeight: '240px',
+            overflowY: 'auto',
+            minWidth: '170px',
+          }}
+        >
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <div
+                key={opt.value}
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '9px 12px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: isSelected ? 700 : 500,
+                  cursor: 'pointer',
+                  backgroundColor: isSelected ? `${accentColor}15` : 'transparent',
+                  color: isSelected ? accentColor : '#1e293b',
+                  transition: 'background-color 0.15s ease',
+                  marginBottom: '2px',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = '#f8fafc';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                  }
+                }}
+              >
+                <span>{opt.label}</span>
+                {isSelected && <Check className="w-4 h-4" style={{ color: accentColor }} />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface HeroV4Props {
   agency?: any;
 }
@@ -366,6 +507,9 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   const [propertyStatus, setPropertyStatus] = useState('2'); // '2' = Venta, '1' = Alquiler
   const [propertyType, setPropertyType] = useState('');
   const [priceMax, setPriceMax] = useState('');
+
+  const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#00a884';
+  const buttonColor = agency?.button_color || agency?.details?.button_color || primaryColor;
 
   const heroTitle = agency?.hero_title || agency?.details?.hero_title || 'Tu Proximo';
   const heroSubtitle = agency?.hero_subtitle || agency?.details?.hero_subtitle || 'Exito Inmobiliario Inicia Con Nosotros';
@@ -405,6 +549,11 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
     }, 450);
   };
 
+  const operationOptions = [
+    { label: 'Venta', value: '2' },
+    { label: 'Alquiler', value: '1' },
+  ];
+
   const propertyTypeOptions = [
     { label: 'Cualquiera', value: '' },
     { label: 'Casa', value: '1' },
@@ -416,7 +565,6 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
     { label: 'Edificio', value: '5' },
     { label: 'Quinta', value: '19' },
   ];
-  const typeDisplayLabel = propertyTypeOptions.find((p) => p.value === propertyType)?.label || 'Cualquiera';
 
   const priceOptions = [
     { label: 'Cualquiera', value: '' },
@@ -427,17 +575,16 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
     { label: 'Hasta $500k', value: '500000' },
     { label: 'Hasta $1M+', value: '1000000' },
   ];
-  const priceDisplayLabel = priceOptions.find((p) => p.value === priceMax)?.label || 'Cualquiera';
 
   return (
-    <div className="inmo-hero-wrapper px-3 sm:px-6 lg:px-12 py-3 lg:py-5">
+    <div className="inmo-hero-wrapper px-3 sm:px-6 py-4 lg:py-6" style={{ maxWidth: '1160px', margin: '0 auto', width: '100%' }}>
       <style jsx global>{`
         @keyframes inmoSpin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
 
-        /* Hero Frame Canvas */
+        /* Hero Frame Canvas (Narrower horizontally, 600px tall, fully responsive) */
         .inmo-hero-canvas {
           position: relative;
           border-radius: 36px;
@@ -447,16 +594,26 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          min-height: 520px;
-          padding: 60px 20px 70px 20px;
-          box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.35);
+          min-height: 600px;
+          padding: 70px 24px 80px 24px;
+          box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.4);
+          width: 100%;
+          max-width: 1100px;
+          margin: 0 auto;
+        }
+
+        @media (max-width: 991px) {
+          .inmo-hero-canvas {
+            min-height: 560px;
+            padding: 50px 20px 60px 20px;
+          }
         }
 
         @media (max-width: 767px) {
           .inmo-hero-canvas {
-            border-radius: 24px;
+            border-radius: 26px;
+            min-height: 520px;
             padding: 40px 14px 40px 14px;
-            min-height: auto;
           }
         }
 
@@ -465,9 +622,9 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           position: relative;
           background: #ffffff;
           border-radius: 24px;
-          box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.28);
+          box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.32);
           width: 100%;
-          max-width: 1040px;
+          max-width: 1020px;
           overflow: visible;
           border: 1px solid rgba(255, 255, 255, 0.9);
           z-index: 10;
@@ -562,30 +719,11 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           margin-bottom: 6px;
         }
 
-        /* Field Control */
-        .inmo-field-control {
-          position: relative;
-          height: 48px;
-          border: 1px solid #e2e8f0;
-          border-radius: 12px;
-          padding: 0 14px;
-          background-color: #ffffff;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .inmo-field-control:hover,
-        .inmo-field-control:focus-within {
-          border-color: #cbd5e1;
-        }
-
         /* Search Button */
         .inmo-btn-search {
           height: 48px;
           padding: 0 28px;
-          background-color: #2b2e35;
+          background-color: ${buttonColor} !important;
           color: #ffffff;
           border: none;
           border-radius: 12px;
@@ -596,15 +734,15 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           justify-content: center;
           gap: 8px;
           cursor: pointer;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+          box-shadow: 0 6px 18px ${buttonColor}40;
           transition: all 0.2s ease;
           white-space: nowrap;
         }
 
         .inmo-btn-search:hover {
-          background-color: #1a1c22;
+          filter: brightness(0.92);
           transform: translateY(-1px);
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+          box-shadow: 0 8px 22px ${buttonColor}60;
         }
 
         .inmo-btn-search:active {
@@ -659,7 +797,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             position: 'relative',
             zIndex: 10,
             textAlign: 'center',
-            marginBottom: '32px',
+            marginBottom: '34px',
             maxWidth: '850px',
           }}
         >
@@ -721,7 +859,6 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           {/* Form Body with Loading Spinner Overlay (Exact match to Image 2) */}
           <form action="/properties" method="GET" className="inmo-card-form-grid">
             {domain && <input type="hidden" name="domain" value={domain} />}
-            <input type="hidden" name="property_status" value={propertyStatus} />
 
             {/* Loader Overlay (Matches Image 2) */}
             {isTabLoading && (
@@ -759,101 +896,56 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                 value={search}
                 onChange={(val) => setSearch(val)}
                 domain={domain}
+                accentColor={buttonColor}
               />
             </div>
 
-            {/* 2. Operación */}
+            {/* 2. Operación (Professional Popover Select) */}
             <div>
-              <label className="inmo-field-label">Operación</label>
-              <div className="inmo-field-control">
-                <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#0f172a' }}>
-                  {activeTab === 'sale' ? 'Venta' : 'Alquiler'}
-                </span>
-                <select
-                  name="property_status"
-                  value={propertyStatus}
-                  onChange={(e) => handleTabClick(e.target.value === '1' ? 'rent' : 'sale')}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    opacity: 0,
-                    width: '100%',
-                    height: '100%',
-                    cursor: 'pointer',
-                    zIndex: 10,
-                  }}
-                >
-                  <option value="2">Venta</option>
-                  <option value="1">Alquiler</option>
-                </select>
-              </div>
+              <ProfessionalBookingSelect
+                label="Operación"
+                name="property_status"
+                value={propertyStatus}
+                onChange={(val) => handleTabClick(val === '1' ? 'rent' : 'sale')}
+                options={operationOptions}
+                hasCaret={false}
+                accentColor={buttonColor}
+              />
             </div>
 
-            {/* 3. Propiedad */}
+            {/* 3. Propiedad (Professional Popover Select) */}
             <div>
-              <label className="inmo-field-label">Propiedad</label>
-              <div className="inmo-field-control">
-                <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {typeDisplayLabel}
-                </span>
-                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
-                <select
-                  name="property_type"
-                  value={propertyType}
-                  onChange={(e) => setPropertyType(e.target.value)}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    opacity: 0,
-                    width: '100%',
-                    height: '100%',
-                    cursor: 'pointer',
-                    zIndex: 10,
-                  }}
-                >
-                  {propertyTypeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <ProfessionalBookingSelect
+                label="Propiedad"
+                name="property_type"
+                value={propertyType}
+                onChange={setPropertyType}
+                options={propertyTypeOptions}
+                hasCaret={true}
+                accentColor={buttonColor}
+              />
             </div>
 
-            {/* 4. Precio */}
+            {/* 4. Precio (Professional Popover Select) */}
             <div>
-              <label className="inmo-field-label">Precio</label>
-              <div className="inmo-field-control">
-                <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {priceDisplayLabel}
-                </span>
-                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
-                <select
-                  name="price_max"
-                  value={priceMax}
-                  onChange={(e) => setPriceMax(e.target.value)}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    opacity: 0,
-                    width: '100%',
-                    height: '100%',
-                    cursor: 'pointer',
-                    zIndex: 10,
-                  }}
-                >
-                  {priceOptions.map((p) => (
-                    <option key={p.value} value={p.value}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <ProfessionalBookingSelect
+                label="Precio"
+                name="price_max"
+                value={priceMax}
+                onChange={setPriceMax}
+                options={priceOptions}
+                hasCaret={false}
+                accentColor={buttonColor}
+              />
             </div>
 
             {/* 5. Botón Buscar */}
             <div>
-              <button type="submit" className="inmo-btn-search w-full sm:w-auto">
+              <button
+                type="submit"
+                className="inmo-btn-search w-full sm:w-auto"
+                style={{ backgroundColor: buttonColor }}
+              >
                 <Search className="w-4 h-4 stroke-[2.5]" />
                 <span>Buscar</span>
               </button>
