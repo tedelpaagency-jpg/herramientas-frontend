@@ -143,7 +143,10 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
               Favorito
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/90 text-slate-800 shadow-2xs backdrop-blur-md border border-white/30">
+            <span
+              className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold text-white shadow-xs backdrop-blur-md"
+              style={{ backgroundColor: primaryColor }}
+            >
               {isRent ? 'Alquiler' : 'En Venta'}
             </span>
           )}

@@ -17,8 +17,10 @@ import {
   Loader2,
   ExternalLink,
 } from 'lucide-react';
-import publicInmobiliariaService, {
+import {
+  publicInmobiliariaService,
   PublicAgencyConfig,
+  getCachedAgencyConfig,
 } from '@/services/publicInmobiliariaService';
 import TopbarSlider from '@/components/topbar/TopbarSlider';
 import Header2Style3 from '@/components/layout/Header2Style3';
@@ -30,7 +32,12 @@ export const PublicInmobiliariaContactView: React.FC = () => {
   const searchParams = useSearchParams();
   const domainParam = searchParams?.get('domain') || null;
 
-  const [agency, setAgency] = useState<PublicAgencyConfig | null>(null);
+  const [agency, setAgency] = useState<PublicAgencyConfig | null>(() => {
+    if (typeof window !== 'undefined') {
+      return getCachedAgencyConfig(domainParam || undefined);
+    }
+    return null;
+  });
   const [loading, setLoading] = useState<boolean>(true);
 
   // Form state

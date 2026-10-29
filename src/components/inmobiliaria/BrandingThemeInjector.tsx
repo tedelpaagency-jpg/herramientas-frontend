@@ -54,6 +54,20 @@ export const BrandingThemeInjector: React.FC<BrandingThemeInjectorProps> = ({ ag
       border-color: ${secondaryColor} !important;
     }
 
+    /* Badges de estado de inmuebles: un solo fondo limpio con color primario */
+    .package-card .package-img-wrap .batch,
+    .property-status-badge {
+      background: ${primaryColor} !important;
+      background-color: ${primaryColor} !important;
+      border: none !important;
+    }
+    .package-card .package-img-wrap .batch span,
+    .property-status-badge span {
+      background: transparent !important;
+      background-color: transparent !important;
+      color: #ffffff !important;
+    }
+
     /* Pestañas activas del hero booking */
     .hero-tab-pill.active {
       background: ${primaryColor} !important;

@@ -27,7 +27,8 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
   const sectionTitle = agency?.details?.featured_title || 'Propiedades Destacadas';
   const sectionSubtitle = agency?.details?.featured_subtitle || 'Selección curada de inmuebles residenciales y comerciales con alta plusvalía y respaldo legal.';
   const btnText = agency?.details?.featured_btn_text || 'Ver Todo el Catálogo de Propiedades';
-  const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#00a884';
+  const rawColor = agency?.primary_color || agency?.details?.primary_color;
+  const primaryColor = (!rawColor || rawColor.toLowerCase() === '#00a884') ? '#e2b728' : rawColor;
   const buttonColor = primaryColor;
 
   return (
@@ -88,23 +89,43 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
                       />
                     </Link>
                     <div
-                      className="batch"
+                      className="property-status-badge"
                       style={{
                         position: 'absolute',
-                        top: '8px',
-                        right: '8px',
-                        background: isRent ? '#f97316' : '#2563eb',
+                        top: '10px',
+                        right: '10px',
+                        backgroundColor: primaryColor,
                         color: '#ffffff',
-                        padding: '3px 8px',
+                        padding: '4px 11px',
                         borderRadius: '9999px',
-                        fontSize: '10px',
-                        fontWeight: 700,
+                        fontSize: '10.5px',
+                        fontWeight: 800,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.02em',
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                        letterSpacing: '0.03em',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                        zIndex: 5,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: 'none',
+                        lineHeight: 1.2,
                       }}
                     >
-                      <span>{isRent ? 'En Renta' : 'En Venta'}</span>
+                      <span
+                        style={{
+                          background: 'transparent',
+                          backgroundColor: 'transparent',
+                          color: '#ffffff',
+                          padding: 0,
+                          margin: 0,
+                          fontSize: '10.5px',
+                          fontWeight: 800,
+                          lineHeight: 1,
+                          display: 'inline',
+                        }}
+                      >
+                        {isRent ? 'En Renta' : 'En Venta'}
+                      </span>
                     </div>
                   </div>
 

@@ -38,7 +38,9 @@ const DEFAULT_ARTICLES = [
   },
 ];
 
-const BlogV4: React.FC<BlogV4Props> = ({ recentEstates }) => {
+const BlogV4: React.FC<BlogV4Props> = ({ recentEstates, agency }) => {
+  const rawColor = agency?.primary_color || agency?.details?.primary_color;
+  const primaryColor = (!rawColor || rawColor.toLowerCase() === '#00a884') ? '#e2b728' : rawColor;
   const hasRecentEstates = recentEstates && recentEstates.length > 0;
 
   return (
@@ -75,7 +77,7 @@ const BlogV4: React.FC<BlogV4Props> = ({ recentEstates }) => {
                     </span>
                   </div>
                   <div className="blog-content" style={{ flexGrow: 1 }}>
-                    <span className="blog-date" style={{ color: '#00a884', fontWeight: 700 }}>
+                    <span className="blog-date" style={{ color: primaryColor, fontWeight: 700 }}>
                       {estate.property_status === 2 ? 'En Renta' : 'En Venta'}
                     </span>
                     <h4>
@@ -130,3 +132,5 @@ const BlogV4: React.FC<BlogV4Props> = ({ recentEstates }) => {
 };
 
 export default BlogV4;
+
+

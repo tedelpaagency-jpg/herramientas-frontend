@@ -24,6 +24,7 @@ const TopbarSlider: React.FC<TopbarSliderProps> = ({ agency }) => {
   }
 
   // Si show_topbar está configurado como falso (en details o en agency), la cinta superior se oculta por completo
+  if (!agency || (!agency.name && !agency.commercial_name && !agency.id)) { return null; }
   const topbarFlag = details?.show_topbar !== undefined
     ? details.show_topbar
     : (agency?.show_topbar !== undefined ? agency.show_topbar : true);

@@ -71,7 +71,7 @@ interface LocationCitySelectProps {
   accentColor?: string;
 }
 
-const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange, domain, accentColor = '#00a884' }) => {
+const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange, domain, accentColor = '#e2b728' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -373,7 +373,7 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
   options,
   name,
   hasCaret = true,
-  accentColor = '#00a884',
+  accentColor = '#e2b728',
   alignRight = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -514,7 +514,8 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   const [propertyType, setPropertyType] = useState('');
   const [priceMax, setPriceMax] = useState('');
 
-  const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#00a884';
+  const rawColor = agency?.primary_color || agency?.details?.primary_color;
+  const primaryColor = (!rawColor || rawColor.toLowerCase() === '#00a884') ? '#e2b728' : rawColor;
   // Los botones deben ser del mismo color del color primario
   const buttonColor = primaryColor;
 
@@ -592,14 +593,14 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   ];
 
   return (
-    <div className="inmo-hero-wrapper px-3 sm:px-6 py-4 lg:py-6" style={{ maxWidth: '1160px', margin: '0 auto', width: '100%' }}>
+    <div className="inmo-hero-wrapper px-3 sm:px-6 py-4 lg:py-6" style={{ maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
       <style jsx global>{`
         @keyframes inmoSpin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
 
-        /* Hero Frame Canvas (Narrower horizontally, 600px tall, fully responsive) */
+        /* Hero Frame Canvas (10% más ancho, 600px tall, responsive) */
         .inmo-hero-canvas {
           position: relative;
           border-radius: 36px;
@@ -613,7 +614,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           padding: 60px 24px 80px 24px;
           box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.4);
           width: 100%;
-          max-width: 1100px;
+          max-width: 1220px;
           margin: 0 auto;
         }
 
@@ -639,7 +640,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           border-radius: 24px;
           box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.32);
           width: 100%;
-          max-width: 1020px;
+          max-width: 1120px;
           overflow: visible !important;
           border: 1px solid rgba(255, 255, 255, 0.9);
           z-index: 20;

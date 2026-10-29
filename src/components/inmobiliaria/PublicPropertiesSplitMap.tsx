@@ -472,7 +472,10 @@ function AnchoredMapPropertyCard({
 
         {/* Top bar over photo: Status / Heart / Close button */}
         <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
-          <span className="pointer-events-auto px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-white/95 text-slate-800 shadow-xs backdrop-blur-xs">
+          <span
+            className="pointer-events-auto px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider text-white shadow-xs"
+            style={{ backgroundColor: agency?.primary_color || '#00a884' }}
+          >
             {isRental ? 'Alquiler' : 'Venta'}
           </span>
 

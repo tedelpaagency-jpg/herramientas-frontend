@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PublicAgencyConfig } from "@/services/publicInmobiliariaService";
+import { PublicAgencyConfig, getCachedAgencyConfig, getCachedBrandColor, getCachedLoaderImage } from "@/services/publicInmobiliariaService";
 
 export interface PublicPortalLoaderProps {
   countryName?: string;
@@ -17,8 +17,9 @@ export interface PublicPortalLoaderProps {
 }
 
 const hexToRgba = (hex: string, alpha: number): string => {
-  if (!hex) return `rgba(0, 168, 132, ${alpha})`;
-  const clean = hex.replace('#', '');
+  if (!hex || hex.toLowerCase() === '#00a884') return `rgba(226, 183, 40, ${alpha})`;
+  let clean = hex.replace('#', '');
+  if (clean.toLowerCase() === '00a884') clean = 'e2b728';
   let r = 0, g = 0, b = 0;
   if (clean.length === 3) {
     r = parseInt(clean[0] + clean[0], 16);
@@ -53,11 +54,10 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
   const activeMessages = (messages && messages.length > 0) ? messages : defaultMessages;
   const [currentMessage, setCurrentMessage] = useState<string>('');
 
-  const effectiveBrandColor =
-    brandColor ||
-    agency?.primary_color ||
-    agency?.button_color ||
-    '#e2b728';
+  // Resolver color de la agencia evitando destellos verdes (#00a884)
+  const cachedBrand = typeof window !== 'undefined' ? (getCachedBrandColor() || getCachedAgencyConfig()?.primary_color) : null;
+  const rawBrand = brandColor || agency?.primary_color || cachedBrand;
+  const effectiveBrandColor = (!rawBrand || rawBrand.toLowerCase() === '#00a884') ? '#e2b728' : rawBrand;
 
   const effectiveTextColor =
     textColor ||
@@ -103,10 +103,23 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
     agency?.province ||
     "Ecuador";
 
+  // Resolver imagen cacheada de inmediato para eliminar retraso visual en frame 0
+  const cachedImg = typeof window !== 'undefined' ? (getCachedLoaderImage() || (getCachedAgencyConfig() as any)?.country_image || (getCachedAgencyConfig()?.details as any)?.country_image) : null;
   const displayImage =
     countryImage ||
     agency?.country_image ||
-    "/assets/img/inmosoft-loader-ecuador.jpg";
+    (agency?.details as any)?.country_image ||
+    cachedImg ||
+    "https://images.unsplash.com/photo-1589802829985-817e51171b92?auto=format&fit=crop&w=1200&q=85";
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && displayImage) {
+      try {
+        const pre = new Image();
+        pre.src = displayImage;
+      } catch {}
+    }
+  }, [displayImage]);
 
   useEffect(() => {
     if (!activeMessages || activeMessages.length === 0) return;
@@ -170,6 +183,8 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
             alt={displayCountry}
             className="w-full h-full object-cover object-center"
             loading="eager"
+            decoding="sync"
+            fetchPriority="high"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src =
                 'https://inmobiliaria.inmosoft.pro/public/assets/images/locations/bcb83c8c9ddaff31bfa8a873df69e6a4ecu.jpg';

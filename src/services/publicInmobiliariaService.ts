@@ -41,6 +41,7 @@ export interface PublicAgencyConfig {
   is_inmosoft?: boolean;
   redirect_to_login?: boolean;
   portal_url?: string;
+  show_topbar?: boolean;
   details?: Record<string, any>;
   agents?: Array<{
     id: number;
@@ -192,10 +193,26 @@ export const getCachedAgencyConfig = (domain?: string): PublicAgencyConfig | nul
   if (typeof window === 'undefined') return null;
   try {
     const key = `inmo_cfg_${resolveEffectiveDomain(domain)}`;
-    const saved = localStorage.getItem(key) || sessionStorage.getItem(key);
+    const saved = localStorage.getItem(key) || sessionStorage.getItem(key) || localStorage.getItem('inmo_cfg_generic');
     if (saved) {
       return JSON.parse(saved);
     }
+  } catch {}
+  return null;
+};
+
+export const getCachedBrandColor = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem('inmo_cached_brand_color') || null;
+  } catch {}
+  return null;
+};
+
+export const getCachedLoaderImage = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem('inmo_cached_loader_img') || null;
   } catch {}
   return null;
 };
@@ -219,6 +236,18 @@ export const publicInmobiliariaService = {
     if (res?.data && typeof window !== 'undefined') {
       try {
         localStorage.setItem(`inmo_cfg_${effectiveDomain}`, JSON.stringify(res.data));
+        localStorage.setItem('inmo_cfg_generic', JSON.stringify(res.data));
+        if (res.data.primary_color) {
+          localStorage.setItem('inmo_cached_brand_color', res.data.primary_color);
+        }
+        const countryImg = res.data.country_image || (res.data.details as any)?.country_image;
+        if (countryImg) {
+          localStorage.setItem('inmo_cached_loader_img', countryImg);
+          try {
+            const preImg = new Image();
+            preImg.src = countryImg;
+          } catch {}
+        }
       } catch {}
     }
     return res;

@@ -47,7 +47,8 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
 
   const sectionTitle = agency?.details?.categories_title || 'Categorías Principales';
   const sectionSubtitle = agency?.details?.categories_subtitle || 'Descubre opciones pensadas para cada estilo de vida e inversión patrimonial.';
-  const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#00a884';
+  const rawColor = agency?.primary_color || agency?.details?.primary_color;
+  const primaryColor = (!rawColor || rawColor.toLowerCase() === '#00a884') ? '#e2b728' : rawColor;
   const buttonColor = primaryColor;
 
   const settings: SwiperOptions = useMemo(() => {
@@ -103,6 +104,27 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
 
   return (
     <div className="home4-destination-section mb-14 sm:mb-20 pt-4" id="categorias">
+      <style jsx global>{`
+        .inmo-cat-card-arrow {
+          background-color: rgba(255, 255, 255, 0.22);
+          color: #ffffff;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .group:hover .inmo-cat-card-arrow {
+          background-color: ${primaryColor} !important;
+          color: #ffffff !important;
+          transform: scale(1.12) rotate(45deg);
+          box-shadow: 0 4px 16px ${primaryColor}66 !important;
+        }
+        .inmo-cat-card-item:hover {
+          border-color: ${primaryColor}80 !important;
+          box-shadow: 0 20px 40px -10px ${primaryColor}30 !important;
+        }
+        .group:hover .inmo-cat-badge {
+          background-color: ${primaryColor}e6 !important;
+          border-color: ${primaryColor} !important;
+        }
+      `}</style>
       <div className="container">
         <div className="row justify-content-center mb-6 sm:mb-8 wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
           <div className="col-xl-6 col-lg-8">
@@ -126,7 +148,7 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
               <Link
                 key={cat.id || index}
                 href={categoryUrl}
-                className="group relative block min-h-[220px] aspect-[3/4] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md transition-all duration-300 ease-out text-decoration-none select-none border border-white/10 hover:border-emerald-400 active:scale-[0.98]"
+                className="group inmo-cat-card-item relative block min-h-[220px] aspect-[3/4] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md transition-all duration-300 ease-out text-decoration-none select-none border border-white/10 active:scale-[0.98]"
               >
                 {/* Imagen de fondo con zoom fluido */}
                 <img
@@ -140,8 +162,15 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none" />
 
                 {/* Badge superior con cantidad disponible */}
-                <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9.5px] font-bold text-white border border-white/15 shadow-xs">
+                <div className="inmo-cat-badge absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9.5px] font-bold text-white border border-white/15 shadow-xs transition-colors duration-300">
                   {cat.count || 0} inmuebles
+                </div>
+
+                {/* Botón flecha móvil animado con hover en color primario */}
+                <div className="inmo-cat-card-arrow absolute top-2.5 right-2.5 w-6 h-6 rounded-full backdrop-blur-md flex items-center justify-center shadow-md">
+                  <svg width={10} height={10} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 13C5.94664 8.05336 13 1 13 1M13 1C10.1852 1.52778 6.69444 2.58333 3 1M13 1C12.4722 3.63889 11.4167 6.77778 13 11" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
                 </div>
 
                 {/* Contenido inferior: Siempre visible con subtextos blancos */}
@@ -178,7 +207,7 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
                     <SwiperSlide key={cat.id || index} className="swiper-slide !h-auto">
                       <Link
                         href={categoryUrl}
-                        className="group relative block h-[280px] sm:h-[300px] md:h-[320px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-md hover:shadow-2xl hover:shadow-emerald-500/15 transition-all duration-300 ease-out transform hover:-translate-y-1.5 cursor-pointer text-decoration-none"
+                        className="group inmo-cat-card-item relative block h-[280px] sm:h-[300px] md:h-[320px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-md transition-all duration-300 ease-out transform hover:-translate-y-1.5 cursor-pointer text-decoration-none"
                       >
                         {/* Imagen con zoom animado al hover */}
                         <img
@@ -192,12 +221,12 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
                         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10 opacity-90 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                         {/* Badge superior con cantidad disponible */}
-                        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10.5px] font-bold text-white border border-white/15 group-hover:bg-emerald-600/90 group-hover:border-emerald-400/50 transition-all duration-300 shadow-xs">
+                        <div className="inmo-cat-badge absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10.5px] font-bold text-white border border-white/15 transition-all duration-300 shadow-xs">
                           {cat.count || 0} disponibles
                         </div>
 
-                        {/* Botón flecha animado con rotación suave */}
-                        <div className="absolute top-3 right-3 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-110 group-hover:rotate-45 shadow-md">
+                        {/* Botón flecha animado con rotación suave y hover con color primario */}
+                        <div className="inmo-cat-card-arrow absolute top-3 right-3 w-7 h-7 sm:w-8 sm:h-8 rounded-full backdrop-blur-md flex items-center justify-center shadow-md">
                           <svg width={11} height={11} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
                             <path d="M1 13C5.94664 8.05336 13 1 13 1M13 1C10.1852 1.52778 6.69444 2.58333 3 1M13 1C12.4722 3.63889 11.4167 6.77778 13 11" strokeWidth="2" strokeLinecap="round" />
                           </svg>
