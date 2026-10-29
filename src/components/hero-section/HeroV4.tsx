@@ -7,6 +7,8 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  Trees,
+  Building2,
 } from 'lucide-react';
 import publicInmobiliariaService, { PublicEstateCity } from '@/services/publicInmobiliariaService';
 
@@ -220,17 +222,16 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
         <div
           style={{
             position: 'absolute',
-            top: '100%',
+            top: 'calc(100% + 4px)',
             left: 0,
             right: 0,
             backgroundColor: '#ffffff',
             border: '1px solid #cbd5e1',
-            borderTop: 'none',
-            borderRadius: '0 0 12px 12px',
-            boxShadow: '0 15px 30px rgba(0, 0, 0, 0.18)',
-            zIndex: 9999,
+            borderRadius: '12px',
+            boxShadow: '0 20px 45px -4px rgba(0, 0, 0, 0.22)',
+            zIndex: 99999,
             padding: '8px 8px 6px 8px',
-            minWidth: '260px',
+            minWidth: '280px',
           }}
         >
           {/* Inner Search Box */}
@@ -362,6 +363,7 @@ interface ProfessionalBookingSelectProps {
   name: string;
   hasCaret?: boolean;
   accentColor?: string;
+  alignRight?: boolean;
 }
 
 const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
@@ -372,6 +374,7 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
   name,
   hasCaret = true,
   accentColor = '#00a884',
+  alignRight = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -389,14 +392,14 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
   }, []);
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+    <div ref={containerRef} style={{ position: 'relative', width: '100%', zIndex: isOpen ? 100 : 1 }}>
       <label className="inmo-field-label">{label}</label>
       <div
         onClick={() => setIsOpen((prev) => !prev)}
         style={{
           height: '48px',
-          border: '1px solid #e2e8f0',
-          borderRadius: isOpen ? '12px 12px 0 0' : '12px',
+          border: `1px solid ${isOpen ? accentColor : '#e2e8f0'}`,
+          borderRadius: '12px',
           padding: '0 14px',
           backgroundColor: '#ffffff',
           display: 'flex',
@@ -433,19 +436,20 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
+            top: 'calc(100% + 4px)',
+            left: alignRight ? 'auto' : 0,
+            right: alignRight ? 0 : 'auto',
+            minWidth: '100%',
+            width: 'max-content',
+            maxWidth: '280px',
             backgroundColor: '#ffffff',
             border: '1px solid #cbd5e1',
-            borderTop: 'none',
-            borderRadius: '0 0 14px 14px',
-            boxShadow: '0 16px 36px -4px rgba(0, 0, 0, 0.16)',
-            zIndex: 9999,
+            borderRadius: '14px',
+            boxShadow: '0 20px 45px -4px rgba(0, 0, 0, 0.22)',
+            zIndex: 99999,
             padding: '6px',
-            maxHeight: '240px',
+            maxHeight: '260px',
             overflowY: 'auto',
-            minWidth: '170px',
           }}
         >
           {options.map((opt) => {
@@ -497,9 +501,11 @@ interface HeroV4Props {
   agency?: any;
 }
 
+type BookingTab = 'sale' | 'rent' | 'land' | 'commercial';
+
 const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
-  // Tabs: 'sale' | 'rent' (Exact match to Image 1 & Image 2)
-  const [activeTab, setActiveTab] = useState<'sale' | 'rent'>('sale');
+  // Tabs: 'sale' (En Venta) | 'rent' (En Renta) | 'land' (Terrenos y Lotes) | 'commercial' (Comercial)
+  const [activeTab, setActiveTab] = useState<BookingTab>('sale');
   const [isTabLoading, setIsTabLoading] = useState(false);
 
   // Form field states
@@ -509,7 +515,8 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   const [priceMax, setPriceMax] = useState('');
 
   const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#00a884';
-  const buttonColor = agency?.button_color || agency?.details?.button_color || primaryColor;
+  // Los botones deben ser del mismo color del color primario
+  const buttonColor = primaryColor;
 
   const heroTitle = agency?.hero_title || agency?.details?.hero_title || 'Tu Proximo';
   const heroSubtitle = agency?.hero_subtitle || agency?.details?.hero_subtitle || 'Exito Inmobiliario Inicia Con Nosotros';
@@ -533,20 +540,28 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
   const domain = agency?.domain || '';
 
-  // Handle Tab Switch with Spinner Loader (Exact match to Image 2)
-  const handleTabClick = (tab: 'sale' | 'rent') => {
+  // Handle Tab Switch with Spinner Loader (Supports 4 tabs)
+  const handleTabClick = (tab: BookingTab) => {
     if (tab === activeTab) return;
     setIsTabLoading(true);
     setActiveTab(tab);
     if (tab === 'sale') {
-      setPropertyStatus('2');
-    } else {
-      setPropertyStatus('1');
+      setPropertyStatus('2'); // Venta
+      setPropertyType('');
+    } else if (tab === 'rent') {
+      setPropertyStatus('1'); // Renta / Alquiler
+      setPropertyType('');
+    } else if (tab === 'land') {
+      setPropertyStatus('');
+      setPropertyType('3'); // Terrenos y Lotes
+    } else if (tab === 'commercial') {
+      setPropertyStatus('');
+      setPropertyType('4'); // Comercial
     }
-    // Simulate natural fetch transition matching inmosoft
+    // Natural fetch transition matching inmosoft
     setTimeout(() => {
       setIsTabLoading(false);
-    }, 450);
+    }, 400);
   };
 
   const operationOptions = [
@@ -588,14 +603,14 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         .inmo-hero-canvas {
           position: relative;
           border-radius: 36px;
-          overflow: hidden;
+          overflow: visible !important;
           background-color: #111827;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           min-height: 600px;
-          padding: 70px 24px 80px 24px;
+          padding: 60px 24px 80px 24px;
           box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.4);
           width: 100%;
           max-width: 1100px;
@@ -625,9 +640,9 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.32);
           width: 100%;
           max-width: 1020px;
-          overflow: visible;
+          overflow: visible !important;
           border: 1px solid rgba(255, 255, 255, 0.9);
-          z-index: 10;
+          z-index: 20;
         }
 
         /* Top Tabs Row */
@@ -637,8 +652,15 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           border-bottom: 1px solid #e2e8f0;
           padding: 16px 28px 0 28px;
           background: #ffffff;
-          gap: 36px;
+          gap: 28px;
           border-radius: 24px 24px 0 0;
+          overflow-x: auto;
+          scrollbar-width: none;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .inmo-card-tabs-bar::-webkit-scrollbar {
+          display: none;
         }
 
         .inmo-card-tab-btn {
@@ -648,22 +670,24 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           background: transparent;
           border: none;
           cursor: pointer;
-          padding: 0 0 10px 0;
+          padding: 0 4px 12px 4px;
           position: relative;
           outline: none;
           color: #94a3b8;
           transition: color 0.2s ease;
           user-select: none;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
 
         .inmo-card-tab-btn.active {
-          color: #0f172a;
+          color: ${primaryColor};
         }
 
         .inmo-card-tab-btn span {
-          font-size: 11px;
+          font-size: 11.5px;
           font-weight: 800;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.04em;
           text-transform: uppercase;
         }
 
@@ -671,11 +695,10 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         .inmo-tab-active-bar {
           position: absolute;
           bottom: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 58px;
+          left: 0;
+          right: 0;
           height: 3px;
-          background-color: #0f172a;
+          background-color: ${primaryColor};
           border-radius: 3px 3px 0 0;
         }
 
@@ -689,6 +712,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           background: #ffffff;
           position: relative;
           border-radius: 0 0 24px 24px;
+          overflow: visible !important;
         }
 
         @media (max-width: 991px) {
@@ -704,9 +728,9 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             gap: 14px;
           }
           .inmo-card-tabs-bar {
-            padding: 14px 16px 0 16px;
-            justify-content: space-around;
-            gap: 0;
+            padding: 12px 14px 0 14px;
+            gap: 16px;
+            justify-content: flex-start;
           }
         }
 
@@ -759,6 +783,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             inset: 0,
             zIndex: 0,
             overflow: 'hidden',
+            borderRadius: '36px',
           }}
         >
           {isVideo ? (
@@ -831,28 +856,50 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         {/* BOOKING CARD (Exact Pixel-Perfect Match to Image 1 & 2) */}
         {/* ======================================================== */}
         <div className="inmo-main-booking-card">
-          {/* Top Tabs: VENTA and ALQUILER with active underline bar */}
+          {/* Top Tabs: En Venta, En Renta, Terrenos y Lotes, Comercial */}
           <div className="inmo-card-tabs-bar">
-            {/* VENTA */}
+            {/* EN VENTA */}
             <button
               type="button"
               className={`inmo-card-tab-btn ${activeTab === 'sale' ? 'active' : ''}`}
               onClick={() => handleTabClick('sale')}
             >
-              <Tag className="w-5 h-5 mb-1" strokeWidth={2} />
-              <span>VENTA</span>
+              <Tag className="w-4 h-4 mb-1" strokeWidth={2.2} />
+              <span>En Venta</span>
               {activeTab === 'sale' && <div className="inmo-tab-active-bar" />}
             </button>
 
-            {/* ALQUILER */}
+            {/* EN RENTA */}
             <button
               type="button"
               className={`inmo-card-tab-btn ${activeTab === 'rent' ? 'active' : ''}`}
               onClick={() => handleTabClick('rent')}
             >
-              <KeyRound className="w-5 h-5 mb-1" strokeWidth={2} />
-              <span>ALQUILER</span>
+              <KeyRound className="w-4 h-4 mb-1" strokeWidth={2.2} />
+              <span>En Renta</span>
               {activeTab === 'rent' && <div className="inmo-tab-active-bar" />}
+            </button>
+
+            {/* TERRENOS Y LOTES */}
+            <button
+              type="button"
+              className={`inmo-card-tab-btn ${activeTab === 'land' ? 'active' : ''}`}
+              onClick={() => handleTabClick('land')}
+            >
+              <Trees className="w-4 h-4 mb-1" strokeWidth={2.2} />
+              <span>Terrenos y Lotes</span>
+              {activeTab === 'land' && <div className="inmo-tab-active-bar" />}
+            </button>
+
+            {/* COMERCIAL */}
+            <button
+              type="button"
+              className={`inmo-card-tab-btn ${activeTab === 'commercial' ? 'active' : ''}`}
+              onClick={() => handleTabClick('commercial')}
+            >
+              <Building2 className="w-4 h-4 mb-1" strokeWidth={2.2} />
+              <span>Comercial</span>
+              {activeTab === 'commercial' && <div className="inmo-tab-active-bar" />}
             </button>
           </div>
 
@@ -881,7 +928,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                     width: '42px',
                     height: '42px',
                     border: '3px solid rgba(0, 0, 0, 0.08)',
-                    borderTop: '3px solid #1e293b',
+                    borderTop: `3px solid ${primaryColor}`,
                     borderRadius: '50%',
                     animation: 'inmoSpin 0.7s linear infinite',
                   }}
@@ -890,44 +937,52 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             )}
 
             {/* 1. Ubicación (Select2-style Search with 2s Debounce matching Screenshot) */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', zIndex: 40, overflow: 'visible' }}>
               <label className="inmo-field-label">Ubicación</label>
               <LocationCitySelect
                 value={search}
                 onChange={(val) => setSearch(val)}
                 domain={domain}
-                accentColor={buttonColor}
+                accentColor={primaryColor}
               />
             </div>
 
             {/* 2. Operación (Professional Popover Select) */}
-            <div>
+            <div style={{ position: 'relative', zIndex: 30, overflow: 'visible' }}>
               <ProfessionalBookingSelect
                 label="Operación"
                 name="property_status"
                 value={propertyStatus}
-                onChange={(val) => handleTabClick(val === '1' ? 'rent' : 'sale')}
+                onChange={(val) => {
+                  setPropertyStatus(val);
+                  if (val === '1') setActiveTab('rent');
+                  else if (val === '2') setActiveTab('sale');
+                }}
                 options={operationOptions}
                 hasCaret={false}
-                accentColor={buttonColor}
+                accentColor={primaryColor}
               />
             </div>
 
             {/* 3. Propiedad (Professional Popover Select) */}
-            <div>
+            <div style={{ position: 'relative', zIndex: 20, overflow: 'visible' }}>
               <ProfessionalBookingSelect
                 label="Propiedad"
                 name="property_type"
                 value={propertyType}
-                onChange={setPropertyType}
+                onChange={(val) => {
+                  setPropertyType(val);
+                  if (val === '3') setActiveTab('land');
+                  else if (val === '4') setActiveTab('commercial');
+                }}
                 options={propertyTypeOptions}
                 hasCaret={true}
-                accentColor={buttonColor}
+                accentColor={primaryColor}
               />
             </div>
 
-            {/* 4. Precio (Professional Popover Select) */}
-            <div>
+            {/* 4. Precio (Professional Popover Select con alineación a la derecha para no cortarse) */}
+            <div style={{ position: 'relative', zIndex: 10, overflow: 'visible' }}>
               <ProfessionalBookingSelect
                 label="Precio"
                 name="price_max"
@@ -935,16 +990,17 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                 onChange={setPriceMax}
                 options={priceOptions}
                 hasCaret={false}
-                accentColor={buttonColor}
+                accentColor={primaryColor}
+                alignRight={true}
               />
             </div>
 
             {/* 5. Botón Buscar */}
-            <div>
+            <div style={{ zIndex: 5 }}>
               <button
                 type="submit"
                 className="inmo-btn-search w-full sm:w-auto"
-                style={{ backgroundColor: buttonColor }}
+                style={{ backgroundColor: primaryColor }}
               >
                 <Search className="w-4 h-4 stroke-[2.5]" />
                 <span>Buscar</span>

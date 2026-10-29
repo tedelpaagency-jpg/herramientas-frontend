@@ -27,7 +27,8 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
   const sectionTitle = agency?.details?.featured_title || 'Propiedades Destacadas';
   const sectionSubtitle = agency?.details?.featured_subtitle || 'Selección curada de inmuebles residenciales y comerciales con alta plusvalía y respaldo legal.';
   const btnText = agency?.details?.featured_btn_text || 'Ver Todo el Catálogo de Propiedades';
-  const buttonColor = agency?.button_color || agency?.primary_color || agency?.details?.button_color || agency?.details?.primary_color || '#00a884';
+  const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#00a884';
+  const buttonColor = primaryColor;
 
   return (
     <div className="home4-travel-package-section mt-100 mb-100" id="destacadas">

@@ -146,8 +146,8 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
       !rawLogo.includes('header-logo.svg')
   );
   const logoUrl = hasCustomLogo ? rawLogo : null;
-  const primaryColor = effectiveAgency?.primary_color || '#00a884';
-  const buttonColor = effectiveAgency?.button_color || effectiveAgency?.primary_color || '#00a884';
+  const primaryColor = effectiveAgency?.primary_color || effectiveAgency?.details?.primary_color || '#00a884';
+  const buttonColor = primaryColor;
   const rawName = effectiveAgency?.name || effectiveAgency?.commercial_name;
   const agencyName = rawName || '';
 

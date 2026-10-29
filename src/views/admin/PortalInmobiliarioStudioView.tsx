@@ -344,6 +344,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         about_text: form.about_text,
         cta_text: form.cta_text,
         primary_color: form.primary_color,
+        button_color: form.primary_color,
         secondary_color: form.secondary_color,
         logo: form.logo,
         phone: form.phone,

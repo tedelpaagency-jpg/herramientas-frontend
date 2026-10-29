@@ -22,9 +22,10 @@ const hexToRgb = (hex: string): string => {
 };
 
 export const BrandingThemeInjector: React.FC<BrandingThemeInjectorProps> = ({ agency }) => {
-  const primaryColor = agency?.primary_color || '#00a884';
-  const secondaryColor = agency?.secondary_color || '#0f172a';
-  const buttonColor = agency?.button_color || primaryColor;
+  const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#00a884';
+  const secondaryColor = agency?.secondary_color || agency?.details?.secondary_color || '#0f172a';
+  // Los botones deben ser del mismo color primario configurado por la agencia
+  const buttonColor = primaryColor;
   const primaryRgb = useMemo(() => hexToRgb(primaryColor), [primaryColor]);
   const secondaryRgb = useMemo(() => hexToRgb(secondaryColor), [secondaryColor]);
 

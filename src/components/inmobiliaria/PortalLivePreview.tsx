@@ -65,7 +65,8 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
   deviceMode = 'desktop',
   details = {},
 }) => {
-  const buttonColor = details?.button_color || primaryColor;
+  // Los botones siempre deben ser del mismo color primario elegido por la agencia
+  const buttonColor = primaryColor;
   const displayHeroTitle = heroTitle || details?.hero_title || 'Encuentra la Propiedad de tus Sueños';
   const displayHeroSubtitle = heroSubtitle || details?.hero_subtitle || 'Las mejores opciones en venta y renta con asesoría jurídica y crediticia garantizada.';
   const displayCatTitle = categoriesTitle || details?.categories_title || 'Categorías Principales';
@@ -191,16 +192,26 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
 
               {/* Real Estate Search Widget Mockup (Exact Match to Image 1 & 2) */}
               <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-white/80 overflow-hidden text-slate-800 text-left">
-                {/* Top Tabs (Exact 2 tabs VENTA & ALQUILER) */}
-                <div className="flex items-center border-b border-slate-200 px-5 pt-3 gap-6 bg-white">
-                  <div className="flex flex-col items-center pb-2 cursor-pointer">
-                    <Tag className="w-4 h-4 text-slate-800 mb-0.5" />
-                    <span className="text-[10px] font-extrabold text-slate-800 tracking-wider">VENTA</span>
-                    <div className="w-10 h-[2.5px] bg-slate-900 rounded-full mt-1.5" />
+                {/* Top Tabs (Exact 4 tabs: En Venta, En Renta, Terrenos y Lotes, Comercial) */}
+                <div className="flex items-center border-b border-slate-200 px-5 pt-3 gap-6 bg-white overflow-x-auto">
+                  <div className="flex flex-col items-center pb-2 cursor-pointer shrink-0">
+                    <Tag className="w-4 h-4 mb-0.5" style={{ color: primaryColor }} />
+                    <span className="text-[10px] font-extrabold tracking-wider" style={{ color: primaryColor }}>EN VENTA</span>
+                    <div className="w-10 h-[2.5px] rounded-full mt-1.5" style={{ backgroundColor: primaryColor }} />
                   </div>
-                  <div className="flex flex-col items-center pb-2 opacity-50 cursor-pointer">
+                  <div className="flex flex-col items-center pb-2 opacity-50 cursor-pointer shrink-0">
                     <KeyRound className="w-4 h-4 text-slate-400 mb-0.5" />
-                    <span className="text-[10px] font-extrabold text-slate-500 tracking-wider">ALQUILER</span>
+                    <span className="text-[10px] font-extrabold text-slate-500 tracking-wider">EN RENTA</span>
+                    <div className="h-[2.5px] mt-1.5" />
+                  </div>
+                  <div className="flex flex-col items-center pb-2 opacity-50 cursor-pointer shrink-0">
+                    <Trees className="w-4 h-4 text-slate-400 mb-0.5" />
+                    <span className="text-[10px] font-extrabold text-slate-500 tracking-wider">TERRENOS &amp; LOTES</span>
+                    <div className="h-[2.5px] mt-1.5" />
+                  </div>
+                  <div className="flex flex-col items-center pb-2 opacity-50 cursor-pointer shrink-0">
+                    <Building2 className="w-4 h-4 text-slate-400 mb-0.5" />
+                    <span className="text-[10px] font-extrabold text-slate-500 tracking-wider">COMERCIAL</span>
                     <div className="h-[2.5px] mt-1.5" />
                   </div>
                 </div>
@@ -291,7 +302,7 @@ export const PortalLivePreview: React.FC<PortalLivePreviewProps> = ({
               <img src={cat.image} alt={cat.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent flex flex-col justify-end p-2">
                 <span className="text-white text-[11px] font-bold truncate leading-tight">{cat.name}</span>
-                <span className="text-[9px] text-slate-300">{cat.count} Disponibles</span>
+                <span className="text-[9px] text-white">{cat.count} Disponibles</span>
               </div>
             </div>
           ))}

@@ -48,7 +48,7 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
   const sectionTitle = agency?.details?.categories_title || 'Categorías Principales';
   const sectionSubtitle = agency?.details?.categories_subtitle || 'Descubre opciones pensadas para cada estilo de vida e inversión patrimonial.';
   const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#00a884';
-  const buttonColor = agency?.button_color || agency?.details?.button_color || primaryColor;
+  const buttonColor = primaryColor;
 
   const settings: SwiperOptions = useMemo(() => {
     return {
@@ -144,15 +144,15 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
                   {cat.count || 0} inmuebles
                 </div>
 
-                {/* Contenido inferior: Siempre visible */}
+                {/* Contenido inferior: Siempre visible con subtextos blancos */}
                 <div className="absolute bottom-3 left-3 right-3 text-left pointer-events-none">
                   <h5 className="text-[14px] font-black text-white leading-tight drop-shadow-md mb-1">
                     {cat.name}
                   </h5>
-                  <p className="text-[10px] text-white/90 leading-tight font-normal line-clamp-2 drop-shadow-xs mb-1.5">
+                  <p className="text-[10px] text-white leading-tight font-medium line-clamp-2 drop-shadow-sm mb-1.5" style={{ color: '#ffffff' }}>
                     {description}
                   </p>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white drop-shadow-sm" style={{ color: '#ffffff' }}>
                     <span>Ver inmuebles</span>
                     <span>→</span>
                   </span>
@@ -203,15 +203,15 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
                           </svg>
                         </div>
 
-                        {/* Contenido inferior: Título, Descripción y enlace SIEMPRE VISIBLES */}
+                        {/* Contenido inferior: Título, Descripción y enlace SIEMPRE VISIBLES con subtextos blancos */}
                         <div className="absolute bottom-4 left-4 right-4 text-left pointer-events-none z-10">
-                          <h5 className="text-[15px] sm:text-[16px] font-black text-white group-hover:text-emerald-300 transition-colors duration-200 leading-snug drop-shadow-md mb-1">
+                          <h5 className="text-[15px] sm:text-[16px] font-black text-white leading-snug drop-shadow-md mb-1">
                             {cat.name}
                           </h5>
-                          <p className="text-[11px] sm:text-[11.5px] text-white/90 leading-tight font-normal line-clamp-2 drop-shadow-xs mb-2">
+                          <p className="text-[11px] sm:text-[11.5px] leading-tight font-medium line-clamp-2 drop-shadow-sm mb-2 text-white" style={{ color: '#ffffff' }}>
                             {description}
                           </p>
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold transition-colors" style={{ color: buttonColor }}>
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold transition-colors text-white drop-shadow-sm" style={{ color: '#ffffff' }}>
                             <span>Explorar inmuebles</span>
                             <span>→</span>
                           </span>
