@@ -954,11 +954,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                 label="Operación"
                 name="property_status"
                 value={propertyStatus}
-                onChange={(val) => {
-                  setPropertyStatus(val);
-                  if (val === '1') setActiveTab('rent');
-                  else if (val === '2') setActiveTab('sale');
-                }}
+                onChange={setPropertyStatus}
                 options={operationOptions}
                 hasCaret={false}
                 accentColor={primaryColor}
@@ -971,11 +967,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                 label="Propiedad"
                 name="property_type"
                 value={propertyType}
-                onChange={(val) => {
-                  setPropertyType(val);
-                  if (val === '3') setActiveTab('land');
-                  else if (val === '4') setActiveTab('commercial');
-                }}
+                onChange={setPropertyType}
                 options={propertyTypeOptions}
                 hasCaret={true}
                 accentColor={primaryColor}
