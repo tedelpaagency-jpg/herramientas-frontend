@@ -36,25 +36,22 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
       borderRadius = (whiteLabel as any)?.border_radius || (hostWhiteLabel as any)?.border_radius || borderRadius;
     } else {
       // Agency Admins & Standard Users:
-      // Check if agency has 'custom_agency_branding' plan permission
+      // Always prioritize agency custom branding when configured!
       const currentPlan = agency?.current_subscription?.plan || agency?.plan;
       const activePlanPermissions = (currentPlan?.plan_permissions || currentPlan?.permissions || [])
         .map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase());
-      const hasCustomBranding = activePlanPermissions.includes('custom_agency_branding');
+      const hasCustomBranding = activePlanPermissions.includes('custom_agency_branding') || Boolean(agency?.primary_color || agency?.logo);
 
-      // If agency has permission AND custom fields, use them. Otherwise INHERIT from White Label!
-      effectiveFavicon = (hasCustomBranding && agency?.favicon) ? agency.favicon : (hostWhiteLabel?.favicon || null);
-      effectiveTitle = (hasCustomBranding && agency?.name) ? agency.name : (hostWhiteLabel?.name || 'Plataforma SaaS');
+      effectiveFavicon = (agency?.favicon) ? agency.favicon : (hostWhiteLabel?.favicon || null);
+      effectiveTitle = (agency?.name) ? agency.name : (hostWhiteLabel?.name || 'Plataforma SaaS');
 
-      if (hasCustomBranding) {
-        primaryColor = agency?.primary_color || hostWhiteLabel?.primary_color || primaryColor;
-        secondaryColor = agency?.secondary_color || hostWhiteLabel?.secondary_color || secondaryColor;
-        buttonColor = agency?.button_color || hostWhiteLabel?.button_color || buttonColor;
-        menuBackground = agency?.menu_background || hostWhiteLabel?.menu_background || menuBackground;
-        fontFamily = agency?.font_family || hostWhiteLabel?.font_family || fontFamily;
-        customCss = agency?.custom_css || hostWhiteLabel?.custom_css || customCss;
-        borderRadius = agency?.border_radius || hostWhiteLabel?.border_radius || borderRadius;
-      }
+      primaryColor = agency?.primary_color || hostWhiteLabel?.primary_color || primaryColor;
+      secondaryColor = agency?.secondary_color || hostWhiteLabel?.secondary_color || secondaryColor;
+      buttonColor = agency?.button_color || agency?.primary_color || hostWhiteLabel?.button_color || buttonColor;
+      menuBackground = agency?.menu_background || hostWhiteLabel?.menu_background || menuBackground;
+      fontFamily = agency?.font_family || hostWhiteLabel?.font_family || fontFamily;
+      customCss = agency?.custom_css || hostWhiteLabel?.custom_css || customCss;
+      borderRadius = agency?.border_radius || hostWhiteLabel?.border_radius || borderRadius;
     }
 
     // Map Tailwind rounded class to CSS pixel radius
@@ -74,6 +71,10 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
     if (primaryColor) {
       root.style.setProperty('--brand-primary', primaryColor);
       root.style.setProperty('--color-primary', primaryColor);
+      root.style.setProperty('--primary-color', primaryColor);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('santun_primary_color', primaryColor);
+      }
     }
     if (secondaryColor) root.style.setProperty('--brand-secondary', secondaryColor);
     if (buttonColor) {
@@ -96,7 +97,10 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
     colorsStyleTag.textContent = `
       :root {
         --color-primary: ${primaryColor} !important;
+        --brand-primary: ${primaryColor} !important;
+        --primary-color: ${primaryColor} !important;
         --color-button: ${buttonColor} !important;
+        --brand-button: ${buttonColor} !important;
         --border-radius: ${pixelRadius} !important;
       }
       .bg-primary {
@@ -107,6 +111,12 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
       }
       .border-primary {
         border-color: ${primaryColor} !important;
+      }
+      .ring-primary {
+        --tw-ring-color: ${primaryColor} !important;
+      }
+      .focus-visible\\:ring-primary:focus-visible {
+        --tw-ring-color: ${primaryColor} !important;
       }
     `;
     

@@ -131,7 +131,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const activeWl = currentWhiteLabel || (user as any)?.white_label || (user as any)?.white_labels?.[0] || cachedWl;
   const activeAgency = currentAgency || agency || (user as any)?.agency;
   const brandMenuBg = activeWl?.menu_background || activeAgency?.menu_background || cachedMenuBg;
-  const brandPrimaryColor = activeWl?.primary_color || activeAgency?.primary_color;
+  const brandPrimaryColor = (isSuperAdmin || isWhiteLabelAdmin) ? (activeWl?.primary_color || activeAgency?.primary_color) : (activeAgency?.primary_color || activeWl?.primary_color);
 
   if (isSuperAdmin || isWhiteLabelAdmin) {
     brandLogo = activeWl?.logo || null;
@@ -222,9 +222,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return brightness < 160;
   };
 
-  const resolvedMenuBg = brandMenuBg === '#0f172a' ? '#161a1b' : brandMenuBg;
+  const resolvedMenuBg = (brandMenuBg && brandMenuBg !== '#161a1b' && brandMenuBg !== '#121413' && brandMenuBg !== '#0f172a') ? brandMenuBg : null;
   const effectiveMenuBg = isDark
-    ? (resolvedMenuBg && isColorDark(resolvedMenuBg) ? resolvedMenuBg : '#161a1b')
+    ? (resolvedMenuBg && isColorDark(resolvedMenuBg) ? resolvedMenuBg : '#0f172a')
     : (resolvedMenuBg && !isColorDark(resolvedMenuBg) ? resolvedMenuBg : '#ffffff');
 
   const isDarkBg = isColorDark(effectiveMenuBg);
@@ -457,7 +457,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   const isActive = pathname === item.path;
                   const isPending = pendingPath === item.path;
                   const Icon = item.icon;
-                  const activeColor = activeWl?.primary_color || (agency as any)?.primary_color;
+                  const activeColor = (isSuperAdmin || isWhiteLabelAdmin) ? (activeWl?.primary_color || (agency as any)?.primary_color) : ((agency as any)?.primary_color || activeWl?.primary_color);
 
                   return (
                     <Link 

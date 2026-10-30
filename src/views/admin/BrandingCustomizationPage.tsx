@@ -479,6 +479,9 @@ export default function BrandingCustomizationPage({
             if (freshWl.dark_theme) localStorage.setItem('santun_dark_theme', freshWl.dark_theme);
             if (freshWl.card_color) localStorage.setItem('santun_card_color', freshWl.card_color);
             if (freshWl.card_logo) localStorage.setItem('santun_card_logo', freshWl.card_logo);
+            if (freshWl.primary_color || form.primary_color) localStorage.setItem('santun_primary_color', freshWl.primary_color || form.primary_color);
+            if (freshWl.secondary_color || form.secondary_color) localStorage.setItem('santun_secondary_color', freshWl.secondary_color || form.secondary_color);
+            if (freshWl.button_color || form.button_color) localStorage.setItem('santun_button_color', freshWl.button_color || form.button_color);
             if (form.navigation_mode) {
               localStorage.setItem('santun_sidebar_collapsed', String(form.navigation_mode === 'compact'));
             }
@@ -499,6 +502,9 @@ export default function BrandingCustomizationPage({
             if (freshAg.dark_theme) localStorage.setItem('santun_dark_theme', freshAg.dark_theme);
             if (freshAg.card_color) localStorage.setItem('santun_card_color', freshAg.card_color);
             if (freshAg.card_logo) localStorage.setItem('santun_card_logo', freshAg.card_logo);
+            if (freshAg.primary_color || form.primary_color) localStorage.setItem('santun_primary_color', freshAg.primary_color || form.primary_color);
+            if (freshAg.secondary_color || form.secondary_color) localStorage.setItem('santun_secondary_color', freshAg.secondary_color || form.secondary_color);
+            if (freshAg.button_color || form.button_color) localStorage.setItem('santun_button_color', freshAg.button_color || form.button_color);
             if (form.navigation_mode) {
               localStorage.setItem('santun_sidebar_collapsed', String(form.navigation_mode === 'compact'));
             }

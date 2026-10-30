@@ -105,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   }
 
   return (
-    <header className="bg-white/80 dark:bg-[#161a1b]/90 backdrop-blur-md sticky top-0 z-30 w-full h-16 border-b border-slate-200/80 dark:border-slate-800/80 text-slate-800 dark:text-slate-100 flex justify-between items-center px-2 sm:px-4 lg:px-6 gap-1.5 sm:gap-4 print:hidden transition-colors duration-200">
+    <header className="bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-md sticky top-0 z-30 w-full h-16 border-b border-slate-200/80 dark:border-slate-800/80 text-slate-800 dark:text-slate-100 flex justify-between items-center px-2 sm:px-4 lg:px-6 gap-1.5 sm:gap-4 print:hidden transition-colors duration-200">
       {/* Menu Toggle & Search Bar */}
       <div className="flex items-center gap-1 sm:gap-3 lg:gap-4 flex-1 lg:flex-none min-w-0">
         <button 
