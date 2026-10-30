@@ -357,8 +357,23 @@ export function prepareHtmlForRendering(
         max-height: none !important;
         overflow: visible !important;
       }
+      .badge {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+        padding-top: 0.6cqw !important;
+        padding-bottom: 0.8cqw !important;
+      }
       .footer, .agent, .agent strong, .agent span {
         overflow: visible !important;
+      }
+      .agent strong {
+        display: block !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        line-height: 1.4 !important;
+        padding-bottom: 6px !important;
       }
     </style>
   `;
@@ -589,8 +604,23 @@ export async function downloadHtmlAsPng(
             max-height: none !important;
             overflow: visible !important;
           }
+          .badge {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            line-height: 1 !important;
+            padding-top: 0.6cqw !important;
+            padding-bottom: 0.8cqw !important;
+          }
           .footer, .agent, .agent strong, .agent span {
             overflow: visible !important;
+          }
+          .agent strong {
+            display: block !important;
+            overflow: visible !important;
+            text-overflow: unset !important;
+            line-height: 1.4 !important;
+            padding-bottom: 6px !important;
           }
         `;
         clonedDoc.head.appendChild(fixStyle);
