@@ -32,7 +32,7 @@ import {
 
 // Muestra de datos para la previsualización interactiva
 const SAMPLE_ESTATE_PAYLOAD: TemplateDataPayload = {
-  logo: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=200&q=80',
+  logo: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="14" fill="%230f172a"/><text x="50%" y="54%" font-family="Arial,sans-serif" font-weight="900" font-size="24" fill="%23ffffff" text-anchor="middle" dominant-baseline="middle" letter-spacing="2">TU%20LOGO</text></svg>',
   property_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80',
   property_image_1: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80',
   property_image_2: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',

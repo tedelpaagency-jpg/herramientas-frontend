@@ -43,8 +43,8 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
   onDownloadPdf,
   onCopyWhatsApp,
 }) => {
-  const { currentAgency, user } = useAuth();
-  const agency = (user as any)?.agency || (user as any)?.agency_data || currentAgency;
+  const { currentAgency, currentWhiteLabel, user } = useAuth();
+  const effectiveAgency = estate?.agency || (estate as any)?.user?.agency || (user as any)?.agency || (user as any)?.agency_data || currentAgency;
 
   const [templates, setTemplates] = useState<EstateTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState<boolean>(true);
@@ -147,8 +147,8 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
 
   const estatePayload = useMemo(() => {
     if (!estate) return null;
-    return buildEstatePayload(estate, agency, imageSlotAssignments[1] ?? 0, customSlotImages);
-  }, [estate, agency, imageSlotAssignments, customSlotImages]);
+    return buildEstatePayload(estate, effectiveAgency, imageSlotAssignments[1] ?? 0, customSlotImages, currentWhiteLabel);
+  }, [estate, effectiveAgency, imageSlotAssignments, customSlotImages, currentWhiteLabel]);
 
   const substitutedHtml = useMemo(() => {
     if (!activeTemplate || !estatePayload) return '';
@@ -187,7 +187,8 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
         tplW,
         tplH,
         filename,
-        agency
+        effectiveAgency,
+        currentWhiteLabel
       );
       toast.success('¡Imagen descargada exitosamente!', { id: toastId });
     } catch (err: any) {
@@ -532,7 +533,7 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
                     >
                       <iframe
                         key={`${activeTemplate.id}-${JSON.stringify(imageSlotAssignments)}-${stageW}`}
-                        srcDoc={prepareHtmlForRendering(substitutedHtml, tplW, tplH, agency)}
+                        srcDoc={prepareHtmlForRendering(substitutedHtml, tplW, tplH, effectiveAgency, currentWhiteLabel)}
                         title={activeTemplate.name}
                         sandbox="allow-same-origin"
                         tabIndex={-1}
@@ -646,7 +647,7 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
                           }}
                         >
                           <iframe
-                            srcDoc={prepareHtmlForRendering(tplHtml, miniW, miniH, agency)}
+                            srcDoc={prepareHtmlForRendering(tplHtml, miniW, miniH, effectiveAgency, currentWhiteLabel)}
                             title={tpl.name}
                             sandbox="allow-same-origin"
                             tabIndex={-1}

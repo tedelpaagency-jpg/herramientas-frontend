@@ -2,7 +2,7 @@ import html2canvas from 'html2canvas';
 
 /**
  * Utilidades para sustitución de atajos (shortcuts) y renderizado de plantillas HTML
- * para flyers e imágenes inmobiliarias.
+ * para flyers e imágenes inmobiliarias con soporte de proxy y fallback multi-tenant.
  */
 
 export interface TemplateDataPayload {
@@ -31,9 +31,61 @@ export function buildEstatePayload(
   estate: any,
   agency?: any,
   selectedImageIndex?: number,
-  customSlotImages?: Record<number, string>
+  customSlotImages?: Record<number, string>,
+  whiteLabel?: any
 ): TemplateDataPayload {
-  const agencyLogo = agency?.logo || agency?.logo_2 || agency?.details?.logo || '';
+  const effectiveAgency = estate?.agency || estate?.user?.agency || agency;
+
+  // 1. Extraer el logotipo de la agencia o marca blanca
+  let agencyLogo = 
+    effectiveAgency?.logo ||
+    effectiveAgency?.logo_2 ||
+    effectiveAgency?.logo_icon ||
+    effectiveAgency?.details?.logo ||
+    effectiveAgency?.card_logo ||
+    estate?.agency?.logo ||
+    estate?.agency?.logo_2 ||
+    estate?.agency?.logo_icon ||
+    estate?.user?.agency?.logo ||
+    agency?.logo ||
+    agency?.logo_2 ||
+    agency?.logo_icon ||
+    agency?.details?.logo ||
+    agency?.card_logo ||
+    whiteLabel?.logo ||
+    whiteLabel?.logo_2 ||
+    whiteLabel?.logo_icon ||
+    '';
+
+  // Si no se encuentra en memoria, recuperar del almacenamiento local
+  if (!agencyLogo && typeof window !== 'undefined') {
+    agencyLogo = 
+      localStorage.getItem('santun_sidebar_logo') ||
+      localStorage.getItem('santun_sidebar_logo_dark') ||
+      localStorage.getItem('santun_sidebar_logo_icon') ||
+      '';
+    if (!agencyLogo) {
+      try {
+        const storedWl = JSON.parse(localStorage.getItem('santun_white_label') || '{}');
+        if (storedWl?.logo) agencyLogo = storedWl.logo;
+      } catch {}
+    }
+  }
+
+  // Normalizar rutas relativas a URLs absolutas seguras
+  if (agencyLogo && !agencyLogo.startsWith('http://') && !agencyLogo.startsWith('https://') && !agencyLogo.startsWith('data:')) {
+    if (agencyLogo.startsWith('/')) {
+      agencyLogo = `https://santun.tedelpa.com${agencyLogo}`;
+    } else {
+      agencyLogo = `https://santun.tedelpa.com/uploads/${agencyLogo}`;
+    }
+  }
+
+  // Fallback elegante SVG vectorial con el nombre comercial si no existe logo cargado
+  if (!agencyLogo) {
+    const brandName = effectiveAgency?.commercial_name || effectiveAgency?.name || whiteLabel?.name || 'INMOBILIARIA';
+    agencyLogo = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="360" height="90" viewBox="0 0 360 90"><rect width="360" height="90" rx="14" fill="%230f172a"/><text x="50%" y="54%" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="24" fill="%23ffffff" text-anchor="middle" dominant-baseline="middle" letter-spacing="2">${encodeURIComponent(brandName.toUpperCase())}</text></svg>`;
+  }
   
   // Extraer todas las imágenes disponibles de la propiedad
   const allImages: string[] = [];
@@ -61,8 +113,8 @@ export function buildEstatePayload(
   const propertyImg = img1;
 
   // Asesor / Agente
-  const agentName = estate?.user?.name || agency?.commercial_name || agency?.name || 'Asesor Inmobiliario';
-  const agentPhone = estate?.user?.phone || estate?.contact_phone || agency?.phone || agency?.whatsapp || '+593 99 999 9999';
+  const agentName = estate?.user?.name || effectiveAgency?.commercial_name || effectiveAgency?.name || 'Asesor Inmobiliario';
+  const agentPhone = estate?.user?.phone || estate?.contact_phone || effectiveAgency?.phone || effectiveAgency?.whatsapp || '+593 99 999 9999';
 
   // Precio Formateado
   const rawPrice = estate?.price || estate?.valoration || 0;
@@ -129,7 +181,7 @@ export function buildEstatePayload(
   }
 
   return {
-    logo: agencyLogo || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=200&q=80',
+    logo: agencyLogo,
     property_image: propertyImg,
     property_image_1: img1,
     property_image_2: img2,
@@ -187,6 +239,8 @@ export function substituteTemplateShortcuts(rawHtml: string, payload: TemplateDa
     // Logo
     .replace(/\{\{\s*logo\s*\}\}/gi, payload.logo || '')
     .replace(/\{\{\s*agency_logo\s*\}\}/gi, payload.logo || '')
+    .replace(/\{\{\s*brand_logo\s*\}\}/gi, payload.logo || '')
+    .replace(/\{\{\s*logo_url\s*\}\}/gi, payload.logo || '')
     // Imágenes individuales
     .replace(/\{\{\s*property_image_1\s*\}\}/gi, payload.property_image_1 || payload.property_image || '')
     .replace(/\{\{\s*image_1\s*\}\}/gi, payload.property_image_1 || payload.property_image || '')
@@ -236,10 +290,27 @@ export function prepareHtmlForRendering(
   html: string,
   width: number,
   height: number,
-  agency?: any
+  agency?: any,
+  whiteLabel?: any
 ): string {
-  const primary = agency?.primary_color || agency?.details?.primary_color || '#a46920';
-  const secondary = agency?.secondary_color || agency?.details?.secondary_color || '#4a321e';
+  let primary = 
+    agency?.primary_color || 
+    agency?.details?.primary_color || 
+    whiteLabel?.primary_color || 
+    '';
+  let secondary = 
+    agency?.secondary_color || 
+    agency?.details?.secondary_color || 
+    whiteLabel?.secondary_color || 
+    '';
+
+  if (typeof window !== 'undefined') {
+    if (!primary) primary = localStorage.getItem('santun_primary_color') || '';
+    if (!secondary) secondary = localStorage.getItem('santun_secondary_color') || '';
+  }
+
+  if (!primary) primary = '#a46920';
+  if (!secondary) secondary = '#4a321e';
 
   const brandStyles = `
     <style id="saas-runtime-brand-vars">
@@ -292,84 +363,111 @@ export function prepareHtmlForRendering(
 }
 
 /**
- * Convierte imágenes remotas a data: URLs para acelerar el renderizado y prevenir restricciones de CORS.
+ * Convierte imágenes remotas a data: URLs para acelerar el renderizado,
+ * garantizar que html2canvas no sufra bloqueos de CORS y evitar imágenes en blanco.
  */
 async function inlineImagesInHtml(html: string): Promise<string> {
-  const imgRegex = /src=["'](https?:\/\/[^"']+)["']/gi;
-  const matches = Array.from(html.matchAll(imgRegex));
+  // Capturar src="..." y src='...' tanto absolutas como relativas
+  const srcRegex = /src=["']((?:https?:\/\/[^"']+|\/[^"']+|uploads\/[^"']+))["']/gi;
+  const matches = Array.from(html.matchAll(srcRegex));
   if (matches.length === 0) return html;
 
   let processedHtml = html;
-  for (const match of matches) {
-    const originalUrl = match[1];
-    if (originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) continue;
+  const uniqueUrls = Array.from(new Set(matches.map((m) => m[1])));
 
-    // 1. Intentar fetch directo con CORS
+  for (const rawUrl of uniqueUrls) {
+    if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:')) continue;
+
+    let fullUrl = rawUrl;
+    if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+      fullUrl = `https://santun.tedelpa.com/${rawUrl.replace(/^\/+/, '')}`;
+    }
+
+    let base64Result: string | null = null;
+
+    // 1. Intento directo con fetch CORS
     try {
-      const res = await fetch(originalUrl, { mode: 'cors' });
+      const res = await fetch(fullUrl, { mode: 'cors' });
       if (res.ok) {
         const blob = await res.blob();
-        const base64: string = await new Promise((resolve) => {
+        base64Result = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
           reader.readAsDataURL(blob);
         });
-        if (base64 && base64.startsWith('data:')) {
-          processedHtml = processedHtml.replaceAll(originalUrl, base64);
-          continue;
-        }
       }
     } catch {
-      // Continuar al siguiente método si fetch directo falla
+      // Si falla CORS directo (típico en Hostinger / S3 sin cabeceras), pasar al proxy interno
     }
 
-    // 2. Intentar conversión con Image y Canvas
-    try {
-      const base64Canvas = await new Promise<string | null>((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          try {
-            const c = document.createElement('canvas');
-            c.width = img.naturalWidth || 800;
-            c.height = img.naturalHeight || 600;
-            const ctx = c.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(img, 0, 0);
-              resolve(c.toDataURL('image/png'));
-              return;
-            }
-          } catch {}
-          resolve(null);
-        };
-        img.onerror = () => resolve(null);
-        setTimeout(() => resolve(null), 2500);
-        img.src = originalUrl;
-      });
-
-      if (base64Canvas && base64Canvas.startsWith('data:')) {
-        processedHtml = processedHtml.replaceAll(originalUrl, base64Canvas);
+    // 2. Si falló directo, usar el proxy interno de Next.js (bypassea CORS 100%)
+    if (!base64Result || !base64Result.startsWith('data:')) {
+      try {
+        const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(fullUrl)}`;
+        const res = await fetch(proxyUrl);
+        if (res.ok) {
+          const blob = await res.blob();
+          base64Result = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch {
+        // Fallback a canvas en memoria
       }
-    } catch {
-      // Continuar con URL original si no fue posible inlinear
+    }
+
+    // 3. Fallback con Image y Canvas en memoria
+    if (!base64Result || !base64Result.startsWith('data:')) {
+      try {
+        base64Result = await new Promise<string | null>((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            try {
+              const c = document.createElement('canvas');
+              c.width = img.naturalWidth || 800;
+              c.height = img.naturalHeight || 600;
+              const ctx = c.getContext('2d');
+              if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                resolve(c.toDataURL('image/png'));
+                return;
+              }
+            } catch {}
+            resolve(null);
+          };
+          img.onerror = () => resolve(null);
+          setTimeout(() => resolve(null), 2500);
+          img.src = fullUrl;
+        });
+      } catch {}
+    }
+
+    // Si obtuvimos la imagen en Base64, reemplazarla en el HTML
+    if (base64Result && base64Result.startsWith('data:')) {
+      processedHtml = processedHtml.replaceAll(rawUrl, base64Result);
     }
   }
+
   return processedHtml;
 }
 
 /**
  * Convierte el contenido HTML renderizado a un archivo PNG y lo descarga automáticamente.
  * Utiliza html2canvas dentro de un iframe aislado para soportar CSS moderno,
- * container queries, flexbox/grid y evitar bloqueos de seguridad de foreignObject.
+ * container queries, flexbox/grid y pre-inlinea todas las imágenes en base64 para 0 bloqueos.
  */
 export async function downloadHtmlAsPng(
   htmlContent: string,
   width: number,
   height: number,
   filename: string = 'flyer-inmueble.png',
-  agency?: any
+  agency?: any,
+  whiteLabel?: any
 ): Promise<void> {
-  const renderedHtml = prepareHtmlForRendering(htmlContent, width, height, agency);
+  const renderedHtml = prepareHtmlForRendering(htmlContent, width, height, agency, whiteLabel);
   const readyHtml = await inlineImagesInHtml(renderedHtml);
 
   // Crear contenedor offscreen
@@ -418,7 +516,7 @@ export async function downloadHtmlAsPng(
           return new Promise<void>((res) => {
             img.onload = () => res();
             img.onerror = () => res();
-            setTimeout(() => res(), 3000);
+            setTimeout(() => res(), 3500);
           });
         })
       );
