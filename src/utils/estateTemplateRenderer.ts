@@ -161,6 +161,37 @@ export function substituteTemplateShortcuts(rawHtml: string, payload: TemplateDa
 }
 
 /**
+ * Convierte imágenes remotas a data: URLs para evitar problemas de CORS/taint en SVG Canvas.
+ */
+async function inlineImagesInHtml(html: string): Promise<string> {
+  const imgRegex = /src=["'](https?:\/\/[^"']+)["']/gi;
+  const matches = Array.from(html.matchAll(imgRegex));
+  if (matches.length === 0) return html;
+
+  let processedHtml = html;
+  for (const match of matches) {
+    const originalUrl = match[1];
+    try {
+      const res = await fetch(originalUrl, { mode: 'cors' });
+      if (res.ok) {
+        const blob = await res.blob();
+        const base64: string = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        if (base64 && base64.startsWith('data:')) {
+          processedHtml = processedHtml.replaceAll(originalUrl, base64);
+        }
+      }
+    } catch {
+      // Ignorar y mantener URL original si hay restricción de origen
+    }
+  }
+  return processedHtml;
+}
+
+/**
  * Convierte el contenido HTML renderizado a un archivo PNG y lo descarga automáticamente.
  */
 export async function downloadHtmlAsPng(
@@ -169,6 +200,8 @@ export async function downloadHtmlAsPng(
   height: number,
   filename: string = 'flyer-inmueble.png'
 ): Promise<void> {
+  const readyHtml = await inlineImagesInHtml(htmlContent);
+
   return new Promise((resolve, reject) => {
     try {
       const canvas = document.createElement('canvas');
@@ -185,7 +218,7 @@ export async function downloadHtmlAsPng(
         <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
           <foreignObject width="100%" height="100%">
             <div xmlns="http://www.w3.org/1999/xhtml" style="width: 100%; height: 100%; margin: 0; padding: 0;">
-              ${htmlContent}
+              ${readyHtml}
             </div>
           </foreignObject>
         </svg>

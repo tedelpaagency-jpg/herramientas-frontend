@@ -49,6 +49,24 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [downloading, setDownloading] = useState<boolean>(false);
 
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [stageWidthCap, setStageWidthCap] = useState<number>(600);
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (stageRef.current) {
+        setStageWidthCap(stageRef.current.clientWidth || 600);
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    const timer = setTimeout(updateSize, 120);
+    return () => {
+      window.removeEventListener('resize', updateSize);
+      clearTimeout(timer);
+    };
+  }, [isOpen, activeTemplateIndex]);
+
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -312,7 +330,10 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
             )}
 
             {/* Central Live Preview */}
-            <div className="relative flex flex-col items-center justify-center min-h-[340px] sm:min-h-[420px] rounded-3xl bg-slate-950/60 border border-slate-800/80 p-3 sm:p-5">
+            <div
+              ref={stageRef}
+              className="relative flex flex-col items-center justify-center min-h-[360px] sm:min-h-[460px] rounded-3xl bg-slate-950/80 border border-slate-800/80 p-3 sm:p-5"
+            >
               {loadingTemplates ? (
                 <div className="flex flex-col items-center justify-center gap-3 py-16">
                   <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
@@ -323,45 +344,60 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
                   <LayoutTemplate className="w-10 h-10 mx-auto text-slate-600 mb-2" />
                   No hay plantillas activas disponibles.
                 </div>
-              ) : (
-                <div className="w-full flex flex-col items-center justify-center">
-                  {/* Template Meta Info */}
-                  <div className="w-full max-w-xl flex items-center justify-between text-xs text-slate-400 mb-2 px-1">
-                    <span className="font-extrabold text-white flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      {activeTemplate.name}
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-black uppercase text-indigo-300 border border-slate-700">
-                      Formato {activeTemplate.aspect_ratio || '1:1'} • {activeTemplate.width}x{activeTemplate.height}px
-                    </span>
-                  </div>
+              ) : (() => {
+                const tplW = activeTemplate.width || 1080;
+                const tplH = activeTemplate.height || 1080;
+                const maxStageW = Math.min(
+                  Math.max(260, stageWidthCap - 32),
+                  activeTemplate.aspect_ratio === '9:16' ? 280 : activeTemplate.aspect_ratio === '16:9' ? 680 : 440
+                );
+                const maxStageH = activeTemplate.aspect_ratio === '9:16' ? 500 : activeTemplate.aspect_ratio === '16:9' ? 390 : 440;
+                const scale = Math.min(maxStageW / tplW, maxStageH / tplH);
+                const stageW = Math.round(tplW * scale);
+                const stageH = Math.round(tplH * scale);
 
-                  {/* Scaled Render Box */}
-                  <div
-                    className="relative overflow-hidden rounded-2xl shadow-2xl border border-slate-700/60 bg-black flex items-center justify-center transition-all duration-300"
-                    style={{
-                      width: activeTemplate.aspect_ratio === '9:16'
-                        ? 'min(100%, 300px)'
-                        : activeTemplate.aspect_ratio === '16:9'
-                        ? 'min(100%, 640px)'
-                        : 'min(100%, 420px)',
-                      aspectRatio: activeTemplate.aspect_ratio === '9:16'
-                        ? '9 / 16'
-                        : activeTemplate.aspect_ratio === '16:9'
-                        ? '16 / 9'
-                        : '1 / 1',
-                    }}
-                  >
-                    <iframe
-                      key={`${activeTemplate.id}-${selectedImageIndex}`}
-                      srcDoc={substitutedHtml}
-                      title={activeTemplate.name}
-                      sandbox="allow-same-origin"
-                      className="w-full h-full border-0 pointer-events-none select-none"
-                    />
+                return (
+                  <div className="w-full flex flex-col items-center justify-center">
+                    {/* Template Meta Info */}
+                    <div
+                      className="flex items-center justify-between text-xs text-slate-400 mb-2.5 px-1"
+                      style={{ width: `${stageW}px`, maxWidth: '100%' }}
+                    >
+                      <span className="font-extrabold text-white flex items-center gap-1.5 truncate">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span className="truncate">{activeTemplate.name}</span>
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-black uppercase text-indigo-300 border border-slate-700 shrink-0">
+                        {activeTemplate.aspect_ratio || '1:1'} • {activeTemplate.width}x{activeTemplate.height}px
+                      </span>
+                    </div>
+
+                    {/* Scaled Render Box */}
+                    <div
+                      className="relative overflow-hidden rounded-2xl shadow-2xl border border-slate-700/60 bg-black transition-all duration-300"
+                      style={{
+                        width: `${stageW}px`,
+                        height: `${stageH}px`,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${tplW}px`,
+                          height: `${tplH}px`,
+                          transform: `scale(${scale})`,
+                          transformOrigin: 'top left',
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                        }}
+                        dangerouslySetInnerHTML={{ __html: substitutedHtml }}
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Bottom Carousel of HTML Templates */}
@@ -411,6 +447,12 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
               >
                 {templates.map((tpl, index) => {
                   const isActive = index === activeTemplateIndex;
+                  const miniW = tpl.width || 1080;
+                  const miniH = tpl.height || 1080;
+                  const miniScale = Math.min(148 / miniW, 95 / miniH);
+                  const miniStageW = Math.round(miniW * miniScale);
+                  const miniStageH = Math.round(miniH * miniScale);
+
                   return (
                     <div
                       key={tpl.id}
@@ -424,14 +466,34 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
                       }`}
                     >
                       {/* Mini preview thumbnail */}
-                      <div className="relative w-full aspect-video rounded-xl bg-slate-950 overflow-hidden border border-slate-800 mb-2 flex items-center justify-center">
-                        <iframe
-                          srcDoc={substituteTemplateShortcuts(tpl.html_content, estatePayload || {})}
-                          title={`Mini-${tpl.name}`}
-                          sandbox="allow-same-origin"
-                          className="w-[200%] h-[200%] scale-50 origin-top-left pointer-events-none select-none border-0"
-                        />
-                        <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-md text-[9px] font-black uppercase text-indigo-300 border border-white/10">
+                      <div className="relative w-full h-26 rounded-xl bg-slate-950 overflow-hidden border border-slate-800/80 mb-2 flex items-center justify-center">
+                        <div
+                          style={{
+                            width: `${miniStageW}px`,
+                            height: `${miniStageH}px`,
+                            position: 'relative',
+                            overflow: 'hidden',
+                            borderRadius: '6px',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${miniW}px`,
+                              height: `${miniH}px`,
+                              transform: `scale(${miniScale})`,
+                              transformOrigin: 'top left',
+                              pointerEvents: 'none',
+                              userSelect: 'none',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                            }}
+                            dangerouslySetInnerHTML={{
+                              __html: substituteTemplateShortcuts(tpl.html_content, estatePayload || {}),
+                            }}
+                          />
+                        </div>
+                        <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-md text-[9px] font-black uppercase text-indigo-300 border border-white/10 z-10">
                           {tpl.aspect_ratio || '1:1'}
                         </span>
                       </div>
