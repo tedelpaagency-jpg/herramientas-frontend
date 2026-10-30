@@ -1,3 +1,5 @@
+import html2canvas from 'html2canvas';
+
 /**
  * Utilidades para sustitución de atajos (shortcuts) y renderizado de plantillas HTML
  * para flyers e imágenes inmobiliarias.
@@ -290,7 +292,7 @@ export function prepareHtmlForRendering(
 }
 
 /**
- * Convierte imágenes remotas a data: URLs para evitar problemas de CORS/taint en SVG Canvas.
+ * Convierte imágenes remotas a data: URLs para acelerar el renderizado y prevenir restricciones de CORS.
  */
 async function inlineImagesInHtml(html: string): Promise<string> {
   const imgRegex = /src=["'](https?:\/\/[^"']+)["']/gi;
@@ -300,6 +302,9 @@ async function inlineImagesInHtml(html: string): Promise<string> {
   let processedHtml = html;
   for (const match of matches) {
     const originalUrl = match[1];
+    if (originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) continue;
+
+    // 1. Intentar fetch directo con CORS
     try {
       const res = await fetch(originalUrl, { mode: 'cors' });
       if (res.ok) {
@@ -311,28 +316,51 @@ async function inlineImagesInHtml(html: string): Promise<string> {
         });
         if (base64 && base64.startsWith('data:')) {
           processedHtml = processedHtml.replaceAll(originalUrl, base64);
+          continue;
         }
       }
     } catch {
-      // Ignorar y mantener URL original si hay restricción de origen
+      // Continuar al siguiente método si fetch directo falla
+    }
+
+    // 2. Intentar conversión con Image y Canvas
+    try {
+      const base64Canvas = await new Promise<string | null>((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const c = document.createElement('canvas');
+            c.width = img.naturalWidth || 800;
+            c.height = img.naturalHeight || 600;
+            const ctx = c.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0);
+              resolve(c.toDataURL('image/png'));
+              return;
+            }
+          } catch {}
+          resolve(null);
+        };
+        img.onerror = () => resolve(null);
+        setTimeout(() => resolve(null), 2500);
+        img.src = originalUrl;
+      });
+
+      if (base64Canvas && base64Canvas.startsWith('data:')) {
+        processedHtml = processedHtml.replaceAll(originalUrl, base64Canvas);
+      }
+    } catch {
+      // Continuar con URL original si no fue posible inlinear
     }
   }
   return processedHtml;
 }
 
 /**
- * Extrae contenido para encapsular dentro del foreignObject de SVG sin tags de documento exterior.
- */
-function extractForForeignObject(fullHtml: string): string {
-  const styleMatches = fullHtml.match(/<style[\s\S]*?<\/style>/gi) || [];
-  const styles = styleMatches.join('\n');
-  const bodyMatch = fullHtml.match(/<body[\s\S]*?>([\s\S]*?)<\/body>/i);
-  const content = bodyMatch ? bodyMatch[1] : fullHtml.replace(/<!doctype[\s\S]*?>/i, '').replace(/<\/?html[\s\S]*?>/gi, '').replace(/<\/?head[\s\S]*?>/gi, '');
-  return `${styles}\n${content}`;
-}
-
-/**
  * Convierte el contenido HTML renderizado a un archivo PNG y lo descarga automáticamente.
+ * Utiliza html2canvas dentro de un iframe aislado para soportar CSS moderno,
+ * container queries, flexbox/grid y evitar bloqueos de seguridad de foreignObject.
  */
 export async function downloadHtmlAsPng(
   htmlContent: string,
@@ -343,77 +371,112 @@ export async function downloadHtmlAsPng(
 ): Promise<void> {
   const renderedHtml = prepareHtmlForRendering(htmlContent, width, height, agency);
   const readyHtml = await inlineImagesInHtml(renderedHtml);
-  const foreignObjectContent = extractForForeignObject(readyHtml);
 
-  return new Promise((resolve, reject) => {
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
+  // Crear contenedor offscreen
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '-99999px';
+  container.style.top = '0';
+  container.style.width = `${width}px`;
+  container.style.height = `${height}px`;
+  container.style.overflow = 'hidden';
+  container.style.zIndex = '-99999';
+  container.style.opacity = '1';
+  container.style.pointerEvents = 'none';
 
-      if (!ctx) {
-        throw new Error('No se pudo inicializar el contexto 2D de canvas');
-      }
+  // Usar iframe aislado para renderizar fielmente reglas de layout y fuentes
+  const iframe = document.createElement('iframe');
+  iframe.style.width = `${width}px`;
+  iframe.style.height = `${height}px`;
+  iframe.style.border = 'none';
+  iframe.style.margin = '0';
+  iframe.style.padding = '0';
+  iframe.style.overflow = 'hidden';
 
-      // Encapsular en SVG ForeignObject
-      const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-          <foreignObject width="100%" height="100%">
-            <div xmlns="http://www.w3.org/1999/xhtml" style="width: ${width}px; height: ${height}px; margin: 0; padding: 0; overflow: hidden;">
-              ${foreignObjectContent}
-            </div>
-          </foreignObject>
-        </svg>
-      `;
+  container.appendChild(iframe);
+  document.body.appendChild(container);
 
-      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const img = new Image();
+  try {
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) {
+      throw new Error('No se pudo inicializar el entorno de renderizado de la plantilla.');
+    }
 
-      img.onload = () => {
-        try {
-          ctx.drawImage(img, 0, 0, width, height);
-          URL.revokeObjectURL(url);
+    iframeDoc.open();
+    iframeDoc.write(readyHtml);
+    iframeDoc.close();
 
-          canvas.toBlob((pngBlob) => {
-            if (!pngBlob) {
-              // Fallback con toDataURL
-              const dataUrl = canvas.toDataURL('image/png', 1.0);
-              const a = document.createElement('a');
-              a.href = dataUrl;
-              a.download = filename;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              resolve();
-              return;
-            }
+    // Esperar renderizado y composición inicial del layout
+    await new Promise((resolve) => setTimeout(resolve, 350));
 
-            const downloadUrl = URL.createObjectURL(pngBlob);
+    // Esperar a que terminen de cargar todas las imágenes del iframe
+    const images = Array.from(iframeDoc.images);
+    if (images.length > 0) {
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise<void>((res) => {
+            img.onload = () => res();
+            img.onerror = () => res();
+            setTimeout(() => res(), 3000);
+          });
+        })
+      );
+    }
+
+    // Esperar fuentes del documento
+    if (iframeDoc.fonts) {
+      try {
+        await iframeDoc.fonts.ready;
+      } catch (e) {}
+    }
+
+    const targetElement = (iframeDoc.body.firstElementChild as HTMLElement) || iframeDoc.body;
+
+    const canvas = await html2canvas(targetElement, {
+      width,
+      height,
+      windowWidth: width,
+      windowHeight: height,
+      scale: 1,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          try {
+            const dataUrl = canvas.toDataURL('image/png', 1.0);
             const a = document.createElement('a');
-            a.href = downloadUrl;
+            a.href = dataUrl;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
             resolve();
-          }, 'image/png', 1.0);
-        } catch (drawErr) {
-          URL.revokeObjectURL(url);
-          reject(drawErr);
+          } catch (err) {
+            reject(err);
+          }
+          return;
         }
-      };
 
-      img.onerror = (e) => {
-        URL.revokeObjectURL(url);
-        reject(new Error('Error al cargar la imagen SVG de la plantilla en el Canvas'));
-      };
-
-      img.src = url;
-    } catch (err) {
-      reject(err);
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+        resolve();
+      }, 'image/png', 1.0);
+    });
+  } finally {
+    if (document.body.contains(container)) {
+      document.body.removeChild(container);
     }
-  });
+  }
 }

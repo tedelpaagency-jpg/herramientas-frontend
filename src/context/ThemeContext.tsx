@@ -21,14 +21,26 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const isPublicRoute = () => {
     if (typeof window === 'undefined') return false;
+    if (localStorage.getItem('santun_auth_token')) return false;
+
     const p = window.location.pathname;
-    const h = window.location.hostname;
+    if (
+      p.startsWith('/white-label') ||
+      p.startsWith('/admin') ||
+      p.startsWith('/estates') ||
+      p.startsWith('/crm') ||
+      p.startsWith('/tasks') ||
+      p.startsWith('/profile') ||
+      p.startsWith('/roles') ||
+      p.startsWith('/agencies')
+    ) {
+      return false;
+    }
+
     return (
       p.startsWith('/travel-agency-03') ||
-      p.startsWith('/properties') ||
-      p.startsWith('/landing') ||
-      h === 'inmosoft.pro' ||
-      h.includes('inmobiliaria')
+      p.startsWith('/properties/') ||
+      p.startsWith('/landing')
     );
   };
 

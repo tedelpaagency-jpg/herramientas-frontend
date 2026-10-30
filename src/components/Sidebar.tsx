@@ -222,12 +222,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return brightness < 160;
   };
 
-  const resolvedMenuBg = (brandMenuBg && brandMenuBg !== '#161a1b' && brandMenuBg !== '#121413' && brandMenuBg !== '#0f172a') ? brandMenuBg : null;
+  const normalizedMenuBg = brandMenuBg ? brandMenuBg.trim().toLowerCase() : null;
+  const isDefaultMenuBg = !normalizedMenuBg || 
+    normalizedMenuBg === '#161a1b' || 
+    normalizedMenuBg === '#121413' || 
+    normalizedMenuBg === '#0f172a' || 
+    normalizedMenuBg === '#ffffff' ||
+    normalizedMenuBg === '#f8fafc';
+
+  const resolvedMenuBg = isDefaultMenuBg ? null : brandMenuBg;
   const effectiveMenuBg = isDark
     ? (resolvedMenuBg && isColorDark(resolvedMenuBg) ? resolvedMenuBg : '#0f172a')
     : (resolvedMenuBg && !isColorDark(resolvedMenuBg) ? resolvedMenuBg : '#ffffff');
 
-  const isDarkBg = isColorDark(effectiveMenuBg);
+  const isDarkBg = isDark;
 
   let activeLogoToRender: string | null = null;
   if (isSidebarCollapsed) {
@@ -382,8 +390,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside 
-        style={{ backgroundColor: effectiveMenuBg }}
-        className={`flex flex-col h-full z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden fixed left-0 top-0 border-r border-slate-200/80 dark:border-slate-800/80 ${
+        style={resolvedMenuBg ? { backgroundColor: effectiveMenuBg } : undefined}
+        className={`flex flex-col h-full z-50 transition-all duration-300 ease-in-out overflow-x-hidden print:hidden fixed left-0 top-0 border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0f172a] ${
           isDarkBg ? 'text-white' : 'text-slate-800'
         } ${leftSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'} lg:translate-x-0 w-[85vw] max-w-[280px] sm:w-64 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
       >

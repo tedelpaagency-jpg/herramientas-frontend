@@ -192,7 +192,7 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
       toast.success('¡Imagen descargada exitosamente!', { id: toastId });
     } catch (err: any) {
       console.error('Download error:', err);
-      toast.error('Error al procesar la descarga de imagen.', { id: toastId });
+      toast.error(err?.message || 'Error al procesar la descarga de imagen.', { id: toastId });
     } finally {
       setDownloading(false);
     }
