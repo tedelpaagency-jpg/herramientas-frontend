@@ -26,6 +26,7 @@ import {
   Bath,
   Car,
   Maximize2,
+  DollarSign,
 } from 'lucide-react';
 import publicInmobiliariaService, {
   PublicAgencyConfig,
@@ -115,6 +116,30 @@ const PRICE_RANGE_PRESETS = [
   { label: 'Más de $500,000', min: '500000', max: '' },
 ];
 
+const OPERATION_OPTIONS = [
+  { label: 'Todas las operaciones', value: '' },
+  { label: 'En Renta / Alquiler', value: '1' },
+  { label: 'En Venta', value: '2' },
+];
+
+const PROPERTY_TYPE_OPTIONS = [
+  { label: 'Todos los inmuebles', value: '' },
+  { label: 'Casas & Residencias', value: '1' },
+  { label: 'Departamentos & Lofts', value: '2' },
+  { label: 'Terrenos & Lotes', value: '3' },
+  { label: 'Comercial & Oficinas', value: '4' },
+  { label: 'Suites', value: '5' },
+  { label: 'Villas & Casas de Campo', value: '6' },
+];
+
+const BEDROOMS_OPTIONS = [
+  { label: 'Cualquier número', value: '' },
+  { label: '1+ hab.', value: '1' },
+  { label: '2+ hab.', value: '2' },
+  { label: '3+ hab.', value: '3' },
+  { label: '4+ hab.', value: '4' },
+];
+
 export const PublicInmobiliariaPropertiesView: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -186,6 +211,22 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   const cityDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const cityContainerRef = useRef<HTMLDivElement>(null);
   const priceContainerRef = useRef<HTMLDivElement>(null);
+
+  // Estados y refs para selects con estilo profesional tipo Booking
+  const [isOperationOpen, setIsOperationOpen] = useState(false);
+  const [isPropertyTypeOpen, setIsPropertyTypeOpen] = useState(false);
+  const [isBedroomsOpen, setIsBedroomsOpen] = useState(false);
+  const operationContainerRef = useRef<HTMLDivElement>(null);
+  const propertyTypeContainerRef = useRef<HTMLDivElement>(null);
+  const bedroomsContainerRef = useRef<HTMLDivElement>(null);
+
+  const closeAllFilterDropdowns = () => {
+    setIsCityDropdownOpen(false);
+    setIsPricePopoverOpen(false);
+    setIsOperationOpen(false);
+    setIsPropertyTypeOpen(false);
+    setIsBedroomsOpen(false);
+  };
 
   // Sync state with URL searchParams (e.g. browser back/forward, links)
   useEffect(() => {
@@ -292,10 +333,44 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
       if (priceContainerRef.current && !priceContainerRef.current.contains(e.target as Node)) {
         setIsPricePopoverOpen(false);
       }
+      if (operationContainerRef.current && !operationContainerRef.current.contains(e.target as Node)) {
+        setIsOperationOpen(false);
+      }
+      if (propertyTypeContainerRef.current && !propertyTypeContainerRef.current.contains(e.target as Node)) {
+        setIsPropertyTypeOpen(false);
+      }
+      if (bedroomsContainerRef.current && !bedroomsContainerRef.current.contains(e.target as Node)) {
+        setIsBedroomsOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const getOperationButtonLabel = () => {
+    if (propertyStatus === '1') return 'En Renta';
+    if (propertyStatus === '2') return 'En Venta';
+    return 'Operación';
+  };
+
+  const getPropertyTypeButtonLabel = () => {
+    const match = PROPERTY_TYPE_OPTIONS.find((o) => o.value === propertyType);
+    if (match && match.value) {
+      if (match.value === '1') return 'Casas';
+      if (match.value === '2') return 'Departamentos';
+      if (match.value === '3') return 'Terrenos';
+      if (match.value === '4') return 'Comercial';
+      if (match.value === '5') return 'Suites';
+      if (match.value === '6') return 'Villas';
+      return match.label;
+    }
+    return 'Inmueble';
+  };
+
+  const getBedroomsButtonLabel = () => {
+    if (bedrooms) return `${bedrooms}+ hab.`;
+    return 'Habitaciones';
+  };
 
   // Manejador del buscador de ciudades con debounce de 2 segundos (exacto al booking)
   const handleCitySearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -540,21 +615,28 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         message="Un momento por favor, estamos buscando las mejores propiedades."
       />
       {/* Header y barra de filtros fijos que calculan su propia altura */}
-      <div className="shrink-0 z-30 bg-white">
+      <div className="shrink-0 relative z-[70] bg-white">
         <TopbarSlider agency={fallbackAgency} />
         <Header2Style3 agency={fallbackAgency} />
 
         {/* Barra de Filtros con Estilizado del Booking y Bordes de Branding */}
-        <div className="border-b border-slate-200/90 bg-white shadow-2xs relative z-40">
-          <div className="max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5">
-            <div className="flex items-center gap-2 overflow-x-auto lg:overflow-visible pb-1 sm:pb-0 scrollbar-none flex-nowrap relative">
+        <div className="border-b border-slate-200/90 bg-white shadow-2xs relative z-[70]" style={{ overflow: 'visible' }}>
+          <div className="max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5" style={{ overflow: 'visible' }}>
+            <div
+              className={`flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative z-[70] ${
+                (isCityDropdownOpen || isPricePopoverOpen || isOperationOpen || isPropertyTypeOpen || isBedroomsOpen)
+                  ? 'overflow-visible'
+                  : 'overflow-x-auto lg:overflow-visible'
+              }`}
+            >
               
               {/* 1. Selector de Ciudad / Ubicación estilo Booking interactivo */}
               <div ref={cityContainerRef} className="relative shrink-0 w-60 sm:w-72">
                 <div
                   onClick={() => {
-                    setIsPricePopoverOpen(false);
-                    setIsCityDropdownOpen(!isCityDropdownOpen);
+                    const next = !isCityDropdownOpen;
+                    closeAllFilterDropdowns();
+                    setIsCityDropdownOpen(next);
                   }}
                   style={{
                     borderColor: (search || isCityDropdownOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
@@ -602,7 +684,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 {/* Dropdown de Ciudades (Diseño idéntico al booking con 2s debounce) */}
                 {isCityDropdownOpen && (
                   <div
-                    className="absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[99999] animate-in fade-in-0 zoom-in-95 duration-150"
+                    className="absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
                   >
                     {/* Input buscador con debounce de 2 segundos */}
                     <div className="relative mb-2">
@@ -677,82 +759,166 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 )}
               </div>
 
-              {/* 2. Filtro Operación (Alquilar / Comprar) */}
-              <div className="relative shrink-0">
-                <select
-                  value={propertyStatus}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setPropertyStatus(val);
-                    applyFilters({ property_status: val });
+              {/* 2. Filtro Operación estilo Booking */}
+              <div ref={operationContainerRef} className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isOperationOpen;
+                    closeAllFilterDropdowns();
+                    setIsOperationOpen(next);
                   }}
                   style={{
-                    borderColor: propertyStatus ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                    borderColor: (propertyStatus || isOperationOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
                     borderWidth: '1.5px',
                     backgroundColor: propertyStatus ? `${filterBorderColor}14` : '#ffffff',
                     color: propertyStatus ? '#0f172a' : '#1e293b',
                   }}
-                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 hover:border-slate-400"
+                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
                 >
-                  <option value="">Operación</option>
-                  <option value="1">En Renta / Alquiler</option>
-                  <option value="2">En Venta</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <span>{getOperationButtonLabel()}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOperationOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isOperationOpen && (
+                  <div
+                    className="absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                  >
+                    {OPERATION_OPTIONS.map((opt) => {
+                      const isSelected = propertyStatus === opt.value;
+                      return (
+                        <div
+                          key={opt.value}
+                          onClick={() => {
+                            setPropertyStatus(opt.value);
+                            setIsOperationOpen(false);
+                            applyFilters({ property_status: opt.value });
+                          }}
+                          style={isSelected ? {
+                            backgroundColor: `${filterBorderColor}18`,
+                            color: '#0f172a',
+                          } : {}}
+                          className={`px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'font-black'
+                              : 'font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                          }`}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              {/* 3. Filtro Tipo de Inmueble */}
-              <div className="relative shrink-0">
-                <select
-                  value={propertyType}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setPropertyType(val);
-                    applyFilters({ property_type: val });
+              {/* 3. Filtro Tipo de Inmueble estilo Booking */}
+              <div ref={propertyTypeContainerRef} className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isPropertyTypeOpen;
+                    closeAllFilterDropdowns();
+                    setIsPropertyTypeOpen(next);
                   }}
                   style={{
-                    borderColor: propertyType ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                    borderColor: (propertyType || isPropertyTypeOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
                     borderWidth: '1.5px',
                     backgroundColor: propertyType ? `${filterBorderColor}14` : '#ffffff',
                     color: propertyType ? '#0f172a' : '#1e293b',
                   }}
-                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 hover:border-slate-400"
+                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
                 >
-                  <option value="">Inmueble</option>
-                  <option value="1">Casas & Residencias</option>
-                  <option value="2">Departamentos & Lofts</option>
-                  <option value="3">Terrenos & Lotes</option>
-                  <option value="4">Comercial & Oficinas</option>
-                  <option value="5">Suites</option>
-                  <option value="6">Villas & Casas de Campo</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <span>{getPropertyTypeButtonLabel()}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isPropertyTypeOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isPropertyTypeOpen && (
+                  <div
+                    className="absolute left-0 top-full mt-2 w-60 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                  >
+                    {PROPERTY_TYPE_OPTIONS.map((opt) => {
+                      const isSelected = propertyType === opt.value;
+                      return (
+                        <div
+                          key={opt.value}
+                          onClick={() => {
+                            setPropertyType(opt.value);
+                            setIsPropertyTypeOpen(false);
+                            applyFilters({ property_type: opt.value });
+                          }}
+                          style={isSelected ? {
+                            backgroundColor: `${filterBorderColor}18`,
+                            color: '#0f172a',
+                          } : {}}
+                          className={`px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'font-black'
+                              : 'font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                          }`}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              {/* 4. Filtro Habitaciones */}
-              <div className="relative shrink-0">
-                <select
-                  value={bedrooms}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setBedrooms(val);
-                    applyFilters({ bedrooms: val });
+              {/* 4. Filtro Habitaciones estilo Booking */}
+              <div ref={bedroomsContainerRef} className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isBedroomsOpen;
+                    closeAllFilterDropdowns();
+                    setIsBedroomsOpen(next);
                   }}
                   style={{
-                    borderColor: bedrooms ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                    borderColor: (bedrooms || isBedroomsOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
                     borderWidth: '1.5px',
                     backgroundColor: bedrooms ? `${filterBorderColor}14` : '#ffffff',
                     color: bedrooms ? '#0f172a' : '#1e293b',
                   }}
-                  className="appearance-none h-[42px] pl-3.5 pr-8 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 hover:border-slate-400"
+                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
                 >
-                  <option value="">Habitaciones</option>
-                  <option value="1">1+ hab.</option>
-                  <option value="2">2+ hab.</option>
-                  <option value="3">3+ hab.</option>
-                  <option value="4">4+ hab.</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <span>{getBedroomsButtonLabel()}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBedroomsOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isBedroomsOpen && (
+                  <div
+                    className="absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                  >
+                    {BEDROOMS_OPTIONS.map((opt) => {
+                      const isSelected = bedrooms === opt.value;
+                      return (
+                        <div
+                          key={opt.value}
+                          onClick={() => {
+                            setBedrooms(opt.value);
+                            setIsBedroomsOpen(false);
+                            applyFilters({ bedrooms: opt.value });
+                          }}
+                          style={isSelected ? {
+                            backgroundColor: `${filterBorderColor}18`,
+                            color: '#0f172a',
+                          } : {}}
+                          className={`px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'font-black'
+                              : 'font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                          }`}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* 5. Filtro Precio por Rangos Funcional */}
@@ -760,8 +926,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsCityDropdownOpen(false);
-                    setIsPricePopoverOpen(!isPricePopoverOpen);
+                    const next = !isPricePopoverOpen;
+                    closeAllFilterDropdowns();
+                    setIsPricePopoverOpen(next);
                     setTempPriceMin(priceMin);
                     setTempPriceMax(priceMax);
                   }}
@@ -773,6 +940,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   }}
                   className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
                 >
+                  <DollarSign className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span>{getPriceButtonLabel()}</span>
                   {(priceMin || priceMax) ? (
                     <span
@@ -788,7 +956,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 </button>
 
                 {isPricePopoverOpen && (
-                  <div className="absolute left-0 sm:left-auto top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[99999] animate-in fade-in-0 zoom-in-95 duration-150">
+                  <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150">
                     <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
                       <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Rangos de Precio (USD)</span>
                       <button

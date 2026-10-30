@@ -142,7 +142,7 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[99999] bg-[#111]/90 backdrop-blur-md flex items-center justify-center font-sans overflow-hidden selection:bg-white/30 transition-opacity duration-500 animate-in fade-in"
+      className="fixed inset-0 z-[99999] bg-black/40 backdrop-blur-md flex items-center justify-center font-sans overflow-hidden selection:bg-white/30 transition-opacity duration-500 animate-in fade-in"
       role="status"
       aria-live="polite"
       aria-label="Cargando propiedades"
@@ -159,8 +159,8 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
       `}} />
 
-      {/* Backdrop oscuro con desenfoque limpio (sin imagen duplicada de fondo) */}
-      <div className="absolute inset-0 z-0 pointer-events-none bg-black/75 backdrop-blur-md" />
+      {/* Backdrop semi-transparente con desenfoque suave */}
+      <div className="absolute inset-0 z-0 pointer-events-none bg-black/20" />
 
       {/* Contenedor Principal (Modal) - Con degradados y bordes del color primario */}
       <div
