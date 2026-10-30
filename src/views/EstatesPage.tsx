@@ -310,10 +310,14 @@ export const EstatesPage: React.FC = () => {
       const mainImg = res.main_image || getEstateImageUrl(estate);
       
       if (textToCopy && mainImg && !textToCopy.includes(mainImg)) {
-        textToCopy = textToCopy.replace(
-          `🏠 *${estate.title}*`,
-          `🏠 *${estate.title}*\n📸 *Foto:* ${mainImg}`
-        );
+        if (textToCopy.includes(`*${estate.title}*`)) {
+          textToCopy = textToCopy.replace(
+            `*${estate.title}*`,
+            `*${estate.title}*\n📸 *Foto:* ${mainImg}`
+          );
+        } else {
+          textToCopy = `📸 *Foto:* ${mainImg}\n\n${textToCopy}`;
+        }
       }
       
       if (textToCopy) {
@@ -368,13 +372,23 @@ export const EstatesPage: React.FC = () => {
     return null;
   };
 
+  const hasActiveFilters = Boolean(search || typeFilter || statusFilter || agentFilter || agencyFilter);
+  const handleClearFilters = () => {
+    setSearch('');
+    setTypeFilter('');
+    setStatusFilter('');
+    setAgentFilter('');
+    setAgencyFilter('');
+    setPage(1);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <Building2 className="w-7 h-7 text-blue-600" />
+            <Building2 className="w-7 h-7 text-primary" />
             Directorio Inmobiliario SANTUN
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
@@ -385,7 +399,7 @@ export const EstatesPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsSettingsModalOpen(true)}
-            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm border border-slate-200 dark:border-slate-700 transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95"
+            className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm border border-slate-200 dark:border-slate-700 transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
             title="Políticas de Aprobación & Automatizaciones de Propiedades"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
@@ -394,7 +408,7 @@ export const EstatesPage: React.FC = () => {
 
           <button
             onClick={handleOpenCreateModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            className="bg-primary hover:brightness-110 text-white px-5 py-2.5 rounded-xl font-extrabold text-sm shadow-md shadow-primary/20 transition-all duration-150 flex items-center gap-2 active:scale-[0.98] cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Agregar Inmueble</span>
@@ -601,10 +615,37 @@ export const EstatesPage: React.FC = () => {
       ) : isLoading ? (
         <TableSkeleton rows={5} />
       ) : estates.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-xl p-12 text-center border border-slate-200/80 dark:border-slate-800 shadow-sm">
-          <Building2 className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">No se encontraron propiedades</h3>
-          <p className="text-xs text-slate-500 mt-1">Ajuste sus filtros o registre un nuevo inmueble.</p>
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 sm:p-14 text-center border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col items-center justify-center max-w-2xl mx-auto my-6 animate-fade-in">
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-4 ring-8 ring-slate-100/50 dark:ring-slate-800/50">
+            <Building2 className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white">
+            {hasActiveFilters ? 'No hay propiedades con los filtros seleccionados' : 'No hay propiedades registradas aún'}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-md leading-relaxed">
+            {hasActiveFilters
+              ? 'Prueba modificando tus términos de búsqueda o limpiando los filtros para ver el catálogo completo.'
+              : 'Empieza publicando el primer inmueble de tu agencia para comenzar a generar fichas, canvas y dossiers en PDF.'}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 mt-6">
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs active:scale-[0.98] transition-all duration-150 cursor-pointer"
+              >
+                Limpiar filtros
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleOpenCreateModal}
+              className="px-5 py-2.5 rounded-xl bg-primary hover:brightness-110 active:scale-[0.98] text-white font-extrabold text-xs flex items-center gap-2 shadow-md shadow-primary/25 transition-all duration-150 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Agregar Inmueble</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-6">

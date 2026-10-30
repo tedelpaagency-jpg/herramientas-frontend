@@ -284,7 +284,7 @@ export const EstateTemplatesManagementView: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenCreate}
-                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-primary hover:brightness-110 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-primary/20 transition-all duration-150 active:scale-[0.98] cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Nueva Plantilla HTML</span>
@@ -317,7 +317,7 @@ export const EstateTemplatesManagementView: React.FC = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => setFilterRatio(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold active:scale-[0.98] transition-all duration-150 cursor-pointer ${
                   filterRatio === tab.id
                     ? 'bg-slate-900 text-white shadow-xs font-black'
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
@@ -360,7 +360,7 @@ export const EstateTemplatesManagementView: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenCreate}
-                className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold inline-flex items-center gap-2"
+                className="mt-4 px-5 py-2.5 bg-primary hover:brightness-110 active:scale-[0.98] text-white rounded-xl text-xs font-extrabold inline-flex items-center gap-2 shadow-md shadow-primary/20 transition-all duration-150 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Crear Plantilla</span>
@@ -513,8 +513,8 @@ export const EstateTemplatesManagementView: React.FC = () => {
         {/* MODAL EDITOR: Crear / Editar Plantilla HTML con Shortcuts */}
         {/* ======================================================== */}
         {editorOpen && (
-          <div className="fixed inset-0 z-[99999] bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
-            <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
+          <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+            <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden flex flex-col max-h-[92vh]">
               
               {/* Encabezado del Modal */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
@@ -752,14 +752,14 @@ export const EstateTemplatesManagementView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setEditorOpen(false)}
-                      className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs"
+                      className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 font-bold text-xs active:scale-[0.98] transition-all duration-150 cursor-pointer"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
                       disabled={saving}
-                      className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                      className="px-5 py-2.5 rounded-xl bg-primary hover:brightness-110 active:scale-[0.98] text-white font-extrabold text-xs shadow-md shadow-primary/25 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {saving ? 'Guardando...' : editingTemplate ? 'Guardar Cambios' : 'Crear Plantilla'}
                     </button>
@@ -774,8 +774,8 @@ export const EstateTemplatesManagementView: React.FC = () => {
         {/* MODAL VISTA PREVIA DETALLADA / TEST PNG                  */}
         {/* ======================================================== */}
         {previewModalTemplate && (
-          <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
-            <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+            <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden flex flex-col max-h-[90vh]">
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 dark:bg-slate-950/60">
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white">
@@ -790,7 +790,7 @@ export const EstateTemplatesManagementView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleDownloadSample(previewModalTemplate)}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
+                    className="px-4 py-2 bg-primary hover:brightness-110 active:scale-[0.98] text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-primary/20 transition-all duration-150 cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
                     <span>Descargar PNG de Prueba</span>

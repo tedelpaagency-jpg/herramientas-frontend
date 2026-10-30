@@ -457,7 +457,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   const isActive = pathname === item.path;
                   const isPending = pendingPath === item.path;
                   const Icon = item.icon;
-                  const activeColor = (isSuperAdmin || isWhiteLabelAdmin) ? (activeWl?.primary_color || (agency as any)?.primary_color) : ((agency as any)?.primary_color || activeWl?.primary_color);
+                  const activeColor = brandPrimaryColor || (typeof window !== 'undefined' ? localStorage.getItem('santun_primary_color') : null);
 
                   return (
                     <Link 
@@ -465,14 +465,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       href={item.path}
                       prefetch={false}
                       onClick={(e) => handleNavClick(item.path, e)}
-                      style={isActive && activeColor ? { color: activeColor } : undefined}
+                      style={
+                        isActive && activeColor
+                          ? {
+                              color: isDarkBg ? '#ffffff' : activeColor,
+                              backgroundColor: isDarkBg ? `${activeColor}25` : `${activeColor}15`,
+                              borderColor: `${activeColor}40`,
+                            }
+                          : undefined
+                      }
                       className={`flex items-center gap-3 py-1.5 rounded-xl transition-all duration-150 ${
                         isSidebarCollapsed ? 'px-2 lg:justify-center' : 'px-3'
                       } ${
                         isActive 
                           ? (isDarkBg 
                               ? 'bg-slate-800/90 text-white font-extrabold border border-slate-700/80 shadow-xs' 
-                              : 'bg-blue-50 text-blue-700 font-extrabold border border-blue-200/80 shadow-xs')
+                              : (activeColor ? 'font-extrabold border shadow-xs' : 'bg-blue-50 text-blue-700 font-extrabold border border-blue-200/80 shadow-xs'))
                           : (isDarkBg 
                               ? 'text-slate-300 hover:bg-slate-800/60 hover:text-white font-medium' 
                               : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium')
@@ -482,7 +490,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0" />
                       ) : (
                         <Icon 
-                          style={isActive && activeColor ? { color: activeColor } : undefined}
+                          style={isActive && activeColor ? { color: isDarkBg ? '#ffffff' : activeColor } : undefined}
                           className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors ${
                             isActive 
                               ? (activeColor ? '' : (isDarkBg ? 'text-white' : 'text-blue-600')) 
@@ -503,59 +511,93 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         <div className="px-3 py-2.5 mt-auto space-y-1 border-t border-slate-200/60 dark:border-slate-800/60">
-          <Link 
-            href="/roles" 
-            prefetch={false}
-            onClick={(e) => handleNavClick('/roles', e)}
-            className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-colors ${
-              pathname === '/roles' || pathname === '/admin/roles'
-                ? (isDarkBg
-                    ? 'bg-slate-800/90 text-white font-extrabold border border-slate-700/80 shadow-xs'
-                    : 'bg-blue-50 text-blue-700 font-extrabold border border-blue-200/80 shadow-xs')
-                : (isDarkBg
-                    ? 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100')
-            } ${pendingPath === '/roles' ? 'opacity-80 ring-1 ring-sky-500/60 bg-sky-50/50 dark:bg-sky-950/40 animate-pulse' : ''}`}
-          >
-            {pendingPath === '/roles' ? (
-              <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0" />
-            ) : (
-              <ShieldCheck className={`w-4 h-4 stroke-[2] ${
-                pathname === '/roles' || pathname === '/admin/roles'
-                  ? (isDarkBg ? 'text-white' : 'text-blue-600')
-                  : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
-              }`} />
-            )}
-            <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Mis Roles & Permisos</span>
-          </Link>
+          {(() => {
+            const isRolesActive = pathname === '/roles' || pathname === '/admin/roles';
+            const activeColor = brandPrimaryColor || (typeof window !== 'undefined' ? localStorage.getItem('santun_primary_color') : null);
+            return (
+              <Link 
+                href="/roles" 
+                prefetch={false}
+                onClick={(e) => handleNavClick('/roles', e)}
+                style={
+                  isRolesActive && activeColor
+                    ? {
+                        color: isDarkBg ? '#ffffff' : activeColor,
+                        backgroundColor: isDarkBg ? `${activeColor}25` : `${activeColor}15`,
+                        borderColor: `${activeColor}40`,
+                      }
+                    : undefined
+                }
+                className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-colors ${
+                  isRolesActive
+                    ? (isDarkBg
+                        ? 'bg-slate-800/90 text-white font-extrabold border border-slate-700/80 shadow-xs'
+                        : (activeColor ? 'font-extrabold border shadow-xs' : 'bg-blue-50 text-blue-700 font-extrabold border border-blue-200/80 shadow-xs'))
+                    : (isDarkBg
+                        ? 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100')
+                } ${pendingPath === '/roles' ? 'opacity-80 ring-1 ring-sky-500/60 bg-sky-50/50 dark:bg-sky-950/40 animate-pulse' : ''}`}
+              >
+                {pendingPath === '/roles' ? (
+                  <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                ) : (
+                  <ShieldCheck 
+                    style={isRolesActive && activeColor ? { color: isDarkBg ? '#ffffff' : activeColor } : undefined}
+                    className={`w-4 h-4 stroke-[2] ${
+                      isRolesActive
+                        ? (activeColor ? '' : (isDarkBg ? 'text-white' : 'text-blue-600'))
+                        : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
+                    }`} 
+                  />
+                )}
+                <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Mis Roles & Permisos</span>
+              </Link>
+            );
+          })()}
 
-          {configHref && (
-            <Link 
-              href={configHref} 
-              prefetch={false}
-              onClick={(e) => handleNavClick(configHref, e)}
-              className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-colors ${
-                pathname === configHref
-                  ? (isDarkBg
-                      ? 'bg-slate-800/90 text-white font-extrabold border border-slate-700/80 shadow-xs'
-                      : 'bg-blue-50 text-blue-700 font-extrabold border border-blue-200/80 shadow-xs')
-                  : (isDarkBg
-                      ? 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100')
-              } ${pendingPath === configHref ? 'opacity-80 ring-1 ring-sky-500/60 bg-sky-50/50 dark:bg-sky-950/40 animate-pulse' : ''}`}
-            >
-              {pendingPath === configHref ? (
-                <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0" />
-              ) : (
-                <Settings className={`w-4 h-4 stroke-[2] ${
-                  pathname === configHref
-                    ? (isDarkBg ? 'text-white' : 'text-blue-600')
-                    : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
-                }`} />
-              )}
-              <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
-            </Link>
-          )}
+          {configHref && (() => {
+            const isConfigActive = pathname === configHref;
+            const activeColor = brandPrimaryColor || (typeof window !== 'undefined' ? localStorage.getItem('santun_primary_color') : null);
+            return (
+              <Link 
+                href={configHref} 
+                prefetch={false}
+                onClick={(e) => handleNavClick(configHref, e)}
+                style={
+                  isConfigActive && activeColor
+                    ? {
+                        color: isDarkBg ? '#ffffff' : activeColor,
+                        backgroundColor: isDarkBg ? `${activeColor}25` : `${activeColor}15`,
+                        borderColor: `${activeColor}40`,
+                      }
+                    : undefined
+                }
+                className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-colors ${
+                  isConfigActive
+                    ? (isDarkBg
+                        ? 'bg-slate-800/90 text-white font-extrabold border border-slate-700/80 shadow-xs'
+                        : (activeColor ? 'font-extrabold border shadow-xs' : 'bg-blue-50 text-blue-700 font-extrabold border border-blue-200/80 shadow-xs'))
+                    : (isDarkBg
+                        ? 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100')
+                } ${pendingPath === configHref ? 'opacity-80 ring-1 ring-sky-500/60 bg-sky-50/50 dark:bg-sky-950/40 animate-pulse' : ''}`}
+              >
+                {pendingPath === configHref ? (
+                  <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                ) : (
+                  <Settings 
+                    style={isConfigActive && activeColor ? { color: isDarkBg ? '#ffffff' : activeColor } : undefined}
+                    className={`w-4 h-4 stroke-[2] ${
+                      isConfigActive
+                        ? (activeColor ? '' : (isDarkBg ? 'text-white' : 'text-blue-600'))
+                        : (isDarkBg ? 'text-slate-400' : 'text-slate-600')
+                    }`} 
+                  />
+                )}
+                <span className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'lg:opacity-0 lg:max-w-0' : 'opacity-100 max-w-[200px]'}`}>Configuración</span>
+              </Link>
+            );
+          })()}
         </div>
 
       </aside>

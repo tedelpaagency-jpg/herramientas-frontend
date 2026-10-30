@@ -262,7 +262,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               prefetch={false}
               onClick={(e) => handleNavClick('/roles', e)}
               title="Ver mis roles y permisos"
-              className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1 max-w-[140px] truncate"
+              className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-primary transition-colors inline-flex items-center gap-1 max-w-[140px] truncate"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
               <span className="truncate">{user?.role || user?.email || 'Specialist'}</span>
@@ -302,7 +302,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <div className="p-3 border-b border-slate-200 dark:border-slate-800 sm:hidden">
                     <p className="font-bold text-slate-800 dark:text-slate-100">{user?.name || 'Usuario SANTUN'}</p>
-                    <Link href="/roles" prefetch={false} onClick={(e) => handleNavClick('/roles', e)} className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 mt-0.5">
+                    <Link href="/roles" prefetch={false} onClick={(e) => handleNavClick('/roles', e)} className="text-xs text-primary font-semibold flex items-center gap-1 mt-0.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                       <span>{user?.role || user?.email || 'Specialist'}</span>
                     </Link>

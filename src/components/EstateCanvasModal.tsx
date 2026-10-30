@@ -65,17 +65,19 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60 backdrop-blur-md"
           aria-hidden="true"
         />
 
         {/* Modal Container */}
         <motion.div
-          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          initial={{ scale: 0.97, opacity: 0, y: 12 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 border border-slate-200 dark:border-slate-800 overflow-hidden my-auto max-h-[90vh] flex flex-col"
+          exit={{ scale: 0.97, opacity: 0, y: 8 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl relative z-10 border border-slate-200/80 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden my-auto max-h-[90vh] flex flex-col"
         >
           {/* Top Bar Header */}
           <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800 flex-shrink-0">
@@ -257,7 +259,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
           <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
             <button
               onClick={handleCopyLink}
-              className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-xs flex items-center gap-2 transition-colors"
+              className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-xs flex items-center gap-2 active:scale-[0.98] transition-all duration-150 cursor-pointer shadow-2xs"
             >
               <ExternalLink className="w-4 h-4" />
               <span>Copiar Enlace Público</span>
@@ -266,7 +268,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleShareWhatsApp}
-                className="px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-sm"
+                className="px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-xs flex items-center gap-2 active:scale-[0.98] transition-all duration-150 shadow-sm cursor-pointer"
               >
                 <Share2 className="w-4 h-4" />
                 <span>Compartir WhatsApp</span>
@@ -275,7 +277,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
               {onDownloadPdf && (
                 <button
                   onClick={onDownloadPdf}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-sm"
+                  className="px-4 py-2 rounded-xl bg-primary hover:brightness-110 text-white font-bold text-xs flex items-center gap-2 active:scale-[0.98] transition-all duration-150 shadow-md shadow-primary/20 cursor-pointer"
                 >
                   <Download className="w-4 h-4" />
                   <span>Descargar PDF</span>

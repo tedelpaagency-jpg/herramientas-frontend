@@ -5,7 +5,15 @@ import { WhiteLabel } from '../types/whiteLabel';
 
 export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null, user?: any | null) => {
   useEffect(() => {
-    if (!whiteLabel && !agency && !user) return;
+    const cachedPrimary = typeof window !== 'undefined' ? localStorage.getItem('santun_primary_color') : null;
+    if (!whiteLabel && !agency && !user) {
+      if (cachedPrimary) {
+        document.documentElement.style.setProperty('--brand-primary', cachedPrimary);
+        document.documentElement.style.setProperty('--color-primary', cachedPrimary);
+        document.documentElement.style.setProperty('--primary-color', cachedPrimary);
+      }
+      return;
+    }
 
     const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
     const isWhiteLabelAdmin = user?.role === 'white_label_admin' || user?.roles?.some((r: any) => r.name === 'white_label_admin');
@@ -14,7 +22,7 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
 
     let effectiveFavicon: string | null = null;
     let effectiveTitle: string = 'Plataforma SaaS';
-    let primaryColor = agency?.primary_color || hostWhiteLabel?.primary_color || whiteLabel?.primary_color || '#00a884';
+    let primaryColor = agency?.primary_color || cachedPrimary || hostWhiteLabel?.primary_color || whiteLabel?.primary_color || '#00a884';
     let secondaryColor = agency?.secondary_color || hostWhiteLabel?.secondary_color || whiteLabel?.secondary_color || '#161a1b';
     let buttonColor = agency?.button_color || hostWhiteLabel?.button_color || whiteLabel?.button_color || '#00a884';
     let menuBackground = agency?.menu_background || hostWhiteLabel?.menu_background || whiteLabel?.menu_background || '#161a1b';
@@ -45,7 +53,7 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
       effectiveFavicon = (agency?.favicon) ? agency.favicon : (hostWhiteLabel?.favicon || null);
       effectiveTitle = (agency?.name) ? agency.name : (hostWhiteLabel?.name || 'Plataforma SaaS');
 
-      primaryColor = agency?.primary_color || hostWhiteLabel?.primary_color || primaryColor;
+      primaryColor = agency?.primary_color || cachedPrimary || hostWhiteLabel?.primary_color || primaryColor;
       secondaryColor = agency?.secondary_color || hostWhiteLabel?.secondary_color || secondaryColor;
       buttonColor = agency?.button_color || agency?.primary_color || hostWhiteLabel?.button_color || buttonColor;
       menuBackground = agency?.menu_background || hostWhiteLabel?.menu_background || menuBackground;

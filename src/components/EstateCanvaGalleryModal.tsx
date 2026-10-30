@@ -271,10 +271,11 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
 
         {/* Modal Window Container - Adaptativo al tema */}
         <motion.div
-          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          initial={{ scale: 0.97, opacity: 0, y: 12 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white w-full max-w-5xl rounded-3xl shadow-2xl relative z-10 border border-slate-200 dark:border-slate-800 overflow-hidden my-auto max-h-[94vh] flex flex-col transition-colors duration-200"
+          exit={{ scale: 0.97, opacity: 0, y: 8 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white w-full max-w-5xl rounded-3xl shadow-2xl relative z-10 border border-slate-200/80 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden my-auto max-h-[94vh] flex flex-col transition-colors duration-200"
         >
           {/* Top Header */}
           <div className="bg-slate-50 dark:bg-slate-900/90 px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
@@ -296,11 +297,12 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Acción Primaria Destacada (Regla del Botón Primario Único & Emil Kowalski active state) */}
               <button
                 type="button"
                 onClick={handleDownload}
                 disabled={downloading || !activeTemplate}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 active:scale-95 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-primary hover:brightness-110 active:scale-[0.98] text-white font-extrabold text-xs flex items-center gap-2 shadow-md shadow-primary/25 transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Descargar esta plantilla como imagen PNG sustituyendo los datos"
               >
                 {downloading ? (
@@ -311,10 +313,11 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
                 <span>{downloading ? 'Generando...' : 'Descargar PNG'}</span>
               </button>
 
+              {/* Acciones Secundarias (Outline / Neutral con tactilidad suave) */}
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all"
+                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-700/90 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80 font-bold text-xs flex items-center gap-1.5 active:scale-[0.98] transition-all duration-150 cursor-pointer"
                 title="Copiar Enlace Público de la Propiedad"
               >
                 <LinkIcon className="w-4 h-4" />
@@ -325,7 +328,7 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
                 <button
                   type="button"
                   onClick={onCopyWhatsApp}
-                  className="p-2 sm:px-3 sm:py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 font-bold text-xs flex items-center gap-1.5 transition-all"
+                  className="p-2 sm:px-3 sm:py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 font-bold text-xs flex items-center gap-1.5 active:scale-[0.98] transition-all duration-150 cursor-pointer"
                   title="Compartir en WhatsApp con imagen"
                 >
                   <Share2 className="w-4 h-4" />
@@ -337,7 +340,7 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
                 type="button"
                 onClick={handleInternalDownloadPdf}
                 disabled={downloadingPdf}
-                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 font-bold text-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60 font-bold text-xs flex items-center gap-1.5 active:scale-[0.98] transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Descargar Dossier PDF de la propiedad"
               >
                 {downloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -347,7 +350,7 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
               <button
                 type="button"
                 onClick={onClose}
-                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-300 flex items-center justify-center transition-colors ml-1 cursor-pointer"
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 text-slate-500 hover:text-slate-800 dark:text-slate-300 flex items-center justify-center active:scale-[0.95] transition-all duration-150 ml-1 cursor-pointer"
                 aria-label="Cerrar modal"
               >
                 <X className="w-5 h-5" />
@@ -391,7 +394,7 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
                       key={slot}
                       type="button"
                       onClick={() => setActiveSlotTarget(slot)}
-                      className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                      className={`flex items-center gap-2.5 p-2 rounded-xl border text-left active:scale-[0.98] transition-all duration-150 cursor-pointer ${
                         isSelectedSlot
                           ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 shadow-sm ring-2 ring-indigo-500/30'
                           : 'bg-white dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
@@ -438,7 +441,7 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
                         onClick={() => {
                           setImageSlotAssignments((prev) => ({ ...prev, [activeSlotTarget]: idx }));
                         }}
-                        className={`relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                        className={`relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 active:scale-95 transition-all duration-150 cursor-pointer ${
                           isAssignedToThisSlot
                             ? 'border-indigo-500 scale-105 shadow-md shadow-indigo-500/30 ring-2 ring-indigo-500/40'
                             : 'border-transparent opacity-70 hover:opacity-100 hover:scale-100'
@@ -625,7 +628,7 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
                       onClick={() => {
                         if (!isDragging) setActiveTemplateIndex(index);
                       }}
-                      className={`relative flex-shrink-0 w-44 rounded-2xl p-2.5 transition-all duration-200 cursor-pointer border flex flex-col justify-between ${
+                      className={`relative flex-shrink-0 w-44 rounded-2xl p-2.5 active:scale-[0.98] transition-all duration-150 cursor-pointer border flex flex-col justify-between ${
                         isActive
                           ? 'bg-indigo-50/80 dark:bg-gradient-to-b dark:from-indigo-950/70 dark:to-slate-900 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.02]'
                           : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/60 dark:hover:bg-slate-800/50'
