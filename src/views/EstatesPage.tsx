@@ -729,25 +729,25 @@ export const EstatesPage: React.FC = () => {
                                   <span>{estate.user?.name ? estate.user.name.charAt(0).toUpperCase() : 'A'}</span>
                                 )}
                               </div>
-                              <span className="text-xs font-semibold text-slate-800 truncate max-w-[130px]" title={estate.user?.name || 'Asesor Inmobiliario'}>
+                              <span className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[130px]" title={estate.user?.name || 'Asesor Inmobiliario'}>
                                 {estate.user?.name || 'Asesor Inmobiliario'}
                               </span>
                             </div>
                           </td>
 
                           {/* Dirección / Ubicación */}
-                          <td className="py-3.5 px-4 text-xs text-slate-600 max-w-xs truncate">
+                          <td className="py-3.5 px-4 text-xs text-slate-600 dark:text-slate-300 max-w-xs truncate">
                             {estate.full_address || estate.address || `${estate.city || estate.province || 'Ecuador'}`}
                           </td>
 
                           {/* Precio */}
-                          <td className="py-3.5 px-4 font-bold text-slate-900 text-sm">
+                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white text-sm">
                             ${Number(estate.price).toLocaleString()}
-                            <span className="text-[10px] text-slate-400 ml-1 font-normal">{estate.currency || 'USD'}</span>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-400 ml-1 font-normal">{estate.currency || 'USD'}</span>
                           </td>
 
                           {/* Fecha */}
-                          <td className="py-3.5 px-4 text-xs text-slate-500 font-mono">
+                          <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400 font-mono">
                             {estate.created_at ? new Date(estate.created_at).toLocaleDateString() : '-'}
                           </td>
 
@@ -1031,22 +1031,22 @@ export const EstatesPage: React.FC = () => {
 
                       <div className="p-5">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-blue-600">{estate.city || estate.province || 'Ecuador'}</span>
-                          <span className="text-lg font-extrabold text-slate-900">${Number(estate.price).toLocaleString()}</span>
+                          <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{estate.city || estate.province || 'Ecuador'}</span>
+                          <span className="text-lg font-extrabold text-slate-900 dark:text-white">${Number(estate.price).toLocaleString()}</span>
                         </div>
 
-                        <h3 className="text-base font-bold text-slate-900 mt-1 line-clamp-1">{estate.title}</h3>
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white mt-1 line-clamp-1">{estate.title}</h3>
 
                         {/* Asesor / Agente Comercial Info */}
-                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
-                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden border border-blue-200 shadow-2xs">
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden border border-blue-200 dark:border-blue-800/60 shadow-2xs">
                             {estate.user?.avatarUrl ? (
                               <img src={estate.user.avatarUrl} alt={estate.user.name} className="w-full h-full object-cover" />
                             ) : (
                               <span>{estate.user?.name ? estate.user.name.charAt(0).toUpperCase() : 'A'}</span>
                             )}
                           </div>
-                          <span className="text-xs font-medium text-slate-600 truncate" title={estate.user?.name || 'Asesor Inmobiliario'}>
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate" title={estate.user?.name || 'Asesor Inmobiliario'}>
                             {estate.user?.name || 'Asesor Inmobiliario'}
                           </span>
                         </div>

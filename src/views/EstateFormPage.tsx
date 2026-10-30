@@ -309,7 +309,7 @@ export const EstateFormPage: React.FC = () => {
         <div className={sectionCls}>
           <div className={sectionHeaderCls}>
             <Building2 className="w-5 h-5 text-blue-600" />
-            <h3 className="font-bold text-slate-800 text-sm">Información</h3>
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Información</h3>
           </div>
           <div className="p-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
@@ -325,7 +325,7 @@ export const EstateFormPage: React.FC = () => {
                   onChange={e => handleChange('highlight', e.target.checked)}
                   className="w-4 h-4 rounded text-blue-600"
                 />
-                <label htmlFor="highlight" className="text-sm text-slate-700 font-medium cursor-pointer">Marcar como destacado</label>
+                <label htmlFor="highlight" className="text-sm text-slate-700 dark:text-slate-200 font-medium cursor-pointer">Marcar como destacado</label>
               </div>
             </div>
 
@@ -379,7 +379,7 @@ export const EstateFormPage: React.FC = () => {
               <div className={sectionCls}>
                 <div className={sectionHeaderCls}>
                   <span className="text-lg">💰</span>
-                  <h3 className="font-bold text-slate-800 text-sm">Precio</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Precio</h3>
                 </div>
                 <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -405,7 +405,7 @@ export const EstateFormPage: React.FC = () => {
                 <div className={sectionCls}>
                   <div className={sectionHeaderCls}>
                     <span className="text-lg">📋</span>
-                    <h3 className="font-bold text-slate-800 text-sm">Información Adicional</h3>
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Información Adicional</h3>
                   </div>
                   <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
@@ -470,7 +470,7 @@ export const EstateFormPage: React.FC = () => {
                 <div className={sectionCls}>
                   <div className={sectionHeaderCls}>
                     <span className="text-lg">✨</span>
-                    <h3 className="font-bold text-slate-800 text-sm">Servicios y Comodidades</h3>
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Servicios y Comodidades</h3>
                   </div>
                   <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {AMENITIES.map(amenity => (
@@ -482,10 +482,10 @@ export const EstateFormPage: React.FC = () => {
                         {(form as any)[amenity.key] ? (
                           <CheckSquare className="w-4 h-4 text-blue-600" />
                         ) : (
-                          <Square className="w-4 h-4 text-slate-300 group-hover:text-slate-400" />
+                          <Square className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-slate-400" />
                         )}
                       </div>
-                      <span className="text-sm text-slate-700 group-hover:text-slate-900">{amenity.label}</span>
+                      <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{amenity.label}</span>
                     </label>
                   ))}
                 </div>
@@ -495,7 +495,7 @@ export const EstateFormPage: React.FC = () => {
               <div className={sectionCls}>
                 <div className={sectionHeaderCls}>
                   <span className="text-lg">🎥</span>
-                  <h3 className="font-bold text-slate-800 text-sm">Video</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Video</h3>
                 </div>
                 <div className="p-5">
                   <label className={labelCls}>URL de YouTube</label>
@@ -514,7 +514,7 @@ export const EstateFormPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => router.push('/estates')}
-                  className="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold text-sm transition-colors"
+                  className="px-5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-sm transition-colors"
                 >
                   Cancelar
                 </button>
