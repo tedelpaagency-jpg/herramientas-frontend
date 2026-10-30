@@ -24,6 +24,7 @@ import {
   List,
   LayoutGrid,
   Copy,
+  Link as LinkIcon,
   MoreVertical,
   MessageSquare,
   FileText,
@@ -292,19 +293,28 @@ export const EstatesPage: React.FC = () => {
   };
 
   const handleCopyLink = (estate: Estate) => {
+    setActiveMenuId(null);
     const slug = (estate as any).slug || estate.id;
-    const publicUrl = `${window.location.origin}/estate/${slug}`;
+    const publicUrl = `${window.location.origin}/properties/${slug}`;
     navigator.clipboard.writeText(publicUrl);
-    toast.success('¡Enlace copiado al portapapeles!');
+    toast.success('¡Enlace público copiado al portapapeles!');
   };
 
   // WhatsApp Action Handler
   const handleCopyWhatsApp = async (estate: Estate) => {
     setActiveMenuId(null);
-    const toastId = toast.loading('Obteniendo plantilla WhatsApp...');
+    const toastId = toast.loading('Obteniendo plantilla WhatsApp con imagen...');
     try {
       const res = await estateService.getWhatsAppInfo(estate.id);
-      const textToCopy = res.formatted_text || res.whatsapp_text || res.copy_text;
+      let textToCopy = res.formatted_text || res.whatsapp_text || res.copy_text;
+      const mainImg = res.main_image || getEstateImageUrl(estate);
+      
+      if (textToCopy && mainImg && !textToCopy.includes(mainImg)) {
+        textToCopy = textToCopy.replace(
+          `🏠 *${estate.title}*`,
+          `🏠 *${estate.title}*\n📸 *Foto:* ${mainImg}`
+        );
+      }
       
       if (textToCopy) {
         await navigator.clipboard.writeText(textToCopy);
@@ -758,60 +768,42 @@ export const EstatesPage: React.FC = () => {
                             )}
                           </td>
 
-                          {/* Acciones Prominentes Directas + Menú (⋮) */}
+                          {/* Acciones: Solo Copiar Link, PDF, Canvas + Dropdown (⋮) para el resto */}
                           <td className="py-3.5 px-4 text-center relative">
                             <div className="flex items-center justify-center gap-1.5">
-                              {/* WhatsApp Direct Icon */}
+                              {/* 1. Copiar Link Direct Icon */}
                               <button
-                                onClick={() => handleCopyWhatsApp(estate)}
-                                className="p-2 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-all active:scale-95 shadow-2xs"
-                                title="Copiar información para WhatsApp"
+                                onClick={() => handleCopyLink(estate)}
+                                className="p-2 rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 transition-all active:scale-95 shadow-2xs cursor-pointer"
+                                title="Copiar enlace público de la propiedad"
                               >
-                                <MessageSquare className="w-4 h-4" />
+                                <LinkIcon className="w-4 h-4" />
                               </button>
 
-                              {/* PDF Direct Icon */}
+                              {/* 2. PDF Direct Icon */}
                               <button
                                 onClick={() => handleDownloadPdf(estate)}
-                                className="p-2 rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 transition-all active:scale-95 shadow-2xs"
+                                className="p-2 rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50 transition-all active:scale-95 shadow-2xs cursor-pointer"
                                 title="Descargar PDF de la propiedad"
                               >
                                 <FileText className="w-4 h-4" />
                               </button>
 
-                              {/* Canvas Direct Icon */}
-                              <button
-                                onClick={() => handleViewCanvas(estate)}
-                                className="p-2 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 transition-all active:scale-95 shadow-2xs"
-                                title="Ver Canvas de la propiedad"
-                              >
-                                <Layout className="w-4 h-4" />
-                              </button>
-
-                              {/* Creative HTML Templates Icon */}
+                              {/* 3. Canvas Direct Icon */}
                               <button
                                 onClick={() => handleViewCanvaGallery(estate)}
-                                className="p-2 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 transition-all active:scale-95 shadow-2xs"
-                                title="Ver Plantillas Creativas (HTML & PNG)"
+                                className="p-2 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50 transition-all active:scale-95 shadow-2xs cursor-pointer"
+                                title="Ver Plantillas Creativas & Canvas"
                               >
                                 <ImageIcon className="w-4 h-4" />
                               </button>
 
-                              {/* Direct Edit Button */}
-                              <button
-                                onClick={() => handleOpenEditModal(estate)}
-                                className="p-2 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition-all active:scale-95 shadow-2xs"
-                                title="Editar Inmueble"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-
-                              {/* Options Dropdown Menu Button (⋮) */}
+                              {/* Options Dropdown Menu Button (⋮) con el resto de acciones */}
                               <div className="relative">
                                 <button
                                   onClick={() => setActiveMenuId(isMenuOpen ? null : estate.id)}
-                                  className={`p-2 rounded-lg border transition-all active:scale-95 shadow-2xs ${
-                                    isMenuOpen ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'
+                                  className={`p-2 rounded-lg border transition-all active:scale-95 shadow-2xs cursor-pointer ${
+                                    isMenuOpen ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                                   }`}
                                   title="Más opciones (⋮)"
                                 >
@@ -827,46 +819,28 @@ export const EstatesPage: React.FC = () => {
                                     />
                                     <div className="absolute right-0 top-full mt-1.5 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left animate-slide-up-fade">
                                       <button
-                                        onClick={() => handleCopyWhatsApp(estate)}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                        onClick={() => {
+                                          setActiveMenuId(null);
+                                          handleCopyWhatsApp(estate);
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
                                       >
                                         <MessageSquare className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                                         <span>Copiar información para WhatsApp</span>
                                       </button>
 
                                       <button
-                                        onClick={() => handleDownloadPdf(estate)}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-50 transition-colors"
-                                      >
-                                        <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                                        <span>Descargar PDF</span>
-                                      </button>
-
-                                      <button
-                                        onClick={() => handleViewCanvas(estate)}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-50 transition-colors"
+                                        onClick={() => {
+                                          setActiveMenuId(null);
+                                          handleViewCanvas(estate);
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
                                       >
                                         <Layout className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-                                        <span>Ver Canvas</span>
-                                      </button>
-
-                                      <button
-                                        onClick={() => handleViewCanvaGallery(estate)}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-purple-700 hover:bg-purple-50 transition-colors"
-                                      >
-                                        <ImageIcon className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                                        <span>Plantillas Creativas (HTML & PNG)</span>
+                                        <span>Ver Canvas Clásico</span>
                                       </button>
 
                                       <div className="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
-
-                                      <button
-                                        onClick={() => handleCopyLink(estate)}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                      >
-                                        <Copy className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                                        <span>Copiar Enlace Público</span>
-                                      </button>
 
                                       <button
                                         onClick={() => {
@@ -884,7 +858,7 @@ export const EstatesPage: React.FC = () => {
                                           setActiveMenuId(null);
                                           handleDelete(estate.id);
                                         }}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                                       >
                                         <Trash2 className="w-4 h-4 flex-shrink-0" />
                                         <span>Eliminar Inmueble</span>
@@ -1038,58 +1012,106 @@ export const EstatesPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Card Footer Direct Quick Action Icons */}
-                    <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+                    {/* Card Footer: Solo Copiar link, PDF, Canvas + Dropdown (⋮) para el resto */}
+                    <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                       <span className="text-slate-400 font-mono">ID: #{estate.id}</span>
                       
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 relative">
+                        {/* 1. Copiar Link Direct Icon */}
                         <button
-                          onClick={() => handleCopyWhatsApp(estate)}
-                          className="p-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-colors"
-                          title="Copiar información para WhatsApp"
+                          onClick={() => handleCopyLink(estate)}
+                          className="p-1.5 rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
+                          title="Copiar enlace público"
                         >
-                          <MessageSquare className="w-4 h-4" />
+                          <LinkIcon className="w-4 h-4" />
                         </button>
 
+                        {/* 2. PDF Direct Icon */}
                         <button
                           onClick={() => handleDownloadPdf(estate)}
-                          className="p-1.5 rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 transition-colors"
+                          className="p-1.5 rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50 transition-colors cursor-pointer"
                           title="Descargar PDF"
                         >
                           <FileText className="w-4 h-4" />
                         </button>
 
-                        <button
-                          onClick={() => handleViewCanvas(estate)}
-                          className="p-1.5 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 transition-colors"
-                          title="Ver Canvas"
-                        >
-                          <Layout className="w-4 h-4" />
-                        </button>
-
+                        {/* 3. Canvas Direct Icon */}
                         <button
                           onClick={() => handleViewCanvaGallery(estate)}
-                          className="p-1.5 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 transition-colors"
-                          title="Ver Plantillas Creativas (HTML & PNG)"
+                          className="p-1.5 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50 transition-colors cursor-pointer"
+                          title="Ver Plantillas Creativas & Canvas"
                         >
                           <ImageIcon className="w-4 h-4" />
                         </button>
 
-                        <button 
-                          onClick={() => handleOpenEditModal(estate)} 
-                          className="p-1.5 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 transition-colors"
-                          title="Editar"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
+                        {/* Dropdown Menu (⋮) para el resto de acciones */}
+                        <div className="relative">
+                          <button
+                            onClick={() => setActiveMenuId(isMenuOpen ? null : estate.id)}
+                            className={`p-1.5 rounded-lg border transition-all active:scale-95 cursor-pointer ${
+                              isMenuOpen ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                            }`}
+                            title="Más opciones (⋮)"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
 
-                        <button 
-                          onClick={() => handleDelete(estate.id)} 
-                          className="p-1.5 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          {isMenuOpen && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-30"
+                                onClick={() => setActiveMenuId(null)}
+                              />
+                              <div className="absolute right-0 bottom-full mb-1.5 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left animate-slide-up-fade">
+                                <button
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    handleCopyWhatsApp(estate);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                                >
+                                  <MessageSquare className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                  <span>Copiar WhatsApp</span>
+                                </button>
+
+                                <button
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    handleViewCanvas(estate);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                                >
+                                  <Layout className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                                  <span>Ver Canvas Clásico</span>
+                                </button>
+
+                                <div className="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
+
+                                <button 
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    handleOpenEditModal(estate);
+                                  }} 
+                                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                >
+                                  <Edit3 className="w-4 h-4 text-amber-600" />
+                                  <span>Editar</span>
+                                </button>
+
+                                <button 
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    handleDelete(estate.id);
+                                  }} 
+                                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>Eliminar</span>
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -187,6 +187,16 @@ export const estateService = {
       responseType: 'blob',
     });
 
+    if (response.data && response.data.type === 'application/json') {
+      const text = await response.data.text();
+      try {
+        const json = JSON.parse(text);
+        throw new Error(json.message || 'Error al generar el PDF del inmueble');
+      } catch (e: any) {
+        throw new Error(e.message || 'Error al generar el PDF del inmueble');
+      }
+    }
+
     const blob = new Blob([response.data], { type: 'application/pdf' });
     const downloadUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');

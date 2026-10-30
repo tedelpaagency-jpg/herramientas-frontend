@@ -26,6 +26,7 @@ import estateTemplateService, { EstateTemplateItem } from '@/services/estateTemp
 import {
   substituteTemplateShortcuts,
   downloadHtmlAsPng,
+  prepareHtmlForRendering,
   TemplateDataPayload,
 } from '@/utils/estateTemplateRenderer';
 
@@ -33,9 +34,14 @@ import {
 const SAMPLE_ESTATE_PAYLOAD: TemplateDataPayload = {
   logo: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=200&q=80',
   property_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80',
+  property_image_1: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80',
+  property_image_2: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+  property_image_3: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
+  property_image_4: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
   agent_name: 'Carlos Mendoza',
   agent_phone: '+593 99 876 5432',
   property_price: '$285,000 USD',
+  plain_amenities: '3 Hab • 2 Baños • 220 m²',
   amenities: `
     <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);padding:6px 14px;border-radius:9999px;color:#fff;font-weight:700;font-size:14px;">🛏️ 3 Hab.</span>
     <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);padding:6px 14px;border-radius:9999px;color:#fff;font-weight:700;font-size:14px;">🚿 2 Baños</span>
@@ -51,16 +57,20 @@ const SAMPLE_ESTATE_PAYLOAD: TemplateDataPayload = {
 const SHORTCUTS_LIST = [
   { key: '{{logo}}', label: 'Logo', desc: 'Logo de la agencia inmobiliaria' },
   { key: '{{property_image}}', label: 'Imagen de la Propiedad', desc: 'Foto principal o seleccionada' },
+  { key: '{{property_image_1}}', label: 'Foto #1', desc: 'Primera foto del carrusel' },
+  { key: '{{property_image_2}}', label: 'Foto #2', desc: 'Segunda foto del carrusel' },
+  { key: '{{property_image_3}}', label: 'Foto #3', desc: 'Tercera foto del carrusel' },
   { key: '{{agent_name}}', label: 'Nombre y Apellido', desc: 'Nombre del asesor o agente' },
   { key: '{{agent_phone}}', label: 'Número de Teléfono', desc: 'Teléfono o WhatsApp de contacto' },
   { key: '{{property_price}}', label: 'Precio de la Propiedad', desc: 'Precio formateado (ej. $285,000 USD)' },
-  { key: '{{amenities}}', label: 'Amenidades', desc: 'Badges con hab, baños, estac. y m²' },
+  { key: '{{amenities}}', label: 'Amenidades', desc: 'Hab, baños, estac. y m²' },
   { key: '{{property_title}}', label: 'Título del Inmueble', desc: 'Título principal de la propiedad' },
   { key: '{{location}}', label: 'Ubicación', desc: 'Ciudad y sector o provincia' },
 ];
 
 export const EstateTemplatesManagementView: React.FC = () => {
-  const { user } = useAuth();
+  const { user, currentAgency } = useAuth();
+  const agency = (user as any)?.agency || (user as any)?.agency_data || currentAgency;
 
   const isSuperAdmin =
     user?.role === 'super_admin' || user?.roles?.some((r) => r.name === 'super_admin');
@@ -299,6 +309,7 @@ export const EstateTemplatesManagementView: React.FC = () => {
             {[
               { id: 'all', label: 'Todas las plantillas' },
               { id: '1:1', label: 'Cuadrado (1:1)' },
+              { id: '4:5', label: 'Retrato (4:5)' },
               { id: '9:16', label: 'Story & Reel (9:16)' },
               { id: '16:9', label: 'Horizontal (16:9)' },
             ].map((tab) => (
@@ -366,19 +377,54 @@ export const EstateTemplatesManagementView: React.FC = () => {
                   key={tpl.id}
                   className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden group"
                 >
-                  {/* Contenedor Superior: Miniatura escalada con iframe seguro */}
+                  {/* Contenedor Superior: Miniatura escalada con iframe aislado */}
                   <div className="relative bg-slate-950 h-56 overflow-hidden flex items-center justify-center p-2 border-b border-slate-100 dark:border-slate-800">
-                    <div
-                      style={{
-                        width: `${tpl.width}px`,
-                        height: `${tpl.height}px`,
-                        transform: `scale(${Math.min(240 / tpl.height, 340 / tpl.width)})`,
-                        transformOrigin: 'center center',
-                        pointerEvents: 'none',
-                        userSelect: 'none',
-                      }}
-                      dangerouslySetInnerHTML={{ __html: renderedSample }}
-                    />
+                    {(() => {
+                      const ratioStr = (tpl.aspect_ratio || '1:1').trim();
+                      const tplW = tpl.width || 1080;
+                      let tplH = tpl.height || 1080;
+                      if (ratioStr === '4:5' || ratioStr === '4/5') tplH = Math.round(tplW * 1.25);
+                      else if (ratioStr === '9:16' || ratioStr === '9/16') tplH = Math.round(tplW * (16 / 9));
+                      else if (ratioStr === '16:9' || ratioStr === '16/9') tplH = Math.round(tplW * (9 / 16));
+                      else if (ratioStr === '1:1') tplH = tplW;
+
+                      const scale = Math.min(208 / tplH, 320 / tplW);
+                      const cardW = Math.round(tplW * scale);
+                      const cardH = Math.round(tplH * scale);
+
+                      return (
+                        <div
+                          style={{
+                            width: `${cardW}px`,
+                            height: `${cardH}px`,
+                            position: 'relative',
+                            overflow: 'hidden',
+                            borderRadius: '8px',
+                          }}
+                        >
+                          <iframe
+                            srcDoc={prepareHtmlForRendering(renderedSample, tplW, tplH, agency)}
+                            title={tpl.name}
+                            sandbox="allow-same-origin"
+                            tabIndex={-1}
+                            aria-hidden="true"
+                            style={{
+                              width: `${tplW}px`,
+                              height: `${tplH}px`,
+                              transform: `scale(${scale})`,
+                              transformOrigin: 'top left',
+                              border: 'none',
+                              pointerEvents: 'none',
+                              userSelect: 'none',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              background: 'transparent',
+                            }}
+                          />
+                        </div>
+                      );
+                    })()}
 
                     {/* Badges de aspecto y resolución */}
                     <div className="absolute top-3 left-3 flex items-center gap-1.5 z-20">
@@ -645,20 +691,54 @@ export const EstateTemplatesManagementView: React.FC = () => {
                 ) : (
                   /* Pestaña de Previsualización en Vivo con Datos de Muestra */
                   <div className="flex flex-col items-center justify-center p-4 bg-slate-950 rounded-2xl min-h-[460px] overflow-hidden">
-                    <div
-                      style={{
-                        width: `${formData.width}px`,
-                        height: `${formData.height}px`,
-                        transform: `scale(${Math.min(420 / formData.height, 550 / formData.width)})`,
-                        transformOrigin: 'center center',
-                        boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
-                        borderRadius: '16px',
-                        overflow: 'hidden',
-                      }}
-                      dangerouslySetInnerHTML={{
-                        __html: substituteTemplateShortcuts(formData.html_content, SAMPLE_ESTATE_PAYLOAD),
-                      }}
-                    />
+                    {(() => {
+                      const ratioStr = (formData.aspect_ratio || '1:1').trim();
+                      const tplW = formData.width || 1080;
+                      let tplH = formData.height || 1080;
+                      if (ratioStr === '4:5' || ratioStr === '4/5') tplH = Math.round(tplW * 1.25);
+                      else if (ratioStr === '9:16' || ratioStr === '9/16') tplH = Math.round(tplW * (16 / 9));
+                      else if (ratioStr === '16:9' || ratioStr === '16/9') tplH = Math.round(tplW * (9 / 16));
+                      else if (ratioStr === '1:1') tplH = tplW;
+
+                      const scale = Math.min(420 / tplH, 550 / tplW);
+                      const boxW = Math.round(tplW * scale);
+                      const boxH = Math.round(tplH * scale);
+                      const rendered = substituteTemplateShortcuts(formData.html_content, SAMPLE_ESTATE_PAYLOAD);
+
+                      return (
+                        <div
+                          style={{
+                            width: `${boxW}px`,
+                            height: `${boxH}px`,
+                            position: 'relative',
+                            overflow: 'hidden',
+                            borderRadius: '16px',
+                            boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+                          }}
+                        >
+                          <iframe
+                            srcDoc={prepareHtmlForRendering(rendered, tplW, tplH, agency)}
+                            title="Previsualización"
+                            sandbox="allow-same-origin"
+                            tabIndex={-1}
+                            aria-hidden="true"
+                            style={{
+                              width: `${tplW}px`,
+                              height: `${tplH}px`,
+                              transform: `scale(${scale})`,
+                              transformOrigin: 'top left',
+                              border: 'none',
+                              pointerEvents: 'none',
+                              userSelect: 'none',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              background: 'transparent',
+                            }}
+                          />
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -727,23 +807,54 @@ export const EstateTemplatesManagementView: React.FC = () => {
               </div>
 
               <div className="p-6 bg-slate-950 flex items-center justify-center overflow-auto min-h-[460px]">
-                <div
-                  style={{
-                    width: `${previewModalTemplate.width}px`,
-                    height: `${previewModalTemplate.height}px`,
-                    transform: `scale(${Math.min(460 / previewModalTemplate.height, 650 / previewModalTemplate.width)})`,
-                    transformOrigin: 'center center',
-                    boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: substituteTemplateShortcuts(
-                      previewModalTemplate.html_content,
-                      SAMPLE_ESTATE_PAYLOAD
-                    ),
-                  }}
-                />
+                {(() => {
+                  const ratioStr = (previewModalTemplate.aspect_ratio || '1:1').trim();
+                  const tplW = previewModalTemplate.width || 1080;
+                  let tplH = previewModalTemplate.height || 1080;
+                  if (ratioStr === '4:5' || ratioStr === '4/5') tplH = Math.round(tplW * 1.25);
+                  else if (ratioStr === '9:16' || ratioStr === '9/16') tplH = Math.round(tplW * (16 / 9));
+                  else if (ratioStr === '16:9' || ratioStr === '16/9') tplH = Math.round(tplW * (9 / 16));
+                  else if (ratioStr === '1:1') tplH = tplW;
+
+                  const scale = Math.min(460 / tplH, 650 / tplW);
+                  const boxW = Math.round(tplW * scale);
+                  const boxH = Math.round(tplH * scale);
+                  const rendered = substituteTemplateShortcuts(previewModalTemplate.html_content, SAMPLE_ESTATE_PAYLOAD);
+
+                  return (
+                    <div
+                      style={{
+                        width: `${boxW}px`,
+                        height: `${boxH}px`,
+                        position: 'relative',
+                        overflow: 'hidden',
+                        borderRadius: '16px',
+                        boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+                      }}
+                    >
+                      <iframe
+                        srcDoc={prepareHtmlForRendering(rendered, tplW, tplH, agency)}
+                        title={previewModalTemplate.name}
+                        sandbox="allow-same-origin"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        style={{
+                          width: `${tplW}px`,
+                          height: `${tplH}px`,
+                          transform: `scale(${scale})`,
+                          transformOrigin: 'top left',
+                          border: 'none',
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          background: 'transparent',
+                        }}
+                      />
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
