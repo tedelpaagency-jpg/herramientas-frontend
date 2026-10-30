@@ -260,6 +260,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'ACM (Avalúo Comercial)', path: '/acm', icon: Calculator, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage', 'acm.view'] },
         { label: 'Propiedades e Inmuebles', path: '/estates', icon: Building2, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage'] },
         { label: 'Portal Inmobiliario (Web)', path: '/portal-inmobiliario', icon: Globe, permission: ['portal_inmobiliario.view', 'portal_inmobiliario.manage', 'portal_inmobiliario'] },
+        ...((isWhiteLabelAdmin || isSuperAdmin)
+          ? [
+              {
+                label: 'Plantillas Creativas (HTML)',
+                path: '/admin/estate-templates',
+                icon: LayoutGrid,
+              },
+            ]
+          : []),
       ],
     },
     {

@@ -631,11 +631,9 @@ export const EstatesPage: React.FC = () => {
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
                               <div 
-                                onClick={() => imgUrl && handleExpandImage(estate, 0)}
-                                className={`w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex-shrink-0 overflow-hidden relative transition-all ${
-                                  imgUrl ? 'cursor-pointer group/thumb hover:ring-2 hover:ring-blue-500 hover:shadow-md' : ''
-                                }`}
-                                title={imgUrl ? "Click para expandir imagen" : ""}
+                                onClick={() => handleViewCanvaGallery(estate)}
+                                className={`w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex-shrink-0 overflow-hidden relative transition-all cursor-pointer group/thumb hover:ring-2 hover:ring-indigo-500 hover:shadow-md`}
+                                title="Ver Plantillas Creativas (HTML & PNG)"
                               >
                                 {imgUrl ? (
                                   <>
@@ -790,11 +788,11 @@ export const EstatesPage: React.FC = () => {
                                 <Layout className="w-4 h-4" />
                               </button>
 
-                              {/* Canva 3D Gallery Icon */}
+                              {/* Creative HTML Templates Icon */}
                               <button
                                 onClick={() => handleViewCanvaGallery(estate)}
                                 className="p-2 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 transition-all active:scale-95 shadow-2xs"
-                                title="Ver Galería Canva 3D"
+                                title="Ver Plantillas Creativas (HTML & PNG)"
                               >
                                 <ImageIcon className="w-4 h-4" />
                               </button>
@@ -857,7 +855,7 @@ export const EstatesPage: React.FC = () => {
                                         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-purple-700 hover:bg-purple-50 transition-colors"
                                       >
                                         <ImageIcon className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                                        <span>Ver Galería Canva 3D</span>
+                                        <span>Plantillas Creativas (HTML & PNG)</span>
                                       </button>
 
                                       <div className="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
@@ -918,11 +916,9 @@ export const EstatesPage: React.FC = () => {
                   >
                     <div>
                       <div 
-                        onClick={() => imgUrl && handleExpandImage(estate, 0)}
-                        className={`h-48 bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center overflow-hidden ${
-                          imgUrl ? 'cursor-pointer group/cardimg' : ''
-                        }`}
-                        title={imgUrl ? "Click para expandir imagen" : ""}
+                        onClick={() => handleViewCanvaGallery(estate)}
+                        className={`h-48 bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center overflow-hidden cursor-pointer group/cardimg`}
+                        title="Ver Plantillas Creativas (HTML & PNG)"
                       >
                         {imgUrl ? (
                           <>
@@ -1074,7 +1070,7 @@ export const EstatesPage: React.FC = () => {
                         <button
                           onClick={() => handleViewCanvaGallery(estate)}
                           className="p-1.5 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 transition-colors"
-                          title="Ver Galería Canva 3D"
+                          title="Ver Plantillas Creativas (HTML & PNG)"
                         >
                           <ImageIcon className="w-4 h-4" />
                         </button>

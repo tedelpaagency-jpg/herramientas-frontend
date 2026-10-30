@@ -18,8 +18,10 @@ import {
   Layers,
   RefreshCw,
   Search,
+  Lock,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useAuth } from "@/context/AuthContext";
 import estateCatalogService, {
   EstateCountryItem,
   EstateCityItem,
@@ -35,6 +37,15 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
   whiteLabelId,
   isCompact = false,
 }) => {
+  const { user } = useAuth();
+  const isSuperAdmin =
+    user?.role === 'super_admin' ||
+    user?.roles?.some((r: any) => r.name === 'super_admin');
+  const isWhiteLabelAdmin =
+    user?.role === 'white_label_admin' ||
+    user?.roles?.some((r: any) => r.name === 'white_label_admin');
+  const canManage = Boolean(isSuperAdmin || isWhiteLabelAdmin);
+
   const [activeTab, setActiveTab] = useState<"countries" | "cities" | "categories">("countries");
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -103,6 +114,10 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
   }, [whiteLabelId]);
 
   const handleSeedDefaults = async () => {
+    if (!canManage) {
+      toast.error("Solo el administrador de la Marca Blanca puede poblar datos en el catálogo.");
+      return;
+    }
     if (!confirm("¿Deseas poblar el catálogo con países, ciudades y categorías sugeridas con fotos de alta resolución?")) {
       return;
     }
@@ -331,6 +346,10 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
   };
 
   const handleDelete = async (type: "country" | "city" | "category", id: number, name: string) => {
+    if (!canManage) {
+      toast.error("Solo el administrador de la Marca Blanca puede eliminar elementos del catálogo.");
+      return;
+    }
     if (!confirm(`¿Estás seguro de eliminar "${name}"?`)) return;
     try {
       if (type === "country") await estateCatalogService.deleteCountry(id);
@@ -344,6 +363,10 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
   };
 
   const handleToggleCountryStatus = async (id: number) => {
+    if (!canManage) {
+      toast.error("Solo el administrador de la Marca Blanca puede cambiar el estado.");
+      return;
+    }
     try {
       const res = await estateCatalogService.toggleCountryStatus(id);
       if (res) {
@@ -356,6 +379,10 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
   };
 
   const handleToggleCityStatus = async (id: number) => {
+    if (!canManage) {
+      toast.error("Solo el administrador de la Marca Blanca puede cambiar el estado.");
+      return;
+    }
     try {
       const res = await estateCatalogService.toggleCityStatus(id);
       if (res) {
@@ -368,6 +395,10 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
   };
 
   const handleToggleCategoryStatus = async (id: number) => {
+    if (!canManage) {
+      toast.error("Solo el administrador de la Marca Blanca puede cambiar el estado.");
+      return;
+    }
     try {
       const res = await estateCatalogService.toggleCategoryStatus(id);
       if (res) {
@@ -409,18 +440,20 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleSeedDefaults}
-              disabled={seeding}
-              className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-xs font-extrabold text-white flex items-center gap-2 backdrop-blur-md border border-white/20 transition-all cursor-pointer shadow-xs disabled:opacity-50"
-              title="Cargar países, ciudades y categorías sugeridas con fotos por defecto"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${seeding ? "animate-spin" : ""}`} />
-              <span>{seeding ? "Poblando..." : "Cargar Sugeridos con Fotos"}</span>
-            </button>
-          </div>
+          {canManage && (
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleSeedDefaults}
+                disabled={seeding}
+                className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-xs font-extrabold text-white flex items-center gap-2 backdrop-blur-md border border-white/20 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                title="Cargar países, ciudades y categorías sugeridas con fotos por defecto"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${seeding ? "animate-spin" : ""}`} />
+                <span>{seeding ? "Poblando..." : "Cargar Sugeridos con Fotos"}</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Contadores rápidos */}
@@ -455,6 +488,15 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
             </div>
           </div>
         </div>
+
+        {!canManage && (
+          <div className="mt-5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs flex items-center gap-2.5">
+            <Lock className="w-4 h-4 shrink-0 text-amber-400" />
+            <span>
+              <strong>Modo de solo lectura:</strong> Únicamente el Administrador de Marca Blanca tiene permisos para crear, editar o eliminar países, ciudades y categorías del catálogo.
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Selector de Pestañas y Buscador */}
@@ -512,7 +554,7 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
             />
           </div>
 
-          {activeTab === "countries" && (
+          {canManage && activeTab === "countries" && (
             <button
               type="button"
               onClick={() => openCountryModal()}
@@ -523,7 +565,7 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
             </button>
           )}
 
-          {activeTab === "cities" && (
+          {canManage && activeTab === "cities" && (
             <button
               type="button"
               onClick={() => openCityModal()}
@@ -534,7 +576,7 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
             </button>
           )}
 
-          {activeTab === "categories" && (
+          {canManage && activeTab === "categories" && (
             <button
               type="button"
               onClick={() => openCategoryModal()}
@@ -578,19 +620,29 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
                     <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider">
                       {c.code || "EC"}
                     </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleCountryStatus(c.id);
-                      }}
-                      title="Click para cambiar estado (Activo / Inactivo)"
-                      className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
-                        c.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
-                      }`}
-                    >
-                      {c.status ? "Activo" : "Inactivo"}
-                    </button>
+                    {canManage ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleCountryStatus(c.id);
+                        }}
+                        title="Click para cambiar estado (Activo / Inactivo)"
+                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
+                          c.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
+                        }`}
+                      >
+                        {c.status ? "Activo" : "Inactivo"}
+                      </button>
+                    ) : (
+                      <span
+                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
+                          c.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {c.status ? "Activo" : "Inactivo"}
+                      </span>
+                    )}
                   </div>
 
                   <div className="p-4 flex-1 flex flex-col justify-between">
@@ -599,24 +651,26 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
                       <p className="text-[11px] text-slate-500 mt-0.5">Orden de visualización: #{c.order}</p>
                     </div>
 
-                    <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                      <button
-                        type="button"
-                        onClick={() => openCountryModal(c)}
-                        className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
-                        title="Editar País"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete("country", c.id, c.name)}
-                        className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
-                        title="Eliminar País"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    {canManage && (
+                      <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => openCountryModal(c)}
+                          className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
+                          title="Editar País"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete("country", c.id, c.name)}
+                          className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
+                          title="Eliminar País"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -653,19 +707,29 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
                         {city.country.name}
                       </span>
                     )}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleCityStatus(city.id);
-                      }}
-                      title="Click para cambiar estado (Activa / Inactiva)"
-                      className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
-                        city.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
-                      }`}
-                    >
-                      {city.status ? "Activa" : "Inactiva"}
-                    </button>
+                    {canManage ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleCityStatus(city.id);
+                        }}
+                        title="Click para cambiar estado (Activa / Inactiva)"
+                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
+                          city.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
+                        }`}
+                      >
+                        {city.status ? "Activa" : "Inactiva"}
+                      </button>
+                    ) : (
+                      <span
+                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
+                          city.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {city.status ? "Activa" : "Inactiva"}
+                      </span>
+                    )}
                   </div>
 
                   <div className="p-4 flex-1 flex flex-col justify-between">
@@ -679,24 +743,26 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                      <button
-                        type="button"
-                        onClick={() => openCityModal(city)}
-                        className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
-                        title="Editar Ciudad"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete("city", city.id, city.name)}
-                        className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
-                        title="Eliminar Ciudad"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    {canManage && (
+                      <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => openCityModal(city)}
+                          className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
+                          title="Editar Ciudad"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete("city", city.id, city.name)}
+                          className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
+                          title="Eliminar Ciudad"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -731,19 +797,29 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
                     <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
                       <Tag className="w-3 h-3 text-emerald-400" /> Tipo #{cat.property_type || 1}
                     </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleCategoryStatus(cat.id);
-                      }}
-                      title="Click para cambiar estado (Visible / Oculta)"
-                      className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
-                        cat.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
-                      }`}
-                    >
-                      {cat.status ? "Visible" : "Oculta"}
-                    </button>
+                    {canManage ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleCategoryStatus(cat.id);
+                        }}
+                        title="Click para cambiar estado (Visible / Oculta)"
+                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
+                          cat.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
+                        }`}
+                      >
+                        {cat.status ? "Visible" : "Oculta"}
+                      </button>
+                    ) : (
+                      <span
+                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
+                          cat.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {cat.status ? "Visible" : "Oculta"}
+                      </span>
+                    )}
                   </div>
 
                   <div className="p-4 flex-1 flex flex-col justify-between">
@@ -754,24 +830,26 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                      <button
-                        type="button"
-                        onClick={() => openCategoryModal(cat)}
-                        className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
-                        title="Editar Categoría"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete("category", cat.id, cat.name)}
-                        className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
-                        title="Eliminar Categoría"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    {canManage && (
+                      <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => openCategoryModal(cat)}
+                          className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
+                          title="Editar Categoría"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete("category", cat.id, cat.name)}
+                          className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
+                          title="Eliminar Categoría"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
