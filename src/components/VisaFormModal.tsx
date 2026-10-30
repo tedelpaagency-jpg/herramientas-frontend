@@ -5,6 +5,7 @@ import { Visa, VisaRef } from '../types';
 import visaService from '../services/visaService';
 import { FileCheck, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Portal from './Portal';
 
 interface VisaFormModalProps {
   visa: Visa | null;
@@ -98,7 +99,8 @@ export const VisaFormModal: React.FC<VisaFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <Portal>
+      <div className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
         {/* Header */}
         <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
@@ -203,6 +205,7 @@ export const VisaFormModal: React.FC<VisaFormModalProps> = ({
         </form>
       </div>
     </div>
+    </Portal>
   );
 };
 

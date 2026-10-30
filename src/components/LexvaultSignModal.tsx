@@ -8,6 +8,7 @@ import lexvaultService from '../services/lexvaultService';
 import toast from 'react-hot-toast';
 
 import WordDocumentPaper from './WordDocumentPaper';
+import Portal from './Portal';
 
 interface LexvaultSignModalProps {
   isOpen: boolean;
@@ -142,8 +143,9 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
   const bodyHtml = (document as any).rendered_content || document.rendered_html || document.filled_content || document.template?.html_content || '';
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <Portal>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -306,6 +308,7 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal>
   );
 };
 

@@ -9,6 +9,7 @@ import WorkflowPaymentSettings from './WorkflowPaymentSettings';
 import DynamicFormRenderer from './DynamicFormRenderer';
 import { X, Save, Layout, Layers, Zap, Code, Eye, Plus, Trash2, Loader2, Globe, ExternalLink, Copy, Check, ArrowRight } from 'lucide-react';
 import { prepareLandingHtml } from '@/utils/landingHtmlHelper';
+import Portal from '@/components/Portal';
 
 interface Props {
   isOpen: boolean;
@@ -342,7 +343,8 @@ export const LandingBuilderModal: React.FC<Props> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <Portal>
+      <div className="fixed inset-0 z-[100] w-screen h-screen bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
       <div className="bg-slate-950 border border-slate-800 rounded-2xl w-full max-w-6xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-slate-900 border-b border-slate-800 p-4 flex flex-wrap items-center justify-between gap-4">
@@ -755,6 +757,7 @@ export const LandingBuilderModal: React.FC<Props> = ({
         </div>
       </div>
     </div>
+    </Portal>
   );
 };
 

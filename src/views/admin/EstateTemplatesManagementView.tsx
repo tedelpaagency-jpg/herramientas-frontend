@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
+import Portal from '@/components/Portal';
 import estateTemplateService, { EstateTemplateItem } from '@/services/estateTemplateService';
 import {
   substituteTemplateShortcuts,
@@ -513,7 +514,8 @@ export const EstateTemplatesManagementView: React.FC = () => {
         {/* MODAL EDITOR: Crear / Editar Plantilla HTML con Shortcuts */}
         {/* ======================================================== */}
         {editorOpen && (
-          <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+          <Portal>
+            <div className="fixed inset-0 z-[100] w-screen h-screen bg-black/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
             <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden flex flex-col max-h-[92vh]">
               
               {/* Encabezado del Modal */}
@@ -768,13 +770,15 @@ export const EstateTemplatesManagementView: React.FC = () => {
               </form>
             </div>
           </div>
+          </Portal>
         )}
 
         {/* ======================================================== */}
         {/* MODAL VISTA PREVIA DETALLADA / TEST PNG                  */}
         {/* ======================================================== */}
         {previewModalTemplate && (
-          <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
+          <Portal>
+            <div className="fixed inset-0 z-[100] w-screen h-screen bg-black/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
             <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden flex flex-col max-h-[90vh]">
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 dark:bg-slate-950/60">
                 <div>
@@ -858,6 +862,7 @@ export const EstateTemplatesManagementView: React.FC = () => {
               </div>
             </div>
           </div>
+          </Portal>
         )}
       </div>
     </div>

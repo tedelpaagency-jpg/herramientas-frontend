@@ -19,6 +19,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { Estate } from '../types';
+import Portal from './Portal';
 
 interface EstateImageLightboxModalProps {
   isOpen: boolean;
@@ -190,8 +191,9 @@ export const EstateImageLightboxModal: React.FC<EstateImageLightboxModalProps> =
   if (!isOpen || !estate) return null;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex flex-col justify-between select-none">
+    <Portal>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[120] w-screen h-screen flex flex-col justify-between select-none">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -420,6 +422,7 @@ export const EstateImageLightboxModal: React.FC<EstateImageLightboxModalProps> =
         )}
       </div>
     </AnimatePresence>
+    </Portal>
   );
 };
 

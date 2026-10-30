@@ -313,6 +313,9 @@ export function prepareHtmlForRendering(
   if (!secondary) secondary = '#4a321e';
 
   const brandStyles = `
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style id="saas-runtime-brand-vars">
       :root, html, body, .property-card {
         --brand-primary: ${primary} !important;
@@ -336,6 +339,26 @@ export function prepareHtmlForRendering(
         height: ${height}px !important;
         max-width: none !important;
         margin: 0 auto !important;
+      }
+      /* Corrección crítica de html2canvas para cálculo de baseline de fuentes */
+      img {
+        display: inline-block !important;
+      }
+      /* Prevenir recorte o truncado vertical de títulos y textos */
+      .copy {
+        overflow: visible !important;
+      }
+      h1, h2, h3 {
+        line-height: 1.08 !important;
+        overflow: visible !important;
+        -webkit-line-clamp: unset !important;
+      }
+      .features .item {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      .footer, .agent, .agent strong, .agent span {
+        overflow: visible !important;
       }
     </style>
   `;
@@ -470,16 +493,16 @@ export async function downloadHtmlAsPng(
   const renderedHtml = prepareHtmlForRendering(htmlContent, width, height, agency, whiteLabel);
   const readyHtml = await inlineImagesInHtml(renderedHtml);
 
-  // Crear contenedor offscreen
+  // Crear contenedor offscreen fijado en (0,0) detrás de la pantalla para evitar bugs de coordenadas
   const container = document.createElement('div');
   container.style.position = 'fixed';
-  container.style.left = '-99999px';
+  container.style.left = '0';
   container.style.top = '0';
   container.style.width = `${width}px`;
   container.style.height = `${height}px`;
   container.style.overflow = 'hidden';
   container.style.zIndex = '-99999';
-  container.style.opacity = '1';
+  container.style.opacity = '0.01';
   container.style.pointerEvents = 'none';
 
   // Usar iframe aislado para renderizar fielmente reglas de layout y fuentes
@@ -537,10 +560,41 @@ export async function downloadHtmlAsPng(
       windowWidth: width,
       windowHeight: height,
       scale: 1,
+      scrollX: 0,
+      scrollY: 0,
+      x: 0,
+      y: 0,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
       logging: false,
+      onclone: (clonedDoc) => {
+        // Inyectar correcciones directamente en el DOM clonado antes de que html2canvas mida fuentes:
+        // 1. Evita que FontMetrics mida la línea con img en display: block (causa del desplazamiento hacia abajo)
+        // 2. Previene el recorte de cajas de texto (line-height, overflow)
+        const fixStyle = clonedDoc.createElement('style');
+        fixStyle.textContent = `
+          img {
+            display: inline-block !important;
+          }
+          .copy {
+            overflow: visible !important;
+          }
+          h1, h2, h3 {
+            line-height: 1.08 !important;
+            overflow: visible !important;
+            -webkit-line-clamp: unset !important;
+          }
+          .features .item {
+            max-height: none !important;
+            overflow: visible !important;
+          }
+          .footer, .agent, .agent strong, .agent span {
+            overflow: visible !important;
+          }
+        `;
+        clonedDoc.head.appendChild(fixStyle);
+      },
     });
 
     await new Promise<void>((resolve, reject) => {

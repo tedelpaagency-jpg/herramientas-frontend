@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Copy, PenTool, FileText, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { LexvaultDocument, LexvaultTemplate } from '../types';
 import WordDocumentPaper from './WordDocumentPaper';
+import Portal from './Portal';
 
 interface LexvaultDetailModalProps {
   isOpen: boolean;
@@ -47,8 +48,9 @@ export const LexvaultDetailModal: React.FC<LexvaultDetailModalProps> = ({
     : 'PLANTILLA BASE';
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
+    <Portal>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -160,6 +162,7 @@ export const LexvaultDetailModal: React.FC<LexvaultDetailModalProps> = ({
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal>
   );
 };
 

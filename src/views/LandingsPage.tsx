@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { LandingTemplate, LandingEvent, LandingRequest } from '../types';
 import landingService from '../services/landingService';
 import LandingBuilderModal from '../components/landings/LandingBuilderModal';
+import Portal from '@/components/Portal';
 import { 
   Globe, Calendar, QrCode, ExternalLink, Users, Copy, 
   Check, Plus, Clock, FileText, CheckCircle2, ShieldCheck, X,
@@ -549,8 +550,9 @@ export const LandingsPage: React.FC = () => {
 
       {/* Landing Detail & Events Modal */}
       {selectedLanding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl h-[80vh] shadow-2xl flex flex-col overflow-hidden">
+        <Portal>
+          <div className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl h-[80vh] shadow-2xl flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
               <div>
@@ -770,12 +772,14 @@ export const LandingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        </Portal>
       )}
 
       {/* New Event Modal */}
       {isEventModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 shadow-2xl space-y-4">
+        <Portal>
+          <div className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="text-lg font-black text-slate-900 dark:text-white">Programar Evento / Promoción</h3>
               <button onClick={() => setIsEventModalOpen(false)} className="text-slate-400 hover:text-slate-600">
@@ -837,6 +841,7 @@ export const LandingsPage: React.FC = () => {
             </form>
           </div>
         </div>
+        </Portal>
       )}
     </div>
   );

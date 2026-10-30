@@ -21,6 +21,7 @@ import { LexvaultTemplate } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import toast from 'react-hot-toast';
 import LetterheadGuideModal, { downloadLetterheadGuideTemplate } from './LetterheadGuideModal';
+import Portal from './Portal';
 
 interface LexvaultTemplateModalProps {
   isOpen: boolean;
@@ -108,8 +109,9 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
   };
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+    <Portal>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -337,6 +339,7 @@ export const LexvaultTemplateModal: React.FC<LexvaultTemplateModalProps> = ({
         onClose={() => setIsGuideModalOpen(false)}
       />
     </AnimatePresence>
+    </Portal>
   );
 };
 

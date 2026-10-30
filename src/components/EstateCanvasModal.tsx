@@ -19,6 +19,7 @@ import {
   QrCode
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Portal from './Portal';
 
 interface EstateCanvasModalProps {
   isOpen: boolean;
@@ -58,8 +59,9 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
   };
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <Portal>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -288,6 +290,7 @@ export const EstateCanvasModal: React.FC<EstateCanvasModalProps> = ({
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal>
   );
 };
 

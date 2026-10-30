@@ -46,6 +46,7 @@ import { EstateCanvaGalleryModal } from '@/components/EstateCanvaGalleryModal';
 import { EstateImageLightboxModal } from '@/components/EstateImageLightboxModal';
 import { AdvisorSearchSelect } from '@/components/AdvisorSearchSelect';
 import EstateApprovalSettingsPanel from '@/components/estates/EstateApprovalSettingsPanel';
+import Portal from '@/components/Portal';
 
 const EstatesMapView = dynamic(() => import('@/components/EstatesMapView'), { ssr: false });
 
@@ -75,7 +76,7 @@ export const EstatesPage: React.FC = () => {
   const searchParams = useSearchParams();
   const viewParam = searchParams ? searchParams.get('view') : null;
 
-  const { user, dashboardType } = useAuth();
+  const { user, dashboardType, currentAgency } = useAuth();
   const isWhiteLabelOrSuperAdmin = dashboardType === 'white_label_admin' || dashboardType === 'super_admin' || user?.role === 'white_label_admin' || user?.role === 'super_admin';
 
   const [estates, setEstates] = useState<Estate[]>([]);
@@ -137,10 +138,13 @@ export const EstatesPage: React.FC = () => {
   const fetchAgents = async (currentAgencyId?: string) => {
     try {
       const selectedAgId = currentAgencyId !== undefined ? currentAgencyId : agencyFilter;
+      const effectiveAgId = selectedAgId 
+        ? Number(selectedAgId) 
+        : (!isWhiteLabelOrSuperAdmin ? (user?.agency_id || (user as any)?.agency?.id || currentAgency?.id || undefined) : undefined);
+
       const res = await userService.getUsers({ 
         all: true,
-        agency_id: selectedAgId ? Number(selectedAgId) : undefined,
-        role: 'agent'
+        agency_id: effectiveAgId,
       });
       const userList = Array.isArray(res) ? res : (res.data?.data || res.data || []);
       setAgents(userList);
@@ -520,6 +524,8 @@ export const EstatesPage: React.FC = () => {
             <AdvisorSearchSelect
               users={agents}
               selectedUserId={agentFilter}
+              selectedAgencyId={agencyFilter}
+              agencies={agencies}
               onChange={(userId) => {
                 setAgentFilter(userId);
                 setPage(1);
@@ -1261,33 +1267,35 @@ export const EstatesPage: React.FC = () => {
 
       {/* Modal de Configuración de Aprobaciones y Automatizaciones */}
       {isSettingsModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-3xl w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto custom-scrollbar animate-slide-up-fade">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
-                  Políticas de Aprobación &amp; Automatizaciones Inmobiliarias
-                </h3>
+        <Portal>
+          <div className="fixed inset-0 z-[100] w-screen h-screen bg-black/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-3xl w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto custom-scrollbar animate-slide-up-fade">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+                    Políticas de Aprobación &amp; Automatizaciones Inmobiliarias
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-xl font-bold"
+                >
+                  &times;
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsSettingsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-xl font-bold"
-              >
-                &times;
-              </button>
-            </div>
 
-            <EstateApprovalSettingsPanel
-              agencyId={agencyFilter ? Number(agencyFilter) : (user?.agency_id || undefined)}
-              onSaved={() => {
-                fetchEstates();
-              }}
-              isModal={true}
-            />
+              <EstateApprovalSettingsPanel
+                agencyId={agencyFilter ? Number(agencyFilter) : (user?.agency_id || undefined)}
+                onSaved={() => {
+                  fetchEstates();
+                }}
+                isModal={true}
+              />
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

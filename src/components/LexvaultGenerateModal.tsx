@@ -9,6 +9,7 @@ import clientService from '../services/clientService';
 import WordDocumentPaper from './WordDocumentPaper';
 import toast from 'react-hot-toast';
 import { downloadLetterheadGuideTemplate } from './LetterheadGuideModal';
+import Portal from './Portal';
 
 interface LexvaultGenerateModalProps {
   isOpen: boolean;
@@ -252,8 +253,9 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <Portal>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -581,6 +583,7 @@ export const LexvaultGenerateModal: React.FC<LexvaultGenerateModalProps> = ({
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal>
   );
 };
 

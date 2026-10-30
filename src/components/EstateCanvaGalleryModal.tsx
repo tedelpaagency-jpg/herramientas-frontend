@@ -19,6 +19,7 @@ import {
 import { Estate } from '../types';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import Portal from './Portal';
 import estateTemplateService, { EstateTemplate } from '@/services/estateTemplateService';
 import estateService from '@/services/estateService';
 import {
@@ -258,8 +259,9 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
   };
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
+    <Portal>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[100] w-screen h-screen flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -694,8 +696,9 @@ export const EstateCanvaGalleryModal: React.FC<EstateCanvaGalleryModalProps> = (
             </div>
           </div>
         </motion.div>
-      </div>
-    </AnimatePresence>
+        </div>
+      </AnimatePresence>
+    </Portal>
   );
 };
 
