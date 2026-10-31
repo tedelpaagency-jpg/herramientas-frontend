@@ -361,9 +361,21 @@ export function prepareHtmlForRendering(
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        height: 4.4cqw !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
         line-height: 1 !important;
-        padding-top: 0.6cqw !important;
-        padding-bottom: 0.8cqw !important;
+        box-sizing: border-box !important;
+      }
+      .cta {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 5.4cqw !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        line-height: 1 !important;
+        box-sizing: border-box !important;
       }
       .footer, .agent, .agent strong, .agent span {
         overflow: visible !important;
@@ -608,9 +620,21 @@ export async function downloadHtmlAsPng(
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+            height: 4.4cqw !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
             line-height: 1 !important;
-            padding-top: 0.6cqw !important;
-            padding-bottom: 0.8cqw !important;
+            box-sizing: border-box !important;
+          }
+          .cta {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            height: 5.4cqw !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            line-height: 1 !important;
+            box-sizing: border-box !important;
           }
           .footer, .agent, .agent strong, .agent span {
             overflow: visible !important;
@@ -624,6 +648,41 @@ export async function downloadHtmlAsPng(
           }
         `;
         clonedDoc.head.appendChild(fixStyle);
+
+        // Compensación milimétrica para centrado vertical de badges y botones en html2canvas
+        const badges = clonedDoc.querySelectorAll('.badge');
+        badges.forEach((el) => {
+          const badgeEl = el as HTMLElement;
+          badgeEl.style.display = 'inline-flex';
+          badgeEl.style.alignItems = 'center';
+          badgeEl.style.justifyContent = 'center';
+          badgeEl.style.height = '4.4cqw';
+          badgeEl.style.paddingTop = '0px';
+          badgeEl.style.paddingBottom = '0px';
+          badgeEl.style.boxSizing = 'border-box';
+          badgeEl.style.lineHeight = '1';
+          const text = badgeEl.textContent?.trim() || '';
+          if (text) {
+            badgeEl.innerHTML = `<span style="display:inline-block; transform:translateY(-0.35cqw); line-height:1; font-weight:inherit; letter-spacing:inherit;">${text}</span>`;
+          }
+        });
+
+        const ctas = clonedDoc.querySelectorAll('.cta');
+        ctas.forEach((el) => {
+          const ctaEl = el as HTMLElement;
+          ctaEl.style.display = 'inline-flex';
+          ctaEl.style.alignItems = 'center';
+          ctaEl.style.justifyContent = 'center';
+          ctaEl.style.height = '5.4cqw';
+          ctaEl.style.paddingTop = '0px';
+          ctaEl.style.paddingBottom = '0px';
+          ctaEl.style.boxSizing = 'border-box';
+          ctaEl.style.lineHeight = '1';
+          const text = ctaEl.textContent?.trim() || '';
+          if (text) {
+            ctaEl.innerHTML = `<span style="display:inline-block; transform:translateY(-0.35cqw); line-height:1; font-weight:inherit; letter-spacing:inherit;">${text}</span>`;
+          }
+        });
       },
     });
 
