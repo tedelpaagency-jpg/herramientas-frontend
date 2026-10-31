@@ -19,6 +19,10 @@ import {
   HelpCircle,
   FileCode,
   ShieldAlert,
+  Lightbulb,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
@@ -100,6 +104,7 @@ export const EstateTemplatesManagementView: React.FC = () => {
 
   // Preview Modal state
   const [previewModalTemplate, setPreviewModalTemplate] = useState<EstateTemplateItem | null>(null);
+  const [showGuide, setShowGuide] = useState<boolean>(false);
 
   const fetchTemplates = async () => {
     setLoading(true);
@@ -303,6 +308,81 @@ export const EstateTemplatesManagementView: React.FC = () => {
             </p>
           </div>
         )}
+
+        {/* Recomendación de Compatibilidad con html2canvas para Exportación PNG */}
+        <div className="bg-gradient-to-r from-indigo-50/80 via-blue-50/60 to-purple-50/80 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-900 rounded-2xl border border-indigo-100 dark:border-slate-800 p-4 shadow-2xs transition-all">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5 sm:mt-0">
+                <Lightbulb className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Recomendación: Diseñar plantillas compatibles con html2canvas</span>
+                  <span className="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold uppercase tracking-wider">
+                    Descarga PNG
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
+                  Las imágenes de tus inmuebles se descargan mediante el motor <code className="px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 font-mono text-[11px]">html2canvas</code>. Sigue las reglas de interlineado y cajas de texto para que los diseños se descarguen exactamente iguales a la previsualización.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowGuide(!showGuide)}
+              className="self-start sm:self-center px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs active:scale-[0.98] cursor-pointer shrink-0"
+            >
+              <span>{showGuide ? 'Ocultar Guía' : 'Ver Reglas de Compatibilidad'}</span>
+              {showGuide ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          {showGuide && (
+            <div className="mt-4 pt-3.5 border-t border-indigo-100/80 dark:border-slate-800 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-950/60 border border-indigo-50 dark:border-slate-800/80 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span>Botones y Badges (Píldoras)</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Evita inflar píldoras con <code className="text-rose-500">padding-top</code> alto. Usa <code className="text-emerald-600 dark:text-emerald-400 font-mono">height</code> fija con <code className="text-emerald-600 dark:text-emerald-400 font-mono">display: flex; align-items: center; justify-content: center; padding: 0 Xpx;</code>.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-950/60 border border-indigo-50 dark:border-slate-800/80 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span>Interlineado y Textos</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Usa <code className="text-emerald-600 dark:text-emerald-400 font-mono">line-height: 1.1 a 1.4</code> (nunca menor a 1.0). Evita <code className="text-rose-500">overflow: hidden</code> en etiquetas de texto individuales (<code className="font-mono">h1</code>, <code className="font-mono">strong</code>) para no recortar letras descendentes.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-950/60 border border-indigo-50 dark:border-slate-800/80 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span>Imágenes del Inmueble</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Las imágenes de portada y galería deben incluir <code className="text-emerald-600 dark:text-emerald-400 font-mono">object-fit: cover</code> y encontrarse dentro de contenedores bien acotados con <code className="text-emerald-600 dark:text-emerald-400 font-mono">position: relative</code> o <code className="text-emerald-600 dark:text-emerald-400 font-mono">absolute</code>.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-950/60 border border-indigo-50 dark:border-slate-800/80 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span>Colores de Marca</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Emplea las variables CSS <code className="text-indigo-600 dark:text-indigo-400 font-mono">var(--brand-primary)</code> y <code className="text-indigo-600 dark:text-indigo-400 font-mono">var(--brand-secondary)</code> para que adopten el color corporativo de la agencia automáticamente.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Barra de Filtros por Aspect Ratio y Búsqueda */}
         <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
@@ -671,6 +751,28 @@ export const EstateTemplatesManagementView: React.FC = () => {
                             <span className="text-[10px] font-sans text-slate-400">({sc.label})</span>
                           </button>
                         ))}
+                      </div>
+                    </div>
+
+                    {/* Recomendación de Compatibilidad html2canvas dentro del Editor */}
+                    <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                        <Lightbulb className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-xs font-black text-amber-950 dark:text-amber-300">
+                            Recomendaciones de Compatibilidad con html2canvas (Exportación PNG)
+                          </h4>
+                          <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200">
+                            Importante
+                          </span>
+                        </div>
+                        <ul className="text-[11px] text-amber-900/90 dark:text-amber-200/90 mt-1.5 space-y-1 list-disc list-inside">
+                          <li><strong>Píldoras y Botones:</strong> No uses <code className="font-mono bg-amber-500/15 px-1 py-0.5 rounded">padding-top</code> alto. Define <code className="font-mono bg-amber-500/15 px-1 py-0.5 rounded">height: Xpx; display: flex; align-items: center; justify-content: center; padding: 0 Ypx;</code> para que el texto quede centrado.</li>
+                          <li><strong>Interlineado y Títulos:</strong> Mantén <code className="font-mono bg-amber-500/15 px-1 py-0.5 rounded">line-height: 1.1 a 1.4</code> (nunca menor a 1.0). Evita <code className="font-mono bg-amber-500/15 px-1 py-0.5 rounded">overflow: hidden</code> en etiquetas de texto individuales (<code className="font-mono">h1</code>, <code className="font-mono">strong</code>) para no recortar letras descendentes.</li>
+                          <li><strong>Imágenes:</strong> Usa <code className="font-mono bg-amber-500/15 px-1 py-0.5 rounded">width: 100%; height: 100%; object-fit: cover;</code> dentro de contenedores bien delimitados.</li>
+                        </ul>
                       </div>
                     </div>
 
