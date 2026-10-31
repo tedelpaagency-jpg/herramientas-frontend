@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Estate, User } from '../types';
-import estateService from '../services/estateService';
+import estateService, { EstateApprovalSettings } from '../services/estateService';
 import userService from '../services/userService';
 import { useAuth } from '../context/AuthContext';
 import { adminService } from '../services/adminService';
@@ -38,6 +38,8 @@ import {
   ShieldCheck,
   AlertCircle,
   CheckCircle2,
+  CheckCheck,
+  Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -121,6 +123,41 @@ export const EstatesPage: React.FC = () => {
   const [lightboxEstate, setLightboxEstate] = useState<Estate | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [approvalSettings, setApprovalSettings] = useState<EstateApprovalSettings | null>(null);
+  const [approvingAll, setApprovingAll] = useState<boolean>(false);
+
+  const requireApproval = Boolean(approvalSettings?.require_admin_approval_to_publish);
+
+  const fetchApprovalSettings = async (targetAgencyId?: string | number) => {
+    try {
+      const effectiveAgId = targetAgencyId !== undefined && targetAgencyId !== '' 
+        ? Number(targetAgencyId) 
+        : (user?.agency_id || (user as any)?.agency?.id || currentAgency?.id || undefined);
+      const data = await estateService.getSettings(effectiveAgId);
+      setApprovalSettings(data || null);
+    } catch (err) {
+      console.error('Error fetching approval settings:', err);
+    }
+  };
+
+  const handleApproveAll = async () => {
+    const unapprovedCount = estates.filter((e) => e.verify === 0).length;
+    if (!confirm(`¿Confirma que desea aprobar todas las propiedades pendientes (${unapprovedCount > 0 ? unapprovedCount : 'todas'}) para su publicación web?`)) return;
+    setApprovingAll(true);
+    try {
+      const effectiveAgId = agencyFilter 
+        ? Number(agencyFilter) 
+        : (user?.agency_id || (user as any)?.agency?.id || currentAgency?.id || undefined);
+      const res = await estateService.approveAllEstates(effectiveAgId);
+      setEstates(estates.map((e) => ({ ...e, verify: 1 })));
+      toast.success(res?.message || '¡Todas las propiedades han sido aprobadas exitosamente!');
+      fetchEstates();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al aprobar las propiedades');
+    } finally {
+      setApprovingAll(false);
+    }
+  };
 
   const handleExpandImage = (estate: Estate, initialIndex: number = 0) => {
     setActiveMenuId(null);
@@ -231,6 +268,7 @@ export const EstatesPage: React.FC = () => {
     setAgentFilter('');
     fetchAgents(agencyFilter);
     fetchCategories();
+    fetchApprovalSettings(agencyFilter);
   }, [agencyFilter]);
 
   useEffect(() => {
@@ -400,7 +438,20 @@ export const EstatesPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Botón Aprobar Todas las Propiedades */}
+          {requireApproval && estates.some((e) => e.verify === 0) && (
+            <button
+              onClick={handleApproveAll}
+              disabled={approvingAll}
+              className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              title="Aprobar todas las propiedades pendientes para su publicación web"
+            >
+              {approvingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
+              <span>Aprobar Todas ({estates.filter((e) => e.verify === 0).length})</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsSettingsModalOpen(true)}
             className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm border border-slate-200 dark:border-slate-700 transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
@@ -421,8 +472,8 @@ export const EstatesPage: React.FC = () => {
       </div>
 
       {/* Banner de Solicitudes Pendientes para Administradores */}
-      {estates.some((e) => e.verify === 0 || e.deletion_requested) && (
-        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between gap-3 shadow-xs">
+      {estates.some((e) => (requireApproval && e.verify === 0) || e.deletion_requested) && (
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <AlertCircle className="w-5 h-5" />
@@ -432,17 +483,33 @@ export const EstatesPage: React.FC = () => {
                 Atención Administrativa Requerida en Propiedades
               </h4>
               <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                Hay {estates.filter((e) => e.verify === 0).length} propiedades pendientes de aprobación y{' '}
-                {estates.filter((e) => e.deletion_requested).length} solicitudes de eliminación.
+                {requireApproval && estates.filter((e) => e.verify === 0).length > 0 && (
+                  <span>Hay {estates.filter((e) => e.verify === 0).length} propiedades pendientes de aprobación. </span>
+                )}
+                {estates.filter((e) => e.deletion_requested).length > 0 && (
+                  <span>{estates.filter((e) => e.deletion_requested).length} solicitudes de eliminación.</span>
+                )}
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setIsSettingsModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shrink-0 transition-all cursor-pointer"
-          >
-            Configurar Políticas
-          </button>
+          <div className="flex items-center gap-2">
+            {requireApproval && estates.some((e) => e.verify === 0) && (
+              <button
+                onClick={handleApproveAll}
+                disabled={approvingAll}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black shrink-0 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              >
+                {approvingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCheck className="w-3.5 h-3.5" />}
+                <span>Aprobar todas</span>
+              </button>
+            )}
+            <button
+              onClick={() => setIsSettingsModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shrink-0 transition-all cursor-pointer"
+            >
+              Configurar Políticas
+            </button>
+          </div>
         </div>
       )}
 
@@ -781,7 +848,7 @@ export const EstatesPage: React.FC = () => {
                                   </button>
                                 </div>
                               </div>
-                            ) : estate.verify === 0 ? (
+                            ) : (requireApproval && estate.verify === 0) ? (
                               <div className="space-y-1">
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">
                                   Pendiente Admin
@@ -1289,6 +1356,7 @@ export const EstatesPage: React.FC = () => {
               <EstateApprovalSettingsPanel
                 agencyId={agencyFilter ? Number(agencyFilter) : (user?.agency_id || undefined)}
                 onSaved={() => {
+                  fetchApprovalSettings(agencyFilter);
                   fetchEstates();
                 }}
                 isModal={true}

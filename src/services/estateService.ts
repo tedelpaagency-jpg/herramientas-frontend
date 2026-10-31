@@ -252,6 +252,13 @@ export const estateService = {
   rejectDeletion: async (estateId: number): Promise<void> => {
     await apiClient.patch(`/v1/estates/${estateId}/reject-deletion`);
   },
+
+  approveAllEstates: async (agencyId?: number): Promise<{ approved_count: number; message?: string }> => {
+    const response = await apiClient.post('/v1/estates/approve-all', {}, {
+      params: agencyId ? { agency_id: agencyId } : {},
+    });
+    return response.data?.data || response.data;
+  },
 };
 
 export default estateService;

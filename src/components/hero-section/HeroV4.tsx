@@ -593,14 +593,14 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   ];
 
   return (
-    <div className="inmo-hero-wrapper px-3 sm:px-6 py-4 lg:py-6" style={{ maxWidth: '1410px', margin: '0 auto', width: '100%' }}>
+    <div className="inmo-hero-wrapper px-3 sm:px-6 py-4 lg:py-6" style={{ maxWidth: '1540px', margin: '0 auto', width: '100%' }}>
       <style jsx global>{`
         @keyframes inmoSpin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
 
-        /* Hero Frame Canvas (10% más ancho, 600px tall, responsive) */
+        /* Hero Frame Canvas (Grande, espacioso y centrado) */
         .inmo-hero-canvas {
           position: relative;
           border-radius: 36px;
@@ -609,38 +609,40 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: center;
-          min-height: 600px;
-          padding: 60px 24px 80px 24px;
+          justify-content: space-between;
+          min-height: clamp(680px, 78vh, 800px);
+          padding: 70px 24px 44px 24px;
           box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.4);
           width: 100%;
-          max-width: 1342px;
+          max-width: 1480px;
           margin: 0 auto;
         }
 
         @media (max-width: 991px) {
           .inmo-hero-canvas {
-            min-height: 560px;
-            padding: 50px 20px 60px 20px;
+            min-height: 640px;
+            padding: 50px 20px 36px 20px;
           }
         }
 
         @media (max-width: 767px) {
           .inmo-hero-canvas {
             border-radius: 26px;
-            min-height: 520px;
-            padding: 40px 14px 40px 14px;
+            min-height: 560px;
+            padding: 40px 14px 28px 14px;
           }
         }
 
-        /* White Booking Card (Exact Match to Image 1) */
+        /* White Booking Card (Centrado en la parte inferior, contenido sin extenderse) */
         .inmo-main-booking-card {
           position: relative;
           background: #ffffff;
           border-radius: 24px;
           box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.32);
           width: 100%;
-          max-width: 1008px;
+          max-width: 940px;
+          margin: auto auto 0 auto;
+          flex-shrink: 0;
           overflow: visible !important;
           border: 1px solid rgba(255, 255, 255, 0.9);
           z-index: 20;
@@ -823,19 +825,20 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             position: 'relative',
             zIndex: 10,
             textAlign: 'center',
-            marginBottom: '34px',
-            maxWidth: '850px',
+            marginTop: 'auto',
+            marginBottom: '44px',
+            maxWidth: '920px',
           }}
         >
           <h1
             style={{
               color: '#ffffff',
-              fontSize: 'clamp(28px, 4.5vw, 48px)',
+              fontSize: 'clamp(32px, 5vw, 52px)',
               fontWeight: 900,
               letterSpacing: '-0.02em',
               lineHeight: 1.15,
-              margin: '0 0 8px 0',
-              textShadow: '0 4px 12px rgba(0,0,0,0.35)',
+              margin: '0 0 10px 0',
+              textShadow: '0 4px 14px rgba(0,0,0,0.4)',
             }}
           >
             {heroTitle}
@@ -843,7 +846,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           <p
             style={{
               color: 'rgba(255, 255, 255, 0.95)',
-              fontSize: 'clamp(15px, 2vw, 19px)',
+              fontSize: 'clamp(16px, 2.2vw, 20px)',
               fontWeight: 600,
               margin: 0,
               textShadow: '0 2px 8px rgba(0,0,0,0.3)',

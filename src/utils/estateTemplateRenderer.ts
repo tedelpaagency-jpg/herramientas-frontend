@@ -406,14 +406,16 @@ export function prepareHtmlForRendering(
         display: block !important;
         overflow: visible !important;
         text-overflow: unset !important;
-        line-height: 1.5 !important;
-        padding-bottom: 6px !important;
+        line-height: 1.35 !important;
+        padding-bottom: 2px !important;
         margin-bottom: 2px !important;
+        max-height: none !important;
+        height: auto !important;
       }
       .agent span {
         display: block !important;
         overflow: visible !important;
-        line-height: 1.35 !important;
+        line-height: 1.3 !important;
       }
     </style>
   `;
@@ -675,14 +677,16 @@ export async function downloadHtmlAsPng(
             display: block !important;
             overflow: visible !important;
             text-overflow: unset !important;
-            line-height: 1.5 !important;
-            padding-bottom: 6px !important;
+            line-height: 1.35 !important;
+            padding-bottom: 2px !important;
             margin-bottom: 2px !important;
+            max-height: none !important;
+            height: auto !important;
           }
           .agent span {
             display: block !important;
             overflow: visible !important;
-            line-height: 1.35 !important;
+            line-height: 1.3 !important;
           }
         `;
         clonedDoc.head.appendChild(fixStyle);
@@ -693,7 +697,7 @@ export async function downloadHtmlAsPng(
           const badgeEl = el as HTMLElement;
           const h = (width * 0.044).toFixed(1) + 'px';
           badgeEl.style.height = h;
-          badgeEl.style.lineHeight = h;
+          badgeEl.style.lineHeight = '1';
           badgeEl.style.paddingTop = '0px';
           badgeEl.style.paddingBottom = '0px';
           badgeEl.style.boxSizing = 'border-box';
@@ -707,7 +711,7 @@ export async function downloadHtmlAsPng(
           const ctaEl = el as HTMLElement;
           const h = (width * 0.054).toFixed(1) + 'px';
           ctaEl.style.height = h;
-          ctaEl.style.lineHeight = h;
+          ctaEl.style.lineHeight = '1';
           ctaEl.style.paddingTop = '0px';
           ctaEl.style.paddingBottom = '0px';
           ctaEl.style.boxSizing = 'border-box';
@@ -720,11 +724,12 @@ export async function downloadHtmlAsPng(
         agentStrongs.forEach((el) => {
           const s = el as HTMLElement;
           s.style.display = 'block';
-          s.style.lineHeight = '1.5';
-          s.style.paddingBottom = '6px';
+          s.style.lineHeight = '1.35';
+          s.style.paddingBottom = '2px';
           s.style.marginBottom = '2px';
           s.style.overflow = 'visible';
           s.style.maxHeight = 'none';
+          s.style.height = 'auto';
         });
       },
     });
