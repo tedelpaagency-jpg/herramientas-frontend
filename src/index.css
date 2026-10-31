@@ -79,6 +79,19 @@
   th {
     color: var(--color-text-secondary);
   }
+
+  html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6,
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: #f8fafc;
+  }
+
+  html.dark table th, .dark table th {
+    color: #94a3b8;
+  }
+
+  html.dark table td, .dark table td {
+    color: #e2e8f0;
+  }
 }
 
 /* Custom Scrollbar */

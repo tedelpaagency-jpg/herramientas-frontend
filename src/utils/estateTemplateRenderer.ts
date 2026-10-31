@@ -282,9 +282,23 @@ export function substituteTemplateShortcuts(rawHtml: string, payload: TemplateDa
 }
 
 /**
+ * Resuelve unidades de Container Queries (cqw / cqh) a píxeles exactos.
+ * Esto evita fallos críticos en html2canvas ya que la librería no soporta container queries nativamente.
+ */
+export function resolveContainerQueryUnits(cssOrHtml: string, width: number, height: number): string {
+  if (!cssOrHtml) return '';
+  const cqwPx = width / 100;
+  const cqhPx = height / 100;
+  return cssOrHtml
+    .replace(/([0-9.]+)cqw/gi, (_, val) => `${(parseFloat(val) * cqwPx).toFixed(2)}px`)
+    .replace(/([0-9.]+)cqh/gi, (_, val) => `${(parseFloat(val) * cqhPx).toFixed(2)}px`);
+}
+
+/**
  * Prepara el documento HTML completo para iframe y canvas:
  * 1. Inyecta las variables CSS de la agencia (--brand-primary, --brand-secondary, etc.)
- * 2. Define las dimensiones exactas de viewport para que las container queries (cqw) funcionen al 100%.
+ * 2. Convierte container queries (cqw/cqh) a px exactos para total compatibilidad con html2canvas.
+ * 3. Define dimensiones exactas de viewport para un renderizado fiel al 100%.
  */
 export function prepareHtmlForRendering(
   html: string,
@@ -311,6 +325,9 @@ export function prepareHtmlForRendering(
 
   if (!primary) primary = '#a46920';
   if (!secondary) secondary = '#4a321e';
+
+  // Resolver cqw / cqh a px exactos para evitar que html2canvas los evalúe como 0 o genere desbordes
+  const resolvedHtml = resolveContainerQueryUnits(html, width, height);
 
   const brandStyles = `
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -347,21 +364,26 @@ export function prepareHtmlForRendering(
       /* Prevenir recorte o truncado vertical de títulos y textos */
       .copy {
         overflow: visible !important;
+        max-height: 29% !important;
       }
       h1, h2, h3 {
-        line-height: 1.08 !important;
+        line-height: 1.16 !important;
         overflow: visible !important;
         -webkit-line-clamp: unset !important;
+        letter-spacing: -0.01em !important;
+        padding-bottom: 4px !important;
       }
       .features .item {
         max-height: none !important;
         overflow: visible !important;
+        line-height: 1.35 !important;
+        padding-bottom: 2px !important;
       }
       .badge {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        height: 4.4cqw !important;
+        height: ${(width * 0.044).toFixed(1)}px !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
         line-height: 1 !important;
@@ -371,7 +393,7 @@ export function prepareHtmlForRendering(
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        height: 5.4cqw !important;
+        height: ${(width * 0.054).toFixed(1)}px !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
         line-height: 1 !important;
@@ -384,16 +406,22 @@ export function prepareHtmlForRendering(
         display: block !important;
         overflow: visible !important;
         text-overflow: unset !important;
-        line-height: 1.4 !important;
+        line-height: 1.5 !important;
         padding-bottom: 6px !important;
+        margin-bottom: 2px !important;
+      }
+      .agent span {
+        display: block !important;
+        overflow: visible !important;
+        line-height: 1.35 !important;
       }
     </style>
   `;
 
-  if (html.includes('</head>')) {
-    return html.replace('</head>', `${brandStyles}</head>`);
-  } else if (html.includes('<html')) {
-    return html.replace('<html', `<head>${brandStyles}</head><html`);
+  if (resolvedHtml.includes('</head>')) {
+    return resolvedHtml.replace('</head>', `${brandStyles}</head>`);
+  } else if (resolvedHtml.includes('<html')) {
+    return resolvedHtml.replace('<html', `<head>${brandStyles}</head><html`);
   } else {
     return `<!doctype html>
 <html lang="es">
@@ -406,7 +434,7 @@ export function prepareHtmlForRendering(
   ${brandStyles}
 </head>
 <body style="margin:0;padding:0;background:transparent;">
-  ${html}
+  ${resolvedHtml}
 </body>
 </html>`;
   }
@@ -608,19 +636,23 @@ export async function downloadHtmlAsPng(
             overflow: visible !important;
           }
           h1, h2, h3 {
-            line-height: 1.08 !important;
+            line-height: 1.16 !important;
             overflow: visible !important;
             -webkit-line-clamp: unset !important;
+            letter-spacing: -0.01em !important;
+            padding-bottom: 4px !important;
           }
           .features .item {
             max-height: none !important;
             overflow: visible !important;
+            line-height: 1.35 !important;
+            padding-bottom: 2px !important;
           }
           .badge {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            height: 4.4cqw !important;
+            height: ${(width * 0.044).toFixed(1)}px !important;
             padding-top: 0px !important;
             padding-bottom: 0px !important;
             line-height: 1 !important;
@@ -630,7 +662,7 @@ export async function downloadHtmlAsPng(
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            height: 5.4cqw !important;
+            height: ${(width * 0.054).toFixed(1)}px !important;
             padding-top: 0px !important;
             padding-bottom: 0px !important;
             line-height: 1 !important;
@@ -643,8 +675,14 @@ export async function downloadHtmlAsPng(
             display: block !important;
             overflow: visible !important;
             text-overflow: unset !important;
-            line-height: 1.4 !important;
+            line-height: 1.5 !important;
             padding-bottom: 6px !important;
+            margin-bottom: 2px !important;
+          }
+          .agent span {
+            display: block !important;
+            overflow: visible !important;
+            line-height: 1.35 !important;
           }
         `;
         clonedDoc.head.appendChild(fixStyle);
@@ -653,35 +691,40 @@ export async function downloadHtmlAsPng(
         const badges = clonedDoc.querySelectorAll('.badge');
         badges.forEach((el) => {
           const badgeEl = el as HTMLElement;
-          badgeEl.style.display = 'inline-flex';
-          badgeEl.style.alignItems = 'center';
-          badgeEl.style.justifyContent = 'center';
-          badgeEl.style.height = '4.4cqw';
+          const h = (width * 0.044).toFixed(1) + 'px';
+          badgeEl.style.height = h;
+          badgeEl.style.lineHeight = h;
           badgeEl.style.paddingTop = '0px';
           badgeEl.style.paddingBottom = '0px';
           badgeEl.style.boxSizing = 'border-box';
-          badgeEl.style.lineHeight = '1';
-          const text = badgeEl.textContent?.trim() || '';
-          if (text) {
-            badgeEl.innerHTML = `<span style="display:inline-block; transform:translateY(-0.35cqw); line-height:1; font-weight:inherit; letter-spacing:inherit;">${text}</span>`;
-          }
+          badgeEl.style.display = 'flex';
+          badgeEl.style.alignItems = 'center';
+          badgeEl.style.justifyContent = 'center';
         });
 
         const ctas = clonedDoc.querySelectorAll('.cta');
         ctas.forEach((el) => {
           const ctaEl = el as HTMLElement;
-          ctaEl.style.display = 'inline-flex';
-          ctaEl.style.alignItems = 'center';
-          ctaEl.style.justifyContent = 'center';
-          ctaEl.style.height = '5.4cqw';
+          const h = (width * 0.054).toFixed(1) + 'px';
+          ctaEl.style.height = h;
+          ctaEl.style.lineHeight = h;
           ctaEl.style.paddingTop = '0px';
           ctaEl.style.paddingBottom = '0px';
           ctaEl.style.boxSizing = 'border-box';
-          ctaEl.style.lineHeight = '1';
-          const text = ctaEl.textContent?.trim() || '';
-          if (text) {
-            ctaEl.innerHTML = `<span style="display:inline-block; transform:translateY(-0.35cqw); line-height:1; font-weight:inherit; letter-spacing:inherit;">${text}</span>`;
-          }
+          ctaEl.style.display = 'flex';
+          ctaEl.style.alignItems = 'center';
+          ctaEl.style.justifyContent = 'center';
+        });
+
+        const agentStrongs = clonedDoc.querySelectorAll('.agent strong');
+        agentStrongs.forEach((el) => {
+          const s = el as HTMLElement;
+          s.style.display = 'block';
+          s.style.lineHeight = '1.5';
+          s.style.paddingBottom = '6px';
+          s.style.marginBottom = '2px';
+          s.style.overflow = 'visible';
+          s.style.maxHeight = 'none';
         });
       },
     });

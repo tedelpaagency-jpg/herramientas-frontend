@@ -728,7 +728,7 @@ export const EstatesPage: React.FC = () => {
                           {/* Asesor / Agente Comercial */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center flex-shrink-0 overflow-hidden border border-blue-200 shadow-2xs">
+                              <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center flex-shrink-0 overflow-hidden border border-blue-200 dark:border-blue-800 shadow-2xs">
                                 {estate.user?.avatarUrl ? (
                                   <img src={estate.user.avatarUrl} alt={estate.user.name} className="w-full h-full object-cover" />
                                 ) : (

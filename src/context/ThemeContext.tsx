@@ -32,7 +32,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       p.startsWith('/tasks') ||
       p.startsWith('/profile') ||
       p.startsWith('/roles') ||
-      p.startsWith('/agencies')
+      p.startsWith('/agencies') ||
+      p.startsWith('/visas') ||
+      p.startsWith('/products') ||
+      p.startsWith('/settings')
     ) {
       return false;
     }
