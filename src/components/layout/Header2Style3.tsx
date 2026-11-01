@@ -1,9 +1,11 @@
 "use client";
 import React, { useEffect, useReducer, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { getCachedAgencyConfig } from "@/services/publicInmobiliariaService";
+import { useAuth } from "@/context/AuthContext";
+import LoginModal from "@/components/auth/LoginModal";
 
 interface State {
   activeMenu: string;
@@ -92,6 +94,26 @@ interface Header2Style3Props {
 const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const pathname = usePathname() as string;
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // Escuchar evento personalizado o query param para abrir el modal desde cualquier enlace
+  useEffect(() => {
+    const handleOpenModal = () => setIsLoginModalOpen(true);
+    window.addEventListener('open-login-modal', handleOpenModal);
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('login') === 'true' || window.location.hash === '#login') {
+        setIsLoginModalOpen(true);
+      }
+    }
+
+    return () => {
+      window.removeEventListener('open-login-modal', handleOpenModal);
+    };
+  }, []);
 
   // Eliminate SSR hydration mismatch by only switching to client-cached agency after mount
   const [isMounted, setIsMounted] = useState(false);
@@ -300,9 +322,17 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
               </li>
             </ul>
 
-            <Link
-              href="/login"
-              className="d-xl-none d-flex align-items-center justify-content-center gap-2 mt-4"
+            <button
+              type="button"
+              onClick={() => {
+                if (state.isSidebarOpen) toggleSidebar();
+                if (isAuthenticated) {
+                  router.push('/dashboard');
+                } else {
+                  setIsLoginModalOpen(true);
+                }
+              }}
+              className="d-xl-none d-flex align-items-center justify-content-center gap-2 mt-4 w-100"
               style={{
                 backgroundColor: buttonColor,
                 borderRadius: '10px',
@@ -311,22 +341,30 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                 fontSize: '13.5px',
                 color: '#ffffff',
                 border: 'none',
-                textDecoration: 'none',
+                cursor: 'pointer',
                 boxShadow: `0 4px 12px ${buttonColor}40`,
+                transition: 'all 0.2s ease-in-out',
               }}
             >
               <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
               </svg>
-              <span>Acceso Agentes</span>
-            </Link>
+              <span>{isAuthenticated ? 'Mi Panel' : 'Acceso Agentes'}</span>
+            </button>
           </div>
         </div>
 
         {/* 3. Lado Derecho: Botón Acceso Agentes (Verde Esmeralda con esquinas redondeadas) */}
         <div className="nav-right d-flex align-items-center justify-content-end gap-3 shrink-0" style={{ flex: '0 0 auto', minWidth: '180px' }}>
-          <Link
-            href="/login"
+          <button
+            type="button"
+            onClick={() => {
+              if (isAuthenticated) {
+                router.push('/dashboard');
+              } else {
+                setIsLoginModalOpen(true);
+              }
+            }}
             className="d-xl-inline-flex d-none align-items-center gap-2"
             style={{
               backgroundColor: buttonColor,
@@ -337,7 +375,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
               color: '#ffffff',
               border: 'none',
               boxShadow: `0 4px 12px ${buttonColor}40`,
-              textDecoration: 'none',
+              cursor: 'pointer',
               transition: 'all 0.2s ease-in-out',
               whiteSpace: 'nowrap',
             }}
@@ -345,8 +383,8 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
             <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
             </svg>
-            <span>Acceso Agentes</span>
-          </Link>
+            <span>{isAuthenticated ? 'Mi Panel' : 'Acceso Agentes'}</span>
+          </button>
 
           <div className="sidebar-button mobile-menu-btn d-xl-none" onClick={toggleSidebar}>
             <svg width={20} height={18} viewBox="0 0 20 18" xmlns="http://www.w3.org/2000/svg">
@@ -357,6 +395,13 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Inicio de Sesión para el Frontend */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        agency={effectiveAgency}
+      />
     </header>
   );
 };

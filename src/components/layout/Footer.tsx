@@ -184,7 +184,20 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
                   <li><a href="#nosotros">Conócenos</a></li>
                   <li><a href="#destacadas">Propiedades Destacadas</a></li>
                   <li><Link href="/contact">Consignar Inmueble</Link></li>
-                  <li><Link href="/login">Acceso Agentes / CRM</Link></li>
+                  <li>
+                    <a
+                      href="/login"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (typeof window !== 'undefined') {
+                          window.dispatchEvent(new CustomEvent('open-login-modal'));
+                        }
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      Acceso Agentes / CRM
+                    </a>
+                  </li>
                 </ul>
               </div>
             </div>
