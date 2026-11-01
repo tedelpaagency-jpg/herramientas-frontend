@@ -183,10 +183,10 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
       <div
         onClick={() => setIsOpen((prev) => !prev)}
         style={{
-          height: '48px',
+          height: '52px',
           border: '1px solid #e2e8f0',
-          borderRadius: isOpen ? '12px 12px 0 0' : '12px',
-          padding: '0 14px',
+          borderRadius: isOpen ? '14px 14px 0 0' : '14px',
+          padding: '0 16px',
           backgroundColor: '#ffffff',
           display: 'flex',
           alignItems: 'center',
@@ -198,7 +198,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
       >
         <span
           style={{
-            fontSize: '13.5px',
+            fontSize: '16.5px',
             fontWeight: value ? 600 : 400,
             color: value ? '#0f172a' : '#94a3b8',
             overflow: 'hidden',
@@ -209,9 +209,9 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
           {displayText}
         </span>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-slate-500 shrink-0 ml-1" />
+          <ChevronUp className="w-5 h-5 text-slate-500 shrink-0 ml-1.5" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+          <ChevronDown className="w-5 h-5 text-slate-400 shrink-0 ml-1.5" />
         )}
       </div>
 
@@ -227,15 +227,15 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
             right: 0,
             backgroundColor: '#ffffff',
             border: '1px solid #cbd5e1',
-            borderRadius: '12px',
+            borderRadius: '14px',
             boxShadow: '0 20px 45px -4px rgba(0, 0, 0, 0.22)',
             zIndex: 99999,
-            padding: '8px 8px 6px 8px',
-            minWidth: '280px',
+            padding: '10px 10px 8px 10px',
+            minWidth: '290px',
           }}
         >
           {/* Inner Search Box */}
-          <div style={{ marginBottom: '8px' }}>
+          <div style={{ marginBottom: '10px' }}>
             <input
               ref={searchInputRef}
               type="text"
@@ -244,11 +244,11 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
               placeholder="Buscar ciudad o provincia..."
               style={{
                 width: '100%',
-                height: '36px',
+                height: '40px',
                 border: '1.5px solid #94a3b8',
-                borderRadius: '6px',
-                padding: '0 10px',
-                fontSize: '13px',
+                borderRadius: '8px',
+                padding: '0 12px',
+                fontSize: '15px',
                 color: '#0f172a',
                 outline: 'none',
                 boxSizing: 'border-box',
@@ -264,7 +264,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
                 alignItems: 'center',
                 gap: '8px',
                 padding: '6px 8px',
-                fontSize: '11px',
+                fontSize: '12px',
                 color: '#64748b',
                 backgroundColor: '#f8fafc',
                 borderRadius: '6px',
@@ -273,8 +273,8 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
             >
               <div
                 style={{
-                  width: '12px',
-                  height: '12px',
+                  width: '13px',
+                  height: '13px',
                   border: '2px solid #cbd5e1',
                   borderTop: `2px solid ${accentColor}`,
                   borderRadius: '50%',
@@ -286,7 +286,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
           )}
 
           {/* Results List */}
-          <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+          <div style={{ maxHeight: '230px', overflowY: 'auto' }}>
             {filteredCities.length > 0 ? (
               filteredCities.map((city, idx) => {
                 const isSelected = highlightedIndex === idx;
@@ -301,13 +301,13 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
-                      padding: '8px 10px',
-                      borderRadius: '4px',
+                      padding: '9px 12px',
+                      borderRadius: '6px',
                       cursor: 'pointer',
                       backgroundColor: isSelected ? accentColor : '#ffffff',
                       color: isSelected ? '#ffffff' : '#0f172a',
                       transition: 'background-color 0.1s ease',
-                      marginBottom: '2px',
+                      marginBottom: '3px',
                     }}
                   >
                     {/* Thumbnail Image */}
@@ -315,10 +315,10 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
                       src={city.image}
                       alt={city.name}
                       style={{
-                        width: '26px',
-                        height: '20px',
+                        width: '28px',
+                        height: '22px',
                         objectFit: 'cover',
-                        borderRadius: '3px',
+                        borderRadius: '4px',
                         flexShrink: 0,
                         border: '1px solid rgba(0,0,0,0.1)',
                       }}
@@ -329,7 +329,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
                     {/* City & Province Label */}
                     <span
                       style={{
-                        fontSize: '12px',
+                        fontSize: '14.5px',
                         fontWeight: 700,
                         letterSpacing: '0.02em',
                         whiteSpace: 'nowrap',
@@ -343,7 +343,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
                 );
               })
             ) : (
-              <div style={{ padding: '12px 10px', textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
+              <div style={{ padding: '14px 10px', textAlign: 'center', fontSize: '14px', color: '#94a3b8' }}>
                 No se encontraron ciudades
               </div>
             )}
@@ -397,10 +397,10 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
       <div
         onClick={() => setIsOpen((prev) => !prev)}
         style={{
-          height: '48px',
+          height: '52px',
           border: `1px solid ${isOpen ? accentColor : '#e2e8f0'}`,
-          borderRadius: '12px',
-          padding: '0 14px',
+          borderRadius: '14px',
+          padding: '0 16px',
           backgroundColor: '#ffffff',
           display: 'flex',
           alignItems: 'center',
@@ -412,7 +412,7 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
       >
         <span
           style={{
-            fontSize: '13.5px',
+            fontSize: '16.5px',
             fontWeight: 600,
             color: '#0f172a',
             overflow: 'hidden',
@@ -424,7 +424,7 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
         </span>
         {hasCaret && (
           <ChevronDown
-            className="w-4 h-4 text-slate-400 shrink-0 ml-1 transition-transform"
+            className="w-5 h-5 text-slate-400 shrink-0 ml-1.5 transition-transform"
             style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
           />
         )}
@@ -441,14 +441,14 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
             right: alignRight ? 0 : 'auto',
             minWidth: '100%',
             width: 'max-content',
-            maxWidth: '280px',
+            maxWidth: '300px',
             backgroundColor: '#ffffff',
             border: '1px solid #cbd5e1',
             borderRadius: '14px',
             boxShadow: '0 20px 45px -4px rgba(0, 0, 0, 0.22)',
             zIndex: 99999,
-            padding: '6px',
-            maxHeight: '260px',
+            padding: '8px',
+            maxHeight: '280px',
             overflowY: 'auto',
           }}
         >
@@ -465,9 +465,9 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '9px 12px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
+                  padding: '11px 14px',
+                  borderRadius: '10px',
+                  fontSize: '16px',
                   fontWeight: isSelected ? 700 : 500,
                   cursor: 'pointer',
                   backgroundColor: isSelected ? `${accentColor}15` : 'transparent',
@@ -633,14 +633,14 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           }
         }
 
-        /* White Booking Card (Centrado en la parte inferior, contenido sin extenderse) */
+        /* White Booking Card (Centrado en la parte inferior, aumentado con mayor presencia) */
         .inmo-main-booking-card {
           position: relative;
           background: #ffffff;
-          border-radius: 24px;
+          border-radius: 26px;
           box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.32);
           width: 100%;
-          max-width: 940px;
+          max-width: 1050px;
           margin: auto auto 0 auto;
           flex-shrink: 0;
           overflow: visible !important;
@@ -653,10 +653,10 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           display: flex;
           align-items: center;
           border-bottom: 1px solid #e2e8f0;
-          padding: 16px 28px 0 28px;
+          padding: 18px 32px 0 32px;
           background: #ffffff;
-          gap: 28px;
-          border-radius: 24px 24px 0 0;
+          gap: 32px;
+          border-radius: 26px 26px 0 0;
           overflow-x: auto;
           scrollbar-width: none;
           -webkit-overflow-scrolling: touch;
@@ -673,7 +673,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           background: transparent;
           border: none;
           cursor: pointer;
-          padding: 0 4px 12px 4px;
+          padding: 0 6px 14px 6px;
           position: relative;
           outline: none;
           color: #94a3b8;
@@ -688,7 +688,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         }
 
         .inmo-card-tab-btn span {
-          font-size: 11.5px;
+          font-size: 14.5px;
           font-weight: 800;
           letter-spacing: 0.04em;
           text-transform: uppercase;
@@ -700,7 +700,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           bottom: 0;
           left: 0;
           right: 0;
-          height: 3px;
+          height: 3.5px;
           background-color: ${primaryColor};
           border-radius: 3px 3px 0 0;
         }
@@ -708,13 +708,13 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         /* Form Row Desktop */
         .inmo-card-form-grid {
           display: grid;
-          grid-template-columns: 2fr 1.1fr 1.2fr 1.1fr auto;
+          grid-template-columns: 2.1fr 1.15fr 1.25fr 1.15fr auto;
           gap: 16px;
-          padding: 24px 28px 28px 28px;
+          padding: 26px 32px 30px 32px;
           align-items: flex-end;
           background: #ffffff;
           position: relative;
-          border-radius: 0 0 24px 24px;
+          border-radius: 0 0 26px 26px;
           overflow: visible !important;
         }
 
@@ -737,31 +737,31 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           }
         }
 
-        /* Field Labels */
+        /* Field Labels (+3px) */
         .inmo-field-label {
           display: block;
-          font-size: 13px;
-          font-weight: 600;
-          color: #475569;
-          margin-bottom: 6px;
+          font-size: 16px;
+          font-weight: 700;
+          color: #334155;
+          margin-bottom: 8px;
         }
 
-        /* Search Button */
+        /* Search Button (+3px de texto y elementos) */
         .inmo-btn-search {
-          height: 48px;
-          padding: 0 28px;
+          height: 52px;
+          padding: 0 32px;
           background-color: ${buttonColor} !important;
           color: #ffffff;
           border: none;
-          border-radius: 12px;
-          font-size: 14.5px;
-          font-weight: 700;
+          border-radius: 14px;
+          font-size: 17.5px;
+          font-weight: 800;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 9px;
           cursor: pointer;
-          box-shadow: 0 6px 18px ${buttonColor}40;
+          box-shadow: 0 6px 20px ${buttonColor}40;
           transition: all 0.2s ease;
           white-space: nowrap;
         }
@@ -868,7 +868,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
               className={`inmo-card-tab-btn ${activeTab === 'sale' ? 'active' : ''}`}
               onClick={() => handleTabClick('sale')}
             >
-              <Tag className="w-4 h-4 mb-1" strokeWidth={2.2} />
+              <Tag className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
               <span>En Venta</span>
               {activeTab === 'sale' && <div className="inmo-tab-active-bar" />}
             </button>
@@ -879,7 +879,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
               className={`inmo-card-tab-btn ${activeTab === 'rent' ? 'active' : ''}`}
               onClick={() => handleTabClick('rent')}
             >
-              <KeyRound className="w-4 h-4 mb-1" strokeWidth={2.2} />
+              <KeyRound className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
               <span>En Renta</span>
               {activeTab === 'rent' && <div className="inmo-tab-active-bar" />}
             </button>
@@ -890,7 +890,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
               className={`inmo-card-tab-btn ${activeTab === 'land' ? 'active' : ''}`}
               onClick={() => handleTabClick('land')}
             >
-              <Trees className="w-4 h-4 mb-1" strokeWidth={2.2} />
+              <Trees className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
               <span>Terrenos y Lotes</span>
               {activeTab === 'land' && <div className="inmo-tab-active-bar" />}
             </button>
@@ -901,7 +901,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
               className={`inmo-card-tab-btn ${activeTab === 'commercial' ? 'active' : ''}`}
               onClick={() => handleTabClick('commercial')}
             >
-              <Building2 className="w-4 h-4 mb-1" strokeWidth={2.2} />
+              <Building2 className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
               <span>Comercial</span>
               {activeTab === 'commercial' && <div className="inmo-tab-active-bar" />}
             </button>
@@ -998,7 +998,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                 className="inmo-btn-search w-full sm:w-auto"
                 style={{ backgroundColor: primaryColor }}
               >
-                <Search className="w-4 h-4 stroke-[2.5]" />
+                <Search className="w-5 h-5 stroke-[2.5]" />
                 <span>Buscar</span>
               </button>
             </div>
