@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -21,6 +22,8 @@ import {
   Calendar,
   X,
   Send,
+  Copy,
+  FileDown,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import publicInmobiliariaService, {
@@ -36,12 +39,25 @@ import TopbarSlider from '@/components/topbar/TopbarSlider';
 import Header2Style3 from '@/components/layout/Header2Style3';
 import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
 import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
+import { EstateImageLightboxModal } from '@/components/EstateImageLightboxModal';
 import {
   getEstatePrimaryImage,
   PROPERTY_TYPE_LABELS,
   PublicPropertyCard,
   PublicInmobiliariaFooter,
 } from './PublicInmobiliariaLayout';
+
+const PublicPropertyMapView = dynamic(
+  () => import('@/components/inmobiliaria/PublicPropertyMapView'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[360px] sm:h-[420px] rounded-3xl bg-slate-100 animate-pulse flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-300 border-t-transparent rounded-full animate-spin" />
+      </div>
+    ),
+  }
+);
 
 interface PublicInmobiliariaDetailViewProps {
   slug: string;
@@ -58,6 +74,13 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedInfo, setCopiedInfo] = useState(false);
+  const [copyingInfo, setCopyingInfo] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  // Lightbox Modal State
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Form State matching "Contacta al anunciante"
   const [contactEmail, setContactEmail] = useState('');
@@ -124,7 +147,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   const primaryColor = fallbackAgency.primary_color || '#00a884';
   const isRent = Number(estate?.property_status) === 1;
 
-  // Initialize pre-filled contact message matching Plusvalia / Inmobiliaria standard (Image uploaded by user)
+  // Initialize pre-filled contact message matching Plusvalia / Inmobiliaria standard
   useEffect(() => {
     if (estate && !contactMessage) {
       const agencyDisplayName = fallbackAgency.name || fallbackAgency.commercial_name || 'el portal inmobiliario';
@@ -169,6 +192,15 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
       setSubmittingContact(false);
     }
   };
+
+  const whatsappNumber = (
+    estate?.agency?.whatsapp ||
+    fallbackAgency.whatsapp ||
+    estate?.agency?.phone ||
+    fallbackAgency.phone ||
+    ''
+  ).replace(/[^0-9]/g, '');
+
   const handleWhatsAppClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -199,6 +231,87 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
       toast.success('¡Enlace de la propiedad copiado al portapapeles!');
       setTimeout(() => setCopiedLink(false), 2500);
     }
+  };
+
+  // Handler: Copiar Información de la Propiedad (Idéntico a la acción del sitio administrativo)
+  const handleCopyPropertyInfo = async () => {
+    if (!estate) return;
+    const toastId = toast.loading('Copiando información del inmueble...');
+    setCopyingInfo(true);
+    try {
+      let textToCopy = '';
+      try {
+        const res = await publicInmobiliariaService.getWhatsAppInfo(
+          estate.slug || estate.id,
+          domainParam || undefined
+        );
+        textToCopy = res?.formatted_text || res?.whatsapp_text || res?.copy_text || '';
+      } catch {
+        // Fallback al formato client-side
+      }
+
+      const mainImg = getEstatePrimaryImage(estate);
+      if (textToCopy && mainImg && !textToCopy.includes(mainImg)) {
+        if (textToCopy.includes(`*${estate.title}*`)) {
+          textToCopy = textToCopy.replace(
+            `*${estate.title}*`,
+            `*${estate.title}*\n📸 *Foto:* ${mainImg}`
+          );
+        } else {
+          textToCopy = `📸 *Foto:* ${mainImg}\n\n${textToCopy}`;
+        }
+      }
+
+      if (!textToCopy) {
+        const op = isRent ? 'ALQUILER' : 'VENTA';
+        const lines = [
+          `🏠 *${estate.title}*`,
+          mainImg ? `📸 *Foto:* ${mainImg}` : null,
+          `💰 *Precio:* $ ${Number(estate.price || 0).toLocaleString('en-US')} ${isRent ? '/mes' : ''}`,
+          estate.full_address ? `📍 *Ubicación:* ${estate.full_address}` : null,
+          estate.bedrooms ? `🛏 *Habitaciones:* ${estate.bedrooms}` : null,
+          estate.bathrooms ? `🛁 *Baños:* ${estate.bathrooms}` : null,
+          estate.size ? `📐 *Superficie:* ${estate.size} m²` : null,
+          estate.garage ? `🚗 *Parqueadero:* Sí` : null,
+          typeof window !== 'undefined' ? `🔗 *Ver en la web:* ${window.location.href}` : null,
+        ].filter(Boolean);
+        textToCopy = lines.join('\n');
+      }
+
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedInfo(true);
+      toast.success('¡Información de la propiedad copiada al portapapeles!', { id: toastId });
+      setTimeout(() => setCopiedInfo(false), 2500);
+    } catch (err: any) {
+      toast.error('No se pudo copiar la información de la propiedad', { id: toastId });
+    } finally {
+      setCopyingInfo(false);
+    }
+  };
+
+  // Handler: Descargar PDF del Inmueble
+  const handleDownloadPdf = async () => {
+    if (!estate) return;
+    const toastId = toast.loading('Generando PDF del inmueble...');
+    setDownloadingPdf(true);
+    try {
+      await publicInmobiliariaService.downloadPdf(
+        estate.slug || estate.id,
+        domainParam || undefined,
+        estate.slug
+      );
+      toast.success('¡PDF descargado exitosamente!', { id: toastId });
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al descargar el PDF de la propiedad', { id: toastId });
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  // Abrir Lightbox en un índice específico
+  const openLightbox = (index: number = 0) => {
+    setLightboxIndex(index);
+    setIsLightboxOpen(true);
   };
 
   // Skeleton Loader adaptado a la pantalla (UX Law: Zero Blank Screens)
@@ -276,18 +389,6 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
     gallery.push(getEstatePrimaryImage(estate));
   }
 
-  const whatsappNumber = (
-    estate.agency?.whatsapp ||
-    fallbackAgency.whatsapp ||
-    estate.agency?.phone ||
-    fallbackAgency.phone ||
-    ''
-  ).replace(/[^0-9]/g, '');
-
-  const whatsappText = encodeURIComponent(
-    `Hola ${fallbackAgency.name}, me interesa recibir información detallada sobre la propiedad "${estate.title}" (Ref: #${estate.id}).`
-  );
-
   const amenityKeys: Array<{ key: string; label: string }> = [
     { key: 'air_condition', label: 'Aire Acondicionado' },
     { key: 'swimming_Pool', label: 'Piscina' },
@@ -354,7 +455,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
           </div>
         </div>
 
-        {/* Cabecera del Inmueble con Glassmorphism y Tipografía Emil Kowalski */}
+        {/* Cabecera del Inmueble con Glassmorphism */}
         <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
             <div className="space-y-2">
@@ -391,14 +492,39 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
             </div>
           </div>
 
-          {/* Galería de Imágenes Interactiva con Emil Kowalski Zoom & Thumbnails */}
+          {/* Galería de Imágenes Interactiva con Expansión Lightbox al hacer Clic */}
           <div className="mt-6 space-y-3">
-            <div className="group relative w-full h-[360px] sm:h-[500px] rounded-2xl overflow-hidden bg-slate-100 shadow-xs border border-slate-200/60">
+            <div
+              onClick={() => openLightbox(gallery.indexOf(activeImage) >= 0 ? gallery.indexOf(activeImage) : 0)}
+              className="group relative w-full h-[360px] sm:h-[500px] rounded-2xl overflow-hidden bg-slate-100 shadow-xs border border-slate-200/60 cursor-pointer"
+              title="Haz clic para ver las fotos en pantalla completa"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  openLightbox(gallery.indexOf(activeImage) >= 0 ? gallery.indexOf(activeImage) : 0);
+                }
+              }}
+            >
               <img
                 src={activeImage || gallery[0]}
                 alt={estate.title}
                 className="w-full h-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-103 will-change-transform"
               />
+
+              {/* Botón Flotante para Expandir Imágenes */}
+              <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/25 transition-all duration-300 flex items-center justify-center">
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-900/85 backdrop-blur-md text-white text-xs font-extrabold shadow-xl border border-white/20 transform scale-95 group-hover:scale-100 transition-transform">
+                  <Maximize2 className="w-4 h-4 text-emerald-400" />
+                  <span>Ver fotos en pantalla completa ({gallery.length})</span>
+                </span>
+              </div>
+
+              {/* Badge Contador de Fotos en Esquina Inferior */}
+              <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1.5 border border-white/10 shadow-md">
+                <Maximize2 className="w-3.5 h-3.5 text-slate-300" />
+                <span>{gallery.indexOf(activeImage) >= 0 ? gallery.indexOf(activeImage) + 1 : 1} / {gallery.length}</span>
+              </div>
             </div>
 
             {gallery.length > 1 && (
@@ -407,7 +533,10 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setActiveImage(imgUrl)}
+                    onClick={() => {
+                      setActiveImage(imgUrl);
+                    }}
+                    onDoubleClick={() => openLightbox(idx)}
                     className={`relative h-20 w-28 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer active:scale-95 ${
                       activeImage === imgUrl
                         ? 'border-slate-900 ring-2 ring-slate-900/20 scale-102 shadow-md'
@@ -423,7 +552,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
           </div>
         </div>
 
-        {/* Detalles y Contacto con Jerarquía UX */}
+        {/* Detalles, Mapa y Contacto Lateral */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 space-y-6">
             {/* Características Principales */}
@@ -488,11 +617,57 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
                 </div>
               </div>
             )}
+
+            {/* MAPA INTERACTIVO Y CARD DE UBICACIÓN */}
+            <PublicPropertyMapView estate={estate} primaryColor={primaryColor} />
           </div>
 
-          {/* Tarjeta de Contacto Lateral Sticky (Formulario idéntico a la imagen subida por el usuario) */}
+          {/* Tarjeta de Contacto Lateral Sticky */}
           <div className="lg:col-span-4">
             <div id="anunciante-form" className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xl sticky top-24 space-y-4">
+              
+              {/* FILA DE BOTONES DE ACCIÓN: COPIAR INFORMACIÓN & DESCARGAR PDF */}
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                  <Share2 className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Acciones de la Ficha</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Botón 1: Copiar Información de la Propiedad */}
+                  <button
+                    type="button"
+                    onClick={handleCopyPropertyInfo}
+                    disabled={copyingInfo}
+                    title="Copiar información de la propiedad para WhatsApp / Portapapeles"
+                    className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 border border-slate-200 transition-all cursor-pointer group shadow-2xs"
+                    aria-label="Copiar información de la propiedad"
+                  >
+                    {copiedInfo ? (
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-slate-700 group-hover:text-slate-900 transition-colors" />
+                    )}
+                  </button>
+
+                  {/* Botón 2: Descargar PDF de la Propiedad */}
+                  <button
+                    type="button"
+                    onClick={handleDownloadPdf}
+                    disabled={downloadingPdf}
+                    title="Descargar ficha en PDF"
+                    className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 border border-slate-200 transition-all cursor-pointer group shadow-2xs"
+                    aria-label="Descargar ficha en PDF"
+                  >
+                    {downloadingPdf ? (
+                      <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <FileDown className="w-4 h-4 text-slate-700 group-hover:text-slate-900 transition-colors" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
               <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
                 Contacta al anunciante
               </h3>
@@ -610,7 +785,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
                   </label>
                 </div>
 
-                {/* Botón 1: Contactar (Naranja con icono de correo) */}
+                {/* Botón 1: Contactar */}
                 <button
                   type="submit"
                   disabled={submittingContact}
@@ -620,7 +795,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
                   <span>{submittingContact ? 'Enviando...' : 'Contactar'}</span>
                 </button>
 
-                {/* Botón 2: Contactar por WhatsApp (Verde con icono de WhatsApp) */}
+                {/* Botón 2: Contactar por WhatsApp */}
                 {whatsappNumber && (
                   <button
                     type="button"
@@ -640,6 +815,16 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
             </div>
           </div>
         </div>
+
+        {/* Modal de Lightbox para Fotos en Pantalla Completa */}
+        {isLightboxOpen && (
+          <EstateImageLightboxModal
+            isOpen={isLightboxOpen}
+            onClose={() => setIsLightboxOpen(false)}
+            estate={estate as any}
+            initialImageIndex={lightboxIndex}
+          />
+        )}
 
         {/* Modal de Términos y Condiciones / Política de Privacidad */}
         {activeLegalModal && (

@@ -367,6 +367,52 @@ export const publicInmobiliariaService = {
     }
     return res.json();
   },
+
+  getWhatsAppInfo: async (slugOrId: string | number, domain?: string): Promise<any> => {
+    const effectiveDomain = resolveEffectiveDomain(domain);
+    const apiBase = getApiBaseUrl();
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+    };
+    if (effectiveDomain) {
+      headers['X-Domain'] = effectiveDomain;
+    }
+    const res = await fetch(`${apiBase}/v1/public/estates/${encodeURIComponent(slugOrId)}/whatsapp?domain=${encodeURIComponent(effectiveDomain)}`, {
+      headers,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al obtener información de la propiedad');
+    }
+    const json = await res.json();
+    return json?.data || json;
+  },
+
+  downloadPdf: async (slugOrId: string | number, domain?: string, fileNameSlug?: string): Promise<void> => {
+    const effectiveDomain = resolveEffectiveDomain(domain);
+    const apiBase = getApiBaseUrl();
+    const headers: Record<string, string> = {
+      Accept: 'application/pdf',
+    };
+    if (effectiveDomain) {
+      headers['X-Domain'] = effectiveDomain;
+    }
+    const res = await fetch(`${apiBase}/v1/public/estates/${encodeURIComponent(slugOrId)}/pdf?domain=${encodeURIComponent(effectiveDomain)}`, {
+      headers,
+    });
+    if (!res.ok) {
+      throw new Error('Error al generar el PDF de la propiedad');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ficha-propiedad-${fileNameSlug || slugOrId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  },
 };
 
 export default publicInmobiliariaService;
