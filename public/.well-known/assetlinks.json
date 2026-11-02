@@ -1,0 +1,23 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.immobillis.www.twa",
+      "sha256_cert_fingerprints": [
+        "3E:D7:C2:B5:A4:9F:03:FE:0C:3D:DF:AB:A2:ED:3C:0A:02:53:61:20:67:FB:CB:AA:4E:96:77:87:48:17:A0:35"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.immobillis.twa",
+      "sha256_cert_fingerprints": [
+        "B6:29:51:E3:27:54:82:E6:88:31:9A:1F:49:80:68:C8:6E:97:A2:1C:A0:26:EB:75:F2:DB:2F:76:EF:F0:16:9C"
+      ]
+    }
+  }
+]
+

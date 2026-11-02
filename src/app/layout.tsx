@@ -64,6 +64,29 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* PWA Manifest & App Links */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#FFFFFF" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Immobillis" />
+        <link rel="apple-touch-icon" href="/android-icon-512x512.png" />
+
+        {/* PWA Service Worker Registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/pwabuilder-sw.js').catch(function() {
+                    navigator.serviceWorker.register('/sw.js').catch(function() {});
+                  });
+                });
+              }
+            `,
+          }}
+        />
+
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link 
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" 
