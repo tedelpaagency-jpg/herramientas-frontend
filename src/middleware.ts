@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  const host = request.headers.get('host')?.toLowerCase().split(':')[0];
-  if (!host) {
+  const rawHost = request.headers.get('host')?.toLowerCase().split(':')[0];
+  if (!rawHost) {
     return NextResponse.next();
   }
+
+  // Normalize host: treat www.immobillis.com the same as immobillis.com
+  const host = rawHost.replace(/^www\./, '');
 
   // Skip platform internal hosts, localhost, and portal subdomains
   if (

@@ -11,6 +11,7 @@ export function normalizeHost(hostHeader?: string | null): string {
   host = host.replace(/^https?:\/\//, '');
   host = host.split('/')[0];
   host = host.split(':')[0];
+  host = host.replace(/^www\./, '');
   return host;
 }
 
