@@ -109,6 +109,20 @@ export default function HomeClientView() {
   }, [authLoading, isAuthenticated]);
 
   useEffect(() => {
+    if (portalStatus === 'enabled' && portalConfig) {
+      const cfg = portalConfig as any;
+      const rawName =
+        cfg?.name ||
+        cfg?.agency_name ||
+        cfg?.commercial_name ||
+        cfg?.trade_name;
+      if (rawName && typeof document !== 'undefined') {
+        document.title = `${rawName} - Inicio`;
+      }
+    }
+  }, [portalStatus, portalConfig]);
+
+  useEffect(() => {
     if (portalStatus === 'disabled' && isHunter) {
       router.replace('/hunter');
     }

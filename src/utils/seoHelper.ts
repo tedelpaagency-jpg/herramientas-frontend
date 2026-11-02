@@ -70,33 +70,23 @@ export function toAbsoluteMediaUrl(url?: string | null, host?: string): string |
  */
 export async function getDomainMetadata(hostHeader?: string | null): Promise<Metadata> {
   const host = normalizeHost(hostHeader);
-  const isLocalOrSantun =
-    !host ||
-    host === 'localhost' ||
-    host === '127.0.0.1' ||
-    host === 'santun.tedelpa.com' ||
-    host === 'tedelpa.com';
 
   const defaultMetadata: Metadata = {
-    title: 'SANTUN Provider Portal',
-    description: 'Plataforma de gestión empresarial conectada a Laravel.',
+    title: 'Inmobiliaria - Inicio',
+    description: 'Portal Inmobiliario - Explora las mejores propiedades en venta y alquiler.',
     openGraph: {
-      title: 'SANTUN Provider Portal',
-      description: 'Plataforma de gestión empresarial conectada a Laravel.',
+      title: 'Inmobiliaria - Inicio',
+      description: 'Portal Inmobiliario - Explora las mejores propiedades en venta y alquiler.',
       url: host ? `https://${host}` : 'https://santun.tedelpa.com',
-      siteName: 'SANTUN',
+      siteName: 'Inmobiliaria',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'SANTUN Provider Portal',
-      description: 'Plataforma de gestión empresarial conectada a Laravel.',
+      title: 'Inmobiliaria - Inicio',
+      description: 'Portal Inmobiliario - Explora las mejores propiedades en venta y alquiler.',
     },
   };
-
-  if (isLocalOrSantun) {
-    return defaultMetadata;
-  }
 
   try {
     // 1. Check White Label configuration
@@ -104,12 +94,12 @@ export async function getDomainMetadata(hostHeader?: string | null): Promise<Met
     const timeout1 = setTimeout(() => ctrl1.abort(), 2500);
 
     const loginRes = await fetch(
-      `${BACKEND_BASE}/api/v1/login/configuration?domain=${encodeURIComponent(host)}`,
+      `${BACKEND_BASE}/api/v1/login/configuration?domain=${encodeURIComponent(host || 'localhost')}`,
       {
         signal: ctrl1.signal,
         headers: {
-          'X-Domain': host,
-          'X-Forwarded-Host': host,
+          'X-Domain': host || 'localhost',
+          'X-Forwarded-Host': host || 'localhost',
           Accept: 'application/json',
         },
         next: { revalidate: 300 },
@@ -125,7 +115,7 @@ export async function getDomainMetadata(hostHeader?: string | null): Promise<Met
 
       if (wl && wl.name) {
         const brandName = wl.name;
-        const title = texts?.portal_badge || texts?.main_title || `Portal ${brandName}`;
+        const title = `${brandName} - Inicio`;
         const description =
           wl.seo_description ||
           texts?.main_subtitle ||
@@ -136,11 +126,11 @@ export async function getDomainMetadata(hostHeader?: string | null): Promise<Met
         const faviconUrl = toAbsoluteMediaUrl(faviconRaw, host);
 
         return {
-          title: `${brandName} | ${title}`,
+          title,
           description,
           icons: faviconUrl ? { icon: faviconUrl, apple: faviconUrl } : undefined,
           openGraph: {
-            title: `${brandName} | ${title}`,
+            title,
             description,
             url: `https://${host}`,
             siteName: brandName,
@@ -149,7 +139,7 @@ export async function getDomainMetadata(hostHeader?: string | null): Promise<Met
           },
           twitter: {
             card: 'summary_large_image',
-            title: `${brandName} | ${title}`,
+            title,
             description,
             images: imageUrl ? [imageUrl] : [],
           },
@@ -162,12 +152,12 @@ export async function getDomainMetadata(hostHeader?: string | null): Promise<Met
     const timeout2 = setTimeout(() => ctrl2.abort(), 2500);
 
     const agencyRes = await fetch(
-      `${BACKEND_BASE}/api/v1/public/inmobiliaria/config?domain=${encodeURIComponent(host)}`,
+      `${BACKEND_BASE}/api/v1/public/inmobiliaria/config?domain=${encodeURIComponent(host || 'localhost')}`,
       {
         signal: ctrl2.signal,
         headers: {
-          'X-Domain': host,
-          'X-Forwarded-Host': host,
+          'X-Domain': host || 'localhost',
+          'X-Forwarded-Host': host || 'localhost',
           Accept: 'application/json',
         },
         next: { revalidate: 300 },
@@ -180,14 +170,15 @@ export async function getDomainMetadata(hostHeader?: string | null): Promise<Met
       const estateJson = await agencyRes.json().catch(() => null);
       const agency = estateJson?.data;
 
-      if (agency && agency.agency_name) {
-        const title = agency.seo_title || `${agency.agency_name} — Portal Inmobiliario`;
+      if (agency && (agency.agency_name || agency.name || agency.commercial_name)) {
+        const agencyName = agency.agency_name || agency.name || agency.commercial_name;
+        const title = `${agencyName} - Inicio`;
         const description =
           agency.seo_description ||
-          `Explora las mejores propiedades en venta y alquiler con ${agency.agency_name}.`;
-        const rawImg = agency.banner_image || agency.agency_logo;
+          `Explora las mejores propiedades en venta y alquiler con ${agencyName}.`;
+        const rawImg = agency.banner_image || agency.agency_logo || agency.logo;
         const imageUrl = toAbsoluteMediaUrl(rawImg, host);
-        const faviconUrl = toAbsoluteMediaUrl(agency.favicon || agency.agency_logo, host);
+        const faviconUrl = toAbsoluteMediaUrl(agency.favicon || agency.agency_logo || agency.logo, host);
 
         return {
           title,
@@ -197,9 +188,9 @@ export async function getDomainMetadata(hostHeader?: string | null): Promise<Met
             title,
             description,
             url: `https://${host}`,
-            siteName: agency.agency_name,
+            siteName: agencyName,
             type: 'website',
-            images: imageUrl ? [{ url: imageUrl, alt: agency.agency_name }] : [],
+            images: imageUrl ? [{ url: imageUrl, alt: agencyName }] : [],
           },
           twitter: {
             card: 'summary_large_image',
@@ -211,7 +202,7 @@ export async function getDomainMetadata(hostHeader?: string | null): Promise<Met
       }
     }
   } catch {
-    // Graceful fallback to default SANTUN metadata on error
+    // Graceful fallback to default metadata on error
   }
 
   return defaultMetadata;

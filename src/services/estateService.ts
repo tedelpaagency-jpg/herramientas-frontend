@@ -1,6 +1,41 @@
 import apiClient from './apiClient';
 import { Estate } from '../types';
 
+export interface BookingFilterSettings {
+  tabs?: boolean;
+  location?: boolean;
+  operation?: boolean;
+  property_type?: boolean;
+  price?: boolean;
+}
+
+export interface PropertiesListFilterSettings {
+  search?: boolean;
+  city?: boolean;
+  operation?: boolean;
+  property_type?: boolean;
+  bedrooms?: boolean;
+  bathrooms?: boolean;
+  parking?: boolean;
+  price?: boolean;
+  size?: boolean;
+  sort?: boolean;
+}
+
+export interface AdminFilterSettings {
+  search?: boolean;
+  category?: boolean;
+  status?: boolean;
+  agent?: boolean;
+  agency?: boolean;
+}
+
+export interface FilterSettingsConfig {
+  booking?: BookingFilterSettings;
+  properties_list?: PropertiesListFilterSettings;
+  admin?: AdminFilterSettings;
+}
+
 export interface EstateApprovalSettings {
   require_admin_approval_to_publish: boolean;
   require_admin_approval_to_delete: boolean;
@@ -11,6 +46,7 @@ export interface EstateApprovalSettings {
   notify_on_user_login: boolean;
   notify_user_login_emails: string;
   webhook_url?: string;
+  filter_settings?: FilterSettingsConfig;
 }
 
 export const estateService = {

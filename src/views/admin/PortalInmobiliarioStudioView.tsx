@@ -632,8 +632,8 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                 activeTab === 'approvals' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>Aprobaciones &amp; Alertas</span>
+              <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
+              <span>Filtros, Políticas &amp; Alertas</span>
             </button>
           </div>
 

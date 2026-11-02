@@ -36,6 +36,7 @@ import {
   Layers,
   Tag,
   ShieldCheck,
+  SlidersHorizontal,
   AlertCircle,
   CheckCircle2,
   CheckCheck,
@@ -127,6 +128,21 @@ export const EstatesPage: React.FC = () => {
   const [approvingAll, setApprovingAll] = useState<boolean>(false);
 
   const requireApproval = Boolean(approvalSettings?.require_admin_approval_to_publish);
+
+  const adminFilters =
+    approvalSettings?.filter_settings?.admin ?? {
+      search: true,
+      category: true,
+      status: true,
+      agent: true,
+      agency: true,
+    };
+
+  const showAdminSearch = adminFilters.search !== false;
+  const showAdminCategory = adminFilters.category !== false;
+  const showAdminStatus = adminFilters.status !== false;
+  const showAdminAgent = adminFilters.agent !== false;
+  const showAdminAgency = adminFilters.agency !== false;
 
   const fetchApprovalSettings = async (targetAgencyId?: string | number) => {
     try {
@@ -455,10 +471,10 @@ export const EstatesPage: React.FC = () => {
           <button
             onClick={() => setIsSettingsModalOpen(true)}
             className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm border border-slate-200 dark:border-slate-700 transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
-            title="Políticas de Aprobación & Automatizaciones de Propiedades"
+            title="Ajustes de Filtros, Políticas de Aprobación & Automatizaciones"
           >
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Aprobaciones &amp; Alertas</span>
+            <SlidersHorizontal className="w-4 h-4 text-emerald-600" />
+            <span>Ajustes &amp; Filtros</span>
           </button>
 
           <button
@@ -517,93 +533,101 @@ export const EstatesPage: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-4 items-center justify-between">
         <div className="flex flex-wrap gap-3 items-center flex-grow">
           {/* Búsqueda General */}
-          <div className="flex-grow max-w-xs relative min-w-[200px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Buscar por título, ID o ubicación..."
-              className="w-full pl-10 pr-4 py-2 bg-[#F4F5F7] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
-            />
-          </div>
+          {showAdminSearch && (
+            <div className="flex-grow max-w-xs relative min-w-[200px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Buscar por título, ID o ubicación..."
+                className="w-full pl-10 pr-4 py-2 bg-[#F4F5F7] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+              />
+            </div>
+          )}
 
           {/* Selector con Búsqueda de Categorías (Todas las 22 de la DB) */}
-          <div className="w-full sm:w-60 min-w-[210px]">
-            <SearchableSelect
-              options={categoriesList.map(cat => ({
-                value: cat.id,
-                label: cat.name,
-                badge: cat.count !== undefined && cat.count !== null ? `${cat.count}` : undefined,
-                icon: <Layers className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-              }))}
-              value={typeFilter}
-              onChange={(val) => {
-                setTypeFilter(val || '');
-                setPage(1);
-              }}
-              placeholder="Todas las Categorías"
-              searchPlaceholder="Buscar categoría o tipo..."
-              allowClear={true}
-              allOption={{
-                value: '',
-                label: `Todas las Categorías (${categoriesList.length})`,
-                icon: <Layers className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-              }}
-              size="sm"
-            />
-          </div>
+          {showAdminCategory && (
+            <div className="w-full sm:w-60 min-w-[210px]">
+              <SearchableSelect
+                options={categoriesList.map(cat => ({
+                  value: cat.id,
+                  label: cat.name,
+                  badge: cat.count !== undefined && cat.count !== null ? `${cat.count}` : undefined,
+                  icon: <Layers className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                }))}
+                value={typeFilter}
+                onChange={(val) => {
+                  setTypeFilter(val || '');
+                  setPage(1);
+                }}
+                placeholder="Todas las Categorías"
+                searchPlaceholder="Buscar categoría o tipo..."
+                allowClear={true}
+                allOption={{
+                  value: '',
+                  label: `Todas las Categorías (${categoriesList.length})`,
+                  icon: <Layers className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                }}
+                size="sm"
+              />
+            </div>
+          )}
 
           {/* Selector con Búsqueda de Estado / Operación */}
-          <div className="w-full sm:w-56 min-w-[200px]">
-            <SearchableSelect
-              options={[
-                { value: '1', label: 'Disponible', badge: 'Estado' },
-                { value: '2', label: 'Reservado', badge: 'Estado' },
-                { value: '3', label: 'Vendido', badge: 'Estado' },
-                { value: '4', label: 'Alquilado', badge: 'Estado' },
-                { value: 'sale', label: 'En Venta', badge: 'Operación' },
-                { value: 'rent', label: 'En Alquiler', badge: 'Operación' },
-                { value: 'auction', label: 'En Remate / Anticresis', badge: 'Operación' },
-              ]}
-              value={statusFilter}
-              onChange={(val) => {
-                setStatusFilter(val || '');
-                setPage(1);
-              }}
-              placeholder="Todos los estados"
-              searchPlaceholder="Buscar estado u operación..."
-              allowClear={true}
-              allOption={{
-                value: '',
-                label: 'Todos los estados',
-                icon: <Tag className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-              }}
-              size="sm"
-            />
-          </div>
+          {showAdminStatus && (
+            <div className="w-full sm:w-56 min-w-[200px]">
+              <SearchableSelect
+                options={[
+                  { value: '1', label: 'Disponible', badge: 'Estado' },
+                  { value: '2', label: 'Reservado', badge: 'Estado' },
+                  { value: '3', label: 'Vendido', badge: 'Estado' },
+                  { value: '4', label: 'Alquilado', badge: 'Estado' },
+                  { value: 'sale', label: 'En Venta', badge: 'Operación' },
+                  { value: 'rent', label: 'En Alquiler', badge: 'Operación' },
+                  { value: 'auction', label: 'En Remate / Anticresis', badge: 'Operación' },
+                ]}
+                value={statusFilter}
+                onChange={(val) => {
+                  setStatusFilter(val || '');
+                  setPage(1);
+                }}
+                placeholder="Todos los estados"
+                searchPlaceholder="Buscar estado u operación..."
+                allowClear={true}
+                allOption={{
+                  value: '',
+                  label: 'Todos los estados',
+                  icon: <Tag className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                }}
+                size="sm"
+              />
+            </div>
+          )}
 
           {/* Asesor Filter */}
-          <div className="w-full sm:w-56 min-w-[200px]">
-            <AdvisorSearchSelect
-              users={agents}
-              selectedUserId={agentFilter}
-              selectedAgencyId={agencyFilter}
-              agencies={agencies}
-              onChange={(userId) => {
-                setAgentFilter(userId);
-                setPage(1);
-              }}
-              placeholder="Todos los Asesores"
-              className="w-full"
-            />
-          </div>
+          {showAdminAgent && (
+            <div className="w-full sm:w-56 min-w-[200px]">
+              <AdvisorSearchSelect
+                users={agents}
+                selectedUserId={agentFilter}
+                selectedAgencyId={agencyFilter}
+                agencies={agencies}
+                onChange={(userId) => {
+                  setAgentFilter(userId);
+                  setPage(1);
+                }}
+                placeholder="Todos los Asesores"
+                className="w-full"
+              />
+            </div>
+          )}
 
           {/* Filtro por Agencia (Solo para Marca Blanca / Super Admin) */}
-          {isWhiteLabelOrSuperAdmin && agencies.length > 0 && (
+          {isWhiteLabelOrSuperAdmin && agencies.length > 0 && showAdminAgency && (
             <div className="w-full sm:w-56 min-w-[200px]">
               <AgencySearchSelect
                 agencies={agencies}
@@ -1339,9 +1363,9 @@ export const EstatesPage: React.FC = () => {
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-3xl w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto custom-scrollbar animate-slide-up-fade">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                  <SlidersHorizontal className="w-5 h-5 text-emerald-600" />
                   <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
-                    Políticas de Aprobación &amp; Automatizaciones Inmobiliarias
+                    Ajustes de Inmuebles &bull; Personalización de Filtros &amp; Políticas
                   </h3>
                 </div>
                 <button

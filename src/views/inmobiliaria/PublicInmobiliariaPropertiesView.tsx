@@ -250,6 +250,34 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     setCurrentPage(Number(searchParams?.get('page')) || 1);
   }, [searchParams]);
 
+  // Filter visibility configuration from Agency Settings
+  const listFilters =
+    agency?.filter_settings?.properties_list ??
+    (agency as any)?.details?.estate_settings?.filter_settings?.properties_list ?? {
+      search: true,
+      city: true,
+      operation: true,
+      property_type: true,
+      bedrooms: true,
+      bathrooms: true,
+      parking: true,
+      price: true,
+      size: true,
+      sort: true,
+    };
+
+  const showCityFilter = listFilters.city !== false || listFilters.search !== false;
+  const showOperationFilter = listFilters.operation !== false;
+  const showPropertyTypeFilter = listFilters.property_type !== false;
+  const showBedroomsFilter = listFilters.bedrooms !== false;
+  const showPriceFilter = listFilters.price !== false;
+  const showBathroomsFilter = listFilters.bathrooms !== false;
+  const showParkingFilter = listFilters.parking !== false;
+  const showSizeFilter = listFilters.size !== false;
+  const showSortFilter = listFilters.sort !== false;
+  const showMoreFiltersBtn =
+    showBathroomsFilter || showParkingFilter || showSizeFilter || showSortFilter;
+
   // Sincronizar estados temporales cuando se abre Más Filtros
   useEffect(() => {
     if (isMoreFiltersOpen) {
@@ -631,448 +659,460 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
             >
               
               {/* 1. Selector de Ciudad / Ubicación estilo Booking interactivo */}
-              <div ref={cityContainerRef} className="relative shrink-0 w-60 sm:w-72">
-                <div
-                  onClick={() => {
-                    const next = !isCityDropdownOpen;
-                    closeAllFilterDropdowns();
-                    setIsCityDropdownOpen(next);
-                  }}
-                  style={{
-                    borderColor: (search || isCityDropdownOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
-                    borderWidth: '1.5px',
-                    backgroundColor: search ? `${filterBorderColor}12` : '#ffffff',
-                  }}
-                  className="h-[42px] px-3 rounded-2xl flex items-center justify-between gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
-                >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <Search className="w-4 h-4 text-slate-400 shrink-0" />
-                    {search ? (
-                      <span
-                        style={{
-                          backgroundColor: `${filterBorderColor}25`,
-                          color: '#0f172a',
-                        }}
-                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-black truncate"
-                      >
-                        <span className="truncate max-w-[130px]">{search}</span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSearch('');
-                            setSearchInputVal('');
-                            setCitySearchInput('');
-                            setDebouncedCityQuery('');
-                            applyFilters({ search: '' });
-                          }}
-                          className="text-white bg-slate-500 hover:bg-slate-700 rounded-full w-3.5 h-3.5 flex items-center justify-center p-0.5 cursor-pointer"
-                          title="Quitar ubicación"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </span>
-                    ) : (
-                      <span className="text-xs font-semibold text-slate-400 truncate">
-                        ¿En dónde estás buscando?
-                      </span>
-                    )}
-                  </div>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
-                </div>
-
-                {/* Dropdown de Ciudades (Diseño idéntico al booking con 2s debounce) */}
-                {isCityDropdownOpen && (
+              {showCityFilter && (
+                <div ref={cityContainerRef} className="relative shrink-0 w-60 sm:w-72">
                   <div
-                    className="absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                    onClick={() => {
+                      const next = !isCityDropdownOpen;
+                      closeAllFilterDropdowns();
+                      setIsCityDropdownOpen(next);
+                    }}
+                    style={{
+                      borderColor: (search || isCityDropdownOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                      borderWidth: '1.5px',
+                      backgroundColor: search ? `${filterBorderColor}12` : '#ffffff',
+                    }}
+                    className="h-[42px] px-3 rounded-2xl flex items-center justify-between gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
                   >
-                    {/* Input buscador con debounce de 2 segundos */}
-                    <div className="relative mb-2">
-                      <input
-                        type="text"
-                        value={citySearchInput}
-                        onChange={handleCitySearchChange}
-                        placeholder="Buscar ciudad o provincia..."
-                        autoFocus
-                        className="w-full h-9 pl-3 pr-8 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
-                      />
-                      {isCityDebouncing ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                      {search ? (
+                        <span
+                          style={{
+                            backgroundColor: `${filterBorderColor}25`,
+                            color: '#0f172a',
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-black truncate"
+                        >
+                          <span className="truncate max-w-[130px]">{search}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSearch('');
+                              setSearchInputVal('');
+                              setCitySearchInput('');
+                              setDebouncedCityQuery('');
+                              applyFilters({ search: '' });
+                            }}
+                            className="text-white bg-slate-500 hover:bg-slate-700 rounded-full w-3.5 h-3.5 flex items-center justify-center p-0.5 cursor-pointer"
+                            title="Quitar ubicación"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </span>
                       ) : (
-                        <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <span className="text-xs font-semibold text-slate-400 truncate">
+                          ¿En dónde estás buscando?
+                        </span>
                       )}
                     </div>
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
 
-                    {/* Opción Todas las ubicaciones */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearch('');
-                        setSearchInputVal('');
-                        setCitySearchInput('');
-                        setDebouncedCityQuery('');
-                        setIsCityDropdownOpen(false);
-                        applyFilters({ search: '' });
-                      }}
-                      className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center justify-between mb-1 transition-colors cursor-pointer"
+                  {/* Dropdown de Ciudades (Diseño idéntico al booking con 2s debounce) */}
+                  {isCityDropdownOpen && (
+                    <div
+                      className="absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
                     >
-                      <span>Todas las ubicaciones</span>
-                      {!search && <Check className="w-3.5 h-3.5 text-emerald-600" />}
-                    </button>
+                      {/* Input buscador con debounce de 2 segundos */}
+                      <div className="relative mb-2">
+                        <input
+                          type="text"
+                          value={citySearchInput}
+                          onChange={handleCitySearchChange}
+                          placeholder="Buscar ciudad o provincia..."
+                          autoFocus
+                          className="w-full h-9 pl-3 pr-8 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                        />
+                        {isCityDebouncing ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        ) : (
+                          <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        )}
+                      </div>
 
-                    {/* Lista scrollable de ciudades */}
-                    <div className="max-h-56 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
-                      {filteredCities.length > 0 ? (
-                        filteredCities.map((city) => {
-                          const isSelected = search.toLowerCase() === city.name.toLowerCase();
-                          return (
-                            <div
-                              key={`${city.id}-${city.name}`}
-                              onClick={() => handleSelectCity(city.name)}
-                              style={isSelected ? { backgroundColor: `${filterBorderColor}20` } : {}}
-                              className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition-colors ${
-                                isSelected ? 'font-black' : 'hover:bg-slate-100'
-                              }`}
-                            >
-                              <img
-                                src={city.image}
-                                alt={city.name}
-                                className="w-7 h-7 rounded-lg object-cover shrink-0 shadow-2xs"
-                                loading="lazy"
-                              />
-                              <div className="flex flex-col min-w-0 flex-1">
-                                <span className="text-xs font-bold text-slate-800 uppercase tracking-wide truncate">
-                                  {city.name} ({city.province})
-                                </span>
-                              </div>
-                              {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="py-4 text-center text-xs text-slate-400">
-                          No se encontraron ciudades
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 2. Filtro Operación estilo Booking */}
-              <div ref={operationContainerRef} className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !isOperationOpen;
-                    closeAllFilterDropdowns();
-                    setIsOperationOpen(next);
-                  }}
-                  style={{
-                    borderColor: (propertyStatus || isOperationOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
-                    borderWidth: '1.5px',
-                    backgroundColor: propertyStatus ? `${filterBorderColor}14` : '#ffffff',
-                    color: propertyStatus ? '#0f172a' : '#1e293b',
-                  }}
-                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
-                >
-                  <span>{getOperationButtonLabel()}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOperationOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {isOperationOpen && (
-                  <div
-                    className="absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
-                  >
-                    {OPERATION_OPTIONS.map((opt) => {
-                      const isSelected = propertyStatus === opt.value;
-                      return (
-                        <div
-                          key={opt.value}
-                          onClick={() => {
-                            setPropertyStatus(opt.value);
-                            setIsOperationOpen(false);
-                            applyFilters({ property_status: opt.value });
-                          }}
-                          style={isSelected ? {
-                            backgroundColor: `${filterBorderColor}18`,
-                            color: '#0f172a',
-                          } : {}}
-                          className={`px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors ${
-                            isSelected
-                              ? 'font-black'
-                              : 'font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                          }`}
-                        >
-                          <span>{opt.label}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* 3. Filtro Tipo de Inmueble estilo Booking */}
-              <div ref={propertyTypeContainerRef} className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !isPropertyTypeOpen;
-                    closeAllFilterDropdowns();
-                    setIsPropertyTypeOpen(next);
-                  }}
-                  style={{
-                    borderColor: (propertyType || isPropertyTypeOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
-                    borderWidth: '1.5px',
-                    backgroundColor: propertyType ? `${filterBorderColor}14` : '#ffffff',
-                    color: propertyType ? '#0f172a' : '#1e293b',
-                  }}
-                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
-                >
-                  <span>{getPropertyTypeButtonLabel()}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isPropertyTypeOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {isPropertyTypeOpen && (
-                  <div
-                    className="absolute left-0 top-full mt-2 w-60 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
-                  >
-                    {PROPERTY_TYPE_OPTIONS.map((opt) => {
-                      const isSelected = propertyType === opt.value;
-                      return (
-                        <div
-                          key={opt.value}
-                          onClick={() => {
-                            setPropertyType(opt.value);
-                            setIsPropertyTypeOpen(false);
-                            applyFilters({ property_type: opt.value });
-                          }}
-                          style={isSelected ? {
-                            backgroundColor: `${filterBorderColor}18`,
-                            color: '#0f172a',
-                          } : {}}
-                          className={`px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors ${
-                            isSelected
-                              ? 'font-black'
-                              : 'font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                          }`}
-                        >
-                          <span>{opt.label}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* 4. Filtro Habitaciones estilo Booking */}
-              <div ref={bedroomsContainerRef} className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !isBedroomsOpen;
-                    closeAllFilterDropdowns();
-                    setIsBedroomsOpen(next);
-                  }}
-                  style={{
-                    borderColor: (bedrooms || isBedroomsOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
-                    borderWidth: '1.5px',
-                    backgroundColor: bedrooms ? `${filterBorderColor}14` : '#ffffff',
-                    color: bedrooms ? '#0f172a' : '#1e293b',
-                  }}
-                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
-                >
-                  <span>{getBedroomsButtonLabel()}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBedroomsOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {isBedroomsOpen && (
-                  <div
-                    className="absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
-                  >
-                    {BEDROOMS_OPTIONS.map((opt) => {
-                      const isSelected = bedrooms === opt.value;
-                      return (
-                        <div
-                          key={opt.value}
-                          onClick={() => {
-                            setBedrooms(opt.value);
-                            setIsBedroomsOpen(false);
-                            applyFilters({ bedrooms: opt.value });
-                          }}
-                          style={isSelected ? {
-                            backgroundColor: `${filterBorderColor}18`,
-                            color: '#0f172a',
-                          } : {}}
-                          className={`px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors ${
-                            isSelected
-                              ? 'font-black'
-                              : 'font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                          }`}
-                        >
-                          <span>{opt.label}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* 5. Filtro Precio por Rangos Funcional */}
-              <div ref={priceContainerRef} className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !isPricePopoverOpen;
-                    closeAllFilterDropdowns();
-                    setIsPricePopoverOpen(next);
-                    setTempPriceMin(priceMin);
-                    setTempPriceMax(priceMax);
-                  }}
-                  style={{
-                    borderColor: (priceMin || priceMax || isPricePopoverOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
-                    borderWidth: '1.5px',
-                    backgroundColor: (priceMin || priceMax) ? `${filterBorderColor}14` : '#ffffff',
-                    color: (priceMin || priceMax) ? '#0f172a' : '#1e293b',
-                  }}
-                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
-                >
-                  <DollarSign className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>{getPriceButtonLabel()}</span>
-                  {(priceMin || priceMax) ? (
-                    <span
-                      onClick={handleClearPrice}
-                      className="w-4 h-4 rounded-full bg-slate-200/90 hover:bg-slate-300 text-slate-800 flex items-center justify-center p-0.5 ml-0.5 cursor-pointer"
-                      title="Quitar filtro de precio"
-                    >
-                      <X className="w-2.5 h-2.5" />
-                    </span>
-                  ) : (
-                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isPricePopoverOpen ? 'rotate-180' : ''}`} />
-                  )}
-                </button>
-
-                {isPricePopoverOpen && (
-                  <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150">
-                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
-                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Rangos de Precio (USD)</span>
+                      {/* Opción Todas las ubicaciones */}
                       <button
                         type="button"
-                        onClick={() => setIsPricePopoverOpen(false)}
-                        className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+                        onClick={() => {
+                          setSearch('');
+                          setSearchInputVal('');
+                          setCitySearchInput('');
+                          setDebouncedCityQuery('');
+                          setIsCityDropdownOpen(false);
+                          applyFilters({ search: '' });
+                        }}
+                        className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center justify-between mb-1 transition-colors cursor-pointer"
                       >
-                        <X className="w-4 h-4" />
+                        <span>Todas las ubicaciones</span>
+                        {!search && <Check className="w-3.5 h-3.5 text-emerald-600" />}
                       </button>
-                    </div>
 
-                    {/* Presets rápidos de rangos de precio con 1 tap */}
-                    <div className="space-y-1 mb-3.5">
-                      {PRICE_RANGE_PRESETS.map((preset) => {
-                        const isSelected = (!priceMin && !priceMax && !preset.min && !preset.max) ||
-                          (priceMin === preset.min && priceMax === preset.max);
+                      {/* Lista scrollable de ciudades */}
+                      <div className="max-h-56 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                        {filteredCities.length > 0 ? (
+                          filteredCities.map((city) => {
+                            const isSelected = search.toLowerCase() === city.name.toLowerCase();
+                            return (
+                              <div
+                                key={`${city.id}-${city.name}`}
+                                onClick={() => handleSelectCity(city.name)}
+                                style={isSelected ? { backgroundColor: `${filterBorderColor}20` } : {}}
+                                className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition-colors ${
+                                  isSelected ? 'font-black' : 'hover:bg-slate-100'
+                                }`}
+                              >
+                                <img
+                                  src={city.image}
+                                  alt={city.name}
+                                  className="w-7 h-7 rounded-lg object-cover shrink-0 shadow-2xs"
+                                  loading="lazy"
+                                />
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wide truncate">
+                                    {city.name} ({city.province})
+                                  </span>
+                                </div>
+                                {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="py-4 text-center text-xs text-slate-400">
+                            No se encontraron ciudades
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 2. Filtro Operación estilo Booking */}
+              {showOperationFilter && (
+                <div ref={operationContainerRef} className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !isOperationOpen;
+                      closeAllFilterDropdowns();
+                      setIsOperationOpen(next);
+                    }}
+                    style={{
+                      borderColor: (propertyStatus || isOperationOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                      borderWidth: '1.5px',
+                      backgroundColor: propertyStatus ? `${filterBorderColor}14` : '#ffffff',
+                      color: propertyStatus ? '#0f172a' : '#1e293b',
+                    }}
+                    className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
+                  >
+                    <span>{getOperationButtonLabel()}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOperationOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isOperationOpen && (
+                    <div
+                      className="absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                    >
+                      {OPERATION_OPTIONS.map((opt) => {
+                        const isSelected = propertyStatus === opt.value;
                         return (
-                          <button
-                            key={preset.label}
-                            type="button"
-                            onClick={() => handleSelectPricePreset(preset.min, preset.max)}
+                          <div
+                            key={opt.value}
+                            onClick={() => {
+                              setPropertyStatus(opt.value);
+                              setIsOperationOpen(false);
+                              applyFilters({ property_status: opt.value });
+                            }}
                             style={isSelected ? {
                               backgroundColor: `${filterBorderColor}18`,
-                              borderColor: filterBorderColor,
                               color: '#0f172a',
                             } : {}}
-                            className={`w-full px-3 py-2 rounded-xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer border ${
+                            className={`px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors ${
                               isSelected
-                                ? 'shadow-xs font-black'
-                                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80'
+                                ? 'font-black'
+                                : 'font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                             }`}
                           >
-                            <span>{preset.label}</span>
+                            <span>{opt.label}</span>
                             {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
-                          </button>
+                          </div>
                         );
                       })}
                     </div>
+                  )}
+                </div>
+              )}
 
-                    {/* Rango personalizado manual */}
-                    <div className="pt-2.5 border-t border-slate-100 mb-3">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                        O escribe un rango personalizado:
+              {/* 3. Filtro Tipo de Inmueble estilo Booking */}
+              {showPropertyTypeFilter && (
+                <div ref={propertyTypeContainerRef} className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !isPropertyTypeOpen;
+                      closeAllFilterDropdowns();
+                      setIsPropertyTypeOpen(next);
+                    }}
+                    style={{
+                      borderColor: (propertyType || isPropertyTypeOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                      borderWidth: '1.5px',
+                      backgroundColor: propertyType ? `${filterBorderColor}14` : '#ffffff',
+                      color: propertyType ? '#0f172a' : '#1e293b',
+                    }}
+                    className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
+                  >
+                    <span>{getPropertyTypeButtonLabel()}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isPropertyTypeOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isPropertyTypeOpen && (
+                    <div
+                      className="absolute left-0 top-full mt-2 w-60 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                    >
+                      {PROPERTY_TYPE_OPTIONS.map((opt) => {
+                        const isSelected = propertyType === opt.value;
+                        return (
+                          <div
+                            key={opt.value}
+                            onClick={() => {
+                              setPropertyType(opt.value);
+                              setIsPropertyTypeOpen(false);
+                              applyFilters({ property_type: opt.value });
+                            }}
+                            style={isSelected ? {
+                              backgroundColor: `${filterBorderColor}18`,
+                              color: '#0f172a',
+                            } : {}}
+                            className={`px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'font-black'
+                                : 'font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                            }`}
+                          >
+                            <span>{opt.label}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 4. Filtro Habitaciones estilo Booking */}
+              {showBedroomsFilter && (
+                <div ref={bedroomsContainerRef} className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !isBedroomsOpen;
+                      closeAllFilterDropdowns();
+                      setIsBedroomsOpen(next);
+                    }}
+                    style={{
+                      borderColor: (bedrooms || isBedroomsOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                      borderWidth: '1.5px',
+                      backgroundColor: bedrooms ? `${filterBorderColor}14` : '#ffffff',
+                      color: bedrooms ? '#0f172a' : '#1e293b',
+                    }}
+                    className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
+                  >
+                    <span>{getBedroomsButtonLabel()}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBedroomsOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isBedroomsOpen && (
+                    <div
+                      className="absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                    >
+                      {BEDROOMS_OPTIONS.map((opt) => {
+                        const isSelected = bedrooms === opt.value;
+                        return (
+                          <div
+                            key={opt.value}
+                            onClick={() => {
+                              setBedrooms(opt.value);
+                              setIsBedroomsOpen(false);
+                              applyFilters({ bedrooms: opt.value });
+                            }}
+                            style={isSelected ? {
+                              backgroundColor: `${filterBorderColor}18`,
+                              color: '#0f172a',
+                            } : {}}
+                            className={`px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'font-black'
+                                : 'font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                            }`}
+                          >
+                            <span>{opt.label}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 5. Filtro Precio por Rangos Funcional */}
+              {showPriceFilter && (
+                <div ref={priceContainerRef} className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !isPricePopoverOpen;
+                      closeAllFilterDropdowns();
+                      setIsPricePopoverOpen(next);
+                      setTempPriceMin(priceMin);
+                      setTempPriceMax(priceMax);
+                    }}
+                    style={{
+                      borderColor: (priceMin || priceMax || isPricePopoverOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                      borderWidth: '1.5px',
+                      backgroundColor: (priceMin || priceMax) ? `${filterBorderColor}14` : '#ffffff',
+                      color: (priceMin || priceMax) ? '#0f172a' : '#1e293b',
+                    }}
+                    className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
+                  >
+                    <DollarSign className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>{getPriceButtonLabel()}</span>
+                    {(priceMin || priceMax) ? (
+                      <span
+                        onClick={handleClearPrice}
+                        className="w-4 h-4 rounded-full bg-slate-200/90 hover:bg-slate-300 text-slate-800 flex items-center justify-center p-0.5 ml-0.5 cursor-pointer"
+                        title="Quitar filtro de precio"
+                      >
+                        <X className="w-2.5 h-2.5" />
                       </span>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <span className="text-[10px] text-slate-500 font-bold block mb-1">Mínimo:</span>
-                          <input
-                            type="number"
-                            placeholder="$0"
-                            value={tempPriceMin}
-                            onChange={(e) => setTempPriceMin(e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
-                          />
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-500 font-bold block mb-1">Máximo:</span>
-                          <input
-                            type="number"
-                            placeholder="Sin límite"
-                            value={tempPriceMax}
-                            onChange={(e) => setTempPriceMax(e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
-                          />
+                    ) : (
+                      <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isPricePopoverOpen ? 'rotate-180' : ''}`} />
+                    )}
+                  </button>
+
+                  {isPricePopoverOpen && (
+                    <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150">
+                      <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+                        <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Rangos de Precio (USD)</span>
+                        <button
+                          type="button"
+                          onClick={() => setIsPricePopoverOpen(false)}
+                          className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Presets rápidos de rangos de precio con 1 tap */}
+                      <div className="space-y-1 mb-3.5">
+                        {PRICE_RANGE_PRESETS.map((preset) => {
+                          const isSelected = (!priceMin && !priceMax && !preset.min && !preset.max) ||
+                            (priceMin === preset.min && priceMax === preset.max);
+                          return (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              onClick={() => handleSelectPricePreset(preset.min, preset.max)}
+                              style={isSelected ? {
+                                backgroundColor: `${filterBorderColor}18`,
+                                borderColor: filterBorderColor,
+                                color: '#0f172a',
+                              } : {}}
+                              className={`w-full px-3 py-2 rounded-xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer border ${
+                                isSelected
+                                  ? 'shadow-xs font-black'
+                                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80'
+                              }`}
+                            >
+                              <span>{preset.label}</span>
+                              {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: filterBorderColor }} />}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Rango personalizado manual */}
+                      <div className="pt-2.5 border-t border-slate-100 mb-3">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                          O escribe un rango personalizado:
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-[10px] text-slate-500 font-bold block mb-1">Mínimo:</span>
+                            <input
+                              type="number"
+                              placeholder="$0"
+                              value={tempPriceMin}
+                              onChange={(e) => setTempPriceMin(e.target.value)}
+                              className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 font-bold block mb-1">Máximo:</span>
+                            <input
+                              type="number"
+                              placeholder="Sin límite"
+                              value={tempPriceMax}
+                              onChange={(e) => setTempPriceMax(e.target.value)}
+                              className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                      <button
-                        type="button"
-                        onClick={handleClearPrice}
-                        className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
-                      >
-                        Limpiar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleApplyCustomPrice}
-                        style={{ backgroundColor: primaryColor }}
-                        className="px-4 py-2 rounded-xl text-xs font-black text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
-                      >
-                        Aplicar rango
-                      </button>
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={handleClearPrice}
+                          className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
+                        >
+                          Limpiar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleApplyCustomPrice}
+                          style={{ backgroundColor: primaryColor }}
+                          className="px-4 py-2 rounded-xl text-xs font-black text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
+                        >
+                          Aplicar rango
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
               {/* 6. Botón Más filtros (Abre Modal Completo de Filtros Avanzados) */}
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsCityDropdownOpen(false);
-                    setIsPricePopoverOpen(false);
-                    setIsMoreFiltersOpen(true);
-                  }}
-                  style={{
-                    borderColor: (bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) ? filterBorderColor : 'rgba(0,0,0,0.18)',
-                    borderWidth: '1.5px',
-                    backgroundColor: (bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) ? `${filterBorderColor}14` : '#ffffff',
-                    color: (bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) ? '#0f172a' : '#1e293b',
-                  }}
-                  className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5 opacity-70" />
-                  <span>Más filtros</span>
-                  {(bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) && (
-                    <span
-                      style={{ backgroundColor: filterBorderColor }}
-                      className="w-2 h-2 rounded-full"
-                    />
-                  )}
-                </button>
-              </div>
+              {showMoreFiltersBtn && (
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCityDropdownOpen(false);
+                      setIsPricePopoverOpen(false);
+                      setIsMoreFiltersOpen(true);
+                    }}
+                    style={{
+                      borderColor: (bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                      borderWidth: '1.5px',
+                      backgroundColor: (bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) ? `${filterBorderColor}14` : '#ffffff',
+                      color: (bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) ? '#0f172a' : '#1e293b',
+                    }}
+                    className="h-[42px] px-3.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:border-slate-400 select-none"
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5 opacity-70" />
+                    <span>Más filtros</span>
+                    {(bathrooms || parking || sizeMin || sizeMax || (sort && sort !== 'recent')) && (
+                      <span
+                        style={{ backgroundColor: filterBorderColor }}
+                        className="w-2 h-2 rounded-full"
+                      />
+                    )}
+                  </button>
+                </div>
+              )}
 
               {/* 7. Botón directo de Resetear / Limpiar Filtros */}
               {hasActiveFilters && (
@@ -1452,96 +1492,104 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               </div>
 
               {/* 3. Baños */}
-              <div>
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Baños</span>
-                <div className="flex items-center gap-1.5">
-                  {['', '1', '2', '3', '4'].map((b) => {
-                    const isSelected = tempBathrooms === b;
-                    return (
-                      <button
-                        key={b}
-                        type="button"
-                        onClick={() => setTempBathrooms(b)}
-                        style={isSelected ? { backgroundColor: filterBorderColor, color: '#ffffff', borderColor: filterBorderColor } : {}}
-                        className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                          isSelected
-                            ? 'shadow-xs font-black'
-                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                        }`}
-                      >
-                        {b ? `${b}+` : 'Todos'}
-                      </button>
-                    );
-                  })}
+              {showBathroomsFilter && (
+                <div>
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Baños</span>
+                  <div className="flex items-center gap-1.5">
+                    {['', '1', '2', '3', '4'].map((b) => {
+                      const isSelected = tempBathrooms === b;
+                      return (
+                        <button
+                          key={b}
+                          type="button"
+                          onClick={() => setTempBathrooms(b)}
+                          style={isSelected ? { backgroundColor: filterBorderColor, color: '#ffffff', borderColor: filterBorderColor } : {}}
+                          className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'shadow-xs font-black'
+                              : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          {b ? `${b}+` : 'Todos'}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 4. Estacionamientos / Garajes */}
-              <div>
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Estacionamientos / Parqueos</span>
-                <div className="flex items-center gap-1.5">
-                  {['', '1', '2', '3'].map((pk) => {
-                    const isSelected = tempParking === pk;
-                    return (
-                      <button
-                        key={pk}
-                        type="button"
-                        onClick={() => setTempParking(pk)}
-                        style={isSelected ? { backgroundColor: filterBorderColor, color: '#ffffff', borderColor: filterBorderColor } : {}}
-                        className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                          isSelected
-                            ? 'shadow-xs font-black'
-                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                        }`}
-                      >
-                        {pk ? `${pk}+` : 'Todos'}
-                      </button>
-                    );
-                  })}
+              {showParkingFilter && (
+                <div>
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Estacionamientos / Parqueos</span>
+                  <div className="flex items-center gap-1.5">
+                    {['', '1', '2', '3'].map((pk) => {
+                      const isSelected = tempParking === pk;
+                      return (
+                        <button
+                          key={pk}
+                          type="button"
+                          onClick={() => setTempParking(pk)}
+                          style={isSelected ? { backgroundColor: filterBorderColor, color: '#ffffff', borderColor: filterBorderColor } : {}}
+                          className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'shadow-xs font-black'
+                              : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          {pk ? `${pk}+` : 'Todos'}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 5. Rango de Superficie / Área (m²) */}
-              <div>
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Superficie / Área Construida (m²)</span>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <span className="text-[10px] text-slate-500 font-bold block mb-1">Mínimo m²:</span>
-                    <input
-                      type="number"
-                      placeholder="0 m²"
-                      value={tempSizeMin}
-                      onChange={(e) => setTempSizeMin(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 font-bold block mb-1">Máximo m²:</span>
-                    <input
-                      type="number"
-                      placeholder="Sin límite"
-                      value={tempSizeMax}
-                      onChange={(e) => setTempSizeMax(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
-                    />
+              {showSizeFilter && (
+                <div>
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Superficie / Área Construida (m²)</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold block mb-1">Mínimo m²:</span>
+                      <input
+                        type="number"
+                        placeholder="0 m²"
+                        value={tempSizeMin}
+                        onChange={(e) => setTempSizeMin(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold block mb-1">Máximo m²:</span>
+                      <input
+                        type="number"
+                        placeholder="Sin límite"
+                        value={tempSizeMax}
+                        onChange={(e) => setTempSizeMax(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* 6. Ordenamiento */}
-              <div>
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Ordenar resultados</span>
-                <select
-                  value={tempSort}
-                  onChange={(e) => setTempSort(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 cursor-pointer"
-                >
-                  <option value="recent">Más recientes</option>
-                  <option value="featured">Propiedades destacadas</option>
-                  <option value="price_asc">Menor precio primero</option>
-                  <option value="price_desc">Mayor precio primero</option>
-                </select>
-              </div>
+              {showSortFilter && (
+                <div>
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Ordenar resultados</span>
+                  <select
+                    value={tempSort}
+                    onChange={(e) => setTempSort(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 cursor-pointer"
+                  >
+                    <option value="recent">Más recientes</option>
+                    <option value="featured">Propiedades destacadas</option>
+                    <option value="price_asc">Menor precio primero</option>
+                    <option value="price_desc">Mayor precio primero</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Footer de Acciones del Modal */}

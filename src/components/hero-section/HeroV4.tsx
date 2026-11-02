@@ -519,6 +519,33 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   // Los botones deben ser del mismo color del color primario
   const buttonColor = primaryColor;
 
+  // Filter visibility configuration from Agency Settings
+  const bookingFilters =
+    agency?.filter_settings?.booking ??
+    agency?.details?.estate_settings?.filter_settings?.booking ?? {
+      tabs: true,
+      location: true,
+      operation: true,
+      property_type: true,
+      price: true,
+    };
+
+  const showTabs = bookingFilters.tabs !== false;
+  const showLocation = bookingFilters.location !== false;
+  const showOperation = bookingFilters.operation !== false;
+  const showPropertyType = bookingFilters.property_type !== false;
+  const showPrice = bookingFilters.price !== false;
+
+  const gridColsList = [
+    showLocation ? '2.1fr' : null,
+    showOperation ? '1.15fr' : null,
+    showPropertyType ? '1.25fr' : null,
+    showPrice ? '1.15fr' : null,
+    'auto',
+  ].filter(Boolean);
+
+  const desktopGridColumns = gridColsList.length > 1 ? gridColsList.join(' ') : '1fr auto';
+
   const heroTitle = agency?.hero_title || agency?.details?.hero_title || 'Tu Proximo';
   const heroSubtitle = agency?.hero_subtitle || agency?.details?.hero_subtitle || 'Exito Inmobiliario Inicia Con Nosotros';
 
@@ -708,13 +735,13 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         /* Form Row Desktop */
         .inmo-card-form-grid {
           display: grid;
-          grid-template-columns: 2.1fr 1.15fr 1.25fr 1.15fr auto;
+          grid-template-columns: ${desktopGridColumns};
           gap: 16px;
           padding: 26px 32px 30px 32px;
           align-items: flex-end;
           background: #ffffff;
           position: relative;
-          border-radius: 0 0 26px 26px;
+          border-radius: ${showTabs ? '0 0 26px 26px' : '26px'};
           overflow: visible !important;
         }
 
@@ -861,51 +888,53 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         {/* ======================================================== */}
         <div className="inmo-main-booking-card">
           {/* Top Tabs: En Venta, En Renta, Terrenos y Lotes, Comercial */}
-          <div className="inmo-card-tabs-bar">
-            {/* EN VENTA */}
-            <button
-              type="button"
-              className={`inmo-card-tab-btn ${activeTab === 'sale' ? 'active' : ''}`}
-              onClick={() => handleTabClick('sale')}
-            >
-              <Tag className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
-              <span>En Venta</span>
-              {activeTab === 'sale' && <div className="inmo-tab-active-bar" />}
-            </button>
+          {showTabs && (
+            <div className="inmo-card-tabs-bar">
+              {/* EN VENTA */}
+              <button
+                type="button"
+                className={`inmo-card-tab-btn ${activeTab === 'sale' ? 'active' : ''}`}
+                onClick={() => handleTabClick('sale')}
+              >
+                <Tag className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
+                <span>En Venta</span>
+                {activeTab === 'sale' && <div className="inmo-tab-active-bar" />}
+              </button>
 
-            {/* EN RENTA */}
-            <button
-              type="button"
-              className={`inmo-card-tab-btn ${activeTab === 'rent' ? 'active' : ''}`}
-              onClick={() => handleTabClick('rent')}
-            >
-              <KeyRound className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
-              <span>En Renta</span>
-              {activeTab === 'rent' && <div className="inmo-tab-active-bar" />}
-            </button>
+              {/* EN RENTA */}
+              <button
+                type="button"
+                className={`inmo-card-tab-btn ${activeTab === 'rent' ? 'active' : ''}`}
+                onClick={() => handleTabClick('rent')}
+              >
+                <KeyRound className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
+                <span>En Renta</span>
+                {activeTab === 'rent' && <div className="inmo-tab-active-bar" />}
+              </button>
 
-            {/* TERRENOS Y LOTES */}
-            <button
-              type="button"
-              className={`inmo-card-tab-btn ${activeTab === 'land' ? 'active' : ''}`}
-              onClick={() => handleTabClick('land')}
-            >
-              <Trees className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
-              <span>Terrenos y Lotes</span>
-              {activeTab === 'land' && <div className="inmo-tab-active-bar" />}
-            </button>
+              {/* TERRENOS Y LOTES */}
+              <button
+                type="button"
+                className={`inmo-card-tab-btn ${activeTab === 'land' ? 'active' : ''}`}
+                onClick={() => handleTabClick('land')}
+              >
+                <Trees className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
+                <span>Terrenos y Lotes</span>
+                {activeTab === 'land' && <div className="inmo-tab-active-bar" />}
+              </button>
 
-            {/* COMERCIAL */}
-            <button
-              type="button"
-              className={`inmo-card-tab-btn ${activeTab === 'commercial' ? 'active' : ''}`}
-              onClick={() => handleTabClick('commercial')}
-            >
-              <Building2 className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
-              <span>Comercial</span>
-              {activeTab === 'commercial' && <div className="inmo-tab-active-bar" />}
-            </button>
-          </div>
+              {/* COMERCIAL */}
+              <button
+                type="button"
+                className={`inmo-card-tab-btn ${activeTab === 'commercial' ? 'active' : ''}`}
+                onClick={() => handleTabClick('commercial')}
+              >
+                <Building2 className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
+                <span>Comercial</span>
+                {activeTab === 'commercial' && <div className="inmo-tab-active-bar" />}
+              </button>
+            </div>
+          )}
 
           {/* Form Body with Loading Spinner Overlay (Exact match to Image 2) */}
           <form action="/properties" method="GET" className="inmo-card-form-grid">
@@ -924,7 +953,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   zIndex: 50,
-                  borderRadius: '0 0 24px 24px',
+                  borderRadius: showTabs ? '0 0 24px 24px' : '24px',
                 }}
               >
                 <div
@@ -941,55 +970,63 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             )}
 
             {/* 1. Ubicación (Select2-style Search with 2s Debounce matching Screenshot) */}
-            <div style={{ position: 'relative', zIndex: 40, overflow: 'visible' }}>
-              <label className="inmo-field-label">Ubicación</label>
-              <LocationCitySelect
-                value={search}
-                onChange={(val) => setSearch(val)}
-                domain={domain}
-                accentColor={primaryColor}
-              />
-            </div>
+            {showLocation && (
+              <div style={{ position: 'relative', zIndex: 40, overflow: 'visible' }}>
+                <label className="inmo-field-label">Ubicación</label>
+                <LocationCitySelect
+                  value={search}
+                  onChange={(val) => setSearch(val)}
+                  domain={domain}
+                  accentColor={primaryColor}
+                />
+              </div>
+            )}
 
             {/* 2. Operación (Professional Popover Select) */}
-            <div style={{ position: 'relative', zIndex: 30, overflow: 'visible' }}>
-              <ProfessionalBookingSelect
-                label="Operación"
-                name="property_status"
-                value={propertyStatus}
-                onChange={setPropertyStatus}
-                options={operationOptions}
-                hasCaret={false}
-                accentColor={primaryColor}
-              />
-            </div>
+            {showOperation && (
+              <div style={{ position: 'relative', zIndex: 30, overflow: 'visible' }}>
+                <ProfessionalBookingSelect
+                  label="Operación"
+                  name="property_status"
+                  value={propertyStatus}
+                  onChange={setPropertyStatus}
+                  options={operationOptions}
+                  hasCaret={false}
+                  accentColor={primaryColor}
+                />
+              </div>
+            )}
 
             {/* 3. Propiedad (Professional Popover Select) */}
-            <div style={{ position: 'relative', zIndex: 20, overflow: 'visible' }}>
-              <ProfessionalBookingSelect
-                label="Propiedad"
-                name="property_type"
-                value={propertyType}
-                onChange={setPropertyType}
-                options={propertyTypeOptions}
-                hasCaret={true}
-                accentColor={primaryColor}
-              />
-            </div>
+            {showPropertyType && (
+              <div style={{ position: 'relative', zIndex: 20, overflow: 'visible' }}>
+                <ProfessionalBookingSelect
+                  label="Propiedad"
+                  name="property_type"
+                  value={propertyType}
+                  onChange={setPropertyType}
+                  options={propertyTypeOptions}
+                  hasCaret={true}
+                  accentColor={primaryColor}
+                />
+              </div>
+            )}
 
             {/* 4. Precio (Professional Popover Select con alineación a la derecha para no cortarse) */}
-            <div style={{ position: 'relative', zIndex: 10, overflow: 'visible' }}>
-              <ProfessionalBookingSelect
-                label="Precio"
-                name="price_max"
-                value={priceMax}
-                onChange={setPriceMax}
-                options={priceOptions}
-                hasCaret={false}
-                accentColor={primaryColor}
-                alignRight={true}
-              />
-            </div>
+            {showPrice && (
+              <div style={{ position: 'relative', zIndex: 10, overflow: 'visible' }}>
+                <ProfessionalBookingSelect
+                  label="Precio"
+                  name="price_max"
+                  value={priceMax}
+                  onChange={setPriceMax}
+                  options={priceOptions}
+                  hasCaret={false}
+                  accentColor={primaryColor}
+                  alignRight={true}
+                />
+              </div>
+            )}
 
             {/* 5. Botón Buscar */}
             <div style={{ zIndex: 5 }}>

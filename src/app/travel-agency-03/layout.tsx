@@ -1,7 +1,9 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { poppins, roboto, courgette } from '@/fonts/font';
 import ClientRoot from '@/components/ClientRoot';
+import { getDomainMetadata } from '@/utils/seoHelper';
 
 // GoFly Travel Agency 03 Stylesheets
 import '../../../public/assets/css/bootstrap.min.css';
@@ -16,10 +18,11 @@ import 'lightgallery/css/lg-zoom.css';
 import 'lightgallery/css/lg-thumbnail.css';
 import 'lightgallery/css/lg-video.css';
 
-export const metadata: Metadata = {
-  title: 'Gofly - Tour & Travel Booking Website',
-  description: 'Travel Agency 03 - Portal Inmobiliario',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = headers();
+  const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
+  return await getDomainMetadata(host);
+}
 
 export default function TravelAgency03Layout({
   children,

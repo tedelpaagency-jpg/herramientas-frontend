@@ -42,6 +42,34 @@ export interface PublicAgencyConfig {
   redirect_to_login?: boolean;
   portal_url?: string;
   show_topbar?: boolean;
+  filter_settings?: {
+    booking?: {
+      tabs?: boolean;
+      location?: boolean;
+      operation?: boolean;
+      property_type?: boolean;
+      price?: boolean;
+    };
+    properties_list?: {
+      search?: boolean;
+      city?: boolean;
+      operation?: boolean;
+      property_type?: boolean;
+      bedrooms?: boolean;
+      bathrooms?: boolean;
+      parking?: boolean;
+      price?: boolean;
+      size?: boolean;
+      sort?: boolean;
+    };
+    admin?: {
+      search?: boolean;
+      category?: boolean;
+      status?: boolean;
+      agent?: boolean;
+      agency?: boolean;
+    };
+  };
   details?: Record<string, any>;
   agents?: Array<{
     id: number;

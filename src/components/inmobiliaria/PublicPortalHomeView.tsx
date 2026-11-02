@@ -59,6 +59,14 @@ export default function PublicPortalHomeView({
   );
 
   useEffect(() => {
+    const rawAgency = agency as any;
+    const rawName = rawAgency?.name || rawAgency?.agency_name || rawAgency?.commercial_name || rawAgency?.trade_name;
+    if (rawName && typeof document !== 'undefined') {
+      document.title = `${rawName} - Inicio`;
+    }
+  }, [agency]);
+
+  useEffect(() => {
     let isMounted = true;
 
     // Load instantly from local storage cache if not already loaded
