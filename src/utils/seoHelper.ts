@@ -238,7 +238,7 @@ export async function getPropertyMetadata(
 
     if (res && res.ok) {
       const json = await res.json().catch(() => null);
-      const estate = json?.data;
+      const estate = json?.data?.estate || json?.data;
       if (estate && estate.title) {
         const agencyName = estate.agency?.name || 'Inmobiliaria';
         const formattedPrice = estate.price
@@ -252,13 +252,35 @@ export async function getPropertyMetadata(
           ? estate.description.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim().slice(0, 200)
           : `${estate.property_type || 'Inmueble'} en ${estate.city || estate.location || ''}. Consulta detalles y agenda tu visita.`;
 
+        const firstArrImg = Array.isArray(estate.images) && estate.images.length > 0
+          ? (typeof estate.images[0] === 'string' ? estate.images[0] : (estate.images[0]?.image_path || estate.images[0]?.url))
+          : null;
+
         const rawImg =
+          estate.image ||
+          firstArrImg ||
           estate.primary_photo ||
           (Array.isArray(estate.photos) && estate.photos[0]) ||
           estate.agency?.banner_image ||
           estate.agency?.logo;
+
         const imageUrl = toAbsoluteMediaUrl(rawImg, host);
         const faviconUrl = toAbsoluteMediaUrl(estate.agency?.logo, host);
+
+        const imageMimeType = imageUrl?.toLowerCase().endsWith('.png') 
+          ? 'image/png' 
+          : (imageUrl?.toLowerCase().endsWith('.webp') ? 'image/webp' : 'image/jpeg');
+
+        const ogImages = imageUrl ? [
+          {
+            url: imageUrl,
+            secureUrl: imageUrl,
+            width: 1200,
+            height: 630,
+            type: imageMimeType,
+            alt: estate.title,
+          }
+        ] : [];
 
         return {
           title,
@@ -270,7 +292,7 @@ export async function getPropertyMetadata(
             url: `https://${host}/properties/${encodeURIComponent(slugOrId)}`,
             siteName: agencyName,
             type: 'article',
-            images: imageUrl ? [{ url: imageUrl, alt: estate.title }] : [],
+            images: ogImages,
           },
           twitter: {
             card: 'summary_large_image',

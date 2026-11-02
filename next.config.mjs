@@ -5,6 +5,15 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
+  async redirects() {
+    return [
+      {
+        source: '/propiedad/:slug*',
+        destination: '/properties/:slug*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

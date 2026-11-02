@@ -14,6 +14,7 @@ import {
   Phone,
   Mail,
   MessageCircle,
+  Link2,
   ArrowLeft,
   Building2,
   Share2,
@@ -233,12 +234,16 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
     }
   };
 
-  // Handler: Copiar Información de la Propiedad (Idéntico a la acción del sitio administrativo)
+  // Handler: Copiar Información de la Propiedad (Formato listo para WhatsApp con enlace a la web)
   const handleCopyPropertyInfo = async () => {
     if (!estate) return;
     const toastId = toast.loading('Copiando información del inmueble...');
     setCopyingInfo(true);
     try {
+      const pageUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/properties/${estate.slug || estate.id}`
+        : `https://${domainParam || 'immobillis.com'}/properties/${estate.slug || estate.id}`;
+
       let textToCopy = '';
       try {
         const res = await publicInmobiliariaService.getWhatsAppInfo(
@@ -251,29 +256,30 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
       }
 
       const mainImg = getEstatePrimaryImage(estate);
-      if (textToCopy && mainImg && !textToCopy.includes(mainImg)) {
-        if (textToCopy.includes(`*${estate.title}*`)) {
-          textToCopy = textToCopy.replace(
-            `*${estate.title}*`,
-            `*${estate.title}*\n📸 *Foto:* ${mainImg}`
-          );
-        } else {
-          textToCopy = `📸 *Foto:* ${mainImg}\n\n${textToCopy}`;
-        }
-      }
 
-      if (!textToCopy) {
+      if (textToCopy) {
+        // 1. Reemplazar enlaces del backend (/estates/, /propiedad/, etc.) con la URL real de la página
+        textToCopy = textToCopy.replace(
+          /(?:https?:\/\/[^\s\n]+)?\/(?:estates|propiedad|properties)\/[^\s\n]+/gi,
+          pageUrl
+        );
+        // 2. Reemplazar explícitamente cualquier santun.tedelpa.com que no sea una imagen
+        textToCopy = textToCopy.replace(
+          /https?:\/\/santun\.tedelpa\.com\/(?:estates|properties|propiedad)[^\s\n]*/gi,
+          pageUrl
+        );
+      } else {
         const op = isRent ? 'ALQUILER' : 'VENTA';
         const lines = [
           `🏠 *${estate.title}*`,
-          mainImg ? `📸 *Foto:* ${mainImg}` : null,
           `💰 *Precio:* $ ${Number(estate.price || 0).toLocaleString('en-US')} ${isRent ? '/mes' : ''}`,
           estate.full_address ? `📍 *Ubicación:* ${estate.full_address}` : null,
           estate.bedrooms ? `🛏 *Habitaciones:* ${estate.bedrooms}` : null,
           estate.bathrooms ? `🛁 *Baños:* ${estate.bathrooms}` : null,
           estate.size ? `📐 *Superficie:* ${estate.size} m²` : null,
           estate.garage ? `🚗 *Parqueadero:* Sí` : null,
-          typeof window !== 'undefined' ? `🔗 *Ver en la web:* ${window.location.href}` : null,
+          `🔗 *Ver propiedad:* ${pageUrl}`,
+          mainImg ? `📸 *Foto:* ${mainImg}` : null,
         ].filter(Boolean);
         textToCopy = lines.join('\n');
       }
@@ -626,58 +632,51 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
           <div className="lg:col-span-4">
             <div id="anunciante-form" className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xl sticky top-24 space-y-4">
               
-              {/* BOTONES DE ACCIÓN CENTRADOS Y RESALTADOS: WHATSAPP (VERDE) & PDF (ROJO) */}
-              <div className="flex items-center justify-center gap-6 pt-1 pb-6 border-b border-slate-100">
-                {/* Botón 1: WhatsApp / Copiar Información (Verde) */}
-                <div className="relative flex flex-col items-center group">
-                  <button
-                    type="button"
-                    onClick={handleCopyPropertyInfo}
-                    disabled={copyingInfo}
-                    title="Copiar información de la propiedad para WhatsApp"
-                    className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#1eb853] hover:from-[#20bd56] hover:to-[#179643] text-white shadow-lg shadow-emerald-500/35 hover:shadow-xl hover:shadow-emerald-500/50 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer border border-white/40"
-                    aria-label="Copiar ficha de la propiedad para WhatsApp"
-                  >
-                    {copiedInfo ? (
-                      <Check className="w-7 h-7 text-white stroke-[2.5]" />
-                    ) : (
-                      <MessageCircle className="w-7 h-7 text-white fill-white/20 stroke-[2]" />
-                    )}
-                    {/* Indicador de pulso para resaltar */}
-                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white"></span>
-                    </span>
-                  </button>
-                  <span className="absolute -bottom-5 text-[10px] font-black uppercase tracking-wider text-emerald-700 whitespace-nowrap opacity-90 group-hover:opacity-100 transition-opacity">
-                    WhatsApp
+              {/* BOTONES DE ACCIÓN CENTRADOS Y RESALTADOS: LINK COPIAR (VERDE) & PDF (ROJO) CON LÍNEA SEPARADORA */}
+              <div className="flex items-center justify-center gap-6 pt-1 pb-5 border-b border-slate-100">
+                {/* Botón 1: Link / Copiar Información (Verde) */}
+                <button
+                  type="button"
+                  onClick={handleCopyPropertyInfo}
+                  disabled={copyingInfo}
+                  title="Copiar enlace e información de la propiedad"
+                  className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d] text-white shadow-lg shadow-emerald-500/35 hover:shadow-xl hover:shadow-emerald-500/50 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer border border-white/40"
+                  aria-label="Copiar ficha de la propiedad"
+                >
+                  {copiedInfo ? (
+                    <Check className="w-7 h-7 text-white stroke-[2.5]" />
+                  ) : (
+                    <Link2 className="w-7 h-7 text-white stroke-[2.2]" />
+                  )}
+                  {/* Indicador de pulso para resaltar */}
+                  <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white"></span>
                   </span>
-                </div>
+                </button>
+
+                {/* Línea divisoria entre botones */}
+                <div className="h-9 w-[1.5px] bg-slate-200/90 rounded-full" />
 
                 {/* Botón 2: Descargar PDF (Rojo) */}
-                <div className="relative flex flex-col items-center group">
-                  <button
-                    type="button"
-                    onClick={handleDownloadPdf}
-                    disabled={downloadingPdf}
-                    title="Descargar dossier de la propiedad en PDF"
-                    className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#ef4444] to-[#dc2626] hover:from-[#dc2626] hover:to-[#b91c1c] text-white shadow-lg shadow-red-500/35 hover:shadow-xl hover:shadow-red-500/50 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer border border-white/40"
-                    aria-label="Descargar ficha en PDF"
-                  >
-                    {downloadingPdf ? (
-                      <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <FileDown className="w-7 h-7 text-white stroke-[2.2]" />
-                    )}
-                    {/* Badge PDF para resaltar */}
-                    <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-slate-900 text-white border border-white/40 shadow-xs">
-                      PDF
-                    </span>
-                  </button>
-                  <span className="absolute -bottom-5 text-[10px] font-black uppercase tracking-wider text-rose-700 whitespace-nowrap opacity-90 group-hover:opacity-100 transition-opacity">
-                    Dossier PDF
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={downloadingPdf}
+                  title="Descargar dossier de la propiedad en PDF"
+                  className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#ef4444] to-[#dc2626] hover:from-[#dc2626] hover:to-[#b91c1c] text-white shadow-lg shadow-red-500/35 hover:shadow-xl hover:shadow-red-500/50 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer border border-white/40"
+                  aria-label="Descargar ficha en PDF"
+                >
+                  {downloadingPdf ? (
+                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileDown className="w-7 h-7 text-white stroke-[2.2]" />
+                  )}
+                  {/* Badge PDF para resaltar */}
+                  <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-slate-900 text-white border border-white/40 shadow-xs">
+                    PDF
                   </span>
-                </div>
+                </button>
               </div>
 
               <h3 className="text-base font-extrabold text-slate-900 tracking-tight">

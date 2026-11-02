@@ -186,6 +186,32 @@ export const EstateImageLightboxModal: React.FC<EstateImageLightboxModalProps> =
     setIsPanning(false);
   };
 
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (zoomLevel > 1) return;
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (zoomLevel > 1) return;
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (zoomLevel > 1 || touchStart === null || touchEnd === null) return;
+    const distance = touchStart - touchEnd;
+    if (distance > 45) {
+      handleNext();
+    } else if (distance < -45) {
+      handlePrev();
+    }
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
   const activeImage = images[currentIndex];
 
   if (!isOpen || !estate) return null;
@@ -200,7 +226,7 @@ export const EstateImageLightboxModal: React.FC<EstateImageLightboxModalProps> =
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 z-[999999] bg-slate-950/95 backdrop-blur-xl"
+          className="absolute inset-0 z-0 bg-slate-950/95 backdrop-blur-xl cursor-pointer"
           aria-hidden="true"
         />
 
@@ -311,10 +337,18 @@ export const EstateImageLightboxModal: React.FC<EstateImageLightboxModalProps> =
 
         {/* Central Image Viewer Area */}
         <div 
-          className="relative z-10 flex-1 flex items-center justify-center overflow-hidden px-4 sm:px-16 py-2"
+          className="relative z-10 flex-1 flex items-center justify-center overflow-hidden px-4 sm:px-16 py-2 touch-pan-y"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              onClose();
+            }
+          }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           style={{ cursor: zoomLevel > 1 ? (isPanning ? 'grabbing' : 'grab') : 'default' }}
         >
           {/* Previous Arrow Button */}
@@ -322,10 +356,11 @@ export const EstateImageLightboxModal: React.FC<EstateImageLightboxModalProps> =
             <button
               type="button"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 handlePrev();
               }}
-              className="absolute left-3 sm:left-6 z-30 p-3 sm:p-3.5 rounded-2xl bg-slate-900/80 hover:bg-blue-600 text-white backdrop-blur-md border border-white/10 hover:border-blue-400 shadow-2xl transition-all duration-200 active:scale-90"
+              className="absolute left-3 sm:left-6 z-40 p-3 sm:p-3.5 rounded-2xl bg-slate-900/85 hover:bg-blue-600 text-white backdrop-blur-md border border-white/20 hover:border-blue-400 shadow-2xl transition-all duration-200 active:scale-90 cursor-pointer pointer-events-auto"
               title="Foto anterior (←)"
               aria-label="Foto anterior"
             >
@@ -334,7 +369,10 @@ export const EstateImageLightboxModal: React.FC<EstateImageLightboxModalProps> =
           )}
 
           {/* Active Image Canvas */}
-          <div className="relative max-w-full max-h-full flex items-center justify-center">
+          <div 
+            className="relative z-20 max-w-full max-h-full flex items-center justify-center pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             {activeImage?.url ? (
               <motion.img
                 key={activeImage.url}
@@ -368,10 +406,11 @@ export const EstateImageLightboxModal: React.FC<EstateImageLightboxModalProps> =
             <button
               type="button"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 handleNext();
               }}
-              className="absolute right-3 sm:right-6 z-30 p-3 sm:p-3.5 rounded-2xl bg-slate-900/80 hover:bg-blue-600 text-white backdrop-blur-md border border-white/10 hover:border-blue-400 shadow-2xl transition-all duration-200 active:scale-90"
+              className="absolute right-3 sm:right-6 z-40 p-3 sm:p-3.5 rounded-2xl bg-slate-900/85 hover:bg-blue-600 text-white backdrop-blur-md border border-white/20 hover:border-blue-400 shadow-2xl transition-all duration-200 active:scale-90 cursor-pointer pointer-events-auto"
               title="Foto siguiente (→)"
               aria-label="Foto siguiente"
             >
@@ -395,8 +434,11 @@ export const EstateImageLightboxModal: React.FC<EstateImageLightboxModalProps> =
                   <button
                     key={img.id}
                     type="button"
-                    onClick={() => handleIndexChange(idx)}
-                    className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200 ${
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleIndexChange(idx);
+                    }}
+                    className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200 cursor-pointer pointer-events-auto ${
                       isActive 
                         ? 'border-blue-500 ring-2 ring-blue-500/40 scale-105 shadow-lg' 
                         : 'border-slate-800/80 hover:border-slate-600 opacity-60 hover:opacity-100'
