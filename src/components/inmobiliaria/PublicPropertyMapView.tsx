@@ -200,3 +200,4 @@ export const PublicPropertyMapView: React.FC<PublicPropertyMapViewProps> = ({
 };
 
 export default PublicPropertyMapView;
+
