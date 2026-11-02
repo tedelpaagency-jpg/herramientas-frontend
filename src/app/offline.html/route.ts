@@ -1,0 +1,91 @@
+import { NextResponse } from 'next/server';
+
+const offlineHtml = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sin Conexión | Immobillis</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #f8fafc;
+      color: #1e293b;
+      text-align: center;
+      box-sizing: border-box;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      padding: 40px 32px;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+      max-width: 420px;
+      width: 100%;
+    }
+    .icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px auto;
+      border-radius: 20px;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 0 10px 0;
+      color: #0f172a;
+    }
+    p {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.5;
+      margin: 0 0 24px 0;
+    }
+    .btn {
+      display: inline-block;
+      background: #00a884;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 12px 28px;
+      border-radius: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #008f6f;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📶</div>
+    <h1>Sin conexión a internet</h1>
+    <p>Por favor revisa tu conexión a la red para continuar explorando las propiedades de Immobillis.</p>
+    <button class="btn" onclick="window.location.reload()">Reintentar conexión</button>
+  </div>
+</body>
+</html>`;
+
+export async function GET() {
+  return new NextResponse(offlineHtml, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  });
+}
