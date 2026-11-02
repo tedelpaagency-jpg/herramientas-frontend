@@ -1,9 +1,8 @@
-// This is the "Offline page" service worker
+// Service Worker for PWA (Offline fallback & Cache management)
 
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
 
-const CACHE = "pwabuilder-page";
-
+const CACHE = "pwabuilder-page-v2";
 const offlineFallbackPage = "offline.html";
 
 self.addEventListener("message", (event) => {
@@ -12,14 +11,28 @@ self.addEventListener("message", (event) => {
   }
 });
 
-self.addEventListener('install', async (event) => {
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE)
       .then((cache) => cache.add(offlineFallbackPage))
   );
 });
 
-if (workbox && workbox.navigationPreload && workbox.navigationPreload.isSupported()) {
+self.addEventListener('activate', (event) => {
+  // Purge old corrupt or outdated caches from previous installs
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE)
+          .map((name) => caches.delete(name))
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+if (typeof workbox !== 'undefined' && workbox.navigationPreload && workbox.navigationPreload.isSupported()) {
   workbox.navigationPreload.enable();
 }
 
@@ -28,15 +41,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith((async () => {
       try {
         const preloadResp = await event.preloadResponse;
-
         if (preloadResp) {
           return preloadResp;
         }
-
         const networkResp = await fetch(event.request);
         return networkResp;
       } catch (error) {
-
         const cache = await caches.open(CACHE);
         const cachedResp = await cache.match(offlineFallbackPage);
         return cachedResp || new Response("Sin conexión a internet", {
@@ -47,4 +57,3 @@ self.addEventListener('fetch', (event) => {
     })());
   }
 });
-

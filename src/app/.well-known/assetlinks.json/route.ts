@@ -8,6 +8,8 @@ export async function GET() {
         namespace: "android_app",
         package_name: "com.immobillis.www.twa",
         sha256_cert_fingerprints: [
+          "3E:D7:C2:B5:A4:9F:03:FE:0C:3D:DF:AB:A2:ED:3C:0A:02:53:61:20:67:FB:CB:AA:4E:96:77:87:48:17:A0:35",
+          "B6:29:51:E3:27:54:82:E6:88:31:9A:1F:49:80:68:C8:6E:97:A2:1C:A0:26:EB:75:F2:DB:2F:76:EF:F0:16:9C",
           "B5:18:6B:19:D4:BA:F3:D5:CD:53:C5:3F:83:8D:17:F1:C9:80:C1:FD:2D:E9:9D:61:94:07:95:C9:1C:17:74:F2",
           "50:90:3F:BE:03:7F:32:04:88:80:0F:78:E9:53:56:5D:87:66:34:64:C3:FF:11:47:04:D2:C3:B6:3B:5F:AA:C1"
         ]
@@ -19,6 +21,8 @@ export async function GET() {
         namespace: "android_app",
         package_name: "com.immobillis.twa",
         sha256_cert_fingerprints: [
+          "3E:D7:C2:B5:A4:9F:03:FE:0C:3D:DF:AB:A2:ED:3C:0A:02:53:61:20:67:FB:CB:AA:4E:96:77:87:48:17:A0:35",
+          "B6:29:51:E3:27:54:82:E6:88:31:9A:1F:49:80:68:C8:6E:97:A2:1C:A0:26:EB:75:F2:DB:2F:76:EF:F0:16:9C",
           "B5:18:6B:19:D4:BA:F3:D5:CD:53:C5:3F:83:8D:17:F1:C9:80:C1:FD:2D:E9:9D:61:94:07:95:C9:1C:17:74:F2",
           "50:90:3F:BE:03:7F:32:04:88:80:0F:78:E9:53:56:5D:87:66:34:64:C3:FF:11:47:04:D2:C3:B6:3B:5F:AA:C1"
         ]
@@ -33,4 +37,3 @@ export async function GET() {
     },
   });
 }
-

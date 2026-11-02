@@ -626,45 +626,57 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
           <div className="lg:col-span-4">
             <div id="anunciante-form" className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xl sticky top-24 space-y-4">
               
-              {/* FILA DE BOTONES DE ACCIÓN: COPIAR INFORMACIÓN & DESCARGAR PDF */}
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                  <Share2 className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Acciones de la Ficha</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {/* Botón 1: Copiar Información de la Propiedad */}
+              {/* BOTONES DE ACCIÓN CENTRADOS Y RESALTADOS: WHATSAPP (VERDE) & PDF (ROJO) */}
+              <div className="flex items-center justify-center gap-6 pt-1 pb-6 border-b border-slate-100">
+                {/* Botón 1: WhatsApp / Copiar Información (Verde) */}
+                <div className="relative flex flex-col items-center group">
                   <button
                     type="button"
                     onClick={handleCopyPropertyInfo}
                     disabled={copyingInfo}
-                    title="Copiar información de la propiedad para WhatsApp / Portapapeles"
-                    className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 border border-slate-200 transition-all cursor-pointer group shadow-2xs"
-                    aria-label="Copiar información de la propiedad"
+                    title="Copiar información de la propiedad para WhatsApp"
+                    className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#1eb853] hover:from-[#20bd56] hover:to-[#179643] text-white shadow-lg shadow-emerald-500/35 hover:shadow-xl hover:shadow-emerald-500/50 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer border border-white/40"
+                    aria-label="Copiar ficha de la propiedad para WhatsApp"
                   >
                     {copiedInfo ? (
-                      <Check className="w-4 h-4 text-emerald-600" />
+                      <Check className="w-7 h-7 text-white stroke-[2.5]" />
                     ) : (
-                      <Copy className="w-4 h-4 text-slate-700 group-hover:text-slate-900 transition-colors" />
+                      <MessageCircle className="w-7 h-7 text-white fill-white/20 stroke-[2]" />
                     )}
+                    {/* Indicador de pulso para resaltar */}
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white"></span>
+                    </span>
                   </button>
+                  <span className="absolute -bottom-5 text-[10px] font-black uppercase tracking-wider text-emerald-700 whitespace-nowrap opacity-90 group-hover:opacity-100 transition-opacity">
+                    WhatsApp
+                  </span>
+                </div>
 
-                  {/* Botón 2: Descargar PDF de la Propiedad */}
+                {/* Botón 2: Descargar PDF (Rojo) */}
+                <div className="relative flex flex-col items-center group">
                   <button
                     type="button"
                     onClick={handleDownloadPdf}
                     disabled={downloadingPdf}
-                    title="Descargar ficha en PDF"
-                    className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 border border-slate-200 transition-all cursor-pointer group shadow-2xs"
+                    title="Descargar dossier de la propiedad en PDF"
+                    className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#ef4444] to-[#dc2626] hover:from-[#dc2626] hover:to-[#b91c1c] text-white shadow-lg shadow-red-500/35 hover:shadow-xl hover:shadow-red-500/50 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer border border-white/40"
                     aria-label="Descargar ficha en PDF"
                   >
                     {downloadingPdf ? (
-                      <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <FileDown className="w-4 h-4 text-slate-700 group-hover:text-slate-900 transition-colors" />
+                      <FileDown className="w-7 h-7 text-white stroke-[2.2]" />
                     )}
+                    {/* Badge PDF para resaltar */}
+                    <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-slate-900 text-white border border-white/40 shadow-xs">
+                      PDF
+                    </span>
                   </button>
+                  <span className="absolute -bottom-5 text-[10px] font-black uppercase tracking-wider text-rose-700 whitespace-nowrap opacity-90 group-hover:opacity-100 transition-opacity">
+                    Dossier PDF
+                  </span>
                 </div>
               </div>
 

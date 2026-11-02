@@ -193,14 +193,14 @@ export const EstateImageLightboxModal: React.FC<EstateImageLightboxModalProps> =
   return (
     <Portal>
       <AnimatePresence>
-        <div className="fixed inset-0 z-[120] w-screen h-screen flex flex-col justify-between select-none">
+        <div className="fixed inset-0 z-[999999] w-screen h-screen flex flex-col justify-between select-none">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-slate-950/95 backdrop-blur-xl"
+          className="fixed inset-0 z-[999999] bg-slate-950/95 backdrop-blur-xl"
           aria-hidden="true"
         />
 
