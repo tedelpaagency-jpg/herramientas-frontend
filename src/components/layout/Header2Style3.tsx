@@ -6,6 +6,32 @@ import Image from 'next/image';
 import { getCachedAgencyConfig } from "@/services/publicInmobiliariaService";
 import { useAuth } from "@/context/AuthContext";
 import LoginModal from "@/components/auth/LoginModal";
+import MobileBottomNavigation from "./MobileBottomNavigation";
+
+const NAVIGATION_PROPERTY_TYPES = [
+  { id: '2', label: 'Casas & Residencias' },
+  { id: '4', label: 'Departamentos & Lofts' },
+  { id: '22', label: 'Terrenos & Lotes' },
+  { id: '21', label: 'Suites' },
+  { id: '15', label: 'Oficinas' },
+  { id: '16', label: 'Oficinas amobladas' },
+  { id: '12', label: 'Locales comerciales' },
+  { id: '18', label: 'Propiedades Comerciales' },
+  { id: '5', label: 'Edificios' },
+  { id: '1', label: 'Bodegas & Almacenes' },
+  { id: '8', label: 'Galpones' },
+  { id: '7', label: 'Fincas' },
+  { id: '10', label: 'Haciendas' },
+  { id: '19', label: 'Quintas' },
+  { id: '11', label: 'Hoteles' },
+  { id: '3', label: 'Complejos turísticos' },
+  { id: '6', label: 'Empresas' },
+  { id: '9', label: 'Gasolineras' },
+  { id: '13', label: 'Lotes' },
+  { id: '14', label: 'Lotizaciones' },
+  { id: '17', label: 'Plantas industriales' },
+  { id: '20', label: 'Solares' },
+];
 
 interface State {
   activeMenu: string;
@@ -229,7 +255,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
           </Link>
         </div>
 
-        {/* 2. Centro: Navegación Completamente Centrada */}
+        {/* 2. Centro: NavegaciÃ³n Completamente Centrada */}
         <div className="header-nav-center d-flex align-items-center justify-content-center flex-grow-1" style={{ textAlign: 'center' }}>
           <div className={`main-menu ${state.isSidebarOpen ? "show-menu" : ""}`}>
             <div className="mobile-logo-area d-xl-none d-flex align-items-center justify-content-between">
@@ -295,15 +321,35 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                   <i className="bi bi-caret-down-fill" />
                 </Link>
                 <i onClick={() => toggleMenu("PROPERTIES")} className={`bi bi-${state.activeMenu === "PROPERTIES" ? "dash" : "plus"} dropdown-icon`} />
-                <ul className={`sub-menu ${state.activeMenu === "PROPERTIES" ? "d-block" : "none"}`}>
+                <ul className={`sub-menu ${state.activeMenu === "PROPERTIES" ? "d-block" : "none"}`} style={{ maxHeight: '68vh', overflowY: 'auto' }}>
+                  <li style={{ padding: '6px 16px 2px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.05em' }}>
+                    Operaciones
+                  </li>
                   <li><Link href="/properties" onClick={() => state.isSidebarOpen && toggleSidebar()}>Todas las Propiedades</Link></li>
                   <li><Link href="/properties?property_status=2" onClick={() => state.isSidebarOpen && toggleSidebar()}>En Venta</Link></li>
                   <li><Link href="/properties?property_status=1" onClick={() => state.isSidebarOpen && toggleSidebar()}>En Alquiler / Renta</Link></li>
-                  <li><Link href="/properties?property_type=1" onClick={() => state.isSidebarOpen && toggleSidebar()}>Casas &amp; Residencias</Link></li>
-                  <li><Link href="/properties?property_type=2" onClick={() => state.isSidebarOpen && toggleSidebar()}>Departamentos &amp; Lofts</Link></li>
-                  <li><Link href="/properties?property_type=3" onClick={() => state.isSidebarOpen && toggleSidebar()}>Terrenos &amp; Lotes</Link></li>
-                  <li><Link href="/properties?property_type=4" onClick={() => state.isSidebarOpen && toggleSidebar()}>Oficinas &amp; Locales</Link></li>
+                  <li><Link href="/properties?property_status=3" onClick={() => state.isSidebarOpen && toggleSidebar()}>En Remate</Link></li>
+
+                  <li style={{ padding: '10px 16px 2px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.05em', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
+                    Tipos de Inmueble
+                  </li>
+                  {NAVIGATION_PROPERTY_TYPES.map((item) => (
+                    <li key={item.id}>
+                      <Link href={`/properties?property_type=${item.id}`} onClick={() => state.isSidebarOpen && toggleSidebar()}>
+                        {item.label}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
+              </li>
+
+              <li className={pathname === '/services' || pathname === '/servicios' ? 'active' : ''}>
+                <Link
+                  href="/services"
+                  onClick={() => state.isSidebarOpen && toggleSidebar()}
+                >
+                  Servicios
+                </Link>
               </li>
 
               <li className={pathname === '/about' || pathname === '/conocenos' ? 'active' : ''}>
@@ -321,6 +367,15 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                   onClick={() => state.isSidebarOpen && toggleSidebar()}
                 >
                   Contacto
+                </Link>
+              </li>
+
+              <li className={pathname === '/privacy' ? 'active' : ''}>
+                <Link
+                  href="/privacy"
+                  onClick={() => state.isSidebarOpen && toggleSidebar()}
+                >
+                  Privacidad
                 </Link>
               </li>
             </ul>
@@ -357,7 +412,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
           </div>
         </div>
 
-        {/* 3. Lado Derecho: Botón Acceso Agentes + Botón Navegación Móvil */}
+        {/* 3. Lado Derecho: BotÃ³n Acceso Agentes + BotÃ³n NavegaciÃ³n MÃ³vil */}
         <div className="nav-right d-flex align-items-center justify-content-end gap-2 shrink-0" style={{ flex: '0 0 auto' }}>
           <button
             type="button"
@@ -398,14 +453,14 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
               borderColor: '#cbd5e1',
               color: '#0f172a',
             }}
-            aria-label="Abrir navegación móvil"
+            aria-label="Abrir navegaciÃ³n mÃ³vil"
           >
             <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="12" x2="21" y2="12" />
               <line x1="3" y1="6" x2="21" y2="6" />
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
-            <span style={{ fontSize: '12px', fontWeight: 800 }}>Navegación</span>
+            <span style={{ fontSize: '12px', fontWeight: 800 }}>NavegaciÃ³n</span>
           </button>
         </div>
       </div>
@@ -416,6 +471,9 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
         onClose={() => setIsLoginModalOpen(false)}
         agency={effectiveAgency}
       />
+
+      {/* Barra de Navegación Inferior para Móviles */}
+      <MobileBottomNavigation agency={effectiveAgency} />
     </header>
   );
 };

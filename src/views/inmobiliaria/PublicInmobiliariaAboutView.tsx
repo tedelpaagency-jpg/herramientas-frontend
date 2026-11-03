@@ -19,7 +19,96 @@ import {
   MapPin,
   ArrowRight,
   ChevronLeft,
+  Handshake,
+  BadgeCheck,
+  ExternalLink,
 } from 'lucide-react';
+
+const DEFAULT_COMMERCIAL_ALLIES = [
+  {
+    id: 1,
+    name: 'Banco Pichincha',
+    category: 'Entidad Financiera',
+    description: 'Créditos hipotecarios preferenciales y precalificación inmediata para compradores.',
+    logo: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=300&q=80',
+    website: 'https://www.pichincha.com',
+  },
+  {
+    id: 2,
+    name: 'Notaría Primera del Cantón',
+    category: 'Seguridad Notarial',
+    description: 'Asesoría jurídica integral, revisión de títulos y solemnización de escrituras públicas.',
+    logo: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=300&q=80',
+    website: '#',
+  },
+  {
+    id: 3,
+    name: 'Seguros Equinoccial',
+    category: 'Pólizas & Aseguradora',
+    description: 'Pólizas de seguro contra incendios, sismos y protección patrimonial para su nuevo hogar.',
+    logo: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=300&q=80',
+    website: 'https://www.segurosequinoccial.com',
+  },
+  {
+    id: 4,
+    name: 'Biess - Banco del IESS',
+    category: 'Crédito Hipotecario Público',
+    description: 'Canalización directa de préstamos hipotecarios para afiliados y jubilados.',
+    logo: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&w=300&q=80',
+    website: 'https://www.biess.fin.ec',
+  },
+  {
+    id: 5,
+    name: 'Constructora Uribe & Schwarzkopf',
+    category: 'Desarrollo Inmobiliario',
+    description: 'Proyectos residenciales y corporativos de vanguardia con alta plusvalía garantizada.',
+    logo: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=300&q=80',
+    website: '#',
+  },
+  {
+    id: 6,
+    name: 'Produbanco Grupo Promerica',
+    category: 'Banca Hipotecaria',
+    description: 'Financiamiento ágil para proyectos en planos y propiedades de reventa.',
+    logo: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=300&q=80',
+    website: 'https://www.produbanco.com.ec',
+  },
+];
+
+const DEFAULT_CERTIFICATIONS = [
+  {
+    id: 1,
+    title: 'Licencia Profesional de Corretaje Inmobiliario',
+    entity: 'Ministerio de Desarrollo Urbano y Vivienda',
+    code: 'MIDUVI-LIC-09412',
+    year: 'Vigente 2025 - 2026',
+    description: 'Acreditación oficial que certifica el ejercicio legal y ético de la intermediación de bienes raíces.',
+  },
+  {
+    id: 2,
+    title: 'Miembro Activo ACBIR',
+    entity: 'Asociación de Corredores de Bienes Raíces',
+    code: 'ACBIR-SOCIO-REG-884',
+    year: 'Certificado Anual',
+    description: 'Garantía de apego a las normas gremiales más exigentes de transparencia, honestidad y honorarios justos.',
+  },
+  {
+    id: 3,
+    title: 'Acreditación MLS Internacional',
+    entity: 'Multiple Listing Service Real Estate Network',
+    code: 'MLS-ID-EC-22910',
+    year: 'Acreditado',
+    description: 'Acceso a la mayor red internacional de propiedades compartidas y compradores calificados globales.',
+  },
+  {
+    id: 4,
+    title: 'Certificación en Prevención de Lavado de Activos',
+    entity: 'Unidad de Análisis Financiero y Económico (UAFE)',
+    code: 'UAFE-CUMP-2025-019',
+    year: 'Cumplimiento 100%',
+    description: 'Protocolos rigurosos de debida diligencia y conocimiento del cliente para operaciones 100% blindadas.',
+  },
+];
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay, Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -80,6 +169,20 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
   const effectiveAgency: PublicAgencyConfig = agency || DEFAULT_FALLBACK_AGENCY;
   const details = effectiveAgency.details || {};
   const primaryColor = effectiveAgency.primary_color || '#00a884';
+
+  const commercialAllies = useMemo(() => {
+    if (Array.isArray(details?.commercial_allies) && details.commercial_allies.length > 0) {
+      return details.commercial_allies;
+    }
+    return DEFAULT_COMMERCIAL_ALLIES;
+  }, [details?.commercial_allies]);
+
+  const certifications = useMemo(() => {
+    if (Array.isArray(details?.certifications) && details.certifications.length > 0) {
+      return details.certifications;
+    }
+    return DEFAULT_CERTIFICATIONS;
+  }, [details?.certifications]);
 
   // Registered agents from backend config
   const rawAgents: AgentItem[] = effectiveAgency.agents || [];
@@ -487,6 +590,112 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
               );
             })}
           </Swiper>
+        </div>
+      </section>
+
+      {/* 5b. Nuestros Aliados Comerciales */}
+      <section className="py-16 lg:py-20 bg-slate-50/70 border-b border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-black uppercase tracking-wider border border-blue-200/60">
+              <Handshake className="w-3.5 h-3.5" />
+              <span>Red de Confianza</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              Nuestros Aliados Comerciales
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600">
+              Colaboramos con las instituciones financieras, notarías y constructoras más prestigiosas para garantizar operaciones ágiles, seguras y transparentes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {commercialAllies.map((ally: any, idx: number) => (
+              <div
+                key={ally.id || idx}
+                className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md hover:border-slate-300 transition-all group flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                      {ally.category || 'Aliado Estratégico'}
+                    </span>
+                    {ally.website && ally.website !== '#' && (
+                      <a
+                        href={ally.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-slate-400 hover:text-blue-600 transition-colors"
+                        title="Visitar sitio oficial"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                  <h3 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors m-0">
+                    {ally.name}
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed m-0">
+                    {ally.description}
+                  </p>
+                </div>
+                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+                  <span>Alianza Oficial</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 5c. Certificaciones & Acreditaciones */}
+      <section className="py-16 lg:py-20 bg-white border-b border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black uppercase tracking-wider border border-emerald-200/60">
+              <BadgeCheck className="w-3.5 h-3.5" />
+              <span>Garantía &amp; Legalidad</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              Certificaciones &amp; Acreditaciones
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600">
+              Nuestra práctica inmobiliaria cuenta con el aval y registro oficial ante los gremios y organismos reguladores competentes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {certifications.map((cert: any, idx: number) => (
+              <div
+                key={cert.id || idx}
+                className="bg-slate-50 rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+              >
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900 leading-snug m-0">
+                      {cert.title}
+                    </h3>
+                    <p className="text-[11px] font-bold text-slate-500 mt-1 m-0">
+                      {cert.entity}
+                    </p>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed m-0">
+                    {cert.description}
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-[11px] font-mono font-bold text-slate-700">
+                  <span className="truncate max-w-[130px]">{cert.code}</span>
+                  <span className="text-emerald-700 font-sans font-bold text-[10px] bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                    {cert.year || 'Verificado'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

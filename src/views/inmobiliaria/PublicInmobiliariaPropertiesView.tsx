@@ -294,7 +294,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
       sort: true,
     };
 
-  const showCityFilter = listFilters.city !== false || listFilters.search !== false;
+  const showNameFilter = listFilters.search !== false;
+  const showCityFilter = listFilters.city !== false;
   const showOperationFilter = listFilters.operation !== false;
   const showPropertyTypeFilter = listFilters.property_type !== false;
   const showBedroomsFilter = listFilters.bedrooms !== false;
@@ -684,46 +685,48 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
             >
               
               {/* 0. Campo de Búsqueda por Nombre / Palabra Clave */}
-              <div className="relative shrink-0 w-48 sm:w-64">
-                <div
-                  style={{
-                    borderColor: nameInputVal ? filterBorderColor : 'rgba(0,0,0,0.18)',
-                    borderWidth: '1.5px',
-                    backgroundColor: nameInputVal ? `${filterBorderColor}12` : '#ffffff',
-                  }}
-                  className="h-[42px] px-3 rounded-2xl flex items-center gap-2 transition-all shadow-2xs hover:border-slate-400"
-                >
-                  <Search className="w-4 h-4 text-slate-400 shrink-0" />
-                  <input
-                    type="text"
-                    value={nameInputVal}
-                    onChange={(e) => setNameInputVal(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        setSearchName(nameInputVal);
-                        applyFilters({ name: nameInputVal });
-                      }
+              {showNameFilter && (
+                <div className="relative shrink-0 w-48 sm:w-64">
+                  <div
+                    style={{
+                      borderColor: nameInputVal ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                      borderWidth: '1.5px',
+                      backgroundColor: nameInputVal ? `${filterBorderColor}12` : '#ffffff',
                     }}
-                    placeholder="Buscar por nombre..."
-                    className="w-full bg-transparent text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none"
-                  />
-                  {nameInputVal && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNameInputVal('');
-                        setSearchName('');
-                        applyFilters({ name: '' });
+                    className="h-[42px] px-3 rounded-2xl flex items-center gap-2 transition-all shadow-2xs hover:border-slate-400"
+                  >
+                    <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                    <input
+                      type="text"
+                      value={nameInputVal}
+                      onChange={(e) => setNameInputVal(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          setSearchName(nameInputVal);
+                          applyFilters({ name: nameInputVal });
+                        }
                       }}
-                      className="text-white bg-slate-400 hover:bg-slate-600 rounded-full w-3.5 h-3.5 flex items-center justify-center p-0.5 cursor-pointer shrink-0"
-                      title="Limpiar búsqueda por nombre"
-                    >
-                      <X className="w-2.5 h-2.5" />
-                    </button>
-                  )}
+                      placeholder="Buscar por nombre..."
+                      className="w-full bg-transparent text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none"
+                    />
+                    {nameInputVal && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNameInputVal('');
+                          setSearchName('');
+                          applyFilters({ name: '' });
+                        }}
+                        className="text-white bg-slate-400 hover:bg-slate-600 rounded-full w-3.5 h-3.5 flex items-center justify-center p-0.5 cursor-pointer shrink-0"
+                        title="Limpiar búsqueda por nombre"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* 1. Selector de Ciudad / Ubicación estilo Booking interactivo */}
               {showCityFilter && (
@@ -1450,7 +1453,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         </div>
 
         {/* Botones flotantes móvil: Navegación y Alternar Lista vs Mapa */}
-        <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
+        <div className="lg:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
           <button
             type="button"
             onClick={() => {

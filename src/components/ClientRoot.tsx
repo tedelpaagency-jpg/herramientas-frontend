@@ -1,6 +1,5 @@
 "use client";
 import { initCounterUp } from "@/utils/counterUp";
-import ScrollCircleProgress from "@/utils/ScrollCircleProgess";
 import React, { useEffect } from "react";
 
 const ClientRoot = ({ children }: { children: React.ReactNode }) => {
@@ -31,7 +30,6 @@ const ClientRoot = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       {children}
-      <ScrollCircleProgress />
     </>
   );
 };

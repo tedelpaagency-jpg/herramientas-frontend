@@ -5,7 +5,8 @@ import {
   Globe, Sparkles, Building2, ShieldCheck, CheckCircle2, AlertTriangle, AlertCircle,
   RefreshCw, Loader2, ExternalLink, Eye, Image as ImageIcon, Laptop, Tablet, Smartphone,
   Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
-  Target, Compass, Users, Megaphone, Video, Play, MapPin, SlidersHorizontal
+  Target, Compass, Users, Megaphone, Video, Play, MapPin, SlidersHorizontal,
+  Briefcase, Plus, Trash2, Handshake, BadgeCheck
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -48,7 +49,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
   // Studio tabs & device preview
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'cta' | 'domain' | 'identity' | 'seo' | 'legal_crm' | 'catalog' | 'approvals'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'services' | 'cta' | 'domain' | 'identity' | 'seo' | 'legal_crm' | 'catalog' | 'approvals'>('hero');
   const [showLoaderPreview, setShowLoaderPreview] = useState<boolean>(false);
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState<boolean>(false);
@@ -560,6 +561,17 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
             <button
               type="button"
+              onClick={() => setActiveTab('services')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'services' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
+            >
+              <Briefcase className="w-3.5 h-3.5 text-blue-400" />
+              <span>Servicios</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab('cta')}
               className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'cta' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -633,7 +645,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
               }`}
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
-              <span>Filtros, Políticas &amp; Alertas</span>
+              <span>Filtros (Booking &amp; Propiedades) &amp; Políticas</span>
             </button>
           </div>
 
@@ -1508,7 +1520,476 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* 4. Aliados Comerciales */}
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                        <Handshake className="w-3.5 h-3.5 text-blue-600" />
+                        Aliados Comerciales (Bancos, Notarías, Aseguradoras)
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const list = Array.isArray(form.details?.commercial_allies) ? [...form.details.commercial_allies] : [];
+                          list.push({
+                            id: Date.now(),
+                            name: '',
+                            category: 'Entidad Financiera',
+                            description: '',
+                            website: '',
+                          });
+                          updateDetailField('commercial_allies', list);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Agregar Aliado</span>
+                      </button>
+                    </div>
+
+                    {(!form.details?.commercial_allies || form.details.commercial_allies.length === 0) ? (
+                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
+                        <p className="text-xs text-slate-500 m-0">
+                          No has agregado aliados comerciales personalizados. El portal muestra los 6 aliados predefinidos del sistema.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateDetailField('commercial_allies', [
+                              { id: 1, name: 'Banco Pichincha', category: 'Entidad Financiera', description: 'Créditos hipotecarios preferenciales y precalificación inmediata.', website: 'https://www.pichincha.com' },
+                              { id: 2, name: 'Notaría Primera del Cantón', category: 'Seguridad Notarial', description: 'Asesoría jurídica integral, revisión de títulos y solemnización de escrituras.', website: '#' },
+                              { id: 3, name: 'Seguros Equinoccial', category: 'Pólizas & Aseguradora', description: 'Pólizas de seguro contra incendios, sismos y protección patrimonial.', website: 'https://www.segurosequinoccial.com' },
+                              { id: 4, name: 'Biess - Banco del IESS', category: 'Crédito Hipotecario Público', description: 'Canalización directa de préstamos hipotecarios para afiliados y jubilados.', website: 'https://www.biess.fin.ec' },
+                            ]);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer transition-all"
+                        >
+                          Cargar Aliados de Ejemplo para Editar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {form.details.commercial_allies.map((ally: any, idx: number) => (
+                          <div key={ally.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[10px] font-black uppercase text-slate-400">Aliado #{idx + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const list = form.details.commercial_allies.filter((_: any, i: number) => i !== idx);
+                                  updateDetailField('commercial_allies', list);
+                                }}
+                                className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                title="Eliminar aliado"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Nombre:</label>
+                                <input
+                                  type="text"
+                                  value={ally.name || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.commercial_allies];
+                                    list[idx] = { ...list[idx], name: e.target.value };
+                                    updateDetailField('commercial_allies', list);
+                                  }}
+                                  placeholder="Ej: Banco Pichincha"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Categoría:</label>
+                                <input
+                                  type="text"
+                                  value={ally.category || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.commercial_allies];
+                                    list[idx] = { ...list[idx], category: e.target.value };
+                                    updateDetailField('commercial_allies', list);
+                                  }}
+                                  placeholder="Ej: Entidad Financiera / Notaría"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Descripción de la Alianza:</label>
+                              <input
+                                type="text"
+                                value={ally.description || ''}
+                                onChange={(e) => {
+                                  const list = [...form.details.commercial_allies];
+                                  list[idx] = { ...list[idx], description: e.target.value };
+                                  updateDetailField('commercial_allies', list);
+                                }}
+                                placeholder="Ej: Créditos hipotecarios preferenciales..."
+                                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Sitio Web (Opcional):</label>
+                              <input
+                                type="text"
+                                value={ally.website || ''}
+                                onChange={(e) => {
+                                  const list = [...form.details.commercial_allies];
+                                  list[idx] = { ...list[idx], website: e.target.value };
+                                  updateDetailField('commercial_allies', list);
+                                }}
+                                placeholder="https://..."
+                                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 5. Certificaciones y Acreditaciones */}
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                        <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        Certificaciones y Acreditaciones de la Agencia
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const list = Array.isArray(form.details?.certifications) ? [...form.details.certifications] : [];
+                          list.push({
+                            id: Date.now(),
+                            title: '',
+                            entity: '',
+                            code: '',
+                            year: 'Vigente',
+                            description: '',
+                          });
+                          updateDetailField('certifications', list);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Agregar Certificado</span>
+                      </button>
+                    </div>
+
+                    {(!form.details?.certifications || form.details.certifications.length === 0) ? (
+                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
+                        <p className="text-xs text-slate-500 m-0">
+                          No has agregado certificaciones personalizadas. El portal muestra las acreditaciones predefinidas del sistema.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateDetailField('certifications', [
+                              { id: 1, title: 'Licencia Profesional de Corretaje Inmobiliario', entity: 'Ministerio de Desarrollo Urbano y Vivienda', code: 'MIDUVI-LIC-09412', year: 'Vigente', description: 'Acreditación oficial que certifica el ejercicio legal y ético de la intermediación de bienes raíces.' },
+                              { id: 2, title: 'Miembro Activo ACBIR', entity: 'Asociación de Corredores de Bienes Raíces', code: 'ACBIR-SOCIO-REG-884', year: 'Certificado Anual', description: 'Garantía de apego a las normas gremiales de transparencia y honestidad.' },
+                              { id: 3, title: 'Acreditación MLS Internacional', entity: 'Multiple Listing Service Network', code: 'MLS-ID-EC-22910', year: 'Acreditado', description: 'Acceso a la mayor red internacional de compradores calificados.' },
+                            ]);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer transition-all"
+                        >
+                          Cargar Certificaciones de Ejemplo para Editar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {form.details.certifications.map((cert: any, idx: number) => (
+                          <div key={cert.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[10px] font-black uppercase text-slate-400">Certificación #{idx + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const list = form.details.certifications.filter((_: any, i: number) => i !== idx);
+                                  updateDetailField('certifications', list);
+                                }}
+                                className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                title="Eliminar certificación"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Título del Certificado:</label>
+                                <input
+                                  type="text"
+                                  value={cert.title || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.certifications];
+                                    list[idx] = { ...list[idx], title: e.target.value };
+                                    updateDetailField('certifications', list);
+                                  }}
+                                  placeholder="Ej: Licencia Profesional de Corretaje"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Entidad Emisora:</label>
+                                <input
+                                  type="text"
+                                  value={cert.entity || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.certifications];
+                                    list[idx] = { ...list[idx], entity: e.target.value };
+                                    updateDetailField('certifications', list);
+                                  }}
+                                  placeholder="Ej: ACBIR / Ministerio de Vivienda"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Nº de Registro / Código:</label>
+                                <input
+                                  type="text"
+                                  value={cert.code || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.certifications];
+                                    list[idx] = { ...list[idx], code: e.target.value };
+                                    updateDetailField('certifications', list);
+                                  }}
+                                  placeholder="Ej: REG-1048-INMO"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-mono"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Vigencia / Año:</label>
+                                <input
+                                  type="text"
+                                  value={cert.year || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.certifications];
+                                    list[idx] = { ...list[idx], year: e.target.value };
+                                    updateDetailField('certifications', list);
+                                  }}
+                                  placeholder="Ej: Vigente 2025 - 2026"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Descripción Breve:</label>
+                              <input
+                                type="text"
+                                value={cert.description || ''}
+                                onChange={(e) => {
+                                  const list = [...form.details.certifications];
+                                  list[idx] = { ...list[idx], description: e.target.value };
+                                  updateDetailField('certifications', list);
+                                }}
+                                placeholder="Ej: Acreditación oficial que certifica el ejercicio legal..."
+                                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
+              </div>
+            )}
+
+            {/* TAB: SERVICIOS INMOBILIARIOS CONFIGURABLES */}
+            {activeTab === 'services' && (
+              <div className="space-y-6 animate-in fade-in-50 duration-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-emerald-600" /> Servicios Inmobiliarios Configurables
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Gestiona las tarjetas de servicios mostradas en la página pública <code>/services</code> con título, descripción, foto y botón de contacto.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const list = Array.isArray(form.details?.services) ? [...form.details.services] : [];
+                      list.push({
+                        id: Date.now(),
+                        title: 'Nuevo Servicio Inmobiliario',
+                        description: 'Descripción detallada de la asesoría o solución que brindamos a los clientes...',
+                        image_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
+                        cta_text: 'Solicitar Asesoría',
+                      });
+                      updateDetailField('services', list);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer transition-all self-start sm:self-auto"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar Servicio</span>
+                  </button>
+                </div>
+
+                {(!form.details?.services || form.details.services.length === 0) ? (
+                  <div className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3">
+                    <Briefcase className="w-8 h-8 text-slate-400 mx-auto" />
+                    <div className="max-w-md mx-auto space-y-1">
+                      <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 m-0">
+                        Servicios predefinidos activos
+                      </h4>
+                      <p className="text-xs text-slate-500 m-0">
+                        Actualmente el portal público muestra los 6 servicios estándar (Compra/Venta, Alquiler, Legal, Hipotecario, Avalúos, Marketing).
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateDetailField('services', [
+                          {
+                            id: 1,
+                            title: 'Compra y Venta de Inmuebles',
+                            description: 'Asesoría integral y personalizada para vender al mejor precio de mercado o adquirir tu propiedad soñada con total seguridad jurídica.',
+                            image_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
+                            cta_text: 'Consultar Compra / Venta',
+                          },
+                          {
+                            id: 2,
+                            title: 'Alquiler y Administración de Propiedades',
+                            description: 'Selección rigurosa de inquilinos, contratos blindados, cobro garantizado de rentas y gestión del mantenimiento preventivo.',
+                            image_url: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=800&q=80',
+                            cta_text: 'Administrar mi Inmueble',
+                          },
+                          {
+                            id: 3,
+                            title: 'Asesoría Legal e Inmobiliaria',
+                            description: 'Redacción y revisión de promesas de compraventa, levantamiento de hipotecas, regularización de linderos y trámites notariales.',
+                            image_url: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=800&q=80',
+                            cta_text: 'Solicitar Asesoría Legal',
+                          },
+                          {
+                            id: 4,
+                            title: 'Gestión de Créditos Hipotecarios',
+                            description: 'Canalización directa de solicitudes de crédito con el Biess y bancos privados con tasas preferenciales y respuesta ágil.',
+                            image_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80',
+                            cta_text: 'Precalificar Crédito',
+                          },
+                          {
+                            id: 5,
+                            title: 'Avalúos Comerciales y Peritajes',
+                            description: 'Determinación técnica, imparcial y documentada del valor comercial real de su propiedad basada en el mercado actual.',
+                            image_url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80',
+                            cta_text: 'Solicitar Avalúo Técnico',
+                          },
+                          {
+                            id: 6,
+                            title: 'Marketing Inmobiliario 360°',
+                            description: 'Fotografía profesional, recorridos virtuales 3D, tomas con drones y campañas digitales segmentadas de alto impacto.',
+                            image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+                            cta_text: 'Promocionar mi Propiedad',
+                          },
+                        ]);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs cursor-pointer transition-all inline-flex items-center gap-2"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Cargar los 6 Servicios para Personalizarlos</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {form.details.services.map((service: any, idx: number) => (
+                      <div
+                        key={service.id || idx}
+                        className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs space-y-3"
+                      >
+                        <div className="flex items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+                          <span className="text-xs font-black uppercase text-emerald-600">
+                            Servicio #{idx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = form.details.services.filter((_: any, i: number) => i !== idx);
+                              updateDetailField('services', list);
+                            }}
+                            className="text-rose-500 hover:text-rose-700 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Eliminar</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                              Título del Servicio:
+                            </label>
+                            <input
+                              type="text"
+                              value={service.title || ''}
+                              onChange={(e) => {
+                                const list = [...form.details.services];
+                                list[idx] = { ...list[idx], title: e.target.value };
+                                updateDetailField('services', list);
+                              }}
+                              placeholder="Ej: Compra y Venta de Inmuebles"
+                              className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                              Texto del Botón (CTA):
+                            </label>
+                            <input
+                              type="text"
+                              value={service.cta_text || ''}
+                              onChange={(e) => {
+                                const list = [...form.details.services];
+                                list[idx] = { ...list[idx], cta_text: e.target.value };
+                                updateDetailField('services', list);
+                              }}
+                              placeholder="Ej: Solicitar Asesoría"
+                              className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                            Descripción del Servicio:
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={service.description || ''}
+                            onChange={(e) => {
+                              const list = [...form.details.services];
+                              list[idx] = { ...list[idx], description: e.target.value };
+                              updateDetailField('services', list);
+                            }}
+                            placeholder="Detalle los beneficios y alcance del servicio..."
+                            className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1.5">
+                            Foto / Imagen del Servicio:
+                          </label>
+                          <MediaPicker
+                            value={service.image_url || service.photo || ''}
+                            onChange={(selected) => {
+                              const list = [...form.details.services];
+                              list[idx] = { ...list[idx], image_url: selected?.url || '', photo: selected?.url || '' };
+                              updateDetailField('services', list);
+                            }}
+                            label="Seleccionar Foto del Servicio"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

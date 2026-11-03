@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { MapPin, Phone, Mail, Send, ArrowUp } from 'lucide-react';
 
@@ -11,6 +11,16 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = ({ agency }) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSent, setNewsletterSent] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(typeof window !== 'undefined' && window.scrollY > 220);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const agencyName = agency?.commercial_name || agency?.name || 'Immobillis';
   const phoneDisplay = agency?.phone || agency?.whatsapp || '+593 0984113967';
@@ -39,9 +49,9 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
       <footer id="contacto" className="bg-[#0b1120] text-slate-300 pt-14 pb-8 border-t border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 pb-12 border-b border-slate-800/80">
-            {/* Columna 1: Información */}
+            {/* Columna 1: InformaciÃ³n */}
             <div>
-              <h4 className="text-sm font-bold text-white mb-5">Información</h4>
+              <h4 className="text-sm font-bold text-white mb-5">InformaciÃ³n</h4>
               <ul className="space-y-3.5 text-xs text-slate-300 p-0 m-0 list-none">
                 <li className="flex items-center gap-2.5">
                   <MapPin className="w-4 h-4 shrink-0 text-slate-400" />
@@ -82,7 +92,7 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/#servicios" className="hover:text-white transition-colors text-slate-300 no-underline">
+                  <Link href="/services" className="hover:text-white transition-colors text-slate-300 no-underline">
                     Servicios
                   </Link>
                 </li>
@@ -96,11 +106,11 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
                     href="#unsubscribe"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert('Tu solicitud para cancelar la suscripción ha sido procesada.');
+                      alert('Tu solicitud para cancelar la suscripciÃ³n ha sido procesada.');
                     }}
                     className="hover:text-white transition-colors text-slate-400 no-underline"
                   >
-                    Cancelar subscripción
+                    Cancelar subscripciÃ³n
                   </a>
                 </li>
               </ul>
@@ -136,7 +146,7 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
               </form>
               {newsletterSent && (
                 <span className="text-[11px] text-emerald-400 mt-2 block font-semibold">
-                  ¡Gracias por suscribirte!
+                  Â¡Gracias por suscribirte!
                 </span>
               )}
             </div>
@@ -145,7 +155,7 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
           {/* Sub-footer */}
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
             <p className="m-0">
-              ©{new Date().getFullYear()} {agencyName}. Todos los derechos reservados.
+              Â©{new Date().getFullYear()} {agencyName}. Todos los derechos reservados.
             </p>
             <div>
               <Link href="/privacy" className="hover:text-white transition-colors text-slate-400 no-underline">
@@ -157,29 +167,33 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
       </footer>
 
       {/* Botones Flotantes (WhatsApp + Subir arriba) */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
-        {/* Botón WhatsApp */}
+      <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-center gap-2.5 pointer-events-none">
+        {/* Boton WhatsApp */}
         <a
           href={`https://wa.me/${cleanPhone}`}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Contactar por WhatsApp"
-          className="w-11 h-11 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 no-underline"
+          className="pointer-events-auto w-12 h-12 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 no-underline"
+          title="Contactar por WhatsApp"
         >
-          <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.074-1.807-.412-1.467-.609-2.404-2.094-2.477-2.19-.074-.097-.591-.786-.591-1.5 0-.714.375-1.066.509-1.212.134-.145.293-.182.391-.182.098 0 .195.002.281.006.091.004.212-.034.331.252.123.292.422 1.026.459 1.101.037.076.061.164.012.263-.049.098-.073.16-.146.244-.073.084-.153.188-.219.252-.073.073-.148.153-.064.298.084.145.375.618.805 1.002.553.493 1.02.646 1.164.718.145.073.23.061.315-.037.085-.098.365-.425.463-.571.098-.146.195-.122.329-.073.134.049.851.401.997.474.146.073.244.11.28.17.037.061.037.353-.107.758z"/>
+          <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.507 14.307l-.009.075c-2.799-1.396-3.14-1.564-3.473-1.077-.286.417-.674.887-.827 1.058-.153.17-.306.192-.58.057-.272-.136-1.15-.424-2.19-1.353-.811-.723-1.358-1.616-1.517-1.89-.16-.272-.017-.419.12-.555.123-.122.272-.317.408-.476.136-.16.182-.272.272-.454.091-.182.046-.34-.023-.476-.068-.136-.613-1.477-.84-2.023-.222-.533-.448-.46-.614-.469-.16-.008-.341-.01-.522-.01-.181 0-.476.068-.726.34-.249.272-.952.93-.952 2.27s.974 2.632 1.11 2.813c.136.182 1.916 2.927 4.643 4.103 2.727 1.176 2.727.784 3.226.737.499-.047 1.61-.658 1.837-1.293.227-.635.227-1.179.159-1.293-.069-.113-.25-.181-.522-.317zM12.004 21.75c-1.748 0-3.415-.463-4.887-1.34l-.35-.208-3.635.953.97-3.543-.228-.363c-.96-1.528-1.47-3.3-1.47-5.129 0-5.376 4.374-9.75 9.75-9.75 5.376 0 9.75 4.374 9.75 9.75 0 5.376-4.374 9.75-9.75 9.75zm0-21.25c-6.351 0-11.5 5.149-11.5 11.5 0 2.03.528 3.94 1.451 5.602l-1.542 5.632 5.766-1.512c1.603.874 3.442 1.378 5.405 1.378 6.351 0 11.5-5.149 11.5-11.5 0-6.351-5.149-11.5-11.5-11.5z"/>
           </svg>
         </a>
 
-        {/* Botón Subir arriba */}
-        <button
-          type="button"
-          onClick={scrollToTop}
-          aria-label="Subir arriba"
-          className="w-10 h-10 rounded-full bg-[#EAB308] hover:bg-[#ca8a04] text-slate-900 shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 font-black border-none cursor-pointer"
-        >
-          <ArrowUp className="w-5 h-5 stroke-[2.5]" />
-        </button>
+        {/* Boton Subir arriba */}
+        {showScrollTop && (
+          <button
+            type="button"
+            onClick={scrollToTop}
+            aria-label="Subir arriba"
+            className="pointer-events-auto w-11 h-11 rounded-full bg-[#EAB308] hover:bg-[#ca8a04] text-slate-900 shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 font-black border-none cursor-pointer animate-in fade-in zoom-in-75 duration-200"
+            title="Volver al inicio"
+          >
+            <ArrowUp className="w-5 h-5 stroke-[2.5]" />
+          </button>
+        )}
       </div>
     </>
   );

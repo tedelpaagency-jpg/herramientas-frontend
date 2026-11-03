@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Building2,
@@ -19,6 +19,32 @@ import {
   ArrowUp,
 } from 'lucide-react';
 import { PublicAgencyConfig, PublicEstateItem } from '@/services/publicInmobiliariaService';
+import MobileBottomNavigation from '@/components/layout/MobileBottomNavigation';
+
+export const NAVIGATION_PROPERTY_TYPES = [
+  { id: '2', label: 'Casas & Residencias' },
+  { id: '4', label: 'Departamentos & Lofts' },
+  { id: '22', label: 'Terrenos & Lotes' },
+  { id: '21', label: 'Suites' },
+  { id: '15', label: 'Oficinas' },
+  { id: '16', label: 'Oficinas amobladas' },
+  { id: '12', label: 'Locales comerciales' },
+  { id: '18', label: 'Propiedades Comerciales' },
+  { id: '5', label: 'Edificios' },
+  { id: '1', label: 'Bodegas & Almacenes' },
+  { id: '8', label: 'Galpones' },
+  { id: '7', label: 'Fincas' },
+  { id: '10', label: 'Haciendas' },
+  { id: '19', label: 'Quintas' },
+  { id: '11', label: 'Hoteles' },
+  { id: '3', label: 'Complejos turísticos' },
+  { id: '6', label: 'Empresas' },
+  { id: '9', label: 'Gasolineras' },
+  { id: '13', label: 'Lotes' },
+  { id: '14', label: 'Lotizaciones' },
+  { id: '17', label: 'Plantas industriales' },
+  { id: '20', label: 'Solares' },
+];
 
 export const PROPERTY_TYPE_LABELS: Record<number, string> = {
   1: 'Casa Residencial',
@@ -276,7 +302,7 @@ export const PublicInmobiliariaHeader: React.FC<{
               Inicio
             </Link>
 
-            {/* Dropdown Propiedades */}
+            {/* Dropdown Propiedades con todos los campos y operaciones */}
             <div className="relative group">
               <Link
                 href={withDomain('/properties')}
@@ -285,77 +311,62 @@ export const PublicInmobiliariaHeader: React.FC<{
                 <span>Propiedades</span>
                 <ChevronDown className="w-3.5 h-3.5" />
               </Link>
-              <div className="absolute top-full left-0 hidden group-hover:block w-52 bg-white rounded-2xl shadow-xl border border-slate-100 py-2.5 text-xs font-semibold z-50">
+              <div className="absolute top-full left-0 hidden group-hover:block w-72 max-h-[70vh] overflow-y-auto bg-white rounded-2xl shadow-xl border border-slate-100 py-3 text-xs font-semibold z-50">
+                <div className="px-4 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Operaciones
+                </div>
                 <Link
                   href={withDomain('/properties')}
-                  className="block px-4 py-2 hover:bg-slate-50 hover:text-[#2067F5]"
+                  className="block px-4 py-1.5 hover:bg-slate-50 hover:text-[#2067F5]"
                 >
                   Todas las Propiedades
                 </Link>
                 <Link
                   href={withDomain('/properties?property_status=2')}
-                  className="block px-4 py-2 hover:bg-slate-50 hover:text-[#2067F5]"
+                  className="block px-4 py-1.5 hover:bg-slate-50 hover:text-[#2067F5]"
                 >
                   En Venta
                 </Link>
                 <Link
                   href={withDomain('/properties?property_status=1')}
-                  className="block px-4 py-2 hover:bg-slate-50 hover:text-[#2067F5]"
+                  className="block px-4 py-1.5 hover:bg-slate-50 hover:text-[#2067F5]"
                 >
                   En Alquiler
                 </Link>
+                <Link
+                  href={withDomain('/properties?property_status=3')}
+                  className="block px-4 py-1.5 hover:bg-slate-50 hover:text-[#2067F5]"
+                >
+                  En Remate
+                </Link>
+
+                <div className="px-4 pt-3 pb-1 text-[10px] font-black uppercase tracking-wider text-slate-400 border-t border-slate-100 mt-2">
+                  Tipos de Inmueble
+                </div>
+                {NAVIGATION_PROPERTY_TYPES.map((type) => (
+                  <Link
+                    key={type.id}
+                    href={withDomain(`/properties?property_type=${type.id}`)}
+                    className="block px-4 py-1.5 hover:bg-slate-50 hover:text-[#2067F5] truncate"
+                  >
+                    {type.label}
+                  </Link>
+                ))}
               </div>
             </div>
 
-            {/* Dropdown Categorías */}
-            <div className="relative group">
-              <Link
-                href={withDomain('/properties')}
-                className="flex items-center gap-1 hover:text-[#2067F5] transition-colors py-2"
-              >
-                <span>Categorías</span>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </Link>
-              <div className="absolute top-full left-0 hidden group-hover:block w-52 bg-white rounded-2xl shadow-xl border border-slate-100 py-2.5 text-xs font-semibold z-50">
-                <Link
-                  href={withDomain('/properties?property_type=1')}
-                  className="block px-4 py-2 hover:bg-slate-50 hover:text-[#2067F5]"
-                >
-                  Casas Residenciales
-                </Link>
-                <Link
-                  href={withDomain('/properties?property_type=2')}
-                  className="block px-4 py-2 hover:bg-slate-50 hover:text-[#2067F5]"
-                >
-                  Departamentos
-                </Link>
-                <Link
-                  href={withDomain('/properties?property_type=3')}
-                  className="block px-4 py-2 hover:bg-slate-50 hover:text-[#2067F5]"
-                >
-                  Terrenos &amp; Lotes
-                </Link>
-                <Link
-                  href={withDomain('/properties?property_type=4')}
-                  className="block px-4 py-2 hover:bg-slate-50 hover:text-[#2067F5]"
-                >
-                  Locales Comerciales
-                </Link>
-                <Link
-                  href={withDomain('/properties?property_type=5')}
-                  className="block px-4 py-2 hover:bg-slate-50 hover:text-[#2067F5]"
-                >
-                  Oficinas Corporativas
-                </Link>
-              </div>
-            </div>
-
-            <a href="#conocenos" className="hover:text-[#2067F5] transition-colors">
+            <Link href={withDomain('/services')} className="hover:text-[#2067F5] transition-colors">
+              Servicios
+            </Link>
+            <Link href={withDomain('/about')} className="hover:text-[#2067F5] transition-colors">
               Nosotros
-            </a>
-            <a href="#contacto" className="hover:text-[#2067F5] transition-colors">
+            </Link>
+            <Link href={withDomain('/contact')} className="hover:text-[#2067F5] transition-colors">
               Contacto
-            </a>
+            </Link>
+            <Link href={withDomain('/privacy')} className="hover:text-[#2067F5] transition-colors">
+              Privacidad
+            </Link>
           </nav>
 
           {/* Área derecha: ¿Necesitas Ayuda? + Buscador Circular + Botón Login Píldora Negra */}
@@ -461,12 +472,41 @@ export const PublicInmobiliariaHeader: React.FC<{
               >
                 Propiedades en Alquiler
               </Link>
-              <a href="#conocenos" onClick={() => setMobileMenuOpen(false)} className="py-1.5">
+              <Link
+                href={withDomain('/properties?property_status=3')}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5"
+              >
+                Propiedades en Remate
+              </Link>
+              <Link
+                href={withDomain('/services')}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5"
+              >
+                Servicios
+              </Link>
+              <Link
+                href={withDomain('/about')}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5"
+              >
                 Nosotros
-              </a>
-              <a href="#contacto" onClick={() => setMobileMenuOpen(false)} className="py-1.5">
+              </Link>
+              <Link
+                href={withDomain('/contact')}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5"
+              >
                 Contacto
-              </a>
+              </Link>
+              <Link
+                href={withDomain('/privacy')}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5"
+              >
+                Privacidad
+              </Link>
             </div>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
               <a
@@ -478,6 +518,9 @@ export const PublicInmobiliariaHeader: React.FC<{
             </div>
           </div>
         )}
+
+        {/* Barra de Navegación Inferior Móvil */}
+        <MobileBottomNavigation agency={agency} />
       </header>
     </>
   );
@@ -489,6 +532,16 @@ export const PublicInmobiliariaFooter: React.FC<{
 }> = ({ agency, domainParam }) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSent, setNewsletterSent] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(typeof window !== 'undefined' && window.scrollY > 220);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const withDomain = (path: string) => {
     if (!domainParam) return path;
@@ -565,7 +618,7 @@ export const PublicInmobiliariaFooter: React.FC<{
                   </Link>
                 </li>
                 <li>
-                  <Link href={withDomain('/#servicios')} className="hover:text-white transition-colors">
+                  <Link href={withDomain('/services')} className="hover:text-white transition-colors">
                     Servicios
                   </Link>
                 </li>
@@ -640,29 +693,33 @@ export const PublicInmobiliariaFooter: React.FC<{
       </footer>
 
       {/* Botones Flotantes (WhatsApp + Subir arriba) */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
-        {/* Botón WhatsApp */}
+      <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-center gap-2.5 pointer-events-none">
+        {/* Boton WhatsApp */}
         <a
           href={`https://wa.me/${cleanPhone}`}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Contactar por WhatsApp"
-          className="w-11 h-11 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+          className="pointer-events-auto w-12 h-12 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 no-underline"
+          title="Contactar por WhatsApp"
         >
-          <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.074-1.807-.412-1.467-.609-2.404-2.094-2.477-2.19-.074-.097-.591-.786-.591-1.5 0-.714.375-1.066.509-1.212.134-.145.293-.182.391-.182.098 0 .195.002.281.006.091.004.212-.034.331.252.123.292.422 1.026.459 1.101.037.076.061.164.012.263-.049.098-.073.16-.146.244-.073.084-.153.188-.219.252-.073.073-.148.153-.064.298.084.145.375.618.805 1.002.553.493 1.02.646 1.164.718.145.073.23.061.315-.037.085-.098.365-.425.463-.571.098-.146.195-.122.329-.073.134.049.851.401.997.474.146.073.244.11.28.17.037.061.037.353-.107.758z"/>
+          <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.507 14.307l-.009.075c-2.799-1.396-3.14-1.564-3.473-1.077-.286.417-.674.887-.827 1.058-.153.17-.306.192-.58.057-.272-.136-1.15-.424-2.19-1.353-.811-.723-1.358-1.616-1.517-1.89-.16-.272-.017-.419.12-.555.123-.122.272-.317.408-.476.136-.16.182-.272.272-.454.091-.182.046-.34-.023-.476-.068-.136-.613-1.477-.84-2.023-.222-.533-.448-.46-.614-.469-.16-.008-.341-.01-.522-.01-.181 0-.476.068-.726.34-.249.272-.952.93-.952 2.27s.974 2.632 1.11 2.813c.136.182 1.916 2.927 4.643 4.103 2.727 1.176 2.727.784 3.226.737.499-.047 1.61-.658 1.837-1.293.227-.635.227-1.179.159-1.293-.069-.113-.25-.181-.522-.317zM12.004 21.75c-1.748 0-3.415-.463-4.887-1.34l-.35-.208-3.635.953.97-3.543-.228-.363c-.96-1.528-1.47-3.3-1.47-5.129 0-5.376 4.374-9.75 9.75-9.75 5.376 0 9.75 4.374 9.75 9.75 0 5.376-4.374 9.75-9.75 9.75zm0-21.25c-6.351 0-11.5 5.149-11.5 11.5 0 2.03.528 3.94 1.451 5.602l-1.542 5.632 5.766-1.512c1.603.874 3.442 1.378 5.405 1.378 6.351 0 11.5-5.149 11.5-11.5 0-6.351-5.149-11.5-11.5-11.5z"/>
           </svg>
         </a>
 
-        {/* Botón Subir arriba */}
-        <button
-          type="button"
-          onClick={scrollToTop}
-          aria-label="Subir arriba"
-          className="w-10 h-10 rounded-full bg-[#EAB308] hover:bg-[#ca8a04] text-slate-900 shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 font-black"
-        >
-          <ArrowUp className="w-5 h-5 stroke-[2.5]" />
-        </button>
+        {/* Boton Subir arriba */}
+        {showScrollTop && (
+          <button
+            type="button"
+            onClick={scrollToTop}
+            aria-label="Subir arriba"
+            className="pointer-events-auto w-11 h-11 rounded-full bg-[#EAB308] hover:bg-[#ca8a04] text-slate-900 shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 font-black border-none cursor-pointer animate-in fade-in zoom-in-75 duration-200"
+            title="Volver al inicio"
+          >
+            <ArrowUp className="w-5 h-5 stroke-[2.5]" />
+          </button>
+        )}
       </div>
     </>
   );
