@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { MapPin, Navigation, ExternalLink } from 'lucide-react';
+import { resolveEstateCoordinates } from '@/utils/coordinateParser';
 
 interface PublicPropertyMapViewProps {
   estate: any;
@@ -23,28 +24,7 @@ function ChangeView({ center }: { center: [number, number] }) {
 }
 
 export function parseCoordinates(estate: any): [number, number] | null {
-  if (!estate) return null;
-
-  if (estate.latitude != null && estate.longitude != null) {
-    const lat = Number(estate.latitude);
-    const lng = Number(estate.longitude);
-    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-      return [lat, lng];
-    }
-  }
-
-  if (estate.location && typeof estate.location === 'string') {
-    const parts = estate.location.split(',');
-    if (parts.length >= 2) {
-      const lat = parseFloat(parts[0].trim());
-      const lng = parseFloat(parts[1].trim());
-      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-        return [lat, lng];
-      }
-    }
-  }
-
-  return null;
+  return resolveEstateCoordinates(estate);
 }
 
 export const PublicPropertyMapView: React.FC<PublicPropertyMapViewProps> = ({

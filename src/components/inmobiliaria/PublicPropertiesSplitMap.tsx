@@ -26,6 +26,7 @@ import {
   PublicEstateItem,
 } from '@/services/publicInmobiliariaService';
 import { getEstateImages } from './AirbnbPropertyCard';
+import { resolveEstateCoordinates } from '@/utils/coordinateParser';
 
 // Deterministic GPS coordinator so every property has a pin even if GPS is unpopulated in DB
 export const resolveEstateGPS = (
@@ -33,17 +34,9 @@ export const resolveEstateGPS = (
   index: number = 0,
   baseCenter: [number, number] = [-0.9677, -80.7089] // Manta / Guayaquil default
 ): [number, number] => {
-  const lat = parseFloat(String(estate?.latitude));
-  const lng = parseFloat(String(estate?.longitude));
-  if (
-    Number.isFinite(lat) &&
-    Number.isFinite(lng) &&
-    lat !== 0 &&
-    lng !== 0 &&
-    Math.abs(lat) <= 90 &&
-    Math.abs(lng) <= 180
-  ) {
-    return [lat, lng];
+  const parsed = resolveEstateCoordinates(estate);
+  if (parsed) {
+    return parsed;
   }
   const safeBaseLat = Number.isFinite(baseCenter?.[0]) ? baseCenter[0] : -0.9677;
   const safeBaseLng = Number.isFinite(baseCenter?.[1]) ? baseCenter[1] : -80.7089;

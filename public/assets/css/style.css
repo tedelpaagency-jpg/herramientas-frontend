@@ -1118,30 +1118,12 @@ body.tt-magic-cursor #magic-cursor {
     opacity: 1;
   }
 }
-.progress-wrap {
-  display: none !important;
-  position: fixed;
-  right: 30px;
-  bottom: 30px;
-  height: 45px;
-  width: 45px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 2px var(--borders-color);
-  background-color: transparent;
-  z-index: 10000;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(15px);
-  transition: all 200ms linear;
-}
+.progress-wrap,
 .progress-wrap.active-progress {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 .progress-wrap svg {
   fill: none;

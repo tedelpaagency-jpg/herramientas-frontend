@@ -195,6 +195,12 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       seo_title: ag.seo_title || `${ag.name || 'Inmobiliaria'} — Portal Oficial`,
       seo_description: ag.seo_description || `Explora las mejores propiedades en venta y alquiler con ${ag.name || 'nuestra agencia'}.`,
       details: {
+        ...(parsedDetails || {}),
+        commercial_allies: Array.isArray(parsedDetails?.commercial_allies) ? parsedDetails.commercial_allies : [],
+        certifications: Array.isArray(parsedDetails?.certifications) ? parsedDetails.certifications : [],
+        services: Array.isArray(parsedDetails?.services) ? parsedDetails.services : [],
+        filter_booking_enabled: parsedDetails?.filter_booking_enabled !== undefined ? Boolean(parsedDetails.filter_booking_enabled) : true,
+        filter_properties_enabled: parsedDetails?.filter_properties_enabled !== undefined ? Boolean(parsedDetails.filter_properties_enabled) : true,
         target_workspace_id: parsedDetails?.target_workspace_id || '',
         show_topbar: parsedDetails?.show_topbar !== undefined
           ? !(

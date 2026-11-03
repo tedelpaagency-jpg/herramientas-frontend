@@ -204,7 +204,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
   const agencyName = rawName || '';
 
   return (
-    <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`} suppressHydrationWarning>
+    <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`} style={{ position: 'relative', zIndex: 1050 }} suppressHydrationWarning>
       <div className="container-fluid d-flex flex-nowrap align-items-center justify-content-between px-3 px-sm-4 px-xl-5" suppressHydrationWarning>
         {/* 1. Lado Izquierdo: Logotipo */}
         <div className="header-logo-area d-flex align-items-center shrink-0" style={{ flex: '0 0 auto' }} suppressHydrationWarning>
@@ -321,7 +321,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                   <i className="bi bi-caret-down-fill" />
                 </Link>
                 <i onClick={() => toggleMenu("PROPERTIES")} className={`bi bi-${state.activeMenu === "PROPERTIES" ? "dash" : "plus"} dropdown-icon`} />
-                <ul className={`sub-menu ${state.activeMenu === "PROPERTIES" ? "d-block" : "none"}`} style={{ maxHeight: '68vh', overflowY: 'auto' }}>
+                <ul className={`sub-menu ${state.activeMenu === "PROPERTIES" ? "d-block" : "none"}`} style={{ maxHeight: '68vh', overflowY: 'auto', zIndex: 1060 }}>
                   <li style={{ padding: '6px 16px 2px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.05em' }}>
                     Operaciones
                   </li>

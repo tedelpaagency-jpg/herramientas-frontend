@@ -28,6 +28,7 @@ import {
   Maximize2,
   DollarSign,
   Menu,
+  ArrowLeft,
 } from 'lucide-react';
 import publicInmobiliariaService, {
   PublicAgencyConfig,
@@ -668,16 +669,16 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         agency={fallbackAgency}
         message="Un momento por favor, estamos buscando las mejores propiedades."
       />
-      {/* Header y barra de filtros fijos que calculan su propia altura */}
-      <div className="shrink-0 relative z-[70] bg-white">
+      {/* Header y barra de filtros fijos que calculan su propia altura (z-index superior a los mapas Leaflet) */}
+      <div className="shrink-0 relative z-[1050] bg-white">
         <TopbarSlider agency={fallbackAgency} />
         <Header2Style3 agency={fallbackAgency} />
 
         {/* Barra de Filtros con Estilizado del Booking y Bordes de Branding */}
-        <div className="border-b border-slate-200/90 bg-white shadow-2xs relative z-[70]" style={{ overflow: 'visible' }}>
+        <div className="border-b border-slate-200/90 bg-white shadow-2xs relative z-[1040]" style={{ overflow: 'visible' }}>
           <div className="max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5" style={{ overflow: 'visible' }}>
             <div
-              className={`flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative z-[70] ${
+              className={`flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative z-[1040] ${
                 (isCityDropdownOpen || isPricePopoverOpen || isOperationOpen || isPropertyTypeOpen || isBedroomsOpen)
                   ? 'overflow-visible'
                   : 'overflow-x-auto lg:overflow-visible'
@@ -1437,6 +1438,20 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               </div>
             )}
 
+            {/* Botón flotante móvil para regresar al listado directamente desde el mapa */}
+            {mobileView === 'map' && (
+              <div className="absolute top-4 left-4 z-[1000] lg:hidden">
+                <button
+                  type="button"
+                  onClick={() => setMobileView('list')}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-900/95 text-white font-black text-xs shadow-2xl active:scale-95 transition-all cursor-pointer backdrop-blur-xs border border-white/10"
+                >
+                  <ArrowLeft className="w-4 h-4 text-emerald-400" />
+                  <span>Regresar al Listado</span>
+                </button>
+              </div>
+            )}
+
             {/* Render Leaflet map only when visible on desktop or active in mobile view to prevent 0x0 size / NaN LatLng errors */}
             {(viewMode === 'map' || isDesktop || mobileView === 'map') && (
               <PublicPropertiesSplitMap
@@ -1476,12 +1491,12 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
             {mobileView === 'list' ? (
               <>
                 <MapIcon className="w-4 h-4" />
-                <span>Ver Mapa</span>
+                <span>Mapa</span>
               </>
             ) : (
               <>
                 <ListIcon className="w-4 h-4" />
-                <span>Ver Lista</span>
+                <span>Regresar al Listado</span>
               </>
             )}
           </button>
