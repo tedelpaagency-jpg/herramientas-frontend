@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -30,6 +31,7 @@ import {
   Camera,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Bell,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -82,7 +84,13 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   const [mobileImgIndex, setMobileImgIndex] = useState<number>(0);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isMobileOptionsOpen, setIsMobileOptionsOpen] = useState<boolean>(false);
+  const [isDescExpanded, setIsDescExpanded] = useState<boolean>(false);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -810,11 +818,13 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
               </div>
             </div>
 
-            {/* Descripción */}
+            {/* Descripción estilo Plusvalia con Leer más */}
             <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs">
               <h3 className="text-base font-black text-slate-900 mb-4">Descripción del Inmueble</h3>
               <div
-                className="text-sm text-slate-600 leading-relaxed whitespace-pre-line font-medium"
+                className={`text-sm text-slate-600 leading-relaxed whitespace-pre-line font-medium transition-all ${
+                  isDescExpanded ? '' : 'line-clamp-4'
+                }`}
                 dangerouslySetInnerHTML={{
                   __html:
                     estate.description ||
@@ -822,6 +832,14 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
                     'Propiedad verificada disponible para entrega inmediata. Contáctenos para agendar una visita guiada.',
                 }}
               />
+              <button
+                type="button"
+                onClick={() => setIsDescExpanded(!isDescExpanded)}
+                className="mt-3.5 inline-flex items-center gap-1.5 text-xs font-black text-orange-600 hover:text-orange-700 cursor-pointer bg-transparent border-0 p-0 active:scale-95 transition-transform"
+              >
+                <span>{isDescExpanded ? 'Ver menos' : 'Leer más'}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isDescExpanded ? 'rotate-180' : ''}`} />
+              </button>
             </div>
 
             {/* Comodidades con Badges Refinados */}
@@ -897,9 +915,40 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
                 </button>
               </div>
 
-              <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
-                Contacta al anunciante
-              </h3>
+              <div className="flex items-center justify-between pb-1">
+                <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                  Contacta al anunciante
+                </h3>
+              </div>
+
+              {/* Ficha del Anunciante estilo Plusvalía */}
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                {fallbackAgency.logo ? (
+                  <img
+                    src={fallbackAgency.logo}
+                    alt={fallbackAgency.name}
+                    className="w-12 h-12 rounded-xl object-contain bg-white p-1 border border-slate-200 shrink-0 shadow-2xs"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-black text-sm shrink-0">
+                    {(fallbackAgency.name || 'IN').substring(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">Inmobiliaria</span>
+                    <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
+                      <ShieldCheck className="w-3 h-3" /> Verificado
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-black text-slate-900 truncate">
+                    {fallbackAgency.name || fallbackAgency.commercial_name || 'Agencia Inmobiliaria'}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium truncate m-0">
+                    {phoneDisplay}
+                  </p>
+                </div>
+              </div>
 
               {contactSuccess && (
                 <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-start gap-2.5 animate-in fade-in-50 zoom-in-95">
@@ -1049,7 +1098,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
         {/* ======================================================== */}
         {/* 4. BARRA INFERIOR FIJA EN MÓVIL (ESTILO PLUSVALIA EXACTO) */}
         {/* ======================================================== */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/98 backdrop-blur-md border-t border-slate-200/90 px-3 py-2.5 flex items-center gap-2 shadow-[0_-4px_25px_rgba(0,0,0,0.12)]">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[1000] bg-white/98 backdrop-blur-md border-t border-slate-200/90 px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] flex items-center gap-2 shadow-[0_-4px_25px_rgba(0,0,0,0.15)]">
           {/* Botón Llamar (icono teléfono en recuadro) */}
           <a
             href={`tel:${cleanPhone}`}
@@ -1090,10 +1139,17 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
           </button>
         </div>
 
-        {/* Modal de Opciones Móvil (3 puntos) */}
-        {isMobileOptionsOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 backdrop-blur-xs p-3 animate-in fade-in-0 duration-200">
-            <div className="bg-white rounded-3xl w-full max-w-sm p-4 space-y-2 shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
+        {/* Modal de Opciones Móvil (3 puntos) via Portal */}
+        {isMounted && isMobileOptionsOpen && createPortal(
+          <div
+            className="lg:hidden fixed inset-0 z-[99999999] flex items-end justify-center bg-black/70 backdrop-blur-xs p-3 animate-in fade-in-0 duration-150"
+            onClick={() => setIsMobileOptionsOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl w-full max-w-sm p-4 pb-6 space-y-2 shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
+            >
+              <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-2 shrink-0" />
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
                 <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Opciones del Inmueble</span>
                 <button
@@ -1181,7 +1237,8 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
                 Cerrar
               </button>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Modal de Lightbox para Fotos en Pantalla Completa */}
@@ -1194,10 +1251,16 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
           />
         )}
 
-        {/* Modal de Términos y Condiciones / Política de Privacidad */}
-        {activeLegalModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-200">
-            <div className="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Modal de Términos y Condiciones / Política de Privacidad via Portal */}
+        {isMounted && activeLegalModal && createPortal(
+          <div
+            className="fixed inset-0 z-[99999999] flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in-0 duration-150"
+            onClick={() => setActiveLegalModal(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200"
+            >
               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
@@ -1235,7 +1298,8 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </main>
 

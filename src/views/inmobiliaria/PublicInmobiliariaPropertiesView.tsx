@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -208,6 +209,10 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   const [hoveredEstateId, setHoveredEstateId] = useState<number | null>(null);
 
   // Popovers & Dialogs
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const [isPricePopoverOpen, setIsPricePopoverOpen] = useState<boolean>(false);
   const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState<boolean>(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState<boolean>(false);
@@ -652,6 +657,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     searchName.trim() || search.trim() || propertyStatus || propertyType || bedrooms || bathrooms || parking || priceMin || priceMax || sizeMin || sizeMax || (sort && sort !== 'recent')
   );
 
+  const isAnyDropdownOpen = isCityDropdownOpen || isOperationOpen || isPropertyTypeOpen || isBedroomsOpen || isPricePopoverOpen;
+
   const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#e2b728';
   const filterBorderColor = agency?.details?.filter_border_color || primaryColor || '#e2b728';
   const fallbackAgency: PublicAgencyConfig = agency || {
@@ -681,9 +688,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         <Header2Style3 agency={fallbackAgency} />
 
         {/* Barra de Filtros con Estilizado del Booking y Bordes de Branding */}
-        <div className="border-b border-slate-200/90 bg-white shadow-2xs relative z-[1040]" style={{ overflow: 'visible' }}>
+        <div className={`border-b border-slate-200/90 bg-white shadow-2xs relative ${isAnyDropdownOpen ? 'z-[1070]' : 'z-[1040]'}`} style={{ overflow: 'visible' }}>
           <div className="max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5" style={{ overflow: 'visible' }}>
-            <div className="flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative z-[1040] overflow-x-auto lg:overflow-visible">
+            <div className={`flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative ${isAnyDropdownOpen ? 'z-[1070]' : 'z-[1040]'} overflow-x-auto lg:overflow-visible`}>
               
               {/* 0. Campo de Búsqueda por Nombre / Palabra Clave */}
               {showNameFilter && (
@@ -731,7 +738,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
               {/* 1. Selector de Ciudad / Ubicación estilo Booking interactivo */}
               {showCityFilter && (
-                <div ref={cityContainerRef} className="relative shrink-0 w-60 sm:w-72">
+                <div ref={cityContainerRef} className={`relative shrink-0 w-60 sm:w-72 ${isCityDropdownOpen ? 'z-50' : 'z-10'}`}>
                   <div
                     onClick={() => {
                       const next = !isCityDropdownOpen;
@@ -784,7 +791,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   {/* Dropdown de Ciudades en Desktop */}
                   {isCityDropdownOpen && (
                     <div
-                      className="hidden lg:block absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                      className="hidden lg:block absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[1050] animate-in fade-in-0 zoom-in-95 duration-150"
                     >
                       {/* Input buscador con debounce de 2 segundos */}
                       <div className="relative mb-2">
@@ -858,10 +865,17 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Modal Bottom-Sheet de Ciudades en Mobile */}
-                  {isCityDropdownOpen && (
-                    <div className="lg:hidden fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in-0 duration-150">
-                      <div className="bg-white rounded-3xl w-full max-w-md max-h-[85vh] p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
+                  {/* Modal Bottom-Sheet de Ciudades en Mobile via Portal */}
+                  {isMounted && isCityDropdownOpen && createPortal(
+                    <div
+                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150"
+                      onClick={() => setIsCityDropdownOpen(false)}
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
+                      >
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-3 shrink-0" />
                         <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100 shrink-0">
                           <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4" style={{ color: filterBorderColor }} />
@@ -870,7 +884,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setIsCityDropdownOpen(false)}
-                            className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                           >
                             <X className="w-5 h-5" />
                           </button>
@@ -946,14 +960,15 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
               )}
 
               {/* 2. Filtro Operación estilo Booking */}
               {showOperationFilter && (
-                <div ref={operationContainerRef} className="relative shrink-0">
+                <div ref={operationContainerRef} className={`relative shrink-0 ${isOperationOpen ? 'z-50' : 'z-10'}`}>
                   <button
                     type="button"
                     onClick={() => {
@@ -976,7 +991,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   {/* Desktop Dropdown */}
                   {isOperationOpen && (
                     <div
-                      className="hidden lg:block absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                      className="hidden lg:block absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[1050] animate-in fade-in-0 zoom-in-95 duration-150"
                     >
                       {OPERATION_OPTIONS.map((opt) => {
                         const isSelected = propertyStatus === opt.value;
@@ -1006,21 +1021,28 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Mobile Bottom-Sheet Modal */}
-                  {isOperationOpen && (
-                    <div className="lg:hidden fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in-0 duration-150">
-                      <div className="bg-white rounded-3xl w-full max-w-sm p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
-                        <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100">
+                  {/* Mobile Bottom-Sheet Modal via Portal */}
+                  {isMounted && isOperationOpen && createPortal(
+                    <div
+                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150"
+                      onClick={() => setIsOperationOpen(false)}
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
+                      >
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-3 shrink-0" />
+                        <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100 shrink-0">
                           <h3 className="text-sm font-black text-slate-900">Tipo de Operación</h3>
                           <button
                             type="button"
                             onClick={() => setIsOperationOpen(false)}
-                            className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                           >
                             <X className="w-5 h-5" />
                           </button>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 overflow-y-auto max-h-[60vh]">
                           {OPERATION_OPTIONS.map((opt) => {
                             const isSelected = propertyStatus === opt.value;
                             return (
@@ -1044,14 +1066,15 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           })}
                         </div>
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
               )}
 
               {/* 3. Filtro Tipo de Inmueble estilo Booking */}
               {showPropertyTypeFilter && (
-                <div ref={propertyTypeContainerRef} className="relative shrink-0">
+                <div ref={propertyTypeContainerRef} className={`relative shrink-0 ${isPropertyTypeOpen ? 'z-50' : 'z-10'}`}>
                   <button
                     type="button"
                     onClick={() => {
@@ -1074,7 +1097,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   {/* Desktop Dropdown */}
                   {isPropertyTypeOpen && (
                     <div
-                      className="hidden lg:block absolute left-0 top-full mt-2 w-60 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150 max-h-72 overflow-y-auto scrollbar-thin"
+                      className="hidden lg:block absolute left-0 top-full mt-2 w-60 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[1050] animate-in fade-in-0 zoom-in-95 duration-150 max-h-72 overflow-y-auto scrollbar-thin"
                     >
                       {PROPERTY_TYPE_OPTIONS.map((opt) => {
                         const isSelected = propertyType === opt.value;
@@ -1104,21 +1127,28 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Mobile Bottom-Sheet Modal */}
-                  {isPropertyTypeOpen && (
-                    <div className="lg:hidden fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in-0 duration-150">
-                      <div className="bg-white rounded-3xl w-full max-w-md max-h-[80vh] p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
+                  {/* Mobile Bottom-Sheet Modal via Portal */}
+                  {isMounted && isPropertyTypeOpen && createPortal(
+                    <div
+                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150"
+                      onClick={() => setIsPropertyTypeOpen(false)}
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
+                      >
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-3 shrink-0" />
                         <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100 shrink-0">
                           <h3 className="text-sm font-black text-slate-900">Tipo de Inmueble</h3>
                           <button
                             type="button"
                             onClick={() => setIsPropertyTypeOpen(false)}
-                            className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                           >
                             <X className="w-5 h-5" />
                           </button>
                         </div>
-                        <div className="overflow-y-auto space-y-1 pr-1 flex-1">
+                        <div className="overflow-y-auto space-y-1 pr-1 flex-1 max-h-[60vh]">
                           {PROPERTY_TYPE_OPTIONS.map((opt) => {
                             const isSelected = propertyType === opt.value;
                             return (
@@ -1142,14 +1172,15 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           })}
                         </div>
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
               )}
 
               {/* 4. Filtro Habitaciones estilo Booking */}
               {showBedroomsFilter && (
-                <div ref={bedroomsContainerRef} className="relative shrink-0">
+                <div ref={bedroomsContainerRef} className={`relative shrink-0 ${isBedroomsOpen ? 'z-50' : 'z-10'}`}>
                   <button
                     type="button"
                     onClick={() => {
@@ -1172,7 +1203,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   {/* Desktop Dropdown */}
                   {isBedroomsOpen && (
                     <div
-                      className="hidden lg:block absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                      className="hidden lg:block absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[1050] animate-in fade-in-0 zoom-in-95 duration-150"
                     >
                       {BEDROOMS_OPTIONS.map((opt) => {
                         const isSelected = bedrooms === opt.value;
@@ -1202,21 +1233,28 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Mobile Bottom-Sheet Modal */}
-                  {isBedroomsOpen && (
-                    <div className="lg:hidden fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in-0 duration-150">
-                      <div className="bg-white rounded-3xl w-full max-w-sm p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
-                        <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100">
+                  {/* Mobile Bottom-Sheet Modal via Portal */}
+                  {isMounted && isBedroomsOpen && createPortal(
+                    <div
+                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150"
+                      onClick={() => setIsBedroomsOpen(false)}
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
+                      >
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-3 shrink-0" />
+                        <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100 shrink-0">
                           <h3 className="text-sm font-black text-slate-900">Número de Habitaciones</h3>
                           <button
                             type="button"
                             onClick={() => setIsBedroomsOpen(false)}
-                            className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                           >
                             <X className="w-5 h-5" />
                           </button>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 overflow-y-auto max-h-[60vh]">
                           {BEDROOMS_OPTIONS.map((opt) => {
                             const isSelected = bedrooms === opt.value;
                             return (
@@ -1240,14 +1278,15 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           })}
                         </div>
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
               )}
 
               {/* 5. Filtro Precio por Rangos Funcional */}
               {showPriceFilter && (
-                <div ref={priceContainerRef} className="relative shrink-0">
+                <div ref={priceContainerRef} className={`relative shrink-0 ${isPricePopoverOpen ? 'z-50' : 'z-10'}`}>
                   <button
                     type="button"
                     onClick={() => {
@@ -1282,7 +1321,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
                   {/* Desktop Popover */}
                   {isPricePopoverOpen && (
-                    <div className="hidden lg:block absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150">
+                    <div className="hidden lg:block absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[1050] animate-in fade-in-0 zoom-in-95 duration-150">
                       <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
                         <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Rangos de Precio (USD)</span>
                         <button
@@ -1371,16 +1410,23 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Mobile Bottom-Sheet Modal */}
-                  {isPricePopoverOpen && (
-                    <div className="lg:hidden fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in-0 duration-150">
-                      <div className="bg-white rounded-3xl w-full max-w-md max-h-[85vh] p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200 overflow-y-auto">
+                  {/* Mobile Bottom-Sheet Modal via Portal */}
+                  {isMounted && isPricePopoverOpen && createPortal(
+                    <div
+                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150"
+                      onClick={() => setIsPricePopoverOpen(false)}
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200 overflow-y-auto"
+                      >
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-3 shrink-0" />
                         <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 shrink-0">
                           <span className="text-sm font-black text-slate-800 uppercase tracking-wider">Rangos de Precio (USD)</span>
                           <button
                             type="button"
                             onClick={() => setIsPricePopoverOpen(false)}
-                            className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                           >
                             <X className="w-5 h-5" />
                           </button>
@@ -1471,7 +1517,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           </button>
                         </div>
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
               )}
