@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   MapPin,
@@ -25,6 +25,12 @@ import {
   Send,
   Copy,
   FileDown,
+  Heart,
+  MoreVertical,
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Bell,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import publicInmobiliariaService, {
@@ -65,6 +71,7 @@ interface PublicInmobiliariaDetailViewProps {
 }
 
 export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailViewProps> = ({ slug }) => {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const domainParam = searchParams?.get('domain') || null;
 
@@ -72,6 +79,10 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   const [estate, setEstate] = useState<PublicEstateItem | null>(null);
   const [related, setRelated] = useState<PublicEstateItem[]>([]);
   const [activeImage, setActiveImage] = useState<string>('');
+  const [mobileImgIndex, setMobileImgIndex] = useState<number>(0);
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [isMobileOptionsOpen, setIsMobileOptionsOpen] = useState<boolean>(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -413,72 +424,180 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
     { key: 'cameras', label: 'Cámaras de Vigilancia' },
   ].filter((a) => Boolean(estate[a.key]));
 
+  const phoneDisplay = (
+    estate?.agency?.phone ||
+    fallbackAgency.phone ||
+    estate?.agency?.whatsapp ||
+    fallbackAgency.whatsapp ||
+    '+593 0984113967'
+  );
+  const cleanPhone = phoneDisplay.replace(/[^0-9]/g, '') || '593984113967';
+
+  const mobileSpecs = [
+    typeLabel,
+    estate.size ? `${estate.size}m²` : null,
+    estate.bedrooms ? `${estate.bedrooms} ${Number(estate.bedrooms) === 1 ? 'habitación' : 'habitaciones'}` : null,
+    estate.garage ? '2 estacionamientos' : (estate.bathrooms ? `${estate.bathrooms} ${Number(estate.bathrooms) === 1 ? 'baño' : 'baños'}` : null),
+  ].filter(Boolean).join(' · ');
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (diff > 40 && gallery.length > 1) {
+      setMobileImgIndex((prev) => (prev + 1) % gallery.length);
+    } else if (diff < -40 && gallery.length > 1) {
+      setMobileImgIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+    }
+    setTouchStartX(null);
+  };
+
   return (
     <div className="travel-agency-03-root min-h-screen flex flex-col bg-[#fcfcfd] text-slate-900 font-sans selection:bg-slate-900 selection:text-white">
       <BrandingThemeInjector agency={fallbackAgency} />
       <TopbarSlider agency={fallbackAgency} />
       <Header2Style3 agency={fallbackAgency} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
-        {/* Breadcrumb Navigation con botón de compartir */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <nav className="flex items-center gap-2 text-slate-500 font-medium">
-            <Link href="/" className="hover:text-slate-900 transition-colors">Inicio</Link>
-            <span>/</span>
-            <Link href={withDomain('/properties')} className="hover:text-slate-900 transition-colors">Propiedades</Link>
-            <span>/</span>
-            <span className="text-slate-900 font-bold truncate max-w-[200px] sm:max-w-md">{estate.title}</span>
-          </nav>
-
-          <div className="flex items-center gap-2.5">
+      <main className="max-w-7xl mx-auto px-0 lg:px-8 py-0 lg:py-8 pb-28 lg:pb-8 flex-1 w-full">
+        {/* ======================================================== */}
+        {/* 1. SECCIÓN MOBILE EXCLUSIVA (ESTILO PLUSVALIA EXACTO)    */}
+        {/* ======================================================== */}
+        <div className="lg:hidden">
+          {/* Sub-header de Navegación Móvil */}
+          <div className="bg-white border-b border-slate-200/80 px-4 py-2.5 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
             <button
               type="button"
-              onClick={handleShare}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-full bg-white border border-slate-200/90 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-xs shadow-2xs transition-all cursor-pointer"
-              aria-label="Compartir propiedad"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  router.push(withDomain('/properties'));
+                }
+              }}
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-800 active:scale-95 transition-transform border-none bg-transparent cursor-pointer p-0"
+              aria-label="Volver atrás"
             >
-              {copiedLink ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-extrabold">¡Copiado!</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Compartir</span>
-                </>
-              )}
+              <ArrowLeft className="w-4 h-4 text-slate-800" />
+              <span>Atrás</span>
             </button>
 
-            <Link
-              href={withDomain('/properties')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs transition-all"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Volver</span>
-            </Link>
-            <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2.5 py-1.5 rounded-full font-bold">Ref: #{estate.id}</span>
-          </div>
-        </div>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFavorite(!isFavorite);
+                  toast.success(!isFavorite ? '¡Guardado en tus favoritos!' : 'Eliminado de favoritos');
+                }}
+                className="p-1 text-slate-700 hover:text-rose-500 active:scale-90 transition-all border-none bg-transparent cursor-pointer"
+                title="Favorito"
+                aria-label="Marcar como favorito"
+              >
+                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-700'}`} />
+              </button>
 
-        {/* Cabecera del Inmueble con Glassmorphism */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className="px-3 py-1 rounded-full text-xs font-black text-white shadow-xs"
-                  style={{ backgroundColor: isRent ? '#2563eb' : primaryColor }}
-                >
-                  {statusLabel}
-                </span>
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
-                  {typeLabel}
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{estate.title}</h1>
-              <p className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 font-semibold">
-                <MapPin className="w-4 h-4 shrink-0" style={{ color: primaryColor }} />
+              <button
+                type="button"
+                onClick={handleShare}
+                className="p-1 text-slate-700 hover:text-slate-950 active:scale-90 transition-all border-none bg-transparent cursor-pointer"
+                title="Compartir"
+                aria-label="Compartir propiedad"
+              >
+                <Share2 className="w-5 h-5 text-slate-700" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsMobileOptionsOpen(true)}
+                className="p-1 text-slate-700 hover:text-slate-950 active:scale-90 transition-all border-none bg-transparent cursor-pointer"
+                title="Más opciones"
+                aria-label="Más opciones"
+              >
+                <MoreVertical className="w-5 h-5 text-slate-700" />
+              </button>
+            </div>
+          </div>
+
+          {/* Carrusel de Imágenes Full-Width con Contador de Fotos y Flechas */}
+          <div
+            className="relative w-full h-[290px] sm:h-[380px] bg-slate-950 overflow-hidden select-none cursor-pointer"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onClick={() => openLightbox(mobileImgIndex)}
+          >
+            <img
+              src={gallery[mobileImgIndex] || gallery[0]}
+              alt={estate.title}
+              className="w-full h-full object-cover"
+            />
+
+            {/* Badge Contador de Fotos en esquina inferior izquierda (estilo Plusvalia) */}
+            <div className="absolute bottom-3 left-3 px-3 py-1.5 rounded-lg bg-black/65 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1.5 border border-white/10 shadow-md">
+              <span>{mobileImgIndex + 1}/{gallery.length}</span>
+              <Camera className="w-3.5 h-3.5 text-white" />
+            </div>
+
+            {/* Flecha Derecha */}
+            {gallery.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMobileImgIndex((prev) => (prev + 1) % gallery.length);
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-xs text-white flex items-center justify-center active:scale-90 transition-all border-none cursor-pointer"
+                aria-label="Foto siguiente"
+              >
+                <ChevronRight className="w-6 h-6 text-white stroke-[2.5]" />
+              </button>
+            )}
+
+            {/* Flecha Izquierda */}
+            {gallery.length > 1 && mobileImgIndex > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMobileImgIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+                }}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-xs text-white flex items-center justify-center active:scale-90 transition-all border-none cursor-pointer"
+                aria-label="Foto anterior"
+              >
+                <ChevronLeft className="w-6 h-6 text-white stroke-[2.5]" />
+              </button>
+            )}
+          </div>
+
+          {/* Ficha básica estilo Plusvalia */}
+          <div className="px-4 pt-3.5 pb-4 bg-white border-b border-slate-100 space-y-2.5">
+            {/* Línea 1: Metadata de la propiedad (Departamento · 160m² · 3 habitaciones · 2 estacionamientos) */}
+            <div className="text-xs text-slate-500 font-semibold tracking-wide">
+              {mobileSpecs || `${typeLabel} · ${estate.title}`}
+            </div>
+
+            {/* Línea 2: Operación y Precio grande en negrita */}
+            <div className="text-2xl font-black text-slate-900 tracking-tight">
+              {isRent ? 'Alquiler' : 'Venta'} {currency} {priceFormatted}
+              {isRent && <span className="text-sm font-semibold text-slate-500 font-normal"> /mes</span>}
+            </div>
+
+            {/* Línea 3: Botón Avisarme si baja de precio */}
+            <button
+              type="button"
+              onClick={() => toast.success('¡Te avisaremos cuando esta propiedad baje de precio!')}
+              className="w-full py-2.5 px-4 rounded-xl border border-orange-500 text-orange-600 font-extrabold text-xs text-center bg-white hover:bg-orange-50 active:scale-98 transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Bell className="w-4 h-4 text-orange-600" />
+              <span>Avisarme si baja de precio</span>
+            </button>
+
+            {/* Título & Ubicación */}
+            <div className="pt-1">
+              <h1 className="text-base font-black text-slate-900 leading-snug">{estate.title}</h1>
+              <p className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-1">
+                <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: primaryColor }} />
                 <span>
                   {estate.full_address ||
                     estate.address ||
@@ -487,79 +606,178 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
               </p>
             </div>
 
-            <div className="lg:text-right shrink-0">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                {isRent ? 'Canon de Arrendamiento' : 'Precio de Venta'}
-              </span>
-              <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight" style={{ color: primaryColor }}>
-                {currency === 'USD' ? '$' : currency} {priceFormatted}
-                {isRent && <small className="text-sm font-semibold text-slate-500"> /mes</small>}
-              </span>
+            {/* Acciones directas: Copiar Ficha (Verde) y Descargar PDF (Rojo) */}
+            <div className="flex items-center justify-center gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={handleCopyPropertyInfo}
+                disabled={copyingInfo}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer border-none"
+              >
+                <Link2 className="w-4 h-4 text-white" />
+                <span>{copiedInfo ? '¡Copiado!' : 'Copiar Info'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={downloadingPdf}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer border-none"
+              >
+                <FileDown className="w-4 h-4 text-white" />
+                <span>Descargar PDF</span>
+              </button>
             </div>
-          </div>
-
-          {/* Galería de Imágenes Interactiva con Expansión Lightbox al hacer Clic */}
-          <div className="mt-6 space-y-3">
-            <div
-              onClick={() => openLightbox(gallery.indexOf(activeImage) >= 0 ? gallery.indexOf(activeImage) : 0)}
-              className="group relative w-full h-[360px] sm:h-[500px] rounded-2xl overflow-hidden bg-slate-100 shadow-xs border border-slate-200/60 cursor-pointer"
-              title="Haz clic para ver las fotos en pantalla completa"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  openLightbox(gallery.indexOf(activeImage) >= 0 ? gallery.indexOf(activeImage) : 0);
-                }
-              }}
-            >
-              <img
-                src={activeImage || gallery[0]}
-                alt={estate.title}
-                className="w-full h-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-103 will-change-transform"
-              />
-
-              {/* Botón Flotante para Expandir Imágenes */}
-              <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/25 transition-all duration-300 flex items-center justify-center">
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-900/85 backdrop-blur-md text-white text-xs font-extrabold shadow-xl border border-white/20 transform scale-95 group-hover:scale-100 transition-transform">
-                  <Maximize2 className="w-4 h-4 text-emerald-400" />
-                  <span>Ver fotos en pantalla completa ({gallery.length})</span>
-                </span>
-              </div>
-
-              {/* Badge Contador de Fotos en Esquina Inferior */}
-              <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1.5 border border-white/10 shadow-md">
-                <Maximize2 className="w-3.5 h-3.5 text-slate-300" />
-                <span>{gallery.indexOf(activeImage) >= 0 ? gallery.indexOf(activeImage) + 1 : 1} / {gallery.length}</span>
-              </div>
-            </div>
-
-            {gallery.length > 1 && (
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
-                {gallery.map((imgUrl, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setActiveImage(imgUrl);
-                    }}
-                    onDoubleClick={() => openLightbox(idx)}
-                    className={`relative h-20 w-28 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer active:scale-95 ${
-                      activeImage === imgUrl
-                        ? 'border-slate-900 ring-2 ring-slate-900/20 scale-102 shadow-md'
-                        : 'border-transparent opacity-75 hover:opacity-100 hover:scale-102'
-                    }`}
-                    aria-label={`Ver foto ${idx + 1}`}
-                  >
-                    <img src={imgUrl} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Detalles, Mapa y Contacto Lateral */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* ======================================================== */}
+        {/* 2. SECCIÓN DESKTOP TRADICIONAL (CONSERVADA INTACTA)      */}
+        {/* ======================================================== */}
+        <div className="hidden lg:block">
+          {/* Breadcrumb Navigation con botón de compartir */}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <nav className="flex items-center gap-2 text-slate-500 font-medium">
+              <Link href="/" className="hover:text-slate-900 transition-colors">Inicio</Link>
+              <span>/</span>
+              <Link href={withDomain('/properties')} className="hover:text-slate-900 transition-colors">Propiedades</Link>
+              <span>/</span>
+              <span className="text-slate-900 font-bold truncate max-w-[200px] sm:max-w-md">{estate.title}</span>
+            </nav>
+
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleShare}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-full bg-white border border-slate-200/90 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-xs shadow-2xs transition-all cursor-pointer"
+                aria-label="Compartir propiedad"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-700 font-extrabold">¡Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Compartir</span>
+                  </>
+                )}
+              </button>
+
+              <Link
+                href={withDomain('/properties')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs transition-all"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Volver</span>
+              </Link>
+              <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2.5 py-1.5 rounded-full font-bold">Ref: #{estate.id}</span>
+            </div>
+          </div>
+
+          {/* Cabecera del Inmueble con Glassmorphism */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className="px-3 py-1 rounded-full text-xs font-black text-white shadow-xs"
+                    style={{ backgroundColor: isRent ? '#2563eb' : primaryColor }}
+                  >
+                    {statusLabel}
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                    {typeLabel}
+                  </span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{estate.title}</h1>
+                <p className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 font-semibold">
+                  <MapPin className="w-4 h-4 shrink-0" style={{ color: primaryColor }} />
+                  <span>
+                    {estate.full_address ||
+                      estate.address ||
+                      [estate.city, estate.province, estate.country].filter(Boolean).join(', ')}
+                  </span>
+                </p>
+              </div>
+
+              <div className="lg:text-right shrink-0">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  {isRent ? 'Canon de Arrendamiento' : 'Precio de Venta'}
+                </span>
+                <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight" style={{ color: primaryColor }}>
+                  {currency === 'USD' ? '$' : currency} {priceFormatted}
+                  {isRent && <small className="text-sm font-semibold text-slate-500"> /mes</small>}
+                </span>
+              </div>
+            </div>
+
+            {/* Galería de Imágenes Interactiva con Expansión Lightbox al hacer Clic */}
+            <div className="mt-6 space-y-3">
+              <div
+                onClick={() => openLightbox(gallery.indexOf(activeImage) >= 0 ? gallery.indexOf(activeImage) : 0)}
+                className="group relative w-full h-[360px] sm:h-[500px] rounded-2xl overflow-hidden bg-slate-100 shadow-xs border border-slate-200/60 cursor-pointer"
+                title="Haz clic para ver las fotos en pantalla completa"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    openLightbox(gallery.indexOf(activeImage) >= 0 ? gallery.indexOf(activeImage) : 0);
+                  }
+                }}
+              >
+                <img
+                  src={activeImage || gallery[0]}
+                  alt={estate.title}
+                  className="w-full h-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-103 will-change-transform"
+                />
+
+                {/* Botón Flotante para Expandir Imágenes */}
+                <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/25 transition-all duration-300 flex items-center justify-center">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-900/85 backdrop-blur-md text-white text-xs font-extrabold shadow-xl border border-white/20 transform scale-95 group-hover:scale-100 transition-transform">
+                    <Maximize2 className="w-4 h-4 text-emerald-400" />
+                    <span>Ver fotos en pantalla completa ({gallery.length})</span>
+                  </span>
+                </div>
+
+                {/* Badge Contador de Fotos en Esquina Inferior */}
+                <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1.5 border border-white/10 shadow-md">
+                  <Maximize2 className="w-3.5 h-3.5 text-slate-300" />
+                  <span>{gallery.indexOf(activeImage) >= 0 ? gallery.indexOf(activeImage) + 1 : 1} / {gallery.length}</span>
+                </div>
+              </div>
+
+              {gallery.length > 1 && (
+                <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
+                  {gallery.map((imgUrl, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setActiveImage(imgUrl);
+                      }}
+                      onDoubleClick={() => openLightbox(idx)}
+                      className={`relative h-20 w-28 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer active:scale-95 ${
+                        activeImage === imgUrl
+                          ? 'border-slate-900 ring-2 ring-slate-900/20 scale-102 shadow-md'
+                          : 'border-transparent opacity-75 hover:opacity-100 hover:scale-102'
+                      }`}
+                      aria-label={`Ver foto ${idx + 1}`}
+                    >
+                      <img src={imgUrl} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* 3. DETALLES, MAPA Y FORMULARIO (RESPONSIVE EN AMBOS)     */}
+        {/* ======================================================== */}
+        <div className="px-4 lg:px-0 mt-6 lg:mt-0">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 space-y-6">
             {/* Características Principales */}
             <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs">
@@ -826,6 +1044,145 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
             </div>
           </div>
         </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* 4. BARRA INFERIOR FIJA EN MÓVIL (ESTILO PLUSVALIA EXACTO) */}
+        {/* ======================================================== */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/98 backdrop-blur-md border-t border-slate-200/90 px-3 py-2.5 flex items-center gap-2 shadow-[0_-4px_25px_rgba(0,0,0,0.12)]">
+          {/* Botón Llamar (icono teléfono en recuadro) */}
+          <a
+            href={`tel:${cleanPhone}`}
+            className="w-12 h-11 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-800 active:scale-95 transition-all shrink-0 no-underline shadow-2xs"
+            title="Llamar al anunciante"
+            aria-label="Llamar al anunciante"
+          >
+            <Phone className="w-5 h-5 text-slate-800" />
+          </a>
+
+          {/* Botón WhatsApp (Verde con icono y texto) */}
+          <button
+            type="button"
+            onClick={handleWhatsAppClick}
+            className="flex-1 h-11 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer border-none"
+          >
+            <span>WhatsApp</span>
+            <svg className="w-5 h-5 fill-white shrink-0" viewBox="0 0 24 24">
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+            </svg>
+          </button>
+
+          {/* Botón Contactar (Naranja con icono sobre y texto) */}
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('anunciante-form');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const input = el.querySelector('input');
+                if (input) input.focus();
+              }
+            }}
+            className="flex-1 h-11 rounded-xl bg-[#ff5a00] hover:bg-[#e04f00] active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer border-none"
+          >
+            <span>Contactar</span>
+            <Mail className="w-4 h-4 text-white shrink-0" />
+          </button>
+        </div>
+
+        {/* Modal de Opciones Móvil (3 puntos) */}
+        {isMobileOptionsOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 backdrop-blur-xs p-3 animate-in fade-in-0 duration-200">
+            <div className="bg-white rounded-3xl w-full max-w-sm p-4 space-y-2 shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Opciones del Inmueble</span>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileOptionsOpen(false)}
+                  className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileOptionsOpen(false);
+                  handleCopyPropertyInfo();
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-emerald-50 text-emerald-800 font-bold text-xs hover:bg-emerald-100 active:scale-98 transition-all border-none text-left cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                  <Link2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="m-0 font-black">Copiar información para WhatsApp</p>
+                  <p className="m-0 text-[11px] text-emerald-700 font-normal">Ficha completa lista para enviar</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileOptionsOpen(false);
+                  handleDownloadPdf();
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-red-50 text-red-800 font-bold text-xs hover:bg-red-100 active:scale-98 transition-all border-none text-left cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-xl bg-red-500 text-white flex items-center justify-center shrink-0">
+                  <FileDown className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="m-0 font-black">Descargar ficha en PDF</p>
+                  <p className="m-0 text-[11px] text-red-700 font-normal">Dossier oficial con fotos y detalles</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileOptionsOpen(false);
+                  handleShare();
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 text-slate-800 font-bold text-xs hover:bg-slate-100 active:scale-98 transition-all border-none text-left cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center shrink-0">
+                  <Share2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="m-0 font-black">Copiar enlace de la propiedad</p>
+                  <p className="m-0 text-[11px] text-slate-500 font-normal">Compartir link directo</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileOptionsOpen(false);
+                  openLightbox(mobileImgIndex);
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 text-slate-800 font-bold text-xs hover:bg-slate-100 active:scale-98 transition-all border-none text-left cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center shrink-0">
+                  <Maximize2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="m-0 font-black">Ver fotos en pantalla completa</p>
+                  <p className="m-0 text-[11px] text-slate-500 font-normal">{gallery.length} fotos en alta resolución</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsMobileOptionsOpen(false)}
+                className="w-full py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-98 transition-all border-none cursor-pointer mt-2"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Modal de Lightbox para Fotos en Pantalla Completa */}
         {isLightboxOpen && (
