@@ -47,8 +47,15 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
           {displayEstates.map((estate, index) => {
             const fallbackImg = DEFAULT_REAL_ESTATE_PROPERTIES[index % DEFAULT_REAL_ESTATE_PROPERTIES.length].image;
             const imgSrc: string = estate.image || fallbackImg || '';
-            const isRent = Number(estate.property_status) === 2;
-            const propertyUrl = `/properties/${estate.slug || estate.id}`;
+            const isRent = Number(estate.property_status) === 1;
+            const propertyUrl = `/properties/${encodeURIComponent((estate.slug || String(estate.id)).trim())}`;
+            const locationText =
+              estate.full_address ||
+              [estate.address || estate.neighborhood, estate.city, estate.province].filter(Boolean).join(', ') ||
+              estate.city ||
+              'Quevedo, Ecuador';
+            const advisorName = estate.user?.name || estate.agent?.name || 'Asesor Inmobiliario';
+            const advisorPhoto = estate.user?.photo || estate.user?.avatar || estate.agent?.photo;
 
             return (
               <div
@@ -179,7 +186,7 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
                             display: 'block',
                           }}
                         >
-                          {estate.city || estate.address || 'Ubicación Exclusiva'}
+                          {locationText}
                         </span>
                       </div>
                     </div>
@@ -225,6 +232,57 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
                         >
                           Ver Propiedad ↗
                         </Link>
+                      </div>
+
+                      {/* Asesor */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          marginBottom: '6px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            backgroundColor: '#e2e8f0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            fontSize: '9px',
+                            fontWeight: 800,
+                            color: '#475569',
+                          }}
+                        >
+                          {advisorPhoto ? (
+                            <img
+                              src={advisorPhoto}
+                              alt={advisorName}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          ) : null}
+                          <span>{advisorName.charAt(0).toUpperCase()}</span>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            color: '#64748b',
+                            fontWeight: 600,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {advisorName}
+                        </span>
                       </div>
 
                       <div

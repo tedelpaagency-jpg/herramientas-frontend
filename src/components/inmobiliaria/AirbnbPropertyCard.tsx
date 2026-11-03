@@ -4,13 +4,11 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Heart,
-  Star,
   ChevronLeft,
   ChevronRight,
   Bed,
   Bath,
   Maximize2,
-  ShieldCheck,
   MapPin,
   ArrowUpRight,
 } from 'lucide-react';
@@ -66,11 +64,7 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
   const priceNum = Number(estate.price || 0);
   const priceFormatted = priceNum.toLocaleString('en-US');
 
-  // Deterministic rating between 4.80 and 5.00 for authentic aesthetic
-  const rating = (4.8 + ((estate.id * 17) % 21) / 100).toFixed(2);
-  const reviewCount = 8 + ((estate.id * 13) % 45);
-
-  const detailHref = `/properties/${encodeURIComponent(estate.slug || String(estate.id))}${
+  const detailHref = `/properties/${encodeURIComponent((estate.slug || String(estate.id)).trim())}${
     domainParam ? `?domain=${encodeURIComponent(domainParam)}` : ''
   }`;
 
@@ -101,9 +95,15 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
   };
 
   const locationSubtitle =
-    [estate.city, estate.province].filter(Boolean).join(', ') ||
-    estate.address ||
-    'Ubicación privilegiada';
+    estate.full_address ||
+    [estate.address || estate.neighborhood, estate.city, estate.province]
+      .filter(Boolean)
+      .join(', ') ||
+    estate.city ||
+    'Quevedo, Ecuador';
+
+  const advisorName = estate.user?.name || estate.agent?.name || 'Asesor Inmobiliario';
+  const advisorPhoto = estate.user?.photo || estate.user?.avatar || estate.agent?.photo;
 
   return (
     <div
@@ -209,22 +209,38 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
 
       {/* Contenido descriptivo compacto */}
       <div className="mt-2 px-1 space-y-1">
-        {/* Fila 1: Título & Calificación */}
-        <div className="flex items-start justify-between gap-1.5">
-          <h3 className="font-extrabold text-xs sm:text-[13px] text-slate-900 leading-snug truncate">
-            {estate.title}
-          </h3>
-          <div className="flex items-center gap-0.5 text-[11px] font-extrabold text-slate-800 shrink-0">
-            <Star className="w-3 h-3 fill-slate-900 text-slate-900" />
-            <span>{rating}</span>
-          </div>
-        </div>
+        {/* Fila 1: Título */}
+        <h3 className="font-extrabold text-xs sm:text-[13px] text-slate-900 leading-snug truncate" title={estate.title}>
+          {estate.title}
+        </h3>
 
         {/* Fila 2: Subtítulo / Ubicación */}
         <p className="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1">
           <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
           <span className="truncate">{locationSubtitle}</span>
         </p>
+
+        {/* Fila Asesor */}
+        <div className="flex items-center gap-1.5 pt-0.5 text-[11px]">
+          <div className="relative w-4.5 h-4.5 rounded-full overflow-hidden bg-slate-200 shrink-0 border border-slate-300 flex items-center justify-center">
+            {advisorPhoto ? (
+              <img
+                src={advisorPhoto}
+                alt={advisorName}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+            ) : null}
+            <span className="text-[8.5px] font-black text-slate-600">
+              {advisorName.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <span className="truncate text-[10.5px] font-medium text-slate-600">
+            {advisorName}
+          </span>
+        </div>
 
         {/* Fila 3: Especificaciones compactas */}
         <div className="flex items-center gap-2 text-[11px] text-slate-600 font-semibold pt-0.5">

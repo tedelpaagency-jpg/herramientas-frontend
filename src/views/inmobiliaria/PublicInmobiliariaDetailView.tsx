@@ -240,9 +240,10 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
     const toastId = toast.loading('Copiando información del inmueble...');
     setCopyingInfo(true);
     try {
+      const cleanSlug = encodeURIComponent(String(estate.slug || estate.id).trim().replace(/\s+/g, '-'));
       const pageUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/properties/${estate.slug || estate.id}`
-        : `https://${domainParam || 'immobillis.com'}/properties/${estate.slug || estate.id}`;
+        ? `${window.location.origin}/properties/${cleanSlug}`
+        : `https://${domainParam || 'immobillis.com'}/properties/${cleanSlug}`;
 
       let textToCopy = '';
       try {
@@ -258,28 +259,27 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
       const mainImg = getEstatePrimaryImage(estate);
 
       if (textToCopy) {
-        // 1. Reemplazar enlaces del backend (/estates/, /propiedad/, etc.) con la URL real de la página
+        // 1. Reemplazar enlaces del backend con la URL limpia de la propiedad
         textToCopy = textToCopy.replace(
-          /(?:https?:\/\/[^\s\n]+)?\/(?:estates|propiedad|properties)\/[^\s\n]+/gi,
+          /https?:\/\/[^\s\n]*\/(?:estates|propiedad|properties)\/[^\s\n]*/gi,
           pageUrl
         );
-        // 2. Reemplazar explícitamente cualquier santun.tedelpa.com que no sea una imagen
+        // 2. Asegurar que el enlace esté en su propia línea sin espacios para la previsualización en WhatsApp
         textToCopy = textToCopy.replace(
-          /https?:\/\/santun\.tedelpa\.com\/(?:estates|properties|propiedad)[^\s\n]*/gi,
-          pageUrl
+          /(🔗\s*\*Ver propiedad[^*]*\*:?)\s*https?:\/\/[^\s\n]+/gi,
+          `$1\n${pageUrl}`
         );
       } else {
-        const op = isRent ? 'ALQUILER' : 'VENTA';
         const lines = [
           `🏠 *${estate.title}*`,
+          mainImg ? `📸 *Foto:* ${mainImg}` : null,
           `💰 *Precio:* $ ${Number(estate.price || 0).toLocaleString('en-US')} ${isRent ? '/mes' : ''}`,
           estate.full_address ? `📍 *Ubicación:* ${estate.full_address}` : null,
           estate.bedrooms ? `🛏 *Habitaciones:* ${estate.bedrooms}` : null,
           estate.bathrooms ? `🛁 *Baños:* ${estate.bathrooms}` : null,
           estate.size ? `📐 *Superficie:* ${estate.size} m²` : null,
           estate.garage ? `🚗 *Parqueadero:* Sí` : null,
-          `🔗 *Ver propiedad:* ${pageUrl}`,
-          mainImg ? `📸 *Foto:* ${mainImg}` : null,
+          `🔗 *Ver propiedad:*\n${pageUrl}`,
         ].filter(Boolean);
         textToCopy = lines.join('\n');
       }
