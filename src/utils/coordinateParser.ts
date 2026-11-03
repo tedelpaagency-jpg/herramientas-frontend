@@ -173,3 +173,4 @@ function isValidLatLng(lat: number, lng: number): boolean {
     (Math.abs(lat) > 0.0001 || Math.abs(lng) > 0.0001)
   );
 }
+
