@@ -83,6 +83,7 @@ const DEFAULT_CERTIFICATIONS = [
     code: 'MIDUVI-LIC-09412',
     year: 'Vigente 2025 - 2026',
     description: 'Acreditación oficial que certifica el ejercicio legal y ético de la intermediación de bienes raíces.',
+    image_url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 2,
@@ -91,6 +92,7 @@ const DEFAULT_CERTIFICATIONS = [
     code: 'ACBIR-SOCIO-REG-884',
     year: 'Certificado Anual',
     description: 'Garantía de apego a las normas gremiales más exigentes de transparencia, honestidad y honorarios justos.',
+    image_url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 3,
@@ -99,6 +101,7 @@ const DEFAULT_CERTIFICATIONS = [
     code: 'MLS-ID-EC-22910',
     year: 'Acreditado',
     description: 'Acceso a la mayor red internacional de propiedades compartidas y compradores calificados globales.',
+    image_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 4,
@@ -107,6 +110,7 @@ const DEFAULT_CERTIFICATIONS = [
     code: 'UAFE-CUMP-2025-019',
     year: 'Cumplimiento 100%',
     description: 'Protocolos rigurosos de debida diligencia y conocimiento del cliente para operaciones 100% blindadas.',
+    image_url: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=600&q=80',
   },
 ];
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -610,41 +614,55 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {commercialAllies.map((ally: any, idx: number) => (
-              <div
-                key={ally.id || idx}
-                className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md hover:border-slate-300 transition-all group flex flex-col justify-between"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                      {ally.category || 'Aliado Estratégico'}
-                    </span>
-                    {ally.website && ally.website !== '#' && (
-                      <a
-                        href={ally.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-slate-400 hover:text-blue-600 transition-colors"
-                        title="Visitar sitio oficial"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
+            {commercialAllies.map((ally: any, idx: number) => {
+              const allyImage = ally.logo || ally.image_url || ally.image || ally.logo_url;
+              return (
+                <div
+                  key={ally.id || idx}
+                  className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md hover:border-slate-300 transition-all group flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    {/* Imagen / Logo del Aliado */}
+                    {allyImage && (
+                      <div className="w-full h-36 rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80 relative flex items-center justify-center">
+                        <img
+                          src={allyImage}
+                          alt={ally.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
                     )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                        {ally.category || 'Aliado Estratégico'}
+                      </span>
+                      {ally.website && ally.website !== '#' && (
+                        <a
+                          href={ally.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-slate-400 hover:text-blue-600 transition-colors"
+                          title="Visitar sitio oficial"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors m-0">
+                      {ally.name}
+                    </h3>
+                    <p className="text-xs text-slate-600 leading-relaxed m-0">
+                      {ally.description}
+                    </p>
                   </div>
-                  <h3 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors m-0">
-                    {ally.name}
-                  </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed m-0">
-                    {ally.description}
-                  </p>
+                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+                    <span>Alianza Oficial</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  </div>
                 </div>
-                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-semibold">
-                  <span>Alianza Oficial</span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -666,35 +684,50 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {certifications.map((cert: any, idx: number) => (
-              <div
-                key={cert.id || idx}
-                className="bg-slate-50 rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs sm:text-sm font-black text-slate-900 leading-snug m-0">
-                      {cert.title}
-                    </h3>
-                    <p className="text-[11px] font-bold text-slate-500 mt-1 m-0">
-                      {cert.entity}
+            {certifications.map((cert: any, idx: number) => {
+              const certImage = cert.image_url || cert.image || cert.badge_url || cert.logo;
+              return (
+                <div
+                  key={cert.id || idx}
+                  className="bg-slate-50 rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
+                >
+                  <div className="space-y-3">
+                    {/* Imagen / Insignia de la Certificación */}
+                    {certImage ? (
+                      <div className="w-full h-36 rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80 relative flex items-center justify-center">
+                        <img
+                          src={certImage}
+                          alt={cert.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                        <ShieldCheck className="w-5 h-5" />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black text-slate-900 leading-snug m-0">
+                        {cert.title}
+                      </h3>
+                      <p className="text-[11px] font-bold text-slate-500 mt-1 m-0">
+                        {cert.entity}
+                      </p>
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed m-0">
+                      {cert.description}
                     </p>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed m-0">
-                    {cert.description}
-                  </p>
+                  <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-[11px] font-mono font-bold text-slate-700">
+                    <span className="truncate max-w-[130px]">{cert.code}</span>
+                    <span className="text-emerald-700 font-sans font-bold text-[10px] bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                      {cert.year || 'Verificado'}
+                    </span>
+                  </div>
                 </div>
-                <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-[11px] font-mono font-bold text-slate-700">
-                  <span className="truncate max-w-[130px]">{cert.code}</span>
-                  <span className="text-emerald-700 font-sans font-bold text-[10px] bg-emerald-100/70 px-2 py-0.5 rounded-full">
-                    {cert.year || 'Verificado'}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

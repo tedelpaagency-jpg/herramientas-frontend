@@ -1557,10 +1557,10 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                           type="button"
                           onClick={() => {
                             updateDetailField('commercial_allies', [
-                              { id: 1, name: 'Banco Pichincha', category: 'Entidad Financiera', description: 'Créditos hipotecarios preferenciales y precalificación inmediata.', website: 'https://www.pichincha.com' },
-                              { id: 2, name: 'Notaría Primera del Cantón', category: 'Seguridad Notarial', description: 'Asesoría jurídica integral, revisión de títulos y solemnización de escrituras.', website: '#' },
-                              { id: 3, name: 'Seguros Equinoccial', category: 'Pólizas & Aseguradora', description: 'Pólizas de seguro contra incendios, sismos y protección patrimonial.', website: 'https://www.segurosequinoccial.com' },
-                              { id: 4, name: 'Biess - Banco del IESS', category: 'Crédito Hipotecario Público', description: 'Canalización directa de préstamos hipotecarios para afiliados y jubilados.', website: 'https://www.biess.fin.ec' },
+                              { id: 1, name: 'Banco Pichincha', category: 'Entidad Financiera', description: 'Créditos hipotecarios preferenciales y precalificación inmediata.', website: 'https://www.pichincha.com', logo: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80' },
+                              { id: 2, name: 'Notaría Primera del Cantón', category: 'Seguridad Notarial', description: 'Asesoría jurídica integral, revisión de títulos y solemnización de escrituras.', website: '#', logo: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=600&q=80' },
+                              { id: 3, name: 'Seguros Equinoccial', category: 'Pólizas & Aseguradora', description: 'Pólizas de seguro contra incendios, sismos y protección patrimonial.', website: 'https://www.segurosequinoccial.com', logo: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80' },
+                              { id: 4, name: 'Biess - Banco del IESS', category: 'Crédito Hipotecario Público', description: 'Canalización directa de préstamos hipotecarios para afiliados y jubilados.', website: 'https://www.biess.fin.ec', logo: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&w=600&q=80' },
                             ]);
                           }}
                           className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer transition-all"
@@ -1644,6 +1644,23 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                                 className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
                               />
                             </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Logo / Imagen del Aliado:</label>
+                              <MediaPicker
+                                value={ally.logo || ally.image_url || ally.image || ''}
+                                onChange={(selected) => {
+                                  const list = [...form.details.commercial_allies];
+                                  list[idx] = {
+                                    ...list[idx],
+                                    logo: selected?.url || '',
+                                    image_url: selected?.url || '',
+                                    image: selected?.url || '',
+                                  };
+                                  updateDetailField('commercial_allies', list);
+                                }}
+                                label="Seleccionar o Subir Logo del Aliado"
+                              />
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1687,9 +1704,9 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                           type="button"
                           onClick={() => {
                             updateDetailField('certifications', [
-                              { id: 1, title: 'Licencia Profesional de Corretaje Inmobiliario', entity: 'Ministerio de Desarrollo Urbano y Vivienda', code: 'MIDUVI-LIC-09412', year: 'Vigente', description: 'Acreditación oficial que certifica el ejercicio legal y ético de la intermediación de bienes raíces.' },
-                              { id: 2, title: 'Miembro Activo ACBIR', entity: 'Asociación de Corredores de Bienes Raíces', code: 'ACBIR-SOCIO-REG-884', year: 'Certificado Anual', description: 'Garantía de apego a las normas gremiales de transparencia y honestidad.' },
-                              { id: 3, title: 'Acreditación MLS Internacional', entity: 'Multiple Listing Service Network', code: 'MLS-ID-EC-22910', year: 'Acreditado', description: 'Acceso a la mayor red internacional de compradores calificados.' },
+                              { id: 1, title: 'Licencia Profesional de Corretaje Inmobiliario', entity: 'Ministerio de Desarrollo Urbano y Vivienda', code: 'MIDUVI-LIC-09412', year: 'Vigente', description: 'Acreditación oficial que certifica el ejercicio legal y ético de la intermediación de bienes raíces.', image_url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80' },
+                              { id: 2, title: 'Miembro Activo ACBIR', entity: 'Asociación de Corredores de Bienes Raíces', code: 'ACBIR-SOCIO-REG-884', year: 'Certificado Anual', description: 'Garantía de apego a las normas gremiales de transparencia y honestidad.', image_url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80' },
+                              { id: 3, title: 'Acreditación MLS Internacional', entity: 'Multiple Listing Service Network', code: 'MLS-ID-EC-22910', year: 'Acreditado', description: 'Acceso a la mayor red internacional de compradores calificados.', image_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80' },
                             ]);
                           }}
                           className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer transition-all"
@@ -1787,6 +1804,23 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                                 }}
                                 placeholder="Ej: Acreditación oficial que certifica el ejercicio legal..."
                                 className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Foto / Insignia de la Certificación:</label>
+                              <MediaPicker
+                                value={cert.image_url || cert.image || cert.badge_url || cert.logo || ''}
+                                onChange={(selected) => {
+                                  const list = [...form.details.certifications];
+                                  list[idx] = {
+                                    ...list[idx],
+                                    image_url: selected?.url || '',
+                                    image: selected?.url || '',
+                                    badge_url: selected?.url || '',
+                                  };
+                                  updateDetailField('certifications', list);
+                                }}
+                                label="Seleccionar o Subir Imagen de la Certificación"
                               />
                             </div>
                           </div>
