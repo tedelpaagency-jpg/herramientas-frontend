@@ -141,6 +141,7 @@ export interface PublicPaginatedEstates {
 
 export interface PublicEstateFilterParams {
   domain?: string;
+  name?: string;
   search?: string;
   property_status?: string | number;
   property_type?: string | number;

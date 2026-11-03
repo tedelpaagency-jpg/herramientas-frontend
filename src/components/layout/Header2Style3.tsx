@@ -101,7 +101,9 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
   // Escuchar evento personalizado o query param para abrir el modal desde cualquier enlace
   useEffect(() => {
     const handleOpenModal = () => setIsLoginModalOpen(true);
+    const handleOpenMobileMenu = () => dispatch({ type: 'TOGGLE_SIDEBAR' });
     window.addEventListener('open-login-modal', handleOpenModal);
+    window.addEventListener('open-mobile-menu', handleOpenMobileMenu);
 
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -112,6 +114,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
 
     return () => {
       window.removeEventListener('open-login-modal', handleOpenModal);
+      window.removeEventListener('open-mobile-menu', handleOpenMobileMenu);
     };
   }, []);
 
@@ -178,7 +181,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
     <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`} suppressHydrationWarning>
       <div className="container-fluid d-flex flex-nowrap align-items-center justify-content-between px-3 px-sm-4 px-xl-5" suppressHydrationWarning>
         {/* 1. Lado Izquierdo: Logotipo */}
-        <div className="header-logo-area d-flex align-items-center shrink-0" style={{ flex: '0 0 auto', minWidth: '180px' }} suppressHydrationWarning>
+        <div className="header-logo-area d-flex align-items-center shrink-0" style={{ flex: '0 0 auto' }} suppressHydrationWarning>
           <Link href="/" className="header-logo" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', minHeight: '62px', textDecoration: 'none' }}>
             {logoUrl ? (
               <img
@@ -354,8 +357,8 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
           </div>
         </div>
 
-        {/* 3. Lado Derecho: Botón Acceso Agentes (Verde Esmeralda con esquinas redondeadas) */}
-        <div className="nav-right d-flex align-items-center justify-content-end gap-3 shrink-0" style={{ flex: '0 0 auto', minWidth: '180px' }}>
+        {/* 3. Lado Derecho: Botón Acceso Agentes + Botón Navegación Móvil */}
+        <div className="nav-right d-flex align-items-center justify-content-end gap-2 shrink-0" style={{ flex: '0 0 auto' }}>
           <button
             type="button"
             onClick={() => {
@@ -386,13 +389,24 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
             <span>{isAuthenticated ? 'Mi Panel' : 'Acceso Agentes'}</span>
           </button>
 
-          <div className="sidebar-button mobile-menu-btn d-xl-none" onClick={toggleSidebar}>
-            <svg width={20} height={18} viewBox="0 0 20 18" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1.29445 2.8421H10.5237C11.2389 2.8421 11.8182 2.2062 11.8182 1.42105C11.8182 0.635903 11.2389 0 10.5237 0H1.29445C0.579249 0 0 0.635903 0 1.42105C0 2.2062 0.579249 2.8421 1.29445 2.8421Z" />
-              <path d="M1.23002 10.421H18.77C19.4496 10.421 20 9.78506 20 8.99991C20 8.21476 19.4496 7.57886 18.77 7.57886H1.23002C0.550421 7.57886 0 8.21476 0 8.99991C0 9.78506 0.550421 10.421 1.23002 10.421Z" />
-              <path d="M18.8052 15.1579H10.2858C9.62563 15.1579 9.09094 15.7938 9.09094 16.5789C9.09094 17.3641 9.62563 18 10.2858 18H18.8052C19.4653 18 20 17.3641 20 16.5789C20 15.7938 19.4653 15.1579 18.8052 15.1579Z" />
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="d-xl-none d-inline-flex align-items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer border"
+            style={{
+              backgroundColor: '#ffffff',
+              borderColor: '#cbd5e1',
+              color: '#0f172a',
+            }}
+            aria-label="Abrir navegación móvil"
+          >
+            <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
-          </div>
+            <span style={{ fontSize: '12px', fontWeight: 800 }}>Navegación</span>
+          </button>
         </div>
       </div>
 

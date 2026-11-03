@@ -27,6 +27,7 @@ import {
   Car,
   Maximize2,
   DollarSign,
+  Menu,
 } from 'lucide-react';
 import publicInmobiliariaService, {
   PublicAgencyConfig,
@@ -38,6 +39,7 @@ import Header2Style3 from '@/components/layout/Header2Style3';
 import { AirbnbPropertyCard } from '@/components/inmobiliaria/AirbnbPropertyCard';
 import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
 import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
+import Footer from '@/components/layout/Footer';
 
 // Dynamically import Leaflet Map to avoid SSR issues
 const PublicPropertiesSplitMap = dynamic(
@@ -120,16 +122,33 @@ const OPERATION_OPTIONS = [
   { label: 'Todas las operaciones', value: '' },
   { label: 'En Renta / Alquiler', value: '1' },
   { label: 'En Venta', value: '2' },
+  { label: 'Remate', value: '3' },
 ];
 
 const PROPERTY_TYPE_OPTIONS = [
   { label: 'Todos los inmuebles', value: '' },
-  { label: 'Casas & Residencias', value: '1' },
-  { label: 'Departamentos & Lofts', value: '2' },
-  { label: 'Terrenos & Lotes', value: '3' },
-  { label: 'Comercial & Oficinas', value: '4' },
-  { label: 'Suites', value: '5' },
-  { label: 'Villas & Casas de Campo', value: '6' },
+  { label: 'Bodegas', value: '1' },
+  { label: 'Casa', value: '2' },
+  { label: 'Complejo turístico', value: '3' },
+  { label: 'Departamento', value: '4' },
+  { label: 'Edificio', value: '5' },
+  { label: 'Empresa', value: '6' },
+  { label: 'Finca', value: '7' },
+  { label: 'Galpón', value: '8' },
+  { label: 'Gasolinera', value: '9' },
+  { label: 'Hacienda', value: '10' },
+  { label: 'Hotel', value: '11' },
+  { label: 'Local comercial', value: '12' },
+  { label: 'Lotes', value: '13' },
+  { label: 'Lotización', value: '14' },
+  { label: 'Oficinas', value: '15' },
+  { label: 'Oficinas amobladas', value: '16' },
+  { label: 'Planta', value: '17' },
+  { label: 'Propiedad Comercial', value: '18' },
+  { label: 'Quinta', value: '19' },
+  { label: 'Solar', value: '20' },
+  { label: 'Suites', value: '21' },
+  { label: 'Terreno', value: '22' },
 ];
 
 const BEDROOMS_OPTIONS = [
@@ -161,7 +180,13 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   });
 
   // Filter states
-  const [search, setSearch] = useState<string>(searchParams?.get('search') || '');
+  const [searchName, setSearchName] = useState<string>(
+    searchParams?.get('name') || searchParams?.get('title') || ''
+  );
+  const [nameInputVal, setNameInputVal] = useState<string>(
+    searchParams?.get('name') || searchParams?.get('title') || ''
+  );
+  const [search, setSearch] = useState<string>(searchParams?.get('city') || searchParams?.get('search') || '');
   const [propertyStatus, setPropertyStatus] = useState<string>(searchParams?.get('property_status') || '');
   const [propertyType, setPropertyType] = useState<string>(searchParams?.get('property_type') || '');
   const [bedrooms, setBedrooms] = useState<string>(searchParams?.get('bedrooms') || '');
@@ -230,7 +255,10 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
   // Sync state with URL searchParams (e.g. browser back/forward, links)
   useEffect(() => {
-    const s = searchParams?.get('search') || '';
+    const n = searchParams?.get('name') || searchParams?.get('title') || '';
+    setSearchName(n);
+    setNameInputVal(n);
+    const s = searchParams?.get('city') || searchParams?.get('search') || '';
     setSearch(s);
     setSearchInputVal(s);
     setPropertyStatus(searchParams?.get('property_status') || '');
@@ -335,15 +363,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
             province: c.province || c.name || '',
             image: c.image || 'https://images.unsplash.com/photo-1589802829985-817e51171b92?auto=format&fit=crop&w=400&q=80',
           }));
-          setCitiesList((prev) => {
-            const combined = [...prev];
-            formatted.forEach((item) => {
-              if (!combined.some((x) => x.name.toLowerCase() === item.name.toLowerCase())) {
-                combined.push(item);
-              }
-            });
-            return combined;
-          });
+          setCitiesList(formatted);
         }
       })
       .catch(() => {});
@@ -378,18 +398,13 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   const getOperationButtonLabel = () => {
     if (propertyStatus === '1') return 'En Renta';
     if (propertyStatus === '2') return 'En Venta';
+    if (propertyStatus === '3') return 'Remate';
     return 'Operación';
   };
 
   const getPropertyTypeButtonLabel = () => {
     const match = PROPERTY_TYPE_OPTIONS.find((o) => o.value === propertyType);
     if (match && match.value) {
-      if (match.value === '1') return 'Casas';
-      if (match.value === '2') return 'Departamentos';
-      if (match.value === '3') return 'Terrenos';
-      if (match.value === '4') return 'Comercial';
-      if (match.value === '5') return 'Suites';
-      if (match.value === '6') return 'Villas';
       return match.label;
     }
     return 'Inmueble';
@@ -429,7 +444,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     setSearch(cityName);
     setSearchInputVal(cityName);
     setIsCityDropdownOpen(false);
-    applyFilters({ search: cityName });
+    applyFilters({ city: cityName, search: '' });
   };
 
   // Helper para el texto dinámico del botón de precios
@@ -475,9 +490,15 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     const loadEstates = async () => {
       setLoading(true);
       try {
+        const nameVal = searchParams?.get('name') || searchParams?.get('title');
+        const cityVal = searchParams?.get('city');
+        const searchVal = searchParams?.get('search');
+
         const res = await publicInmobiliariaService.getEstates({
           domain: domainParam || undefined,
-          search: searchParams?.get('search') || undefined,
+          name: nameVal || undefined,
+          city: cityVal || undefined,
+          search: (!nameVal && !cityVal) ? (searchVal || undefined) : undefined,
           property_status: searchParams?.get('property_status') || undefined,
           property_type: searchParams?.get('property_type') || undefined,
           bedrooms: searchParams?.get('bedrooms') || undefined,
@@ -519,7 +540,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     const params = new URLSearchParams();
     if (domainParam) params.set('domain', domainParam);
 
-    const s = customParams?.search !== undefined ? customParams.search : search;
+    const n = customParams?.name !== undefined ? customParams.name : searchName;
+    const s = customParams?.city !== undefined ? customParams.city : (customParams?.search !== undefined ? customParams.search : search);
     const stat = customParams?.property_status !== undefined ? customParams.property_status : propertyStatus;
     const pt = customParams?.property_type !== undefined ? customParams.property_type : propertyType;
     const b = customParams?.bedrooms !== undefined ? customParams.bedrooms : bedrooms;
@@ -531,7 +553,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     const pMax = customParams?.price_max !== undefined ? customParams.price_max : priceMax;
     const srt = customParams?.sort !== undefined ? customParams.sort : sort;
 
-    if (s.trim()) params.set('search', s.trim());
+    if (n.trim()) params.set('name', n.trim());
+    if (s.trim()) params.set('city', s.trim());
     if (stat) params.set('property_status', stat);
     if (pt) params.set('property_type', pt);
     if (b) params.set('bedrooms', b);
@@ -585,6 +608,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   };
 
   const resetFilters = () => {
+    setSearchName('');
+    setNameInputVal('');
     setSearch('');
     setSearchInputVal('');
     setCitySearchInput('');
@@ -616,7 +641,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   };
 
   const hasActiveFilters = Boolean(
-    search.trim() || propertyStatus || propertyType || bedrooms || bathrooms || parking || priceMin || priceMax || sizeMin || sizeMax || (sort && sort !== 'recent')
+    searchName.trim() || search.trim() || propertyStatus || propertyType || bedrooms || bathrooms || parking || priceMin || priceMax || sizeMin || sizeMax || (sort && sort !== 'recent')
   );
 
   const primaryColor = agency?.primary_color || agency?.details?.primary_color || '#e2b728';
@@ -658,6 +683,48 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               }`}
             >
               
+              {/* 0. Campo de Búsqueda por Nombre / Palabra Clave */}
+              <div className="relative shrink-0 w-48 sm:w-64">
+                <div
+                  style={{
+                    borderColor: nameInputVal ? filterBorderColor : 'rgba(0,0,0,0.18)',
+                    borderWidth: '1.5px',
+                    backgroundColor: nameInputVal ? `${filterBorderColor}12` : '#ffffff',
+                  }}
+                  className="h-[42px] px-3 rounded-2xl flex items-center gap-2 transition-all shadow-2xs hover:border-slate-400"
+                >
+                  <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={nameInputVal}
+                    onChange={(e) => setNameInputVal(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        setSearchName(nameInputVal);
+                        applyFilters({ name: nameInputVal });
+                      }
+                    }}
+                    placeholder="Buscar por nombre..."
+                    className="w-full bg-transparent text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none"
+                  />
+                  {nameInputVal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNameInputVal('');
+                        setSearchName('');
+                        applyFilters({ name: '' });
+                      }}
+                      className="text-white bg-slate-400 hover:bg-slate-600 rounded-full w-3.5 h-3.5 flex items-center justify-center p-0.5 cursor-pointer shrink-0"
+                      title="Limpiar búsqueda por nombre"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* 1. Selector de Ciudad / Ubicación estilo Booking interactivo */}
               {showCityFilter && (
                 <div ref={cityContainerRef} className="relative shrink-0 w-60 sm:w-72">
@@ -693,7 +760,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                               setSearchInputVal('');
                               setCitySearchInput('');
                               setDebouncedCityQuery('');
-                              applyFilters({ search: '' });
+                              applyFilters({ city: '', search: '' });
                             }}
                             className="text-white bg-slate-500 hover:bg-slate-700 rounded-full w-3.5 h-3.5 flex items-center justify-center p-0.5 cursor-pointer"
                             title="Quitar ubicación"
@@ -741,7 +808,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           setCitySearchInput('');
                           setDebouncedCityQuery('');
                           setIsCityDropdownOpen(false);
-                          applyFilters({ search: '' });
+                          applyFilters({ city: '', search: '' });
                         }}
                         className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center justify-between mb-1 transition-colors cursor-pointer"
                       >
@@ -1334,6 +1401,11 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 </button>
               </div>
             )}
+
+            {/* Footer de la Vista de Propiedades */}
+            <div className="mt-8 -mx-3 sm:-mx-6 lg:-mx-8">
+              <Footer agency={fallbackAgency} />
+            </div>
           </div>
 
           {/* Contenedor Derecho: Mapa interactivo (pantalla completa o split según modo) */}
@@ -1377,12 +1449,26 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           </div>
         </div>
 
-        {/* Botón flotante móvil para alternar Lista vs Mapa */}
-        <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+        {/* Botones flotantes móvil: Navegación y Alternar Lista vs Mapa */}
+        <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('open-mobile-menu'));
+              }
+            }}
+            className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-full bg-white text-slate-900 font-extrabold text-xs shadow-2xl active:scale-95 transition-all cursor-pointer border border-slate-200"
+            aria-label="Abrir navegación móvil"
+          >
+            <Menu className="w-4 h-4 text-slate-700" />
+            <span>Navegación</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setMobileView((prev) => (prev === 'list' ? 'map' : 'list'))}
-            className="flex items-center gap-2 px-5 py-3 min-h-[46px] rounded-full bg-slate-900 text-white font-black text-xs shadow-2xl active:scale-95 transition-all cursor-pointer border border-white/10"
+            className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-full bg-slate-900 text-white font-black text-xs shadow-2xl active:scale-95 transition-all cursor-pointer border border-white/10"
           >
             {mobileView === 'list' ? (
               <>

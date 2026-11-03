@@ -429,9 +429,11 @@ export const PublicInmobiliariaHeader: React.FC<{
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100"
+            className="lg:hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-800 hover:bg-slate-100 font-bold text-xs shadow-2xs transition-all cursor-pointer"
+            aria-label="Abrir navegación móvil"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-4 h-4 text-slate-600" /> : <Menu className="w-4 h-4 text-slate-600" />}
+            <span style={{ fontSize: '12px', fontWeight: 800 }}>{mobileMenuOpen ? 'Cerrar' : 'Navegación'}</span>
           </button>
         </div>
 

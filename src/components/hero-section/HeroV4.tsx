@@ -96,15 +96,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
             province: c.province || c.name || '',
             image: c.image || 'https://images.unsplash.com/photo-1589802829985-817e51171b92?auto=format&fit=crop&w=400&q=80',
           }));
-          setCitiesList((prev) => {
-            const combined = [...prev];
-            formatted.forEach((item) => {
-              if (!combined.some((x) => x.name.toLowerCase() === item.name.toLowerCase())) {
-                combined.push(item);
-              }
-            });
-            return combined;
-          });
+          setCitiesList(formatted);
         }
       })
       .catch(() => {});
@@ -216,6 +208,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
       </div>
 
       <input type="hidden" name="search" value={value} />
+      <input type="hidden" name="city" value={value} />
 
       {/* Dropdown Menu (Exact match to uploaded image) */}
       {isOpen && (
@@ -581,10 +574,10 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
       setPropertyType('');
     } else if (tab === 'land') {
       setPropertyStatus('');
-      setPropertyType('3'); // Terrenos y Lotes
+      setPropertyType('22'); // Terrenos y Lotes
     } else if (tab === 'commercial') {
       setPropertyStatus('');
-      setPropertyType('4'); // Comercial
+      setPropertyType('12'); // Comercial
     }
     // Natural fetch transition matching inmosoft
     setTimeout(() => {
@@ -595,18 +588,33 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   const operationOptions = [
     { label: 'Venta', value: '2' },
     { label: 'Alquiler', value: '1' },
+    { label: 'Remate', value: '3' },
   ];
 
   const propertyTypeOptions = [
     { label: 'Cualquiera', value: '' },
-    { label: 'Casa', value: '1' },
-    { label: 'Departamento', value: '2' },
-    { label: 'Terreno', value: '3' },
-    { label: 'Local comercial', value: '4' },
-    { label: 'Oficinas', value: '15' },
-    { label: 'Suites', value: '21' },
+    { label: 'Bodegas', value: '1' },
+    { label: 'Casa', value: '2' },
+    { label: 'Complejo turístico', value: '3' },
+    { label: 'Departamento', value: '4' },
     { label: 'Edificio', value: '5' },
+    { label: 'Empresa', value: '6' },
+    { label: 'Finca', value: '7' },
+    { label: 'Galpón', value: '8' },
+    { label: 'Gasolinera', value: '9' },
+    { label: 'Hacienda', value: '10' },
+    { label: 'Hotel', value: '11' },
+    { label: 'Local comercial', value: '12' },
+    { label: 'Lotes', value: '13' },
+    { label: 'Lotización', value: '14' },
+    { label: 'Oficinas', value: '15' },
+    { label: 'Oficinas amobladas', value: '16' },
+    { label: 'Planta', value: '17' },
+    { label: 'Propiedad Comercial', value: '18' },
     { label: 'Quinta', value: '19' },
+    { label: 'Solar', value: '20' },
+    { label: 'Suites', value: '21' },
+    { label: 'Terreno', value: '22' },
   ];
 
   const priceOptions = [

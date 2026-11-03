@@ -8,6 +8,22 @@ interface BlogV4Props {
   agency?: any;
 }
 
+const cleanHtmlText = (raw?: string | null): string => {
+  if (!raw) return '';
+  return raw
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/(p|div|h[1-6]|li)>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 const DEFAULT_ARTICLES = [
   {
     id: 1,
@@ -78,7 +94,7 @@ const BlogV4: React.FC<BlogV4Props> = ({ recentEstates, agency }) => {
                   </div>
                   <div className="blog-content" style={{ flexGrow: 1 }}>
                     <span className="blog-date" style={{ color: primaryColor, fontWeight: 700 }}>
-                      {estate.property_status === 2 ? 'En Renta' : 'En Venta'}
+                      {estate.property_status === 1 ? 'En Renta' : (estate.property_status === 3 ? 'Remate' : 'En Venta')}
                     </span>
                     <h4>
                       <Link href={`/properties/${estate.slug || estate.id}`}>
@@ -86,7 +102,7 @@ const BlogV4: React.FC<BlogV4Props> = ({ recentEstates, agency }) => {
                       </Link>
                     </h4>
                     <p style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {estate.short_description || estate.description || 'Excelente oportunidad patrimonial con alta plusvalía y ubicación estratégica.'}
+                      {cleanHtmlText(estate.short_description || estate.description) || 'Excelente oportunidad patrimonial con alta plusvalía y ubicación estratégica.'}
                     </p>
                   </div>
                 </div>
