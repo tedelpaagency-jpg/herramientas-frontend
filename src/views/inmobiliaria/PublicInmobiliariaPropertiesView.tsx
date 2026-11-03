@@ -683,14 +683,14 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         message="Un momento por favor, estamos buscando las mejores propiedades."
       />
       {/* Header y barra de filtros fijos que calculan su propia altura (z-index superior a los mapas Leaflet) */}
-      <div className="shrink-0 relative z-[1050] bg-white">
+      <div className={`shrink-0 relative ${isAnyDropdownOpen ? 'z-[1095]' : 'z-[1050]'} bg-white`} style={{ overflow: 'visible' }}>
         <TopbarSlider agency={fallbackAgency} />
         <Header2Style3 agency={fallbackAgency} />
 
         {/* Barra de Filtros con Estilizado del Booking y Bordes de Branding */}
-        <div className={`border-b border-slate-200/90 bg-white shadow-2xs relative ${isAnyDropdownOpen ? 'z-[1070]' : 'z-[1040]'}`} style={{ overflow: 'visible' }}>
+        <div className={`border-b border-slate-200/90 bg-white shadow-2xs relative ${isAnyDropdownOpen ? 'z-[1095]' : 'z-[1040]'}`} style={{ overflow: 'visible' }}>
           <div className="max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5" style={{ overflow: 'visible' }}>
-            <div className={`flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative ${isAnyDropdownOpen ? 'z-[1070]' : 'z-[1040]'} overflow-x-auto lg:overflow-visible`}>
+            <div className={`flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative ${isAnyDropdownOpen ? 'z-[1095]' : 'z-[1040]'} overflow-x-auto lg:overflow-visible`} style={{ overflow: isAnyDropdownOpen ? 'visible' : undefined }}>
               
               {/* 0. Campo de Búsqueda por Nombre / Palabra Clave */}
               {showNameFilter && (

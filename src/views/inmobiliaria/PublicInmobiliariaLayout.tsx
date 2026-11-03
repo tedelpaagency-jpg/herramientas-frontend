@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
   Building2,
@@ -17,6 +18,8 @@ import {
   ChevronDown,
   Send,
   ArrowUp,
+  ShieldCheck,
+  MessageCircle,
 } from 'lucide-react';
 import { PublicAgencyConfig, PublicEstateItem } from '@/services/publicInmobiliariaService';
 import MobileBottomNavigation from '@/components/layout/MobileBottomNavigation';
@@ -92,6 +95,13 @@ export const PublicPropertyCard: React.FC<{
 
   const advisorName = estate.user?.name || estate.agent?.name || 'Asesor Inmobiliario';
   const advisorPhoto = estate.user?.photo || estate.user?.avatar || estate.agent?.photo;
+  const advisorEmail = estate.user?.email || estate.agent?.email || estate.agency?.email || '';
+  const advisorPhone = estate.user?.phone || estate.agent?.phone || estate.agency?.phone || estate.agency?.whatsapp || '';
+  const cleanAdvisorPhone = (advisorPhone || '').replace(/[^0-9]/g, '');
+  const agencyName = estate.agency?.name || 'Inmobiliaria';
+
+  const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div className="group bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
@@ -159,26 +169,33 @@ export const PublicPropertyCard: React.FC<{
             </div>
           </div>
 
-          {/* Asesor comercial */}
-          <div className="pt-3 flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
-              {advisorPhoto ? (
+          {/* Asesor comercial con modal */}
+          <div
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsAdvisorModalOpen(true);
+            }}
+            title={`Ver información de ${advisorName}`}
+            className="pt-3 flex items-center gap-2 cursor-pointer group/advisor w-fit select-none hover:opacity-90 transition-opacity"
+          >
+            <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center shadow-2xs">
+              {advisorPhoto && !imgError ? (
                 <img
                   src={advisorPhoto}
                   alt={advisorName}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
+                  onError={() => setImgError(true)}
                 />
-              ) : null}
-              <span className="text-[9px] font-black text-slate-700">
-                {advisorName.charAt(0).toUpperCase()}
-              </span>
+              ) : (
+                <span className="text-[9px] font-black text-slate-700">
+                  {advisorName.charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-[9.5px] text-slate-400 font-semibold leading-none">Asesor</span>
-              <span className="text-xs font-bold text-slate-800 truncate leading-tight">
+              <span className="text-xs font-bold text-slate-800 truncate leading-tight group-hover/advisor:text-blue-600 group-hover/advisor:underline transition-colors">
                 {advisorName}
               </span>
             </div>
@@ -204,6 +221,110 @@ export const PublicPropertyCard: React.FC<{
           </Link>
         </div>
       </div>
+
+      {/* Modal Asesor */}
+      {isAdvisorModalOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[99999999] bg-black/65 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in-0 duration-150"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsAdvisorModalOpen(false);
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 flex flex-col items-center text-center relative animate-in zoom-in-95 duration-200"
+          >
+            <button
+              type="button"
+              onClick={() => setIsAdvisorModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              aria-label="Cerrar modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="relative w-20 h-20 rounded-full overflow-hidden bg-slate-100 border-4 border-white shadow-md flex items-center justify-center mb-3">
+              {advisorPhoto && !imgError ? (
+                <img src={advisorPhoto} alt={advisorName} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl font-black">
+                  {advisorName.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              Asesor Inmobiliario Verificado
+            </span>
+
+            <h3 className="text-base font-black text-slate-900 leading-tight">
+              {advisorName}
+            </h3>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">
+              {agencyName}
+            </p>
+
+            <div className="w-full mt-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 text-left text-xs">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                Propiedad Asignada
+              </span>
+              <span className="font-bold text-slate-800 line-clamp-1">
+                Ref #{estate.id} · {estate.title}
+              </span>
+            </div>
+
+            <div className="w-full space-y-2 mt-4">
+              {cleanAdvisorPhone ? (
+                <a
+                  href={`https://wa.me/${cleanAdvisorPhone}?text=${encodeURIComponent(
+                    `Hola ${advisorName}, vi la propiedad "${estate.title}" (Ref #${estate.id}) y deseo más información.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-xs transition-all no-underline"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white" />
+                  <span>Contactar por WhatsApp</span>
+                </a>
+              ) : null}
+
+              {cleanAdvisorPhone ? (
+                <a
+                  href={`tel:${cleanAdvisorPhone}`}
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-xs transition-all no-underline"
+                >
+                  <Phone className="w-4 h-4" />
+                  <span>Llamar: {advisorPhone}</span>
+                </a>
+              ) : null}
+
+              {advisorEmail ? (
+                <a
+                  href={`mailto:${advisorEmail}?subject=${encodeURIComponent(
+                    `Consulta sobre propiedad #${estate.id}: ${estate.title}`
+                  )}`}
+                  className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition-all no-underline truncate"
+                >
+                  <Mail className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span className="truncate">{advisorEmail}</span>
+                </a>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsAdvisorModalOpen(false)}
+              className="mt-4 text-xs font-bold text-slate-400 hover:text-slate-600 cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
