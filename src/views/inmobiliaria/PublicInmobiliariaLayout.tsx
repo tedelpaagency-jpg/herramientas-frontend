@@ -700,7 +700,7 @@ export const PublicInmobiliariaFooter: React.FC<{
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Contactar por WhatsApp"
-          className="pointer-events-auto w-13 h-13 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 no-underline border-2 border-white/30"
+          className="pointer-events-auto w-[52px] h-[52px] rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 no-underline border-2 border-white ring-2 ring-[#25D366]/20"
           title="Contactar por WhatsApp"
         >
           <svg className="w-7 h-7 fill-white" viewBox="0 0 24 24">
@@ -714,7 +714,7 @@ export const PublicInmobiliariaFooter: React.FC<{
             type="button"
             onClick={scrollToTop}
             aria-label="Subir arriba"
-            className="pointer-events-auto w-11 h-11 rounded-full bg-[#EAB308] hover:bg-[#ca8a04] text-slate-900 shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 font-black border-none cursor-pointer animate-in fade-in zoom-in-75 duration-200"
+            className="pointer-events-auto w-11 h-11 rounded-full bg-[#EAB308] hover:bg-[#ca8a04] text-slate-900 shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 font-black border-2 border-white cursor-pointer animate-in fade-in zoom-in-75 duration-200"
             title="Volver al inicio"
           >
             <ArrowUp className="w-5 h-5 stroke-[2.5]" />

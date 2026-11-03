@@ -535,3 +535,15 @@ body.dark:has(.travel-agency-03-root) {
 }
 
 
+
+/* Hide legacy template progress-wrap so it never clashes with floating buttons */
+.progress-wrap,
+.progress-wrap.active-progress,
+div[class*="progress-wrap"],
+svg.progress-circle,
+.progress-circle {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

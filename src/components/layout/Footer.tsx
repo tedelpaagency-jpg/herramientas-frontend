@@ -49,9 +49,9 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
       <footer id="contacto" className="bg-[#0b1120] text-slate-300 pt-14 pb-8 border-t border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 pb-12 border-b border-slate-800/80">
-            {/* Columna 1: InformaciÃ³n */}
+            {/* Columna 1: Información */}
             <div>
-              <h4 className="text-sm font-bold text-white mb-5">InformaciÃ³n</h4>
+              <h4 className="text-sm font-bold text-white mb-5">Información</h4>
               <ul className="space-y-3.5 text-xs text-slate-300 p-0 m-0 list-none">
                 <li className="flex items-center gap-2.5">
                   <MapPin className="w-4 h-4 shrink-0 text-slate-400" />
@@ -106,11 +106,11 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
                     href="#unsubscribe"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert('Tu solicitud para cancelar la suscripciÃ³n ha sido procesada.');
+                      alert('Tu solicitud para cancelar la suscripción ha sido procesada.');
                     }}
                     className="hover:text-white transition-colors text-slate-400 no-underline"
                   >
-                    Cancelar subscripciÃ³n
+                    Cancelar suscripción
                   </a>
                 </li>
               </ul>
@@ -146,7 +146,7 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
               </form>
               {newsletterSent && (
                 <span className="text-[11px] text-emerald-400 mt-2 block font-semibold">
-                  Â¡Gracias por suscribirte!
+                  ¡Gracias por suscribirte!
                 </span>
               )}
             </div>
@@ -155,11 +155,11 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
           {/* Sub-footer */}
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
             <p className="m-0">
-              Â©{new Date().getFullYear()} {agencyName}. Todos los derechos reservados.
+              ©{new Date().getFullYear()} {agencyName}. Todos los derechos reservados.
             </p>
             <div>
               <Link href="/privacy" className="hover:text-white transition-colors text-slate-400 no-underline">
-                Politica de privacidad
+                Política de privacidad
               </Link>
             </div>
           </div>

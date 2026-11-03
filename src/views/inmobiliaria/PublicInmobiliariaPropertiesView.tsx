@@ -29,6 +29,7 @@ import {
   DollarSign,
   Menu,
   ArrowLeft,
+  MapPin,
 } from 'lucide-react';
 import publicInmobiliariaService, {
   PublicAgencyConfig,
@@ -376,25 +377,30 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
 
   // Cerrar popovers y menús al hacer clic fuera del contenedor
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (cityContainerRef.current && !cityContainerRef.current.contains(e.target as Node)) {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (cityContainerRef.current && !cityContainerRef.current.contains(target)) {
         setIsCityDropdownOpen(false);
       }
-      if (priceContainerRef.current && !priceContainerRef.current.contains(e.target as Node)) {
+      if (priceContainerRef.current && !priceContainerRef.current.contains(target)) {
         setIsPricePopoverOpen(false);
       }
-      if (operationContainerRef.current && !operationContainerRef.current.contains(e.target as Node)) {
+      if (operationContainerRef.current && !operationContainerRef.current.contains(target)) {
         setIsOperationOpen(false);
       }
-      if (propertyTypeContainerRef.current && !propertyTypeContainerRef.current.contains(e.target as Node)) {
+      if (propertyTypeContainerRef.current && !propertyTypeContainerRef.current.contains(target)) {
         setIsPropertyTypeOpen(false);
       }
-      if (bedroomsContainerRef.current && !bedroomsContainerRef.current.contains(e.target as Node)) {
+      if (bedroomsContainerRef.current && !bedroomsContainerRef.current.contains(target)) {
         setIsBedroomsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const getOperationButtonLabel = () => {
@@ -677,13 +683,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         {/* Barra de Filtros con Estilizado del Booking y Bordes de Branding */}
         <div className="border-b border-slate-200/90 bg-white shadow-2xs relative z-[1040]" style={{ overflow: 'visible' }}>
           <div className="max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5" style={{ overflow: 'visible' }}>
-            <div
-              className={`flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative z-[1040] ${
-                (isCityDropdownOpen || isPricePopoverOpen || isOperationOpen || isPropertyTypeOpen || isBedroomsOpen)
-                  ? 'overflow-visible'
-                  : 'overflow-x-auto lg:overflow-visible'
-              }`}
-            >
+            <div className="flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative z-[1040] overflow-x-auto lg:overflow-visible">
               
               {/* 0. Campo de Búsqueda por Nombre / Palabra Clave */}
               {showNameFilter && (
@@ -781,10 +781,10 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
                   </div>
 
-                  {/* Dropdown de Ciudades (Diseño idéntico al booking con 2s debounce) */}
+                  {/* Dropdown de Ciudades en Desktop */}
                   {isCityDropdownOpen && (
                     <div
-                      className="absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                      className="hidden lg:block absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
                     >
                       {/* Input buscador con debounce de 2 segundos */}
                       <div className="relative mb-2">
@@ -857,6 +857,97 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Modal Bottom-Sheet de Ciudades en Mobile */}
+                  {isCityDropdownOpen && (
+                    <div className="lg:hidden fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in-0 duration-150">
+                      <div className="bg-white rounded-3xl w-full max-w-md max-h-[85vh] p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
+                        <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100 shrink-0">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4" style={{ color: filterBorderColor }} />
+                            <h3 className="text-sm font-black text-slate-900">Ubicación / Ciudad</h3>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsCityDropdownOpen(false)}
+                            className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        {/* Buscador */}
+                        <div className="relative mb-2 shrink-0">
+                          <input
+                            type="text"
+                            value={citySearchInput}
+                            onChange={handleCitySearchChange}
+                            placeholder="Buscar ciudad o provincia..."
+                            className="w-full h-10 pl-3 pr-8 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                          />
+                          {isCityDebouncing ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          ) : (
+                            <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          )}
+                        </div>
+                        {/* Todas las ubicaciones */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearch('');
+                            setSearchInputVal('');
+                            setCitySearchInput('');
+                            setDebouncedCityQuery('');
+                            setIsCityDropdownOpen(false);
+                            applyFilters({ city: '', search: '' });
+                          }}
+                          className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-between mb-2 shrink-0 border border-slate-200/80"
+                        >
+                          <span>Todas las ubicaciones</span>
+                          {!search && <Check className="w-4 h-4 text-emerald-600" />}
+                        </button>
+                        {/* Lista scrollable */}
+                        <div className="overflow-y-auto space-y-1.5 pr-1 flex-1 max-h-[50vh]">
+                          {filteredCities.length > 0 ? (
+                            filteredCities.map((city) => {
+                              const isSelected = search.toLowerCase() === city.name.toLowerCase();
+                              return (
+                                <div
+                                  key={`mob-${city.id}-${city.name}`}
+                                  onClick={() => {
+                                    handleSelectCity(city.name);
+                                    setIsCityDropdownOpen(false);
+                                  }}
+                                  style={isSelected ? { backgroundColor: `${filterBorderColor}20` } : {}}
+                                  className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-colors ${
+                                    isSelected ? 'font-black' : 'hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <img
+                                    src={city.image}
+                                    alt={city.name}
+                                    className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs"
+                                    loading="lazy"
+                                  />
+                                  <div className="flex flex-col min-w-0 flex-1">
+                                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wide truncate">
+                                      {city.name}
+                                    </span>
+                                    <span className="text-[11px] text-slate-400 truncate">{city.province}</span>
+                                  </div>
+                                  {isSelected && <Check className="w-4 h-4 shrink-0" style={{ color: filterBorderColor }} />}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="py-4 text-center text-xs text-slate-400">
+                              No se encontraron ciudades
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -882,9 +973,10 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOperationOpen ? 'rotate-180' : ''}`} />
                   </button>
 
+                  {/* Desktop Dropdown */}
                   {isOperationOpen && (
                     <div
-                      className="absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                      className="hidden lg:block absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
                     >
                       {OPERATION_OPTIONS.map((opt) => {
                         const isSelected = propertyStatus === opt.value;
@@ -913,6 +1005,47 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                       })}
                     </div>
                   )}
+
+                  {/* Mobile Bottom-Sheet Modal */}
+                  {isOperationOpen && (
+                    <div className="lg:hidden fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in-0 duration-150">
+                      <div className="bg-white rounded-3xl w-full max-w-sm p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
+                        <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100">
+                          <h3 className="text-sm font-black text-slate-900">Tipo de Operación</h3>
+                          <button
+                            type="button"
+                            onClick={() => setIsOperationOpen(false)}
+                            className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                          {OPERATION_OPTIONS.map((opt) => {
+                            const isSelected = propertyStatus === opt.value;
+                            return (
+                              <button
+                                key={`mob-op-${opt.value}`}
+                                type="button"
+                                onClick={() => {
+                                  setPropertyStatus(opt.value);
+                                  setIsOperationOpen(false);
+                                  applyFilters({ property_status: opt.value });
+                                }}
+                                style={isSelected ? { backgroundColor: `${filterBorderColor}18`, color: '#0f172a' } : {}}
+                                className={`w-full px-4 py-3 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors border-0 text-left ${
+                                  isSelected ? 'font-black' : 'font-semibold text-slate-700 hover:bg-slate-100'
+                                }`}
+                              >
+                                <span>{opt.label}</span>
+                                {isSelected && <Check className="w-4 h-4 shrink-0" style={{ color: filterBorderColor }} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -938,9 +1071,10 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isPropertyTypeOpen ? 'rotate-180' : ''}`} />
                   </button>
 
+                  {/* Desktop Dropdown */}
                   {isPropertyTypeOpen && (
                     <div
-                      className="absolute left-0 top-full mt-2 w-60 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                      className="hidden lg:block absolute left-0 top-full mt-2 w-60 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150 max-h-72 overflow-y-auto scrollbar-thin"
                     >
                       {PROPERTY_TYPE_OPTIONS.map((opt) => {
                         const isSelected = propertyType === opt.value;
@@ -969,6 +1103,47 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                       })}
                     </div>
                   )}
+
+                  {/* Mobile Bottom-Sheet Modal */}
+                  {isPropertyTypeOpen && (
+                    <div className="lg:hidden fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in-0 duration-150">
+                      <div className="bg-white rounded-3xl w-full max-w-md max-h-[80vh] p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
+                        <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100 shrink-0">
+                          <h3 className="text-sm font-black text-slate-900">Tipo de Inmueble</h3>
+                          <button
+                            type="button"
+                            onClick={() => setIsPropertyTypeOpen(false)}
+                            className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="overflow-y-auto space-y-1 pr-1 flex-1">
+                          {PROPERTY_TYPE_OPTIONS.map((opt) => {
+                            const isSelected = propertyType === opt.value;
+                            return (
+                              <button
+                                key={`mob-pt-${opt.value}`}
+                                type="button"
+                                onClick={() => {
+                                  setPropertyType(opt.value);
+                                  setIsPropertyTypeOpen(false);
+                                  applyFilters({ property_type: opt.value });
+                                }}
+                                style={isSelected ? { backgroundColor: `${filterBorderColor}18`, color: '#0f172a' } : {}}
+                                className={`w-full px-3.5 py-2.5 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors border-0 text-left ${
+                                  isSelected ? 'font-black' : 'font-semibold text-slate-700 hover:bg-slate-100'
+                                }`}
+                              >
+                                <span>{opt.label}</span>
+                                {isSelected && <Check className="w-4 h-4 shrink-0" style={{ color: filterBorderColor }} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -994,9 +1169,10 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBedroomsOpen ? 'rotate-180' : ''}`} />
                   </button>
 
+                  {/* Desktop Dropdown */}
                   {isBedroomsOpen && (
                     <div
-                      className="absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
+                      className="hidden lg:block absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150"
                     >
                       {BEDROOMS_OPTIONS.map((opt) => {
                         const isSelected = bedrooms === opt.value;
@@ -1023,6 +1199,47 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {/* Mobile Bottom-Sheet Modal */}
+                  {isBedroomsOpen && (
+                    <div className="lg:hidden fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in-0 duration-150">
+                      <div className="bg-white rounded-3xl w-full max-w-sm p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200">
+                        <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100">
+                          <h3 className="text-sm font-black text-slate-900">Número de Habitaciones</h3>
+                          <button
+                            type="button"
+                            onClick={() => setIsBedroomsOpen(false)}
+                            className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                          {BEDROOMS_OPTIONS.map((opt) => {
+                            const isSelected = bedrooms === opt.value;
+                            return (
+                              <button
+                                key={`mob-bed-${opt.value}`}
+                                type="button"
+                                onClick={() => {
+                                  setBedrooms(opt.value);
+                                  setIsBedroomsOpen(false);
+                                  applyFilters({ bedrooms: opt.value });
+                                }}
+                                style={isSelected ? { backgroundColor: `${filterBorderColor}18`, color: '#0f172a' } : {}}
+                                className={`w-full px-4 py-3 rounded-xl text-xs flex items-center justify-between cursor-pointer transition-colors border-0 text-left ${
+                                  isSelected ? 'font-black' : 'font-semibold text-slate-700 hover:bg-slate-100'
+                                }`}
+                              >
+                                <span>{opt.label}</span>
+                                {isSelected && <Check className="w-4 h-4 shrink-0" style={{ color: filterBorderColor }} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1063,8 +1280,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     )}
                   </button>
 
+                  {/* Desktop Popover */}
                   {isPricePopoverOpen && (
-                    <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150">
+                    <div className="hidden lg:block absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[999999] animate-in fade-in-0 zoom-in-95 duration-150">
                       <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
                         <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Rangos de Precio (USD)</span>
                         <button
@@ -1149,6 +1367,109 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                         >
                           Aplicar rango
                         </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mobile Bottom-Sheet Modal */}
+                  {isPricePopoverOpen && (
+                    <div className="lg:hidden fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in-0 duration-150">
+                      <div className="bg-white rounded-3xl w-full max-w-md max-h-[85vh] p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200 overflow-y-auto">
+                        <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 shrink-0">
+                          <span className="text-sm font-black text-slate-800 uppercase tracking-wider">Rangos de Precio (USD)</span>
+                          <button
+                            type="button"
+                            onClick={() => setIsPricePopoverOpen(false)}
+                            className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Presets */}
+                        <div className="space-y-1.5 mb-3.5">
+                          {PRICE_RANGE_PRESETS.map((preset) => {
+                            const isSelected = (!priceMin && !priceMax && !preset.min && !preset.max) ||
+                              (priceMin === preset.min && priceMax === preset.max);
+                            return (
+                              <button
+                                key={`mob-preset-${preset.label}`}
+                                type="button"
+                                onClick={() => {
+                                  handleSelectPricePreset(preset.min, preset.max);
+                                  setIsPricePopoverOpen(false);
+                                }}
+                                style={isSelected ? {
+                                  backgroundColor: `${filterBorderColor}18`,
+                                  borderColor: filterBorderColor,
+                                  color: '#0f172a',
+                                } : {}}
+                                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold text-left transition-all flex items-center justify-between cursor-pointer border ${
+                                  isSelected
+                                    ? 'shadow-xs font-black'
+                                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80'
+                                }`}
+                              >
+                                <span>{preset.label}</span>
+                                {isSelected && <Check className="w-4 h-4 shrink-0" style={{ color: filterBorderColor }} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Rango manual */}
+                        <div className="pt-2.5 border-t border-slate-100 mb-3">
+                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                            O escribe un rango personalizado:
+                          </span>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-[10px] text-slate-500 font-bold block mb-1">Mínimo:</span>
+                              <input
+                                type="number"
+                                placeholder="$0"
+                                value={tempPriceMin}
+                                onChange={(e) => setTempPriceMin(e.target.value)}
+                                className="w-full px-2.5 py-2 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                              />
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-500 font-bold block mb-1">Máximo:</span>
+                              <input
+                                type="number"
+                                placeholder="Sin límite"
+                                value={tempPriceMax}
+                                onChange={(e) => setTempPriceMax(e.target.value)}
+                                className="w-full px-2.5 py-2 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleClearPrice();
+                              setIsPricePopoverOpen(false);
+                            }}
+                            className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors border border-slate-200 cursor-pointer"
+                          >
+                            Limpiar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleApplyCustomPrice();
+                              setIsPricePopoverOpen(false);
+                            }}
+                            style={{ backgroundColor: primaryColor }}
+                            className="flex-1 py-2.5 rounded-xl text-xs font-black text-white hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
+                          >
+                            Aplicar
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1535,11 +1856,12 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               {/* 1. Tipo de Operación */}
               <div>
                 <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Operación</span>
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { label: 'Todas', value: '' },
                     { label: 'En Venta', value: '2' },
                     { label: 'En Renta', value: '1' },
+                    { label: 'Remate', value: '3' },
                   ].map((op) => {
                     const isSelected = tempPropertyStatus === op.value;
                     return (
@@ -1548,7 +1870,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                         type="button"
                         onClick={() => setTempPropertyStatus(op.value)}
                         style={isSelected ? { backgroundColor: filterBorderColor, color: '#ffffff', borderColor: filterBorderColor } : {}}
-                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
                           isSelected
                             ? 'shadow-xs font-black'
                             : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
@@ -1564,16 +1886,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               {/* 2. Tipo de Inmueble */}
               <div>
                 <span className="text-xs font-black text-slate-800 uppercase tracking-wider block mb-2">Tipo de Inmueble</span>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {[
-                    { label: 'Todos', value: '' },
-                    { label: 'Casas', value: '1' },
-                    { label: 'Departamentos', value: '2' },
-                    { label: 'Terrenos / Lotes', value: '3' },
-                    { label: 'Comercial', value: '4' },
-                    { label: 'Suites / Lofts', value: '5' },
-                    { label: 'Villas / Quintas', value: '6' },
-                  ].map((t) => {
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+                  {PROPERTY_TYPE_OPTIONS.map((t) => {
                     const isSelected = tempPropertyType === t.value;
                     return (
                       <button
