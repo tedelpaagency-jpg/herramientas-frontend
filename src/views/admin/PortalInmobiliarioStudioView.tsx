@@ -86,6 +86,8 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       footer_logo: '',
       terms_and_conditions: '',
       privacy_policy: '',
+      cookies_enabled: true,
+      cookies_message: '',
       hero_media_type: 'video',
       banner_video: '/assets/video/home4-banner-video.mp4',
       hero_tab1: 'En Venta',
@@ -216,6 +218,8 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         footer_logo: parsedDetails?.footer_logo || ag.footer_logo || '',
         terms_and_conditions: parsedDetails?.terms_and_conditions || '',
         privacy_policy: parsedDetails?.privacy_policy || '',
+        cookies_enabled: parsedDetails?.cookies_enabled !== false && parsedDetails?.cookies_enabled !== '0',
+        cookies_message: parsedDetails?.cookies_message || '',
         hero_media_type: parsedDetails?.hero_media_type || (ag.banner_video || parsedDetails?.banner_video ? 'video' : (ag.banner_image ? 'image' : 'video')),
         banner_video: parsedDetails?.banner_video || ag.banner_video || '/assets/video/home4-banner-video.mp4',
         hero_tab1: parsedDetails?.hero_tab1 || 'En Venta',
@@ -2799,6 +2803,58 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                       onChange={(e) => updateDetailField('privacy_policy', e.target.value)}
                       placeholder={DEFAULT_REAL_ESTATE_PRIVACY}
                       className="w-full px-4 py-3 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl leading-relaxed"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Aviso y Consentimiento de Cookies */}
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <span>🍪</span> Aviso y Configuración de Cookies
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Personaliza el mensaje que se mostrará en el banner de cookies del frontend.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateDetailField(
+                            'cookies_message',
+                            'Utilizamos cookies propias y de terceros para brindarte la mejor experiencia de navegación, personalizar tus búsquedas de propiedades y analizar el tráfico de nuestro portal. Al continuar navegando, aceptas su uso según nuestra Política de Privacidad.'
+                          )
+                        }
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 hover:bg-amber-100 transition-colors cursor-pointer border border-amber-200 dark:border-amber-800"
+                      >
+                        Cargar Mensaje Estándar
+                      </button>
+
+                      <label className="relative inline-flex items-center cursor-pointer select-none" title="Activar/Desactivar aviso de cookies">
+                        <input
+                          type="checkbox"
+                          checked={form.details?.cookies_enabled !== false}
+                          onChange={(e) => updateDetailField('cookies_enabled', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Mensaje del Banner de Cookies:
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={form.details?.cookies_message || ''}
+                      onChange={(e) => updateDetailField('cookies_message', e.target.value)}
+                      placeholder="Utilizamos cookies propias y de terceros para brindarte la mejor experiencia de navegación, personalizar tus búsquedas de propiedades y analizar el tráfico de nuestro portal..."
+                      className="w-full px-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl leading-relaxed"
                     />
                   </div>
                 </div>

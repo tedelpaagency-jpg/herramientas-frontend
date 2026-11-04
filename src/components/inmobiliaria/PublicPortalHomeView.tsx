@@ -6,6 +6,7 @@ import DestinationSectionV4 from '@/components/destination-section/DestinationSe
 import HeroV4 from '@/components/hero-section/HeroV4';
 import Footer from '@/components/layout/Footer';
 import Header2Style3 from '@/components/layout/Header2Style3';
+import CookieConsentBanner from '@/components/inmobiliaria/CookieConsentBanner';
 import TopbarSlider from '@/components/topbar/TopbarSlider';
 import TravelPackageV4 from '@/components/travel-package-section/TravelPackageV4';
 import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
@@ -106,18 +107,15 @@ export default function PublicPortalHomeView({
 
         if (catsRes.status === 'fulfilled' && catsRes.value?.data?.length) {
           const backendCats = catsRes.value.data;
-          if (backendCats.length >= 6) {
-            setCategories(backendCats.slice(0, 6));
-          } else {
-            const combined = [...backendCats];
-            for (const def of DEFAULT_REAL_ESTATE_CATEGORIES) {
-              if (combined.length >= 6) break;
-              if (!combined.some((c: any) => c.name?.toLowerCase() === def.name?.toLowerCase() || c.id === def.id)) {
-                combined.push(def);
-              }
+          const combined = [...backendCats];
+          for (const def of DEFAULT_REAL_ESTATE_CATEGORIES) {
+            if (!combined.some((c: any) => c.name?.toLowerCase() === def.name?.toLowerCase() || c.id === def.id || (c.slug && def.slug && c.slug === def.slug))) {
+              combined.push(def);
             }
-            setCategories(combined.slice(0, 6));
           }
+          setCategories(combined);
+        } else {
+          setCategories(DEFAULT_REAL_ESTATE_CATEGORIES);
         }
       } catch (err) {
         console.warn('Could not load dynamic real estate portal data, using defaults:', err);
@@ -160,6 +158,7 @@ export default function PublicPortalHomeView({
       <TravelPackageV4 featuredEstates={featuredEstates} agency={agency} />
       <BlogV4 recentEstates={recentEstates} agency={agency} />
       <Footer agency={agency} />
+      <CookieConsentBanner agency={agency} domainParam={domain} />
     </div>
   );
 }

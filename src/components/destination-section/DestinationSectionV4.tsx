@@ -1,9 +1,8 @@
 "use client";
 import Link from "next/link";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import Image from "next/image";
 import { SwiperOptions } from "swiper/types";
 import { PublicEstateCategory } from "@/services/publicInmobiliariaService";
 import { DEFAULT_REAL_ESTATE_CATEGORIES } from "@/constants/realEstateDefaults";
@@ -20,6 +19,16 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'oficinas-corporativos': 'Espacios empresariales, consultorios y edificios comerciales.',
   'villas-quintas': 'Propiedades campestres, quintas vacacionales y casas de campo exclusivas.',
   'penthouses-lujo': 'Exclusivas propiedades de alta gama con acabados premium y vistas panorámicas.',
+  'comercial': 'Locales comerciales y puntos estratégicos de alta afluencia vehicular y peatonal.',
+  'bodegas': 'Almacenes y bodegas industriales con patio de maniobras y acceso a vías principales.',
+  'edificio': 'Edificios residenciales, corporativos y comerciales de alta rentabilidad.',
+  'fincas-haciendas': 'Fincas agrícolas, haciendas ganaderas y terrenos productivos.',
+  'galpon': 'Galpones de almacenaje con estructura reforzada e infraestructura logística.',
+  'hotel': 'Propiedades hoteleras, complejos turísticos y proyectos de hospitalidad.',
+  'suites': 'Suites amobladas y apartamentos tipo estudio para ejecutivos y profesionales.',
+  'plaza-comercial': 'Locales en plazas y centros comerciales de alto tráfico.',
+  'solar': 'Solares urbanizados con servicios básicos listos para construir.',
+  'parqueadero': 'Plazas de parqueadero y garajes en zonas céntricas y residenciales.',
 };
 
 const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories, agency }) => {
@@ -28,33 +37,24 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
       ? [...categories]
       : [...DEFAULT_REAL_ESTATE_CATEGORIES];
 
-    // Garantizar que siempre existan exactamente 6 categorías distintas
-    if (list.length < 6) {
-      for (const def of DEFAULT_REAL_ESTATE_CATEGORIES) {
-        if (list.length >= 6) break;
-        if (!list.some(c => c.name?.toLowerCase() === def.name?.toLowerCase() || c.id === def.id)) {
-          list.push(def);
-        }
+    // Combinar con las categorías por defecto para incluir todos los tipos de inmuebles de la app
+    for (const def of DEFAULT_REAL_ESTATE_CATEGORIES) {
+      if (!list.some(c => c.name?.toLowerCase() === def.name?.toLowerCase() || c.id === def.id || (c.slug && def.slug && c.slug === def.slug))) {
+        list.push(def);
       }
     }
-    return list.slice(0, 6);
+    return list;
   }, [categories]);
-
-  // Estado para la tarjeta activa en cuadrícula móvil (por defecto la 6ta, idéntico a la referencia)
-  const [activeCategoryId, setActiveCategoryId] = useState<number | string | null>(() => {
-    return displayCategories[5]?.id ?? 6;
-  });
 
   const sectionTitle = agency?.details?.categories_title || 'Categorías Principales';
   const sectionSubtitle = agency?.details?.categories_subtitle || 'Descubre opciones pensadas para cada estilo de vida e inversión patrimonial.';
   const rawColor = agency?.primary_color || agency?.details?.primary_color;
   const primaryColor = rawColor || '#00a884';
-  const buttonColor = primaryColor;
 
   const settings: SwiperOptions = useMemo(() => {
     return {
-      slidesPerView: "auto",
-      speed: 800,
+      slidesPerView: 2,
+      speed: 700,
       spaceBetween: 14,
       autoplay: {
         delay: 3500,
@@ -70,17 +70,9 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
         clickable: true,
       },
       breakpoints: {
-        280: {
-          slidesPerView: 2,
-          spaceBetween: 10,
-        },
-        480: {
-          slidesPerView: 2.3,
-          spaceBetween: 12,
-        },
         640: {
           slidesPerView: 3,
-          spaceBetween: 12,
+          spaceBetween: 14,
         },
         768: {
           slidesPerView: 4,
@@ -135,63 +127,52 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
           </div>
         </div>
 
-        {/* VISTA MÓVIL: Cuadrícula interactiva de 2 columnas (Tarjetas más largas con texto siempre visible) */}
-        <div className="md:hidden grid grid-cols-2 gap-3 sm:gap-4 mb-6">
-          {displayCategories.map((cat, index) => {
-            const fallbackImg = DEFAULT_REAL_ESTATE_CATEGORIES[index % DEFAULT_REAL_ESTATE_CATEGORIES.length].image;
-            const imgSrc = cat.image || fallbackImg;
-            const categoryUrl = `/properties?property_type=${cat.id}`;
-            const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '') as string;
-            const description = (cat as any).description || CATEGORY_DESCRIPTIONS[slug] || 'Propiedades seleccionadas con los más altos estándares de calidad.';
+        {/* VISTA MÓVIL: Formato 2x4 (2 filas x 4 columnas con deslizamiento fluido) */}
+        <div className="md:hidden mb-6">
+          <div className="grid grid-rows-2 grid-flow-col auto-cols-[calc(26vw-8px)] sm:auto-cols-[calc(23vw-8px)] gap-2.5 overflow-x-auto pb-3 pt-1 px-1 scrollbar-none snap-x snap-mandatory">
+            {displayCategories.map((cat, index) => {
+              const fallbackImg = DEFAULT_REAL_ESTATE_CATEGORIES[index % DEFAULT_REAL_ESTATE_CATEGORIES.length].image;
+              const imgSrc = cat.image || fallbackImg;
+              const categoryUrl = `/properties?property_type=${cat.id}`;
 
-            return (
-              <Link
-                key={cat.id || index}
-                href={categoryUrl}
-                className="group inmo-cat-card-item relative block min-h-[220px] aspect-[3/4] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md transition-all duration-300 ease-out text-decoration-none select-none border border-white/10 active:scale-[0.98]"
-              >
-                {/* Imagen de fondo con zoom fluido */}
-                <img
-                  src={imgSrc}
-                  alt={cat.name}
-                  className="w-full h-full object-cover object-center filter brightness-[0.82] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-105"
-                  loading="lazy"
-                />
+              return (
+                <Link
+                  key={cat.id || index}
+                  href={categoryUrl}
+                  className="group relative flex flex-col justify-end h-[118px] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-xs border border-slate-200/60 dark:border-white/10 active:scale-[0.96] transition-all duration-200 text-decoration-none select-none snap-start"
+                >
+                  {/* Imagen de Fondo */}
+                  <img
+                    src={imgSrc}
+                    alt={cat.name}
+                    className="absolute inset-0 w-full h-full object-cover filter brightness-[0.78] contrast-[1.05]"
+                    loading="lazy"
+                  />
 
-                {/* Viñeta degradada oscura permanente para legibilidad */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none" />
+                  {/* Degradado oscuro */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent pointer-events-none" />
 
-                {/* Badge superior con cantidad disponible */}
-                <div className="inmo-cat-badge absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9.5px] font-bold text-white border border-white/15 shadow-xs transition-colors duration-300">
-                  {cat.count || 0} inmuebles
-                </div>
+                  {/* Badge de Conteo */}
+                  <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[8.5px] font-bold text-white border border-white/20">
+                    {cat.count || 0}
+                  </div>
 
-                {/* Botón flecha móvil animado con hover en color primario */}
-                <div className="inmo-cat-card-arrow absolute top-2.5 right-2.5 w-6 h-6 rounded-full backdrop-blur-md flex items-center justify-center shadow-md">
-                  <svg width={10} height={10} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 13C5.94664 8.05336 13 1 13 1M13 1C10.1852 1.52778 6.69444 2.58333 3 1M13 1C12.4722 3.63889 11.4167 6.77778 13 11" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                </div>
-
-                {/* Contenido inferior: Siempre visible con subtextos blancos */}
-                <div className="absolute bottom-3 left-3 right-3 text-left pointer-events-none">
-                  <h5 className="text-[14px] font-black text-white leading-tight drop-shadow-md mb-1">
-                    {cat.name}
-                  </h5>
-                  <p className="text-[10px] text-white leading-tight font-medium line-clamp-2 drop-shadow-sm mb-1.5" style={{ color: '#ffffff' }}>
-                    {description}
-                  </p>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white drop-shadow-sm" style={{ color: '#ffffff' }}>
-                    <span>Ver inmuebles</span>
-                    <span>→</span>
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
+                  {/* Nombre de la Categoría */}
+                  <div className="relative z-10 p-2 text-center">
+                    <span className="block text-[11px] font-black text-white leading-tight drop-shadow-md truncate">
+                      {cat.name}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 mt-1 font-medium">
+            <span>← Desliza horizontalmente para ver más categorías →</span>
+          </div>
         </div>
 
-        {/* VISTA ESCRITORIO Y TABLET: Carrusel con tarjetas más largas y texto siempre visible */}
+        {/* VISTA ESCRITORIO Y TABLET: Carrusel 1x6 en PC con todas las categorías de la app */}
         <div className="hidden md:block">
           <div className="destination-slider-area mb-4">
             <Swiper {...settings} modules={[Navigation, Pagination, Autoplay]} className="swiper home3-destination-slider !pb-4">
@@ -201,47 +182,47 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
                   const imgSrc = cat.image || fallbackImg;
                   const categoryUrl = `/properties?property_type=${cat.id}`;
                   const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '') as string;
-                  const description = (cat as any).description || CATEGORY_DESCRIPTIONS[slug] || 'Propiedades exclusivas con alta plusvalía y asesoría notarial.';
+                  const description = (cat as any).description || CATEGORY_DESCRIPTIONS[slug] || 'Propiedades seleccionadas con los más altos estándares de calidad.';
 
                   return (
-                    <SwiperSlide key={cat.id || index} className="swiper-slide !h-auto">
+                    <SwiperSlide key={cat.id || index} className="swiper-slide">
                       <Link
                         href={categoryUrl}
-                        className="group inmo-cat-card-item relative block h-[280px] sm:h-[300px] md:h-[320px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-md transition-all duration-300 ease-out transform hover:-translate-y-1.5 cursor-pointer text-decoration-none"
+                        className="group inmo-cat-card-item relative block min-h-[300px] aspect-[3/4.2] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md transition-all duration-300 ease-out text-decoration-none select-none border border-white/10"
                       >
-                        {/* Imagen con zoom animado al hover */}
+                        {/* Imagen de fondo con zoom fluido al hover */}
                         <img
                           src={imgSrc}
                           alt={cat.name}
-                          className="w-full h-full object-cover object-center filter brightness-[0.85] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-110"
+                          className="w-full h-full object-cover object-center filter brightness-[0.80] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-108"
                           loading="lazy"
                         />
 
-                        {/* Viñeta degradada oscura permanente de alto contraste */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/10 opacity-90 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                        {/* Viñeta degradada oscura permanente para legibilidad óptima */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-transparent pointer-events-none" />
 
                         {/* Badge superior con cantidad disponible */}
-                        <div className="inmo-cat-badge absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10.5px] font-bold text-white border border-white/15 transition-all duration-300 shadow-xs">
-                          {cat.count || 0} disponibles
+                        <div className="inmo-cat-badge absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10.5px] font-bold text-white border border-white/15 shadow-xs transition-colors duration-300">
+                          {cat.count || 0} inmuebles
                         </div>
 
-                        {/* Botón flecha animado con rotación suave y hover con color primario */}
-                        <div className="inmo-cat-card-arrow absolute top-3 right-3 w-7 h-7 sm:w-8 sm:h-8 rounded-full backdrop-blur-md flex items-center justify-center shadow-md">
-                          <svg width={11} height={11} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        {/* Botón flecha animado con color corporativo */}
+                        <div className="inmo-cat-card-arrow absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center shadow-md">
+                          <svg width={12} height={12} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
                             <path d="M1 13C5.94664 8.05336 13 1 13 1M13 1C10.1852 1.52778 6.69444 2.58333 3 1M13 1C12.4722 3.63889 11.4167 6.77778 13 11" strokeWidth="2" strokeLinecap="round" />
                           </svg>
                         </div>
 
-                        {/* Contenido inferior: Título, Descripción y enlace SIEMPRE VISIBLES con subtextos blancos */}
-                        <div className="absolute bottom-4 left-4 right-4 text-left pointer-events-none z-10">
-                          <h5 className="text-[15px] sm:text-[16px] font-black text-white leading-snug drop-shadow-md mb-1">
+                        {/* Contenido inferior */}
+                        <div className="absolute bottom-4 left-4 right-4 text-left pointer-events-none">
+                          <h5 className="text-[16px] font-black text-white leading-tight drop-shadow-md mb-1.5">
                             {cat.name}
                           </h5>
-                          <p className="text-[11px] sm:text-[11.5px] leading-tight font-medium line-clamp-2 drop-shadow-sm mb-2 text-white" style={{ color: '#ffffff' }}>
+                          <p className="text-[11px] text-white/90 leading-tight font-medium line-clamp-2 drop-shadow-sm mb-2">
                             {description}
                           </p>
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold transition-colors text-white drop-shadow-sm" style={{ color: '#ffffff' }}>
-                            <span>Explorar inmuebles</span>
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white drop-shadow-sm">
+                            <span>Ver inmuebles</span>
                             <span>→</span>
                           </span>
                         </div>
@@ -252,22 +233,9 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
               </div>
             </Swiper>
           </div>
-
           <div className="row">
-            <div className="col-lg-12 d-flex justify-content-between align-items-center">
-              <div className="slider-btn-grp">
-                <div className="slider-btn destination-slider-prev">
-                  <svg width={9} height={15} viewBox="0 0 9 15" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M7.7478 1.48828L1.7478 7.48828L7.7478 13.4883" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <div className="slider-btn destination-slider-next">
-                  <svg width={9} height={15} viewBox="0 0 9 15" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1.2478 1.48828L7.2478 7.48828L1.2478 13.4883" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </div>
-              </div>
-              <div className="swiper-pagination1 paginations" />
+            <div className="col-12 d-flex justify-content-center">
+              <div className="swiper-pagination1" />
             </div>
           </div>
         </div>

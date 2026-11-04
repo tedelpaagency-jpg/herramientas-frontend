@@ -407,11 +407,15 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     };
   }, [domainParam]);
 
-  // Cerrar popovers y menús al hacer clic fuera del contenedor (respetando los portales)
+  // Cerrar popovers y menús en desktop al hacer clic fuera del contenedor (respetando los portales)
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target && target.closest && target.closest('[data-portal-dropdown="true"]')) {
+      if (
+        !target ||
+        target.closest?.('[data-portal-dropdown="true"]') ||
+        target.closest?.('[data-portal-sheet="true"]')
+      ) {
         return;
       }
       if (cityContainerRef.current && !cityContainerRef.current.contains(target)) {
@@ -431,10 +435,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, []);
 
@@ -972,10 +974,12 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   {/* Modal Bottom-Sheet de Ciudades en Mobile via Portal */}
                   {isMounted && isCityDropdownOpen && createPortal(
                     <div
-                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150"
+                      data-portal-sheet="true"
+                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150 touch-manipulation"
                       onClick={() => setIsCityDropdownOpen(false)}
                     >
                       <div
+                        data-portal-sheet="true"
                         onClick={(e) => e.stopPropagation()}
                         className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
                       >
@@ -1134,10 +1138,12 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   {/* Mobile Bottom-Sheet Modal via Portal */}
                   {isMounted && isOperationOpen && createPortal(
                     <div
-                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150"
+                      data-portal-sheet="true"
+                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150 touch-manipulation"
                       onClick={() => setIsOperationOpen(false)}
                     >
                       <div
+                        data-portal-sheet="true"
                         onClick={(e) => e.stopPropagation()}
                         className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
                       >
@@ -1246,10 +1252,12 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   {/* Mobile Bottom-Sheet Modal via Portal */}
                   {isMounted && isPropertyTypeOpen && createPortal(
                     <div
-                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150"
+                      data-portal-sheet="true"
+                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150 touch-manipulation"
                       onClick={() => setIsPropertyTypeOpen(false)}
                     >
                       <div
+                        data-portal-sheet="true"
                         onClick={(e) => e.stopPropagation()}
                         className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
                       >
@@ -1358,10 +1366,12 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   {/* Mobile Bottom-Sheet Modal via Portal */}
                   {isMounted && isBedroomsOpen && createPortal(
                     <div
-                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150"
+                      data-portal-sheet="true"
+                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150 touch-manipulation"
                       onClick={() => setIsBedroomsOpen(false)}
                     >
                       <div
+                        data-portal-sheet="true"
                         onClick={(e) => e.stopPropagation()}
                         className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
                       >
@@ -1545,10 +1555,12 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   {/* Mobile Bottom-Sheet Modal via Portal */}
                   {isMounted && isPricePopoverOpen && createPortal(
                     <div
-                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150"
+                      data-portal-sheet="true"
+                      className="lg:hidden fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 animate-in fade-in-0 duration-150 touch-manipulation"
                       onClick={() => setIsPricePopoverOpen(false)}
                     >
                       <div
+                        data-portal-sheet="true"
                         onClick={(e) => e.stopPropagation()}
                         className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200 overflow-y-auto"
                       >
@@ -1967,26 +1979,12 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           </div>
         </div>
 
-        {/* Botones flotantes móvil: Navegación y Alternar Lista vs Mapa */}
-        <div className="lg:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('open-mobile-menu'));
-              }
-            }}
-            className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-full bg-white text-slate-900 font-extrabold text-xs shadow-2xl active:scale-95 transition-all cursor-pointer border border-slate-200"
-            aria-label="Abrir navegación móvil"
-          >
-            <Menu className="w-4 h-4 text-slate-700" />
-            <span>Navegación</span>
-          </button>
-
+        {/* Botón flotante móvil: Alternar Lista vs Mapa */}
+        <div className="lg:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center">
           <button
             type="button"
             onClick={() => setMobileView((prev) => (prev === 'list' ? 'map' : 'list'))}
-            className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] rounded-full bg-slate-900 text-white font-black text-xs shadow-2xl active:scale-95 transition-all cursor-pointer border border-white/10"
+            className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-full bg-slate-900 text-white font-black text-xs shadow-2xl active:scale-95 transition-all cursor-pointer border border-white/10"
           >
             {mobileView === 'list' ? (
               <>

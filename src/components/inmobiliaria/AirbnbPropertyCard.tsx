@@ -111,8 +111,16 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
   const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  const advisorName = estate.user?.name || estate.agent?.name || 'Asesor Inmobiliario';
-  const advisorPhoto = estate.user?.photo || estate.user?.avatar || estate.agent?.photo;
+  const resolvePhotoUrl = (raw?: string | null) => {
+    if (!raw) return null;
+    if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) return raw;
+    const base = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/?$/, '') : '';
+    return `${base}/${raw.replace(/^\/+/, '')}`;
+  };
+
+  const rawAdvisorPhoto = estate.user?.photo || estate.user?.avatar || estate.agent?.photo || (estate as any).agent_photo || (estate as any).advisor_photo;
+  const advisorPhoto = resolvePhotoUrl(rawAdvisorPhoto);
+  const advisorName = estate.user?.name || estate.agent?.name || (estate as any).agent_name || (estate as any).advisor_name || 'Asesor Inmobiliario';
   const advisorEmail = estate.user?.email || estate.agent?.email || estate.agency?.email || '';
   const advisorPhone = estate.user?.phone || estate.agent?.phone || estate.agency?.phone || estate.agency?.whatsapp || '';
   const advisorRole = estate.user?.role || estate.agent?.role || 'Asesor Inmobiliario';
@@ -222,19 +230,19 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
       </div>
 
       {/* Contenido descriptivo compacto */}
-      <div className="mt-2 px-1 space-y-1">
+      <div className="mt-2 px-1 space-y-1 w-full min-w-0 overflow-hidden">
         {/* Fila 1: Título */}
         <h3 className="font-extrabold text-xs sm:text-[13px] text-slate-900 leading-snug truncate" title={estate.title}>
           {estate.title}
         </h3>
 
         {/* Fila 2: Subtítulo / Ubicación */}
-        <p className="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1">
+        <p className="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1 min-w-0">
           <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-          <span className="truncate">{locationSubtitle}</span>
+          <span className="truncate min-w-0">{locationSubtitle}</span>
         </p>
 
-        {/* Fila Asesor (Al hacer clic en el nombre o foto abre modal de información) */}
+        {/* Fila Asesor (Al hacer clic en el nombre o foto abre modal de información, con truncado anti-desbordamiento) */}
         <div
           onClick={(e) => {
             e.preventDefault();
@@ -242,7 +250,7 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
             setIsAdvisorModalOpen(true);
           }}
           title={`Ver información del asesor: ${advisorName}`}
-          className="flex items-center gap-1.5 pt-0.5 text-[11px] group/advisor cursor-pointer select-none w-fit"
+          className="flex items-center gap-1.5 pt-0.5 text-[11px] group/advisor cursor-pointer select-none w-full max-w-full min-w-0 overflow-hidden"
         >
           <div className="relative w-5 h-5 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-300 flex items-center justify-center shadow-2xs">
             {advisorPhoto && !imgError ? (
@@ -258,7 +266,7 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
               </span>
             )}
           </div>
-          <span className="truncate text-[10.5px] sm:text-[11px] font-bold text-slate-700 group-hover/advisor:text-blue-700 group-hover/advisor:underline transition-colors">
+          <span className="truncate min-w-0 max-w-[calc(100%-26px)] text-[10.5px] sm:text-[11px] font-bold text-slate-700 group-hover/advisor:text-blue-700 group-hover/advisor:underline transition-colors block">
             {advisorName}
           </span>
         </div>

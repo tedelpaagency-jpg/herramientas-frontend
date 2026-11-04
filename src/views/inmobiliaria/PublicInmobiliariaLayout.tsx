@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { PublicAgencyConfig, PublicEstateItem } from '@/services/publicInmobiliariaService';
 import MobileBottomNavigation from '@/components/layout/MobileBottomNavigation';
+import CookieConsentBanner from '@/components/inmobiliaria/CookieConsentBanner';
 
 export const NAVIGATION_PROPERTY_TYPES = [
   { id: '2', label: 'Casas & Residencias' },
@@ -169,7 +170,7 @@ export const PublicPropertyCard: React.FC<{
             </div>
           </div>
 
-          {/* Asesor comercial con modal */}
+          {/* Asesor comercial con modal (anti-desbordamiento de nombres) */}
           <div
             onClick={(e) => {
               e.preventDefault();
@@ -177,7 +178,7 @@ export const PublicPropertyCard: React.FC<{
               setIsAdvisorModalOpen(true);
             }}
             title={`Ver información de ${advisorName}`}
-            className="pt-3 flex items-center gap-2 cursor-pointer group/advisor w-fit select-none hover:opacity-90 transition-opacity"
+            className="pt-3 flex items-center gap-2 cursor-pointer group/advisor w-full max-w-full min-w-0 select-none hover:opacity-90 transition-opacity"
           >
             <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center shadow-2xs">
               {advisorPhoto && !imgError ? (
@@ -193,9 +194,9 @@ export const PublicPropertyCard: React.FC<{
                 </span>
               )}
             </div>
-            <div className="flex flex-col min-w-0">
+            <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
               <span className="text-[9.5px] text-slate-400 font-semibold leading-none">Asesor</span>
-              <span className="text-xs font-bold text-slate-800 truncate leading-tight group-hover/advisor:text-blue-600 group-hover/advisor:underline transition-colors">
+              <span className="text-xs font-bold text-slate-800 truncate leading-tight group-hover/advisor:text-blue-600 group-hover/advisor:underline transition-colors block max-w-full min-w-0">
                 {advisorName}
               </span>
             </div>
@@ -842,6 +843,9 @@ export const PublicInmobiliariaFooter: React.FC<{
           </button>
         )}
       </div>
+
+      {/* Banner de Aviso de Cookies */}
+      <CookieConsentBanner agency={agency} domainParam={domainParam} />
     </>
   );
 };

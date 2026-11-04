@@ -494,12 +494,11 @@ interface HeroV4Props {
   agency?: any;
 }
 
-type BookingTab = 'sale' | 'rent' | 'land' | 'commercial';
+type BookingTab = 'sale' | 'rent';
 
 const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
-  // Tabs: 'sale' (En Venta) | 'rent' (En Renta) | 'land' (Terrenos y Lotes) | 'commercial' (Comercial)
+  // Tabs: 'sale' (En Venta) | 'rent' (En Renta)
   const [activeTab, setActiveTab] = useState<BookingTab>('sale');
-  const [isTabLoading, setIsTabLoading] = useState(false);
 
   // Form field states
   const [search, setSearch] = useState('');
@@ -561,10 +560,9 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
   const domain = agency?.domain || '';
 
-  // Handle Tab Switch with Spinner Loader (Supports 4 tabs)
+  // Handle Tab Switch (Solo En Venta y En Renta, sin skeleton ni demoras)
   const handleTabClick = (tab: BookingTab) => {
     if (tab === activeTab) return;
-    setIsTabLoading(true);
     setActiveTab(tab);
     if (tab === 'sale') {
       setPropertyStatus('2'); // Venta
@@ -572,17 +570,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
     } else if (tab === 'rent') {
       setPropertyStatus('1'); // Renta / Alquiler
       setPropertyType('');
-    } else if (tab === 'land') {
-      setPropertyStatus('');
-      setPropertyType('22'); // Terrenos y Lotes
-    } else if (tab === 'commercial') {
-      setPropertyStatus('');
-      setPropertyType('12'); // Comercial
     }
-    // Natural fetch transition matching inmosoft
-    setTimeout(() => {
-      setIsTabLoading(false);
-    }, 400);
   };
 
   const operationOptions = [
@@ -895,7 +883,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         {/* BOOKING CARD (Exact Pixel-Perfect Match to Image 1 & 2) */}
         {/* ======================================================== */}
         <div className="inmo-main-booking-card">
-          {/* Top Tabs: En Venta, En Renta, Terrenos y Lotes, Comercial */}
+          {/* Top Tabs: Solo En Venta y En Renta */}
           {showTabs && (
             <div className="inmo-card-tabs-bar">
               {/* EN VENTA */}
@@ -919,63 +907,12 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                 <span>En Renta</span>
                 {activeTab === 'rent' && <div className="inmo-tab-active-bar" />}
               </button>
-
-              {/* TERRENOS Y LOTES */}
-              <button
-                type="button"
-                className={`inmo-card-tab-btn ${activeTab === 'land' ? 'active' : ''}`}
-                onClick={() => handleTabClick('land')}
-              >
-                <Trees className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
-                <span>Terrenos y Lotes</span>
-                {activeTab === 'land' && <div className="inmo-tab-active-bar" />}
-              </button>
-
-              {/* COMERCIAL */}
-              <button
-                type="button"
-                className={`inmo-card-tab-btn ${activeTab === 'commercial' ? 'active' : ''}`}
-                onClick={() => handleTabClick('commercial')}
-              >
-                <Building2 className="w-5 h-5 mb-1.5" strokeWidth={2.2} />
-                <span>Comercial</span>
-                {activeTab === 'commercial' && <div className="inmo-tab-active-bar" />}
-              </button>
             </div>
           )}
 
-          {/* Form Body with Loading Spinner Overlay (Exact match to Image 2) */}
+          {/* Form Body sin skeleton ni overlays que parpadeen */}
           <form action="/properties" method="GET" className="inmo-card-form-grid">
             {domain && <input type="hidden" name="domain" value={domain} />}
-
-            {/* Loader Overlay (Matches Image 2) */}
-            {isTabLoading && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backgroundColor: 'rgba(255, 255, 255, 0.82)',
-                  backdropFilter: 'blur(4px)',
-                  WebkitBackdropFilter: 'blur(4px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 50,
-                  borderRadius: showTabs ? '0 0 24px 24px' : '24px',
-                }}
-              >
-                <div
-                  style={{
-                    width: '42px',
-                    height: '42px',
-                    border: '3px solid rgba(0, 0, 0, 0.08)',
-                    borderTop: `3px solid ${primaryColor}`,
-                    borderRadius: '50%',
-                    animation: 'inmoSpin 0.7s linear infinite',
-                  }}
-                />
-              </div>
-            )}
 
             {/* 1. Ubicación (Select2-style Search with 2s Debounce matching Screenshot) */}
             {showLocation && (
