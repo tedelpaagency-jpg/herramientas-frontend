@@ -116,6 +116,12 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
           background-color: ${primaryColor}e6 !important;
           border-color: ${primaryColor} !important;
         }
+        /* Garantizar que todos los títulos, subtextos y enlaces dentro de las tarjetas sean siempre blanco puro */
+        .inmo-cat-card-item h5,
+        .inmo-cat-card-item p,
+        .inmo-cat-card-item span {
+          color: #ffffff !important;
+        }
       `}</style>
       <div className="container">
         <div className="row justify-content-center mb-6 sm:mb-8 wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
@@ -166,12 +172,15 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
                     </svg>
                   </div>
 
-                  {/* Contenido inferior: Título y enlace */}
+                  {/* Contenido inferior: Título, subtexto y enlace */}
                   <div className="absolute bottom-2.5 left-2 right-2 text-left pointer-events-none">
-                    <h5 className="text-[12px] font-black text-white leading-tight drop-shadow-md mb-0.5 line-clamp-2">
+                    <h5 className="text-[12px] font-black leading-tight drop-shadow-md mb-0.5 line-clamp-1" style={{ color: '#ffffff' }}>
                       {cat.name}
                     </h5>
-                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-white drop-shadow-sm" style={{ color: '#ffffff' }}>
+                    <p className="text-[9.5px] leading-tight font-medium line-clamp-1 drop-shadow-sm mb-1" style={{ color: '#ffffff' }}>
+                      {description}
+                    </p>
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold drop-shadow-sm" style={{ color: '#ffffff' }}>
                       <span>Ver</span>
                       <span>→</span>
                     </span>
@@ -228,13 +237,13 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
 
                         {/* Contenido inferior */}
                         <div className="absolute bottom-4 left-4 right-4 text-left pointer-events-none">
-                          <h5 className="text-[16px] font-black text-white leading-tight drop-shadow-md mb-1.5">
+                          <h5 className="text-[16px] font-black leading-tight drop-shadow-md mb-1.5" style={{ color: '#ffffff' }}>
                             {cat.name}
                           </h5>
-                          <p className="text-[11px] text-white/90 leading-tight font-medium line-clamp-2 drop-shadow-sm mb-2">
+                          <p className="text-[11px] leading-tight font-medium line-clamp-2 drop-shadow-sm mb-2" style={{ color: '#ffffff' }}>
                             {description}
                           </p>
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white drop-shadow-sm">
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold drop-shadow-sm" style={{ color: '#ffffff' }}>
                             <span>Ver inmuebles</span>
                             <span>→</span>
                           </span>
