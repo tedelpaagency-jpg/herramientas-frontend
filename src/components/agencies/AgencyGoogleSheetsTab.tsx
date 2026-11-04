@@ -178,14 +178,14 @@ export const AgencyGoogleSheetsTab: React.FC<AgencyGoogleSheetsTabProps> = ({ ag
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Alerta de Configuración Global */}
+      {/* Alerta de Configuración Marca Blanca */}
       {!globalConfigured && (
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-xs">
           <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div className="space-y-1 text-xs">
-            <p className="font-black text-amber-900">Credenciales Globales de Google API Pendientes</p>
+            <p className="font-black text-amber-900">Credenciales de Google API de la Marca Blanca Pendientes</p>
             <p className="text-amber-800 leading-relaxed font-medium">
-              El Super Administrador debe habilitar la integración y cargar las credenciales globales de Google Service Account en el panel principal para que la sincronización automática pueda operar.
+              El Administrador de la Marca Blanca debe habilitar la integración y cargar las credenciales de Google Service Account en su panel para que la sincronización automática de sus agencias pueda operar.
             </p>
           </div>
         </div>

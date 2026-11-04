@@ -38,7 +38,9 @@ export const AdminGoogleSheetsPage: React.FC = () => {
   const [serviceAccountJson, setServiceAccountJson] = useState('');
   const [jsonParsedInfo, setJsonParsedInfo] = useState<{ clientEmail?: string; projectId?: string } | null>(null);
 
-  const isSuperAdmin =
+  const isWhiteLabelAdmin =
+    user?.role === 'white_label_admin' ||
+    user?.roles?.some((r: any) => r.name === 'white_label_admin') ||
     user?.role === 'super_admin' ||
     user?.role === 'superadmin' ||
     user?.roles?.some((r: any) => r.name === 'super_admin' || r.name === 'superadmin');
@@ -183,13 +185,13 @@ export const AdminGoogleSheetsPage: React.FC = () => {
     }
   };
 
-  if (!isSuperAdmin) {
+  if (!isWhiteLabelAdmin) {
     return (
       <div className="p-8 text-center bg-white rounded-3xl border border-slate-200/80 shadow-xs max-w-lg mx-auto mt-12">
         <ShieldCheck className="w-12 h-12 text-rose-500 mx-auto mb-3" />
         <h2 className="text-lg font-black text-slate-800">Acceso Restringido</h2>
         <p className="text-xs text-slate-500 mt-1">
-          Esta sección está reservada exclusivamente para el Super Administrador de la plataforma.
+          Esta sección está reservada exclusivamente para el Administrador de Marca Blanca.
         </p>
       </div>
     );
@@ -206,10 +208,10 @@ export const AdminGoogleSheetsPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Integración Google Sheets
+                Integración Google Sheets (Marca Blanca)
               </h1>
               <p className="text-xs text-slate-500 font-medium">
-                Configuración global de credenciales Google Service Account para sincronización multi-tenant de propiedades.
+                Configuración de credenciales Google Service Account de tu Marca Blanca para sincronización automática de propiedades.
               </p>
             </div>
           </div>

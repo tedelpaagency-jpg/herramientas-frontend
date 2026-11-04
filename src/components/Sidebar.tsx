@@ -355,7 +355,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ? [
               { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_plans', 'manage_agencies'] },
               { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_subscriptions', 'manage_agencies'] },
-              { label: 'Integración Google Sheets', path: '/admin/google-sheets', icon: FileSpreadsheet, permission: ['manage_agencies', 'manage_plans'] },
             ]
           : []),
       ],
@@ -369,6 +368,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               { label: 'Marketing B2B (Creativos)', path: '/marketing-b2b', icon: Sparkles },
               { label: 'Personalizar Marca', path: '/admin/branding', icon: Palette },
               { label: 'Accesos Directos Header', path: '/admin/shortcuts', icon: LayoutGrid },
+              { label: 'Integración Google Sheets', path: '/admin/google-sheets', icon: FileSpreadsheet },
               { label: 'Configuración del Login', path: '/admin/login-settings', icon: Film },
               { label: 'Roles & Permisos', path: '/roles', icon: ShieldCheck },
               { label: 'Importar Estudiantes', path: '/white-label/import-students', icon: FileSpreadsheet },

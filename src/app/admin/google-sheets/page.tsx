@@ -7,7 +7,7 @@ import AdminGoogleSheetsPage from '@/views/admin/AdminGoogleSheetsPage';
 
 export default function GoogleSheetsAdminRoute() {
   return (
-    <ProtectedRoute permission={['manage_agencies', 'manage_plans']}>
+    <ProtectedRoute>
       <Layout>
         <AdminGoogleSheetsPage />
       </Layout>
