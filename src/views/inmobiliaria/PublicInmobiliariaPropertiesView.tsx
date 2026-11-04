@@ -252,12 +252,39 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   const propertyTypeContainerRef = useRef<HTMLDivElement>(null);
   const bedroomsContainerRef = useRef<HTMLDivElement>(null);
 
+  const [dropdownCoords, setDropdownCoords] = useState<{ top: number; left: number } | null>(null);
+
   const closeAllFilterDropdowns = () => {
     setIsCityDropdownOpen(false);
     setIsPricePopoverOpen(false);
     setIsOperationOpen(false);
     setIsPropertyTypeOpen(false);
     setIsBedroomsOpen(false);
+    setDropdownCoords(null);
+  };
+
+  const toggleDropdownPortal = (
+    ref: React.RefObject<HTMLElement>,
+    width: number,
+    isOpen: boolean,
+    setOpen: (val: boolean) => void
+  ) => {
+    if (isOpen) {
+      setOpen(false);
+      setDropdownCoords(null);
+    } else {
+      closeAllFilterDropdowns();
+      if (ref.current && typeof window !== 'undefined') {
+        const rect = ref.current.getBoundingClientRect();
+        const dropdownW = Math.min(width, window.innerWidth - 32);
+        let left = rect.left;
+        if (left + dropdownW > window.innerWidth - 16) {
+          left = Math.max(16, window.innerWidth - dropdownW - 16);
+        }
+        setDropdownCoords({ top: rect.bottom + 6, left });
+        setOpen(true);
+      }
+    }
   };
 
   // Sync state with URL searchParams (e.g. browser back/forward, links)
@@ -380,10 +407,13 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     };
   }, [domainParam]);
 
-  // Cerrar popovers y menús al hacer clic fuera del contenedor
+  // Cerrar popovers y menús al hacer clic fuera del contenedor (respetando los portales)
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node;
+      const target = e.target as HTMLElement;
+      if (target && target.closest && target.closest('[data-portal-dropdown="true"]')) {
+        return;
+      }
       if (cityContainerRef.current && !cityContainerRef.current.contains(target)) {
         setIsCityDropdownOpen(false);
       }
@@ -407,6 +437,71 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, []);
+
+  // Reposicionar dinámicamente el dropdown del portal al hacer scroll horizontal o vertical
+  useEffect(() => {
+    const isAnyOpen = isCityDropdownOpen || isOperationOpen || isPropertyTypeOpen || isBedroomsOpen || isPricePopoverOpen;
+    if (!isAnyOpen) return;
+
+    const handleRepositionOrClose = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target && target.closest && target.closest('[data-portal-dropdown="true"]')) {
+        return;
+      }
+
+      let activeRef: React.RefObject<HTMLElement> | null = null;
+      let width = 240;
+
+      if (isCityDropdownOpen) {
+        activeRef = cityContainerRef;
+        width = 320;
+      } else if (isOperationOpen) {
+        activeRef = operationContainerRef;
+        width = 220;
+      } else if (isPropertyTypeOpen) {
+        activeRef = propertyTypeContainerRef;
+        width = 260;
+      } else if (isBedroomsOpen) {
+        activeRef = bedroomsContainerRef;
+        width = 210;
+      } else if (isPricePopoverOpen) {
+        activeRef = priceContainerRef;
+        width = 320;
+      }
+
+      if (activeRef?.current && typeof window !== 'undefined') {
+        const rect = activeRef.current.getBoundingClientRect();
+        if (
+          rect.bottom < 0 ||
+          rect.top > window.innerHeight ||
+          rect.right < 0 ||
+          rect.left > window.innerWidth
+        ) {
+          closeAllFilterDropdowns();
+          return;
+        }
+        const dropdownW = Math.min(width, window.innerWidth - 32);
+        let left = rect.left;
+        if (left + dropdownW > window.innerWidth - 16) {
+          left = Math.max(16, window.innerWidth - dropdownW - 16);
+        }
+        setDropdownCoords({ top: rect.bottom + 6, left });
+      }
+    };
+
+    window.addEventListener('scroll', handleRepositionOrClose, true);
+    window.addEventListener('resize', handleRepositionOrClose);
+    return () => {
+      window.removeEventListener('scroll', handleRepositionOrClose, true);
+      window.removeEventListener('resize', handleRepositionOrClose);
+    };
+  }, [
+    isCityDropdownOpen,
+    isOperationOpen,
+    isPropertyTypeOpen,
+    isBedroomsOpen,
+    isPricePopoverOpen,
+  ]);
 
   const getOperationButtonLabel = () => {
     if (propertyStatus === '1') return 'En Renta';
@@ -688,9 +783,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         <Header2Style3 agency={fallbackAgency} />
 
         {/* Barra de Filtros con Estilizado del Booking y Bordes de Branding */}
-        <div className={`border-b border-slate-200/90 bg-white shadow-2xs relative ${isAnyDropdownOpen ? 'z-[1095]' : 'z-[1040]'}`} style={{ overflow: 'visible' }}>
-          <div className="max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5" style={{ overflow: 'visible' }}>
-            <div className={`flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative ${isAnyDropdownOpen ? 'z-[1095]' : 'z-[1040]'} overflow-x-auto lg:overflow-visible`} style={{ overflow: isAnyDropdownOpen ? 'visible' : undefined }}>
+        <div className="border-b border-slate-200/90 bg-white shadow-2xs relative z-[1040]">
+          <div className="max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5">
+            <div className="flex items-center gap-2 pb-1 sm:pb-0 scrollbar-none flex-nowrap relative z-[1040] overflow-x-auto">
               
               {/* 0. Campo de Búsqueda por Nombre / Palabra Clave */}
               {showNameFilter && (
@@ -740,11 +835,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               {showCityFilter && (
                 <div ref={cityContainerRef} className={`relative shrink-0 w-60 sm:w-72 ${isCityDropdownOpen ? 'z-50' : 'z-10'}`}>
                   <div
-                    onClick={() => {
-                      const next = !isCityDropdownOpen;
-                      closeAllFilterDropdowns();
-                      setIsCityDropdownOpen(next);
-                    }}
+                    onClick={() => toggleDropdownPortal(cityContainerRef, 320, isCityDropdownOpen, setIsCityDropdownOpen)}
                     style={{
                       borderColor: (search || isCityDropdownOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
                       borderWidth: '1.5px',
@@ -788,10 +879,19 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
                   </div>
 
-                  {/* Dropdown de Ciudades en Desktop */}
-                  {isCityDropdownOpen && (
+                  {/* Dropdown de Ciudades en Desktop vía Portal fuera del contenedor para no recortarse */}
+                  {isMounted && isCityDropdownOpen && dropdownCoords && typeof document !== 'undefined' && createPortal(
                     <div
-                      className="hidden lg:block absolute left-0 top-full mt-2 w-72 sm:w-80 p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[1050] animate-in fade-in-0 zoom-in-95 duration-150"
+                      data-portal-dropdown="true"
+                      style={{
+                        position: 'fixed',
+                        top: `${dropdownCoords.top}px`,
+                        left: `${dropdownCoords.left}px`,
+                        width: '320px',
+                        maxWidth: 'calc(100vw - 32px)',
+                        zIndex: 9999999,
+                      }}
+                      className="hidden lg:block p-2.5 bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in-0 zoom-in-95 duration-150"
                     >
                       {/* Input buscador con debounce de 2 segundos */}
                       <div className="relative mb-2">
@@ -835,7 +935,10 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                             return (
                               <div
                                 key={`${city.id}-${city.name}`}
-                                onClick={() => handleSelectCity(city.name)}
+                                onClick={() => {
+                                  handleSelectCity(city.name);
+                                  setIsCityDropdownOpen(false);
+                                }}
                                 style={isSelected ? { backgroundColor: `${filterBorderColor}20` } : {}}
                                 className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition-colors ${
                                   isSelected ? 'font-black' : 'hover:bg-slate-100'
@@ -862,7 +965,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           </div>
                         )}
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
 
                   {/* Modal Bottom-Sheet de Ciudades en Mobile via Portal */}
@@ -971,11 +1075,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 <div ref={operationContainerRef} className={`relative shrink-0 ${isOperationOpen ? 'z-50' : 'z-10'}`}>
                   <button
                     type="button"
-                    onClick={() => {
-                      const next = !isOperationOpen;
-                      closeAllFilterDropdowns();
-                      setIsOperationOpen(next);
-                    }}
+                    onClick={() => toggleDropdownPortal(operationContainerRef, 220, isOperationOpen, setIsOperationOpen)}
                     style={{
                       borderColor: (propertyStatus || isOperationOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
                       borderWidth: '1.5px',
@@ -988,10 +1088,19 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOperationOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  {/* Desktop Dropdown */}
-                  {isOperationOpen && (
+                  {/* Desktop Dropdown vía Portal fuera del contenedor */}
+                  {isMounted && isOperationOpen && dropdownCoords && typeof document !== 'undefined' && createPortal(
                     <div
-                      className="hidden lg:block absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[1050] animate-in fade-in-0 zoom-in-95 duration-150"
+                      data-portal-dropdown="true"
+                      style={{
+                        position: 'fixed',
+                        top: `${dropdownCoords.top}px`,
+                        left: `${dropdownCoords.left}px`,
+                        width: '220px',
+                        maxWidth: 'calc(100vw - 32px)',
+                        zIndex: 9999999,
+                      }}
+                      className="hidden lg:block p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in-0 zoom-in-95 duration-150"
                     >
                       {OPERATION_OPTIONS.map((opt) => {
                         const isSelected = propertyStatus === opt.value;
@@ -1018,7 +1127,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           </div>
                         );
                       })}
-                    </div>
+                    </div>,
+                    document.body
                   )}
 
                   {/* Mobile Bottom-Sheet Modal via Portal */}
@@ -1077,11 +1187,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 <div ref={propertyTypeContainerRef} className={`relative shrink-0 ${isPropertyTypeOpen ? 'z-50' : 'z-10'}`}>
                   <button
                     type="button"
-                    onClick={() => {
-                      const next = !isPropertyTypeOpen;
-                      closeAllFilterDropdowns();
-                      setIsPropertyTypeOpen(next);
-                    }}
+                    onClick={() => toggleDropdownPortal(propertyTypeContainerRef, 260, isPropertyTypeOpen, setIsPropertyTypeOpen)}
                     style={{
                       borderColor: (propertyType || isPropertyTypeOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
                       borderWidth: '1.5px',
@@ -1094,10 +1200,19 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isPropertyTypeOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  {/* Desktop Dropdown */}
-                  {isPropertyTypeOpen && (
+                  {/* Desktop Dropdown vía Portal fuera del contenedor */}
+                  {isMounted && isPropertyTypeOpen && dropdownCoords && typeof document !== 'undefined' && createPortal(
                     <div
-                      className="hidden lg:block absolute left-0 top-full mt-2 w-60 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[1050] animate-in fade-in-0 zoom-in-95 duration-150 max-h-72 overflow-y-auto scrollbar-thin"
+                      data-portal-dropdown="true"
+                      style={{
+                        position: 'fixed',
+                        top: `${dropdownCoords.top}px`,
+                        left: `${dropdownCoords.left}px`,
+                        width: '260px',
+                        maxWidth: 'calc(100vw - 32px)',
+                        zIndex: 9999999,
+                      }}
+                      className="hidden lg:block p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in-0 zoom-in-95 duration-150 max-h-80 overflow-y-auto scrollbar-thin"
                     >
                       {PROPERTY_TYPE_OPTIONS.map((opt) => {
                         const isSelected = propertyType === opt.value;
@@ -1124,7 +1239,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           </div>
                         );
                       })}
-                    </div>
+                    </div>,
+                    document.body
                   )}
 
                   {/* Mobile Bottom-Sheet Modal via Portal */}
@@ -1183,11 +1299,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 <div ref={bedroomsContainerRef} className={`relative shrink-0 ${isBedroomsOpen ? 'z-50' : 'z-10'}`}>
                   <button
                     type="button"
-                    onClick={() => {
-                      const next = !isBedroomsOpen;
-                      closeAllFilterDropdowns();
-                      setIsBedroomsOpen(next);
-                    }}
+                    onClick={() => toggleDropdownPortal(bedroomsContainerRef, 210, isBedroomsOpen, setIsBedroomsOpen)}
                     style={{
                       borderColor: (bedrooms || isBedroomsOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
                       borderWidth: '1.5px',
@@ -1200,10 +1312,19 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBedroomsOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  {/* Desktop Dropdown */}
-                  {isBedroomsOpen && (
+                  {/* Desktop Dropdown vía Portal fuera del contenedor */}
+                  {isMounted && isBedroomsOpen && dropdownCoords && typeof document !== 'undefined' && createPortal(
                     <div
-                      className="hidden lg:block absolute left-0 top-full mt-2 w-52 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[1050] animate-in fade-in-0 zoom-in-95 duration-150"
+                      data-portal-dropdown="true"
+                      style={{
+                        position: 'fixed',
+                        top: `${dropdownCoords.top}px`,
+                        left: `${dropdownCoords.left}px`,
+                        width: '210px',
+                        maxWidth: 'calc(100vw - 32px)',
+                        zIndex: 9999999,
+                      }}
+                      className="hidden lg:block p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in-0 zoom-in-95 duration-150"
                     >
                       {BEDROOMS_OPTIONS.map((opt) => {
                         const isSelected = bedrooms === opt.value;
@@ -1230,7 +1351,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           </div>
                         );
                       })}
-                    </div>
+                    </div>,
+                    document.body
                   )}
 
                   {/* Mobile Bottom-Sheet Modal via Portal */}
@@ -1290,11 +1412,9 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      const next = !isPricePopoverOpen;
-                      closeAllFilterDropdowns();
-                      setIsPricePopoverOpen(next);
                       setTempPriceMin(priceMin);
                       setTempPriceMax(priceMax);
+                      toggleDropdownPortal(priceContainerRef, 320, isPricePopoverOpen, setIsPricePopoverOpen);
                     }}
                     style={{
                       borderColor: (priceMin || priceMax || isPricePopoverOpen) ? filterBorderColor : 'rgba(0,0,0,0.18)',
@@ -1319,9 +1439,20 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                     )}
                   </button>
 
-                  {/* Desktop Popover */}
-                  {isPricePopoverOpen && (
-                    <div className="hidden lg:block absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-80 p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[1050] animate-in fade-in-0 zoom-in-95 duration-150">
+                  {/* Desktop Popover vía Portal fuera del contenedor */}
+                  {isMounted && isPricePopoverOpen && dropdownCoords && typeof document !== 'undefined' && createPortal(
+                    <div
+                      data-portal-dropdown="true"
+                      style={{
+                        position: 'fixed',
+                        top: `${dropdownCoords.top}px`,
+                        left: `${dropdownCoords.left}px`,
+                        width: '320px',
+                        maxWidth: 'calc(100vw - 32px)',
+                        zIndex: 9999999,
+                      }}
+                      className="hidden lg:block p-4 bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in-0 zoom-in-95 duration-150"
+                    >
                       <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
                         <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Rangos de Precio (USD)</span>
                         <button
@@ -1407,7 +1538,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                           Aplicar rango
                         </button>
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
 
                   {/* Mobile Bottom-Sheet Modal via Portal */}
