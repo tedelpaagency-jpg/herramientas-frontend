@@ -127,40 +127,53 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
           </div>
         </div>
 
-        {/* VISTA MÓVIL: Formato 2x4 (2 filas x 4 columnas con deslizamiento fluido) */}
+        {/* VISTA MÓVIL: Carrusel de 2 filas de 3 visibles con diseño de tarjeta original */}
         <div className="md:hidden mb-6">
-          <div className="grid grid-rows-2 grid-flow-col auto-cols-[calc(26vw-8px)] sm:auto-cols-[calc(23vw-8px)] gap-2.5 overflow-x-auto pb-3 pt-1 px-1 scrollbar-none snap-x snap-mandatory">
+          <div className="grid grid-rows-2 grid-flow-col auto-cols-[calc((100vw-44px)/3)] sm:auto-cols-[calc((100%-16px)/3)] gap-2.5 overflow-x-auto pb-3 pt-1 px-1 scrollbar-none snap-x snap-mandatory">
             {displayCategories.map((cat, index) => {
               const fallbackImg = DEFAULT_REAL_ESTATE_CATEGORIES[index % DEFAULT_REAL_ESTATE_CATEGORIES.length].image;
               const imgSrc = cat.image || fallbackImg;
               const categoryUrl = `/properties?property_type=${cat.id}`;
+              const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '') as string;
+              const description = (cat as any).description || CATEGORY_DESCRIPTIONS[slug] || 'Propiedades seleccionadas.';
 
               return (
                 <Link
                   key={cat.id || index}
                   href={categoryUrl}
-                  className="group relative flex flex-col justify-end h-[118px] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-xs border border-slate-200/60 dark:border-white/10 active:scale-[0.96] transition-all duration-200 text-decoration-none select-none snap-start"
+                  className="group inmo-cat-card-item relative block aspect-[3/4.2] min-h-[160px] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md transition-all duration-300 ease-out text-decoration-none select-none border border-white/10 active:scale-[0.97] snap-start"
                 >
-                  {/* Imagen de Fondo */}
+                  {/* Imagen de Fondo con zoom suave */}
                   <img
                     src={imgSrc}
                     alt={cat.name}
-                    className="absolute inset-0 w-full h-full object-cover filter brightness-[0.78] contrast-[1.05]"
+                    className="w-full h-full object-cover object-center filter brightness-[0.80] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-105"
                     loading="lazy"
                   />
 
-                  {/* Degradado oscuro */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent pointer-events-none" />
+                  {/* Viñeta degradada oscura permanente para legibilidad */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-transparent pointer-events-none" />
 
-                  {/* Badge de Conteo */}
-                  <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[8.5px] font-bold text-white border border-white/20">
+                  {/* Badge superior con cantidad disponible */}
+                  <div className="inmo-cat-badge absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9px] font-bold text-white border border-white/15 shadow-xs transition-colors duration-300">
                     {cat.count || 0}
                   </div>
 
-                  {/* Nombre de la Categoría */}
-                  <div className="relative z-10 p-2 text-center">
-                    <span className="block text-[11px] font-black text-white leading-tight drop-shadow-md truncate">
+                  {/* Botón flecha móvil animado con hover en color primario */}
+                  <div className="inmo-cat-card-arrow absolute top-2 right-2 w-5 h-5 rounded-full backdrop-blur-md flex items-center justify-center shadow-md">
+                    <svg width={9} height={9} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M1 13C5.94664 8.05336 13 1 13 1M13 1C10.1852 1.52778 6.69444 2.58333 3 1M13 1C12.4722 3.63889 11.4167 6.77778 13 11" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+
+                  {/* Contenido inferior: Título y enlace */}
+                  <div className="absolute bottom-2.5 left-2 right-2 text-left pointer-events-none">
+                    <h5 className="text-[12px] font-black text-white leading-tight drop-shadow-md mb-0.5 line-clamp-2">
                       {cat.name}
+                    </h5>
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-white drop-shadow-sm" style={{ color: '#ffffff' }}>
+                      <span>Ver</span>
+                      <span>→</span>
                     </span>
                   </div>
                 </Link>
@@ -168,7 +181,7 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
             })}
           </div>
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 mt-1 font-medium">
-            <span>← Desliza horizontalmente para ver más categorías →</span>
+            <span>← Desliza para ver más categorías →</span>
           </div>
         </div>
 

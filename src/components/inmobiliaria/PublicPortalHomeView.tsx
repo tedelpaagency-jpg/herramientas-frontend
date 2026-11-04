@@ -47,10 +47,10 @@ export default function PublicPortalHomeView({
     return DEFAULT_FALLBACK_AGENCY;
   });
   const [featuredEstates, setFeaturedEstates] = useState<PublicEstateItem[]>(
-    initialFeaturedEstates || DEFAULT_REAL_ESTATE_PROPERTIES
+    initialFeaturedEstates || DEFAULT_REAL_ESTATE_PROPERTIES.slice(0, 8)
   );
   const [recentEstates, setRecentEstates] = useState<PublicEstateItem[]>(
-    initialRecentEstates || DEFAULT_REAL_ESTATE_PROPERTIES.slice(0, 3)
+    initialRecentEstates || DEFAULT_REAL_ESTATE_PROPERTIES.slice(0, 8)
   );
   const [categories, setCategories] = useState<PublicEstateCategory[]>(
     initialCategories || DEFAULT_REAL_ESTATE_CATEGORIES
@@ -86,8 +86,8 @@ export default function PublicPortalHomeView({
 
         const [configRes, estatesRes, recentRes, catsRes] = await Promise.allSettled([
           publicInmobiliariaService.getConfig(hostname),
-          publicInmobiliariaService.getFeaturedEstates(hostname, 6),
-          publicInmobiliariaService.getRecentEstates(hostname, 3),
+          publicInmobiliariaService.getFeaturedEstates(hostname, 8),
+          publicInmobiliariaService.getRecentEstates(hostname, 8),
           publicInmobiliariaService.getCategories(hostname),
         ]);
 

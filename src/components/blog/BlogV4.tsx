@@ -2,145 +2,84 @@
 import React from 'react';
 import Link from 'next/link';
 import { PublicEstateItem } from '@/services/publicInmobiliariaService';
+import { DEFAULT_REAL_ESTATE_PROPERTIES } from '@/constants/realEstateDefaults';
+import AirbnbPropertyCard from '@/components/inmobiliaria/AirbnbPropertyCard';
 
 interface BlogV4Props {
   recentEstates?: PublicEstateItem[];
   agency?: any;
 }
 
-const cleanHtmlText = (raw?: string | null): string => {
-  if (!raw) return '';
-  return raw
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<\/(p|div|h[1-6]|li)>/gi, ' ')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/\s+/g, ' ')
-    .trim();
-};
-
-const DEFAULT_ARTICLES = [
-  {
-    id: 1,
-    title: '5 Claves Fundamentales antes de Adquirir tu Primera Vivienda',
-    summary: 'Aprende a evaluar plusvalía, créditos hipotecarios y certeza legal para una inversión segura.',
-    date: '24 Octubre, 2026',
-    category: 'Guía del Comprador',
-    image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=700&q=80',
-    link: '/properties',
-  },
-  {
-    id: 2,
-    title: 'Tendencias Inmobiliarias: Por qué los Desarrollos Verticales son el Futuro',
-    summary: 'La vida en condominios con amenidades integradas maximiza el tiempo y calidad de vida.',
-    date: '18 Octubre, 2026',
-    category: 'Inversión & Plusvalía',
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=700&q=80',
-    link: '/properties',
-  },
-  {
-    id: 3,
-    title: 'Cómo Preparar tu Propiedad para Venderla al Máximo Valor de Mercado',
-    summary: 'Home staging, reparaciones clave y estrategia digital para un cierre rápido y rentable.',
-    date: '12 Octubre, 2026',
-    category: 'Consejos para Propietarios',
-    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=700&q=80',
-    link: '/properties',
-  },
-];
-
 const BlogV4: React.FC<BlogV4Props> = ({ recentEstates, agency }) => {
+  const displayEstates = (recentEstates && recentEstates.length > 0)
+    ? recentEstates
+    : DEFAULT_REAL_ESTATE_PROPERTIES;
+
+  const agencyCurrency = agency?.currency || 'USD';
+  const sectionTitle = agency?.details?.recent_title || 'Últimas Propiedades Incorporadas';
+  const sectionSubtitle = agency?.details?.recent_subtitle || 'Descubre los inmuebles recién listados en nuestro portafolio de venta y renta con alta plusvalía.';
+  const btnText = agency?.details?.recent_btn_text || 'Ver Todas las Nuevas Propiedades';
   const rawColor = agency?.primary_color || agency?.details?.primary_color;
   const primaryColor = (!rawColor || rawColor.toLowerCase() === '#00a884') ? '#e2b728' : rawColor;
-  const hasRecentEstates = recentEstates && recentEstates.length > 0;
+  const buttonColor = primaryColor;
 
   return (
-    <div className="home4-blog-section mb-100">
+    <div className="home4-blog-section mb-100" id="recientes">
       <div className="container">
         <div className="row justify-content-center mb-50 wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
           <div className="col-xl-6 col-lg-8">
             <div className="section-title text-center">
-              <h2>{hasRecentEstates ? 'Nuevas Propiedades en el Mercado' : 'Guías & Artículos Inmobiliarios'}</h2>
-              <p>
-                {hasRecentEstates
-                  ? 'Inmuebles recién incorporados a nuestro portafolio de venta y renta.'
-                  : 'Consejos de expertos, análisis de mercado y tendencias para tomar las mejores decisiones patrimoniales.'}
-              </p>
+              <h2>{sectionTitle}</h2>
+              <p>{sectionSubtitle}</p>
             </div>
           </div>
         </div>
 
-        <div className="row g-4 mb-40">
-          {hasRecentEstates ? (
-            recentEstates.slice(0, 3).map((estate, index) => (
-              <div key={estate.id || index} className="col-lg-4 col-md-6 wow animate fadeInDown" data-wow-delay={`${(index + 1) * 200}ms`} data-wow-duration="1500ms">
-                <div className="blog-card2 two" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <div className="blog-img-wrap" style={{ position: 'relative', height: '220px', overflow: 'hidden' }}>
-                    <Link href={`/properties/${estate.slug || estate.id}`} className="blog-img" style={{ width: '100%', height: '100%' }}>
-                      <img
-                        src={estate.image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80'}
-                        alt={estate.title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    </Link>
-                    <span className="location" style={{ fontSize: '11px', fontWeight: 600 }}>
-                      {estate.city || 'Ubicación Premium'}
-                    </span>
-                  </div>
-                  <div className="blog-content" style={{ flexGrow: 1 }}>
-                    <span className="blog-date" style={{ color: primaryColor, fontWeight: 700 }}>
-                      {estate.property_status === 1 ? 'En Renta' : (estate.property_status === 3 ? 'Remate' : 'En Venta')}
-                    </span>
-                    <h4>
-                      <Link href={`/properties/${estate.slug || estate.id}`}>
-                        {estate.title}
-                      </Link>
-                    </h4>
-                    <p style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {cleanHtmlText(estate.short_description || estate.description) || 'Excelente oportunidad patrimonial con alta plusvalía y ubicación estratégica.'}
-                    </p>
-                  </div>
+        {/* Cuadrícula de 4 columnas y 2 filas (8 propiedades) con AirbnbPropertyCard */}
+        <div className="row gy-3 gy-sm-4 gx-2 gx-sm-3">
+          {displayEstates.slice(0, 8).map((estate, index) => {
+            const fallbackImg = DEFAULT_REAL_ESTATE_PROPERTIES[index % DEFAULT_REAL_ESTATE_PROPERTIES.length].image;
+            const estateWithFallback = {
+              ...estate,
+              image: estate.image || fallbackImg,
+            };
+
+            return (
+              <div
+                key={estate.id || index}
+                className="col-6 col-sm-6 col-lg-3 px-1.5 px-sm-2 mb-3 mb-sm-4 wow animate fadeInDown flex"
+                data-wow-delay={`${(index % 4) * 100 + 100}ms`}
+                data-wow-duration="1200ms"
+              >
+                <div className="w-full h-full flex flex-col">
+                  <AirbnbPropertyCard
+                    estate={estateWithFallback}
+                    currency={agencyCurrency}
+                    primaryColor={primaryColor}
+                    domainParam={agency?.domain}
+                  />
                 </div>
               </div>
-            ))
-          ) : (
-            DEFAULT_ARTICLES.map((article, index) => (
-              <div key={article.id} className="col-lg-4 col-md-6 wow animate fadeInDown" data-wow-delay={`${(index + 1) * 200}ms`} data-wow-duration="1500ms">
-                <div className="blog-card2 two" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <div className="blog-img-wrap" style={{ position: 'relative', height: '220px', overflow: 'hidden' }}>
-                    <Link href={article.link} className="blog-img" style={{ width: '100%', height: '100%' }}>
-                      <img
-                        src={article.image}
-                        alt={article.title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    </Link>
-                    <span className="location" style={{ fontSize: '11px', fontWeight: 600 }}>
-                      {article.category}
-                    </span>
-                  </div>
-                  <div className="blog-content" style={{ flexGrow: 1 }}>
-                    <span className="blog-date">
-                      {article.date}
-                    </span>
-                    <h4>
-                      <Link href={article.link}>
-                        {article.title}
-                      </Link>
-                    </h4>
-                    <p>
-                      {article.summary}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+            );
+          })}
+        </div>
+
+        <div className="row mt-50">
+          <div className="col-12 text-center">
+            <Link
+              href="/properties?sort=recent"
+              className="primary-btn1"
+              style={{
+                display: 'inline-flex',
+                backgroundColor: buttonColor,
+                borderColor: buttonColor,
+                boxShadow: `0 8px 24px ${buttonColor}40`,
+              }}
+            >
+              <span>{btnText}</span>
+              <span>{btnText}</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -148,5 +87,3 @@ const BlogV4: React.FC<BlogV4Props> = ({ recentEstates, agency }) => {
 };
 
 export default BlogV4;
-
-

@@ -35,8 +35,9 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
           </div>
         </div>
 
-        <div className="row gy-3 gy-sm-4 gx-2 gx-sm-4">
-          {displayEstates.map((estate, index) => {
+        {/* Cuadrícula de 4 columnas y 2 filas (8 propiedades) con AirbnbPropertyCard */}
+        <div className="row gy-3 gy-sm-4 gx-2 gx-sm-3">
+          {displayEstates.slice(0, 8).map((estate, index) => {
             const fallbackImg = DEFAULT_REAL_ESTATE_PROPERTIES[index % DEFAULT_REAL_ESTATE_PROPERTIES.length].image;
             const estateWithFallback = {
               ...estate,
@@ -46,8 +47,8 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
             return (
               <div
                 key={estate.id || index}
-                className="col-12 col-sm-6 col-lg-4 px-1.5 px-sm-3 mb-3 mb-sm-4 wow animate fadeInDown flex"
-                data-wow-delay={`${(index % 6) * 100 + 100}ms`}
+                className="col-6 col-sm-6 col-lg-3 px-1.5 px-sm-2 mb-3 mb-sm-4 wow animate fadeInDown flex"
+                data-wow-delay={`${(index % 4) * 100 + 100}ms`}
                 data-wow-duration="1200ms"
               >
                 <div className="w-full h-full flex flex-col">

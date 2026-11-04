@@ -392,6 +392,42 @@ export const DEFAULT_REAL_ESTATE_PROPERTIES: PublicEstateItem[] = [
     featured: 0,
     image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=900&q=80',
   },
+  {
+    id: 107,
+    agency_id: 1,
+    title: 'Edificio Corporativo Torre Empresarial',
+    slug: 'edificio-corporativo-torre-empresarial',
+    description: 'Excelente oportunidad de inversión en edificio de oficinas con lobby de lujo, seguridad 24/7 y ubicación financiera estratégica.',
+    address: 'Av. Amazonas y Naciones Unidas',
+    city: 'Quito, Pichincha',
+    price: 890000,
+    property_type: 7,
+    property_status: 2, // En Venta
+    bedrooms: 0,
+    bathrooms: 8,
+    size: 780,
+    garage: 12,
+    featured: 1,
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80',
+  },
+  {
+    id: 108,
+    agency_id: 1,
+    title: 'Suite Amoblada en Zona Exclusiva',
+    slug: 'suite-amoblada-en-zona-exclusiva',
+    description: 'Hermosa suite totalmente amoblada con diseño moderno, acabados de primera y balcón privado con vista panorámica.',
+    address: 'Av. Samborondón Km 2.5',
+    city: 'Guayaquil, Guayas',
+    price: 850,
+    property_type: 21,
+    property_status: 1, // En Renta
+    bedrooms: 1,
+    bathrooms: 1,
+    size: 65,
+    garage: 1,
+    featured: 1,
+    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80',
+  },
 ];
 
 export const DEFAULT_REAL_ESTATE_TERMS = `1. Aceptación de los Términos
