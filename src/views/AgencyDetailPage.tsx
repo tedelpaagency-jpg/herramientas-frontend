@@ -26,10 +26,12 @@ import {
   X,
   AlertCircle,
   ShieldCheck,
+  FileSpreadsheet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { TableSkeleton } from '@/components/Skeleton';
 import EstateApprovalSettingsPanel from '@/components/estates/EstateApprovalSettingsPanel';
+import AgencyGoogleSheetsTab from '@/components/agencies/AgencyGoogleSheetsTab';
 
 interface AgencyDetailPageProps {
   agencyId: number;
@@ -43,7 +45,7 @@ export const AgencyDetailPage: React.FC<AgencyDetailPageProps> = ({ agencyId }) 
   const [whiteLabels, setWhiteLabels] = useState<WhiteLabel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'info' | 'users' | 'properties' | 'estate_config'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'users' | 'properties' | 'estate_config' | 'google_sheets'>('info');
 
   const hasEstateAccess =
     currentUser?.role === 'super_admin' ||
@@ -270,17 +272,31 @@ export const AgencyDetailPage: React.FC<AgencyDetailPageProps> = ({ agencyId }) 
             <span>Propiedades ({agencyProperties.length})</span>
           </button>
           {hasEstateAccess && (
-            <button
-              onClick={() => setActiveTab('estate_config')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                activeTab === 'estate_config'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Aprobaciones &amp; Automatizaciones</span>
-            </button>
+            <>
+              <button
+                onClick={() => setActiveTab('estate_config')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  activeTab === 'estate_config'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Aprobaciones &amp; Automatizaciones</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('google_sheets')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  activeTab === 'google_sheets'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>Google Sheets</span>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -502,6 +518,11 @@ export const AgencyDetailPage: React.FC<AgencyDetailPageProps> = ({ agencyId }) 
       {/* Tab Panel: Aprobaciones y Automatizaciones Inmobiliarias */}
       {activeTab === 'estate_config' && hasEstateAccess && (
         <EstateApprovalSettingsPanel agencyId={agencyId} />
+      )}
+
+      {/* Tab Panel: Integración Google Sheets */}
+      {activeTab === 'google_sheets' && (
+        <AgencyGoogleSheetsTab agencyId={agencyId} agencyName={agency?.name} />
       )}
 
       {/* Modal para Editar Datos Generales y Reasignar Marca Blanca */}

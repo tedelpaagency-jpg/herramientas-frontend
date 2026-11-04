@@ -6,7 +6,7 @@ import {
   RefreshCw, Loader2, ExternalLink, Eye, Image as ImageIcon, Laptop, Tablet, Smartphone,
   Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
   Target, Compass, Users, Megaphone, Video, Play, MapPin, SlidersHorizontal,
-  Briefcase, Plus, Trash2, Handshake, BadgeCheck
+  Briefcase, Plus, Trash2, Handshake, BadgeCheck, FileSpreadsheet
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -17,6 +17,7 @@ import PortalLivePreview from '@/components/inmobiliaria/PortalLivePreview';
 import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
 import EstateCatalogManagementView from '@/components/admin/EstateCatalogManagementView';
 import EstateApprovalSettingsPanel from '@/components/estates/EstateApprovalSettingsPanel';
+import AgencyGoogleSheetsTab from '@/components/agencies/AgencyGoogleSheetsTab';
 import {
   FREE_STOCK_HERO_IMAGES,
   FREE_STOCK_HERO_VIDEOS,
@@ -49,7 +50,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
   // Studio tabs & device preview
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'services' | 'cta' | 'domain' | 'identity' | 'seo' | 'legal_crm' | 'catalog' | 'approvals'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'sections' | 'about' | 'services' | 'cta' | 'domain' | 'identity' | 'seo' | 'legal_crm' | 'catalog' | 'approvals' | 'google_sheets'>('hero');
   const [showLoaderPreview, setShowLoaderPreview] = useState<boolean>(false);
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState<boolean>(false);
@@ -657,6 +658,19 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
               <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
               <span>Filtros (Booking &amp; Propiedades) &amp; Políticas</span>
             </button>
+
+            {selectedAgencyId && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('google_sheets')}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'google_sheets' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Google Sheets</span>
+              </button>
+            )}
           </div>
 
           {/* CONTENIDO DEL FORMULARIO SEGÚN PESTAÑA */}
@@ -2874,6 +2888,16 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
             {activeTab === 'approvals' && (
               <div className="space-y-6 animate-in fade-in-50 duration-200">
                 <EstateApprovalSettingsPanel agencyId={selectedAgencyId || undefined} />
+              </div>
+            )}
+
+            {/* PESTAÑA 11: INTEGRACIÓN GOOGLE SHEETS */}
+            {activeTab === 'google_sheets' && selectedAgencyId && (
+              <div className="space-y-6 animate-in fade-in-50 duration-200">
+                <AgencyGoogleSheetsTab
+                  agencyId={selectedAgencyId}
+                  agencyName={agencies.find(a => a.id === selectedAgencyId)?.name}
+                />
               </div>
             )}
 

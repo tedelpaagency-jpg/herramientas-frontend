@@ -355,6 +355,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ? [
               { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_plans', 'manage_agencies'] },
               { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_subscriptions', 'manage_agencies'] },
+              { label: 'Integración Google Sheets', path: '/admin/google-sheets', icon: FileSpreadsheet, permission: ['manage_agencies', 'manage_plans'] },
             ]
           : []),
       ],
