@@ -7,6 +7,7 @@ import {
   Save, X, CheckSquare, Square, Loader2
 } from 'lucide-react';
 import estateService from '../services/estateService';
+import estateCatalogService, { LocationsHierarchyData } from '../services/estateCatalogService';
 import dynamic from 'next/dynamic';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
@@ -57,6 +58,8 @@ export const EstateFormPage: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadedImages, setUploadedImages] = useState<ImageItem[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [locationsData, setLocationsData] = useState<LocationsHierarchyData | null>(null);
+  const [loadingLocations, setLoadingLocations] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -64,7 +67,12 @@ export const EstateFormPage: React.FC = () => {
     full_address: '',
     province: '',
     neighborhood: '',
+    parroquia: '',
     country: 'Ecuador',
+    pais_id: null as number | null,
+    province_id: null as number | null,
+    canton_id: null as number | null,
+    parroquia_id: null as number | null,
     price: '',
     unit_price: '',
     before_price_label: '',
@@ -91,6 +99,21 @@ export const EstateFormPage: React.FC = () => {
   });
 
   useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        setLoadingLocations(true);
+        const data = await estateCatalogService.getLocationsHierarchy();
+        setLocationsData(data);
+      } catch (err) {
+        console.error('Error loading locations:', err);
+      } finally {
+        setLoadingLocations(false);
+      }
+    };
+    fetchLocations();
+  }, []);
+
+  useEffect(() => {
     if (!isEditing) return;
     const fetchEstate = async () => {
       try {
@@ -103,7 +126,12 @@ export const EstateFormPage: React.FC = () => {
           full_address: e.full_address || e.address || '',
           province: e.province || '',
           neighborhood: e.neighborhood || '',
+          parroquia: e.parroquia || '',
           country: e.country || 'Ecuador',
+          pais_id: e.pais_id ? Number(e.pais_id) : null,
+          province_id: e.province_id ? Number(e.province_id) : null,
+          canton_id: e.canton_id ? Number(e.canton_id) : null,
+          parroquia_id: e.parroquia_id ? Number(e.parroquia_id) : null,
           price: e.price || '',
           unit_price: e.unit_price || '',
           before_price_label: e.before_price_label || '',
@@ -233,6 +261,91 @@ export const EstateFormPage: React.FC = () => {
   const sectionCls = 'bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-5';
   const sectionHeaderCls = 'px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2';
 
+  // Locations cascading logic
+  const availableCountries = locationsData?.countries || [];
+
+  const selectedCountry = availableCountries.find(
+    c => c.name.toLowerCase() === (form.country || 'ecuador').toLowerCase() || (form.pais_id && c.id === form.pais_id)
+  );
+
+  const availableProvinces = (locationsData?.provinces || []).filter(p => {
+    if (!selectedCountry) return true;
+    return p.country_id === selectedCountry.id;
+  });
+
+  const selectedProvince = availableProvinces.find(
+    p => p.name.toLowerCase() === (form.province || '').toLowerCase() || (form.province_id && p.id === form.province_id)
+  );
+
+  const availableCities = (locationsData?.cities || []).filter(c => {
+    if (selectedProvince) {
+      return (c.province_id && c.province_id === selectedProvince.id) || 
+             (c.province && c.province.toLowerCase() === selectedProvince.name.toLowerCase());
+    }
+    if (selectedCountry) {
+      return c.country_id === selectedCountry.id;
+    }
+    return true;
+  });
+
+  const selectedCity = availableCities.find(
+    c => c.name.toLowerCase() === (form.neighborhood || '').toLowerCase() || (form.canton_id && c.id === form.canton_id)
+  );
+
+  const availableParroquias = selectedCity
+    ? (locationsData?.parroquias || []).filter(p => p.city_id === selectedCity.id)
+    : [];
+
+  const hasParroquias = availableParroquias.length > 0;
+
+  const handleCountrySelect = (countryName: string) => {
+    const cObj = availableCountries.find(c => c.name === countryName);
+    setForm(prev => ({
+      ...prev,
+      country: countryName,
+      pais_id: cObj?.id || null,
+      province: '',
+      province_id: null,
+      neighborhood: '',
+      canton_id: null,
+      parroquia: '',
+      parroquia_id: null,
+    }));
+  };
+
+  const handleProvinceSelect = (provinceName: string) => {
+    const pObj = availableProvinces.find(p => p.name === provinceName);
+    setForm(prev => ({
+      ...prev,
+      province: provinceName,
+      province_id: pObj?.id || null,
+      neighborhood: '',
+      canton_id: null,
+      parroquia: '',
+      parroquia_id: null,
+    }));
+  };
+
+  const handleCitySelect = (cityName: string) => {
+    const cityObj = availableCities.find(c => c.name === cityName);
+    setForm(prev => ({
+      ...prev,
+      neighborhood: cityName,
+      canton_id: cityObj?.id || null,
+      parroquia: '',
+      parroquia_id: null,
+    }));
+  };
+
+  const handleParroquiaSelect = (parroquiaName: string) => {
+    const parroquiaObj = availableParroquias.find(p => p.name === parroquiaName);
+    setForm(prev => ({
+      ...prev,
+      parroquia: parroquiaName,
+      parroquia_id: parroquiaObj?.id || null,
+    }));
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -344,18 +457,107 @@ export const EstateFormPage: React.FC = () => {
               <input type="text" className={inputCls} required value={form.full_address} onChange={e => handleChange('full_address', e.target.value)} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className={labelCls}>País <span className="text-rose-500">*</span></label>
-                <input type="text" className={inputCls} value={form.country} onChange={e => handleChange('country', e.target.value)} />
+                {availableCountries.length > 0 ? (
+                  <select
+                    className={inputCls}
+                    value={form.country}
+                    onChange={e => handleCountrySelect(e.target.value)}
+                  >
+                    <option value="">Seleccione país</option>
+                    {availableCountries.map(c => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    className={inputCls}
+                    value={form.country}
+                    onChange={e => handleChange('country', e.target.value)}
+                  />
+                )}
               </div>
+
               <div>
                 <label className={labelCls}>Provincia / Estado <span className="text-rose-500">*</span></label>
-                <input type="text" className={inputCls} value={form.province} onChange={e => handleChange('province', e.target.value)} />
+                {availableProvinces.length > 0 ? (
+                  <select
+                    className={inputCls}
+                    value={form.province}
+                    onChange={e => handleProvinceSelect(e.target.value)}
+                  >
+                    <option value="">Seleccione provincia</option>
+                    {availableProvinces.map(p => (
+                      <option key={p.id} value={p.name}>{p.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    className={inputCls}
+                    placeholder="Ej: Pichincha"
+                    value={form.province}
+                    onChange={e => handleChange('province', e.target.value)}
+                  />
+                )}
               </div>
+
               <div>
                 <label className={labelCls}>Ciudad / Cantón <span className="text-rose-500">*</span></label>
-                <input type="text" className={inputCls} value={form.neighborhood} onChange={e => handleChange('neighborhood', e.target.value)} />
+                {availableCities.length > 0 ? (
+                  <select
+                    className={inputCls}
+                    value={form.neighborhood}
+                    onChange={e => handleCitySelect(e.target.value)}
+                  >
+                    <option value="">Seleccione ciudad</option>
+                    {availableCities.map(c => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    className={inputCls}
+                    placeholder="Ej: Quito"
+                    value={form.neighborhood}
+                    onChange={e => handleChange('neighborhood', e.target.value)}
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className={labelCls}>
+                  Parroquia / Sector
+                  {hasParroquias && <span className="text-rose-500 ml-0.5">*</span>}
+                </label>
+                {hasParroquias ? (
+                  <select
+                    className={inputCls}
+                    value={form.parroquia}
+                    onChange={e => handleParroquiaSelect(e.target.value)}
+                  >
+                    <option value="">Seleccione parroquia</option>
+                    {availableParroquias.map(p => (
+                      <option key={p.id} value={p.name}>
+                        {p.name} {p.type ? `(${p.type})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <select
+                    className={`${inputCls} bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed opacity-60 text-slate-400`}
+                    disabled
+                    value=""
+                  >
+                    <option value="">
+                      {!form.neighborhood ? 'Seleccione ciudad primero' : 'Sin parroquias registradas'}
+                    </option>
+                  </select>
+                )}
               </div>
             </div>
 

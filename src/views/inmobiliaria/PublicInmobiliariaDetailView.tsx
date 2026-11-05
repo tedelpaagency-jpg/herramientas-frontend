@@ -289,10 +289,14 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
           `$1\n${pageUrl}`
         );
       } else {
+        const cityName = (estate as any).city || estate.neighborhood || '';
+        const parroquiaName = (estate as any).parroquia || '';
         const lines = [
           `🏠 *${estate.title}*`,
           mainImg ? `📸 *Foto:* ${mainImg}` : null,
           `💰 *Precio:* $ ${Number(estate.price || 0).toLocaleString('en-US')} ${isRent ? '/mes' : ''}`,
+          cityName ? `🏙️ *Ciudad:* ${cityName}` : null,
+          parroquiaName ? `📍 *Parroquia / Sector:* ${parroquiaName}` : null,
           estate.full_address ? `📍 *Ubicación:* ${estate.full_address}` : null,
           estate.bedrooms ? `🛏 *Habitaciones:* ${estate.bedrooms}` : null,
           estate.bathrooms ? `🛁 *Baños:* ${estate.bathrooms}` : null,
