@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -35,33 +35,36 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [notifications, setNotifications] = useState<VisaNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const fetchRecentNotifications = async () => {
+  const lastFetchedRef = useRef<number>(0);
+  const isFetchingRef = useRef<boolean>(false);
+
+  const fetchRecentNotifications = async (force: boolean = false) => {
+    if (!user) return;
+    const now = Date.now();
+    // Prevenir peticiones en bucle o ráfagas continuas (mínimo 60s entre consultas automáticas salvo acción explícita del usuario)
+    if (!force && (now - lastFetchedRef.current < 60000 || isFetchingRef.current)) {
+      return;
+    }
+    isFetchingRef.current = true;
+    lastFetchedRef.current = now;
+
     try {
       const res = await visaWholesaleService.getRecentNotifications();
       if (res) {
         setNotifications(res.data || []);
         setUnreadCount(res.unread_count || 0);
       }
-    } catch (e) {}
+    } catch (e) {
+    } finally {
+      isFetchingRef.current = false;
+    }
   };
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       fetchRecentNotifications();
     }
-  }, [user, currentWhiteLabel?.id]);
-
-  useEffect(() => {
-    const handleBrandingChange = () => {
-      if (user) {
-        fetchRecentNotifications();
-      }
-    };
-    window.addEventListener('branding-updated', handleBrandingChange);
-    return () => {
-      window.removeEventListener('branding-updated', handleBrandingChange);
-    };
-  }, [user]);
+  }, [user?.id, currentWhiteLabel?.id]);
 
   const handleMarkAllRead = async () => {
     try {
@@ -161,7 +164,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               const nextState = !showNotifications;
               setShowNotifications(nextState);
               if (nextState) {
-                fetchRecentNotifications();
+                fetchRecentNotifications(true);
               }
             }} 
             className={`hidden lg:flex w-11 h-11 flex-shrink-0 items-center justify-center rounded-full transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary relative ${showNotifications ? 'bg-primary text-white shadow-md' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
@@ -192,7 +195,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          fetchRecentNotifications();
+                          fetchRecentNotifications(true);
                         }}
                         title="Actualizar notificaciones"
                         className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors"

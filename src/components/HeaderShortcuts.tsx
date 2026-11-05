@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import shortcutService from '../services/shortcutService';
 import { Shortcut } from '../types';
@@ -16,30 +16,42 @@ export const HeaderShortcuts: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const fetchShortcuts = async () => {
+  const lastFetchedRef = useRef<number>(0);
+  const isFetchingRef = useRef<boolean>(false);
+
+  const fetchShortcuts = async (force: boolean = false) => {
     if (!user) return;
+    const now = Date.now();
+    if (!force && (now - lastFetchedRef.current < 60000 || isFetchingRef.current)) {
+      return;
+    }
+    isFetchingRef.current = true;
+    lastFetchedRef.current = now;
+
     try {
       const data = await shortcutService.getHeaderShortcuts();
       setShortcuts(data);
     } catch (err) {
       console.error('Error loading header shortcuts:', err);
+    } finally {
+      isFetchingRef.current = false;
     }
   };
 
   useEffect(() => {
-    fetchShortcuts();
+    if (user?.id) {
+      fetchShortcuts();
+    }
 
     const handleUpdate = () => {
-      fetchShortcuts();
+      fetchShortcuts(true);
     };
 
     window.addEventListener('shortcuts-updated', handleUpdate);
-    window.addEventListener('branding-updated', handleUpdate);
     return () => {
       window.removeEventListener('shortcuts-updated', handleUpdate);
-      window.removeEventListener('branding-updated', handleUpdate);
     };
-  }, [user, currentWhiteLabel, currentAgency]);
+  }, [user?.id, currentWhiteLabel?.id, currentAgency?.id]);
 
   if (!shortcuts || shortcuts.length === 0) {
     return null;

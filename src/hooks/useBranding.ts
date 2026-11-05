@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { WhiteLabel } from '../types/whiteLabel';
 
 export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null, user?: any | null) => {
+  const lastSignatureRef = useRef<string>('');
+
   useEffect(() => {
     const cachedPrimary = typeof window !== 'undefined' ? localStorage.getItem('santun_primary_color') : null;
     if (!whiteLabel && !agency && !user) {
@@ -243,7 +245,11 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
         localStorage.setItem('santun_white_label', JSON.stringify(targetWl));
       }
 
-      window.dispatchEvent(new Event('branding-updated'));
+      const currentSignature = `${primaryColor}|${secondaryColor}|${buttonColor}|${menuBackground}|${fontFamily}|${pixelRadius}|${targetDarkTheme}|${targetNavMode}|${targetWl?.id}`;
+      if (lastSignatureRef.current !== currentSignature) {
+        lastSignatureRef.current = currentSignature;
+        window.dispatchEvent(new Event('branding-updated'));
+      }
     }
 
   }, [whiteLabel, agency, user]);

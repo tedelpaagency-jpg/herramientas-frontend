@@ -36,16 +36,6 @@ export const VisaNotificationsPage: React.FC = () => {
     fetchNotifications();
   }, [page, currentWhiteLabel?.id]);
 
-  useEffect(() => {
-    const handleBrandingChange = () => {
-      fetchNotifications();
-    };
-    window.addEventListener('branding-updated', handleBrandingChange);
-    return () => {
-      window.removeEventListener('branding-updated', handleBrandingChange);
-    };
-  }, []);
-
   const handleMarkAsRead = async (id: number) => {
     try {
       await visaWholesaleService.markNotificationAsRead(id);
