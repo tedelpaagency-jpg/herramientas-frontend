@@ -3,10 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import {
   Globe, Sparkles, Building2, ShieldCheck, CheckCircle2, AlertTriangle, AlertCircle,
-  RefreshCw, Loader2, ExternalLink, Eye, Image as ImageIcon, Laptop, Tablet, Smartphone,
+  RefreshCw, Loader2, ExternalLink, Eye, EyeOff, Image as ImageIcon, Laptop, Tablet, Smartphone,
   Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
   Target, Compass, Users, Megaphone, Video, Play, MapPin, SlidersHorizontal,
-  Briefcase, Plus, Trash2, Handshake, BadgeCheck, FileSpreadsheet
+  Briefcase, Plus, Trash2, Handshake, BadgeCheck, FileSpreadsheet, ArrowUp, ArrowDown, Code, GripVertical
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -102,7 +102,13 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       featured_subtitle: 'Selección curada de inmuebles residenciales y comerciales con alta plusvalía y respaldo legal.',
       featured_btn_text: 'Ver Todo el Catálogo de Propiedades',
       allies_title: 'Nuestros Aliados Comerciales',
-      allies_subtitle: 'Colaboramos con las instituciones financieras, notarías y constructoras más prestigiosas para garantizar operaciones ágiles, seguras y transparentes.',
+      allies_subtitle: '',
+      our_clients: [],
+      clients_title: 'Nuestros Clientes',
+      clients_subtitle: '',
+      about_sections_order: ['presentation', 'mission_vision', 'team', 'clients', 'allies', 'certifications', 'custom_html'],
+      about_sections_hidden: [],
+      about_html_sections: [],
       about_stat1_num: '15',
       about_stat1_label: 'Años de Trayectoria',
       about_stat2_num: '3,500',
@@ -235,8 +241,14 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         featured_title: parsedDetails?.featured_title || 'Propiedades Destacadas',
         featured_subtitle: parsedDetails?.featured_subtitle || 'Selección curada de inmuebles residenciales y comerciales con alta plusvalía y respaldo legal.',
         featured_btn_text: parsedDetails?.featured_btn_text || 'Ver Todo el Catálogo de Propiedades',
-        allies_title: parsedDetails?.allies_title || 'Nuestros Aliados Comerciales',
-        allies_subtitle: parsedDetails?.allies_subtitle || 'Colaboramos con las instituciones financieras, notarías y constructoras más prestigiosas para garantizar operaciones ágiles, seguras y transparentes.',
+        allies_title: parsedDetails?.allies_title ?? 'Nuestros Aliados Comerciales',
+        allies_subtitle: parsedDetails?.allies_subtitle ?? '',
+        our_clients: Array.isArray(parsedDetails?.our_clients) ? parsedDetails.our_clients : [],
+        clients_title: parsedDetails?.clients_title ?? 'Nuestros Clientes',
+        clients_subtitle: parsedDetails?.clients_subtitle ?? '',
+        about_sections_order: Array.isArray(parsedDetails?.about_sections_order) ? parsedDetails.about_sections_order : ['presentation', 'mission_vision', 'team', 'clients', 'allies', 'certifications', 'custom_html'],
+        about_sections_hidden: Array.isArray(parsedDetails?.about_sections_hidden) ? parsedDetails.about_sections_hidden : [],
+        about_html_sections: Array.isArray(parsedDetails?.about_html_sections) ? parsedDetails.about_html_sections : [],
         about_stat1_num: parsedDetails?.about_stat1_num || '15',
         about_stat1_label: parsedDetails?.about_stat1_label || 'Años de Trayectoria',
         about_stat2_num: parsedDetails?.about_stat2_num || '3,500',
@@ -1315,11 +1327,159 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                     <Building2 className="w-4 h-4 text-emerald-600" /> Sección Conócenos / Identidad Institucional
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Configura la historia, misión, visión y equipo de agentes para la página pública de Conócenos.
+                    Configura el orden de las secciones, clientes, aliados comerciales, certificaciones y bloques HTML personalizados para la página pública de Conócenos.
                   </p>
                 </div>
 
                 <div className="space-y-6">
+                  {/* ORGANIZADOR Y VISIBILIDAD DE SECCIONES */}
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                          <GripVertical className="w-3.5 h-3.5 text-emerald-600" />
+                          Orden y Visibilidad de Secciones en Conócenos
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Usa las flechas para cambiar el orden de las secciones o el ojo para activar u ocultarlas.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateDetailField('about_sections_order', [
+                            'presentation',
+                            'mission_vision',
+                            'team',
+                            'clients',
+                            'allies',
+                            'certifications',
+                            'custom_html',
+                          ]);
+                          updateDetailField('about_sections_hidden', []);
+                        }}
+                        className="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline cursor-pointer"
+                      >
+                        Restablecer Orden
+                      </button>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      {(() => {
+                        const allSections = [
+                          { id: 'presentation', label: 'Quiénes Somos / Presentación', icon: Building2, desc: 'Historia institucional, imagen y puntos clave' },
+                          { id: 'mission_vision', label: 'Misión y Visión', icon: Target, desc: 'Tarjetas de propósito corporativo' },
+                          { id: 'team', label: 'Equipo de Asesores', icon: Users, desc: 'Listado sincronizado de agentes de la agencia' },
+                          { id: 'clients', label: 'Nuestros Clientes (Carrusel de Logos)', icon: Sparkles, desc: 'Carrusel continuo de empresas clientes (Estilo Imagen 1)' },
+                          { id: 'allies', label: 'Asociados Comerciales', icon: Handshake, desc: 'Tarjetas con imagen, título y descripción (Estilo Imagen 2)' },
+                          { id: 'certifications', label: 'Certificaciones y Acreditaciones', icon: BadgeCheck, desc: 'Licencias oficiales y avales profesionales' },
+                          { id: 'custom_html', label: 'Secciones Personalizadas (HTML Puro)', icon: Code, desc: 'Bloques de código HTML libre, banners o widgets' },
+                        ];
+
+                        const currentOrder: string[] = Array.isArray(form.details?.about_sections_order) && form.details.about_sections_order.length > 0
+                          ? form.details.about_sections_order
+                          : allSections.map((s) => s.id);
+
+                        const fullOrder = [...currentOrder];
+                        allSections.forEach((s) => {
+                          if (!fullOrder.includes(s.id)) fullOrder.push(s.id);
+                        });
+
+                        const hiddenList: string[] = Array.isArray(form.details?.about_sections_hidden)
+                          ? form.details.about_sections_hidden
+                          : [];
+
+                        return fullOrder.map((secId, idx) => {
+                          const meta = allSections.find((s) => s.id === secId);
+                          if (!meta) return null;
+                          const isHidden = hiddenList.includes(secId);
+                          const IconComp = meta.icon;
+
+                          return (
+                            <div
+                              key={secId}
+                              className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
+                                isHidden
+                                  ? 'bg-slate-100/60 dark:bg-slate-950/40 border-slate-200/60 dark:border-slate-800/60 opacity-60'
+                                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span className="w-5 h-5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
+                                  {idx + 1}
+                                </span>
+                                <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 shrink-0">
+                                  <IconComp className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="truncate">
+                                  <div className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <span>{meta.label}</span>
+                                    {isHidden && (
+                                      <span className="text-[10px] font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/50 px-1.5 py-0.5 rounded-md">
+                                        Oculta
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[10px] text-slate-500 truncate m-0">{meta.desc}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={() => {
+                                    if (idx === 0) return;
+                                    const next = [...fullOrder];
+                                    const [moved] = next.splice(idx, 1);
+                                    next.splice(idx - 1, 0, moved);
+                                    updateDetailField('about_sections_order', next);
+                                  }}
+                                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                  title="Subir posición"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === fullOrder.length - 1}
+                                  onClick={() => {
+                                    if (idx === fullOrder.length - 1) return;
+                                    const next = [...fullOrder];
+                                    const [moved] = next.splice(idx, 1);
+                                    next.splice(idx + 1, 0, moved);
+                                    updateDetailField('about_sections_order', next);
+                                  }}
+                                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                  title="Bajar posición"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextHidden = isHidden
+                                      ? hiddenList.filter((k) => k !== secId)
+                                      : [...hiddenList, secId];
+                                    updateDetailField('about_sections_hidden', nextHidden);
+                                  }}
+                                  className={`p-1.5 rounded-lg border cursor-pointer transition-all ${
+                                    isHidden
+                                      ? 'border-rose-200 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:border-rose-800'
+                                      : 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:border-emerald-800'
+                                  }`}
+                                  title={isHidden ? 'Activar sección' : 'Ocultar sección'}
+                                >
+                                  {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+
                   {/* 1. Quiénes Somos */}
                   <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
                     <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
@@ -1551,13 +1711,191 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 4. Aliados Comerciales */}
+                  {/* 4. NUESTROS CLIENTES (CARRUSEL DE LOGOS) */}
                   <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
-                        <Handshake className="w-3.5 h-3.5 text-blue-600" />
-                        Aliados Comerciales (Bancos, Notarías, Aseguradoras)
-                      </h4>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                          Nuestros Clientes (Carrusel de Logos)
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Agrega los logos o imágenes de empresas clientes. En el frontend se listarán en un carrusel dinámico continuo como en la Imagen 1.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const list = Array.isArray(form.details?.our_clients) ? [...form.details.our_clients] : [];
+                          list.push({
+                            id: Date.now(),
+                            name: '',
+                            logo: '',
+                          });
+                          updateDetailField('our_clients', list);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Agregar Logo / Cliente</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Título de la Sección de Clientes:
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.clients_title ?? 'Nuestros Clientes'}
+                          onChange={(e) => updateDetailField('clients_title', e.target.value)}
+                          placeholder="Ej: Nuestros Clientes"
+                          className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold focus:border-amber-500 outline-none"
+                        />
+                        <span className="text-[10px] text-slate-400 mt-1 block">
+                          * Este título adoptará automáticamente el color primario de la marca.
+                        </span>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Subtítulo de la Sección de Clientes (Opcional):
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.clients_subtitle ?? ''}
+                          onChange={(e) => updateDetailField('clients_subtitle', e.target.value)}
+                          placeholder="Dejar vacío si no deseas mostrar subtítulo"
+                          className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:border-amber-500 outline-none"
+                        />
+                        <span className="text-[10px] text-slate-400 mt-1 block">
+                          * Si está vacío, no se renderizará ningún subtítulo ni espacio extra en el frontend.
+                        </span>
+                      </div>
+                    </div>
+
+                    {(!form.details?.our_clients || form.details.our_clients.length === 0) ? (
+                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
+                        <p className="text-xs text-slate-500 m-0">
+                          No has agregado clientes personalizados. El portal mostrará los logos predeterminados del sistema.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateDetailField('our_clients', [
+                              { id: 1, name: 'Grupo Manobanda', logo: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=300&q=80' },
+                              { id: 2, name: 'Inmoconstrucción Expo 2024 Quevedo', logo: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=300&q=80' },
+                              { id: 3, name: 'Banco Pichincha', logo: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=300&q=80' },
+                              { id: 4, name: 'Tesalia cbc', logo: 'https://images.unsplash.com/photo-1516876437184-593fda40c7ce?auto=format&fit=crop&w=300&q=80' },
+                            ]);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 font-bold text-xs cursor-pointer transition-all border border-amber-200 dark:border-amber-800"
+                        >
+                          Cargar Logos de Ejemplo
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {form.details.our_clients.map((client: any, idx: number) => (
+                          <div key={client.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[10px] font-black uppercase text-slate-400">Cliente / Logo #{idx + 1}</span>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={() => {
+                                    if (idx === 0) return;
+                                    const next = [...form.details.our_clients];
+                                    const [moved] = next.splice(idx, 1);
+                                    next.splice(idx - 1, 0, moved);
+                                    updateDetailField('our_clients', next);
+                                  }}
+                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                  title="Subir"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === form.details.our_clients.length - 1}
+                                  onClick={() => {
+                                    if (idx === form.details.our_clients.length - 1) return;
+                                    const next = [...form.details.our_clients];
+                                    const [moved] = next.splice(idx, 1);
+                                    next.splice(idx + 1, 0, moved);
+                                    updateDetailField('our_clients', next);
+                                  }}
+                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                  title="Bajar"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const list = form.details.our_clients.filter((_: any, i: number) => i !== idx);
+                                    updateDetailField('our_clients', list);
+                                  }}
+                                  className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                  title="Eliminar cliente"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Nombre de la Empresa / Cliente (Opcional):</label>
+                                <input
+                                  type="text"
+                                  value={client.name || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.our_clients];
+                                    list[idx] = { ...list[idx], name: e.target.value };
+                                    updateDetailField('our_clients', list);
+                                  }}
+                                  placeholder="Ej: Grupo Manobanda"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Logo o Imagen de la Empresa:</label>
+                                <MediaPicker
+                                  value={client.logo || client.image_url || client.image || ''}
+                                  onChange={(selected) => {
+                                    const list = [...form.details.our_clients];
+                                    list[idx] = {
+                                      ...list[idx],
+                                      logo: selected?.url || '',
+                                      image_url: selected?.url || '',
+                                      image: selected?.url || '',
+                                    };
+                                    updateDetailField('our_clients', list);
+                                  }}
+                                  label="Seleccionar o Subir Logo del Cliente"
+                                  type="image"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 5. Asociados Comerciales (Aliados) */}
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                          <Handshake className="w-3.5 h-3.5 text-blue-600" />
+                          Asociados Comerciales (Bancos, Notarías, Aseguradoras, Gremios)
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          En el frontend se listarán como tarjetas limpias con imagen destacada arriba, título y descripción como en la Imagen 2.
+                        </p>
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
@@ -1582,27 +1920,33 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
                       <div>
                         <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                          Título de la Sección de Aliados:
+                          Título de la Sección de Asociados:
                         </label>
                         <input
                           type="text"
                           value={form.details?.allies_title ?? 'Nuestros Aliados Comerciales'}
                           onChange={(e) => updateDetailField('allies_title', e.target.value)}
-                          placeholder="Nuestros Aliados Comerciales"
+                          placeholder="Ej: Asociados a / Aliados Comerciales"
                           className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold focus:border-blue-500 outline-none"
                         />
+                        <span className="text-[10px] text-slate-400 mt-1 block">
+                          * Este título adoptará automáticamente el color primario configurado.
+                        </span>
                       </div>
                       <div>
                         <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                          Subtítulo de la Sección de Aliados:
+                          Subtítulo de la Sección de Asociados (Opcional):
                         </label>
                         <input
                           type="text"
-                          value={form.details?.allies_subtitle ?? 'Colaboramos con las instituciones financieras, notarías y constructoras más prestigiosas para garantizar operaciones ágiles, seguras y transparentes.'}
+                          value={form.details?.allies_subtitle ?? ''}
                           onChange={(e) => updateDetailField('allies_subtitle', e.target.value)}
-                          placeholder="Colaboramos con las instituciones financieras..."
+                          placeholder="Dejar vacío si no deseas mostrar subtítulo"
                           className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:border-blue-500 outline-none"
                         />
+                        <span className="text-[10px] text-slate-400 mt-1 block">
+                          * Si está vacío, no se renderizará ningún subtítulo ni espacio extra en el frontend.
+                        </span>
                       </div>
                     </div>
 
@@ -1632,17 +1976,49 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                           <div key={ally.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-[10px] font-black uppercase text-slate-400">Aliado #{idx + 1}</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const list = form.details.commercial_allies.filter((_: any, i: number) => i !== idx);
-                                  updateDetailField('commercial_allies', list);
-                                }}
-                                className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
-                                title="Eliminar aliado"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={() => {
+                                    if (idx === 0) return;
+                                    const next = [...form.details.commercial_allies];
+                                    const [moved] = next.splice(idx, 1);
+                                    next.splice(idx - 1, 0, moved);
+                                    updateDetailField('commercial_allies', next);
+                                  }}
+                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                  title="Subir"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === form.details.commercial_allies.length - 1}
+                                  onClick={() => {
+                                    if (idx === form.details.commercial_allies.length - 1) return;
+                                    const next = [...form.details.commercial_allies];
+                                    const [moved] = next.splice(idx, 1);
+                                    next.splice(idx + 1, 0, moved);
+                                    updateDetailField('commercial_allies', next);
+                                  }}
+                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                  title="Bajar"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const list = form.details.commercial_allies.filter((_: any, i: number) => i !== idx);
+                                    updateDetailField('commercial_allies', list);
+                                  }}
+                                  className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                  title="Eliminar aliado"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <div>
@@ -1703,7 +2079,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Logo / Imagen del Aliado:</label>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Logo / Imagen del Aliado (Banner o Logo):</label>
                               <MediaPicker
                                 value={ally.logo || ally.image_url || ally.image || ''}
                                 onChange={(selected) => {
@@ -1716,7 +2092,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                                   };
                                   updateDetailField('commercial_allies', list);
                                 }}
-                                label="Seleccionar o Subir Logo del Aliado"
+                                label="Seleccionar o Subir Imagen/Logo del Aliado"
                               />
                             </div>
                           </div>
@@ -1725,7 +2101,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                     )}
                   </div>
 
-                  {/* 5. Certificaciones y Acreditaciones */}
+                  {/* 6. Certificaciones y Acreditaciones */}
                   <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
@@ -1778,17 +2154,49 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                           <div key={cert.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-[10px] font-black uppercase text-slate-400">Certificación #{idx + 1}</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const list = form.details.certifications.filter((_: any, i: number) => i !== idx);
-                                  updateDetailField('certifications', list);
-                                }}
-                                className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
-                                title="Eliminar certificación"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={() => {
+                                    if (idx === 0) return;
+                                    const next = [...form.details.certifications];
+                                    const [moved] = next.splice(idx, 1);
+                                    next.splice(idx - 1, 0, moved);
+                                    updateDetailField('certifications', next);
+                                  }}
+                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                  title="Subir"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === form.details.certifications.length - 1}
+                                  onClick={() => {
+                                    if (idx === form.details.certifications.length - 1) return;
+                                    const next = [...form.details.certifications];
+                                    const [moved] = next.splice(idx, 1);
+                                    next.splice(idx + 1, 0, moved);
+                                    updateDetailField('certifications', next);
+                                  }}
+                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                  title="Bajar"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const list = form.details.certifications.filter((_: any, i: number) => i !== idx);
+                                    updateDetailField('certifications', list);
+                                  }}
+                                  className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                  title="Eliminar certificación"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <div>
@@ -1879,6 +2287,201 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                                   updateDetailField('certifications', list);
                                 }}
                                 label="Seleccionar o Subir Imagen de la Certificación"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 7. SECCIONES PERSONALIZADAS CON HTML PURO */}
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                          <Code className="w-3.5 h-3.5 text-indigo-600" />
+                          Secciones Personalizadas con HTML Puro
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Agrega bloques de código HTML, widgets embebidos, iframes de video o mapas personalizados directamente en Conócenos.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const list = Array.isArray(form.details?.about_html_sections) ? [...form.details.about_html_sections] : [];
+                          list.push({
+                            id: Date.now(),
+                            title: '',
+                            subtitle: '',
+                            container: 'boxed',
+                            bg_color: '',
+                            html: '<div className="p-8 text-center bg-slate-50 rounded-3xl border border-slate-200">\n  <h3 className="text-xl font-bold text-slate-900 mb-2">Sección Personalizada</h3>\n  <p className="text-sm text-slate-600">Escribe aquí tu código HTML o incrusta contenido.</p>\n</div>',
+                          });
+                          updateDetailField('about_html_sections', list);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Agregar Sección HTML</span>
+                      </button>
+                    </div>
+
+                    {(!form.details?.about_html_sections || form.details.about_html_sections.length === 0) ? (
+                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-1">
+                        <p className="text-xs text-slate-500 m-0">
+                          No tienes secciones de HTML puro configuradas. Puedes agregar una haciendo clic en el botón superior.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {form.details.about_html_sections.map((sec: any, idx: number) => (
+                          <div key={sec.id || idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">
+                                Sección HTML #{idx + 1}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={() => {
+                                    if (idx === 0) return;
+                                    const next = [...form.details.about_html_sections];
+                                    const [moved] = next.splice(idx, 1);
+                                    next.splice(idx - 1, 0, moved);
+                                    updateDetailField('about_html_sections', next);
+                                  }}
+                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                  title="Subir"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === form.details.about_html_sections.length - 1}
+                                  onClick={() => {
+                                    if (idx === form.details.about_html_sections.length - 1) return;
+                                    const next = [...form.details.about_html_sections];
+                                    const [moved] = next.splice(idx, 1);
+                                    next.splice(idx + 1, 0, moved);
+                                    updateDetailField('about_html_sections', next);
+                                  }}
+                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                  title="Bajar"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const list = form.details.about_html_sections.filter((_: any, i: number) => i !== idx);
+                                    updateDetailField('about_html_sections', list);
+                                  }}
+                                  className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                  title="Eliminar sección HTML"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                  Título de la Sección (Opcional):
+                                </label>
+                                <input
+                                  type="text"
+                                  value={sec.title || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.about_html_sections];
+                                    list[idx] = { ...list[idx], title: e.target.value };
+                                    updateDetailField('about_html_sections', list);
+                                  }}
+                                  placeholder="Ej: Nuestra Infraestructura Tecnológica"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                />
+                                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                                  * Si se define, usará el color primario seleccionado.
+                                </span>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                  Subtítulo de la Sección (Opcional):
+                                </label>
+                                <input
+                                  type="text"
+                                  value={sec.subtitle || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.about_html_sections];
+                                    list[idx] = { ...list[idx], subtitle: e.target.value };
+                                    updateDetailField('about_html_sections', list);
+                                  }}
+                                  placeholder="Dejar vacío si no deseas subtítulo"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                  Tipo de Contenedor:
+                                </label>
+                                <select
+                                  value={sec.container || 'boxed'}
+                                  onChange={(e) => {
+                                    const list = [...form.details.about_html_sections];
+                                    list[idx] = { ...list[idx], container: e.target.value };
+                                    updateDetailField('about_html_sections', list);
+                                  }}
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                >
+                                  <option value="boxed">Enmarcado (Centrado con márgenes - Container)</option>
+                                  <option value="full">Ancho Completo (Full Width)</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                  Color de Fondo (Opcional):
+                                </label>
+                                <input
+                                  type="text"
+                                  value={sec.bg_color || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.about_html_sections];
+                                    list[idx] = { ...list[idx], bg_color: e.target.value };
+                                    updateDetailField('about_html_sections', list);
+                                  }}
+                                  placeholder="Ej: #f8fafc o transparente"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-mono"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase">
+                                  Código HTML Puro:
+                                </label>
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  Soporta divs, imágenes, iframes, estilos inline
+                                </span>
+                              </div>
+                              <textarea
+                                rows={6}
+                                value={sec.html || ''}
+                                onChange={(e) => {
+                                  const list = [...form.details.about_html_sections];
+                                  list[idx] = { ...list[idx], html: e.target.value };
+                                  updateDetailField('about_html_sections', list);
+                                }}
+                                placeholder="<div>...</div>"
+                                className="w-full px-3 py-2 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none leading-relaxed"
                               />
                             </div>
                           </div>
