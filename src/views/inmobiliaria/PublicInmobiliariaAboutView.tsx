@@ -664,7 +664,7 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
     if (ourClients.length === 0) return null;
 
     return (
-      <section key="clients" className="py-16 lg:py-24 bg-white border-b border-slate-100 overflow-hidden">
+      <section key="clients" className="py-14 lg:py-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
             <h2
@@ -696,19 +696,19 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
                 1024: { slidesPerView: 4, spaceBetween: 40 },
                 1280: { slidesPerView: 5, spaceBetween: 48 },
               }}
-              className="py-4 items-center"
+              className="py-2 items-center"
             >
               {ourClients.map((client: any, idx: number) => {
                 const logoUrl = client.logo || client.image || client.logo_url || client.image_url;
                 if (!logoUrl) return null;
                 return (
                   <SwiperSlide key={client.id || idx} className="flex items-center justify-center">
-                    <div className="h-28 sm:h-32 w-full flex items-center justify-center p-3 rounded-2xl bg-white border border-slate-100 hover:border-slate-300 shadow-2xs hover:shadow-xs transition-all">
+                    <div className="h-24 sm:h-28 w-full flex items-center justify-center p-2">
                       <img
                         src={logoUrl}
                         alt={client.name || `Cliente ${idx + 1}`}
                         loading="lazy"
-                        className="max-h-20 sm:max-h-24 max-w-[180px] sm:max-w-[220px] w-auto h-auto object-contain transition-transform duration-300 hover:scale-105"
+                        className="max-h-16 sm:max-h-20 max-w-[180px] sm:max-w-[220px] w-auto h-auto object-contain transition-transform duration-300 hover:scale-105"
                       />
                     </div>
                   </SwiperSlide>
@@ -726,9 +726,9 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
     if (commercialAllies.length === 0) return null;
 
     return (
-      <section key="allies" className="py-16 lg:py-24 bg-slate-50/70 border-b border-slate-200/80">
+      <section key="allies" className="py-14 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
             <h2
               className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight"
               style={{ color: primaryColor }}
@@ -742,42 +742,42 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
             {commercialAllies.map((ally: any, idx: number) => {
               const allyImage = ally.logo || ally.image_url || ally.image || ally.logo_url;
               return (
                 <div
                   key={ally.id || idx}
-                  className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+                  className="flex flex-col justify-between group transition-all duration-300"
                 >
                   <div>
-                    {/* Imagen superior estilo Imagen 2 con bordes redondeados destacados */}
+                    {/* Imagen superior estilo Imagen 2 con bordes redondeados destacados sin borde ni fondo blanco */}
                     {allyImage ? (
-                      <div className="w-full aspect-[4/4] sm:aspect-[4/3.8] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 relative flex items-center justify-center shadow-xs">
+                      <div className="w-full aspect-[4/4] sm:aspect-[4/3.8] rounded-3xl overflow-hidden relative flex items-center justify-center">
                         <img
                           src={allyImage}
                           alt={ally.name}
                           loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-3xl"
                         />
                       </div>
                     ) : null}
 
                     {/* Título en negrita abajo de la imagen */}
-                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-5 m-0 group-hover:text-emerald-700 transition-colors">
+                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-4 m-0 group-hover:text-emerald-700 transition-colors">
                       {ally.name}
                     </h3>
 
                     {/* Descripción debajo del título */}
                     {ally.description ? (
-                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal mt-3 m-0">
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal mt-2.5 m-0">
                         {ally.description}
                       </p>
                     ) : null}
                   </div>
 
                   {ally.website && ally.website !== '#' && (
-                    <div className="pt-4 mt-5 border-t border-slate-100 flex items-center justify-between">
+                    <div className="pt-3 mt-4 flex items-center justify-between">
                       <a
                         href={ally.website}
                         target="_blank"
