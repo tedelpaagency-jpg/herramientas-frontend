@@ -277,6 +277,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               },
             ]
           : []),
+        ...(isSuperAdmin
+          ? [
+              {
+                label: 'Destinos & Ubicaciones',
+                path: '/admin/locations',
+                icon: MapPin,
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -340,6 +349,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ...(isSuperAdmin
           ? [
               { label: 'Marcas Blancas', path: '/admin/white-labels', icon: Globe, permission: ['manage_agencies', 'view_agencies', 'agencies.view'] },
+              { label: 'Destinos & Ubicaciones', path: '/admin/locations', icon: MapPin, permission: ['manage_agencies', 'view_agencies'] },
             ]
           : []),
         ...(isSuperAdmin || isWhiteLabelAdmin
