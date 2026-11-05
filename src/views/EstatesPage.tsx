@@ -41,6 +41,7 @@ import {
   CheckCircle2,
   CheckCheck,
   Loader2,
+  User as UserIcon,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -81,6 +82,18 @@ export const EstatesPage: React.FC = () => {
 
   const { user, dashboardType, currentAgency } = useAuth();
   const isWhiteLabelOrSuperAdmin = dashboardType === 'white_label_admin' || dashboardType === 'super_admin' || user?.role === 'white_label_admin' || user?.role === 'super_admin';
+
+  const isAgencyAdmin = Boolean(
+    isWhiteLabelOrSuperAdmin ||
+    dashboardType === 'agency_admin' ||
+    ['agency_admin', 'admin', 'gerente', 'gerente_comercial'].includes(user?.role || '') ||
+    user?.roles?.some((r: any) => ['agency_admin', 'admin', 'gerente', 'gerente_comercial', 'super_admin', 'white_label_admin'].includes(r.name))
+  );
+
+  // Ámbito de visualización:
+  // 'all_agency' => Todas las propiedades de la agencia (Solo lectura para asesores normales)
+  // 'my_estates' => Solo las propiedades subidas por el usuario actual (Modificación y eliminación habilitada)
+  const [scopeTab, setScopeTab] = useState<'all_agency' | 'my_estates'>('all_agency');
 
   const [estates, setEstates] = useState<Estate[]>([]);
   const [mapEstates, setMapEstates] = useState<Estate[]>([]);
@@ -241,8 +254,9 @@ export const EstatesPage: React.FC = () => {
         type: typeFilter ? String(typeFilter) : undefined,
         status: isOperationFilter ? undefined : (statusFilter || undefined),
         property_status: statusFilter === 'rent' ? 1 : statusFilter === 'sale' ? 2 : statusFilter === 'auction' ? 3 : undefined,
-        agent_id: agentFilter ? Number(agentFilter) : undefined,
+        agent_id: scopeTab === 'my_estates' ? Number(user?.id) : (agentFilter ? Number(agentFilter) : undefined),
         agency_id: agencyFilter ? Number(agencyFilter) : undefined,
+        my_estates: scopeTab === 'my_estates' ? 1 : undefined,
       });
       setEstates(res.data);
       if (res.pagination) {
@@ -265,8 +279,9 @@ export const EstatesPage: React.FC = () => {
         type: typeFilter ? String(typeFilter) : undefined,
         status: isOperationFilter ? undefined : (statusFilter || undefined),
         property_status: statusFilter === 'rent' ? 1 : statusFilter === 'sale' ? 2 : statusFilter === 'auction' ? 3 : undefined,
-        agent_id: agentFilter ? Number(agentFilter) : undefined,
+        agent_id: scopeTab === 'my_estates' ? Number(user?.id) : (agentFilter ? Number(agentFilter) : undefined),
         agency_id: agencyFilter ? Number(agencyFilter) : undefined,
+        my_estates: scopeTab === 'my_estates' ? 1 : undefined,
       });
       setMapEstates(data);
     } catch (err) {
@@ -291,13 +306,34 @@ export const EstatesPage: React.FC = () => {
     if (viewMode !== 'reports') {
       fetchEstates();
     }
-  }, [page, perPage, search, typeFilter, statusFilter, agentFilter, agencyFilter, viewMode]);
+  }, [page, perPage, search, typeFilter, statusFilter, agentFilter, agencyFilter, viewMode, scopeTab]);
 
   useEffect(() => {
     if (viewMode === 'map') {
       fetchMapEstates();
     }
-  }, [viewMode, search, typeFilter, statusFilter, agentFilter, agencyFilter]);
+  }, [viewMode, search, typeFilter, statusFilter, agentFilter, agencyFilter, scopeTab]);
+
+  const handleScopeChange = (newScope: 'all_agency' | 'my_estates') => {
+    setScopeTab(newScope);
+    setPage(1);
+  };
+
+  const canEditEstate = (estate: Estate): boolean => {
+    if (isAgencyAdmin) return true;
+    if (scopeTab === 'all_agency') return false;
+    const currentUserId = Number(user?.id);
+    const estateUserId = Number(estate.user_id || estate.user?.id);
+    return Boolean(currentUserId && estateUserId && currentUserId === estateUserId);
+  };
+
+  const canDeleteEstate = (estate: Estate): boolean => {
+    if (isAgencyAdmin) return true;
+    if (scopeTab === 'all_agency') return false;
+    const currentUserId = Number(user?.id);
+    const estateUserId = Number(estate.user_id || estate.user?.id);
+    return Boolean(currentUserId && estateUserId && currentUserId === estateUserId);
+  };
 
   const handleOpenCreateModal = () => router.push('/estates/new');
   const handleOpenEditModal = (estate: Estate) => router.push(`/estates/${estate.id}/edit`);
@@ -529,6 +565,67 @@ export const EstatesPage: React.FC = () => {
         </div>
       )}
 
+      {/* Scope Switcher Tabs (Todas las Propiedades de la Agencia vs Mis Propiedades Subidas) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl">
+          <button
+            type="button"
+            onClick={() => handleScopeChange('all_agency')}
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              scopeTab === 'all_agency'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Building2 className={`w-4 h-4 ${scopeTab === 'all_agency' ? 'text-blue-600' : 'text-slate-400'}`} />
+            <span>Todas las de la Agencia</span>
+            {!isAgencyAdmin && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700 text-slate-600 dark:text-slate-300 ml-1">
+                Solo Lectura
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleScopeChange('my_estates')}
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              scopeTab === 'my_estates'
+                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <UserIcon className={`w-4 h-4 ${scopeTab === 'my_estates' ? 'text-blue-600' : 'text-slate-400'}`} />
+            <span>Mis Propiedades Subidas</span>
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 ml-1">
+              Edición Habilitada
+            </span>
+          </button>
+        </div>
+
+        {/* Explicación de contexto según permisos */}
+        <div className="flex items-center gap-2 px-3 py-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
+          {scopeTab === 'all_agency' ? (
+            isAgencyAdmin ? (
+              <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                Modo Administrador: Puedes editar y gestionar cualquier propiedad de la agencia.
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
+                <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                Mostrando el catálogo completo de la agencia (Solo lectura). Cambia a &ldquo;Mis Propiedades&rdquo; para editar las tuyas.
+              </span>
+            )
+          ) : (
+            <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 text-[11px]">
+              <UserIcon className="w-3.5 h-3.5" />
+              Mostrando únicamente las propiedades creadas por ti con permisos completos de edición y eliminación.
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Filter & View Switcher Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-4 items-center justify-between">
         <div className="flex flex-wrap gap-3 items-center flex-grow">
@@ -609,7 +706,7 @@ export const EstatesPage: React.FC = () => {
           )}
 
           {/* Asesor Filter */}
-          {showAdminAgent && (
+          {showAdminAgent && scopeTab === 'all_agency' && (
             <div className="w-full sm:w-56 min-w-[200px]">
               <AdvisorSearchSelect
                 users={agents}
@@ -623,6 +720,13 @@ export const EstatesPage: React.FC = () => {
                 placeholder="Todos los Asesores"
                 className="w-full"
               />
+            </div>
+          )}
+
+          {scopeTab === 'my_estates' && (
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs font-semibold text-blue-700 dark:text-blue-300">
+              <UserIcon className="w-3.5 h-3.5 shrink-0" />
+              <span>Asesor: {user?.name || 'Mis publicaciones'}</span>
             </div>
           )}
 
@@ -826,9 +930,16 @@ export const EstatesPage: React.FC = () => {
                                   <span>{estate.user?.name ? estate.user.name.charAt(0).toUpperCase() : 'A'}</span>
                                 )}
                               </div>
-                              <span className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[130px]" title={estate.user?.name || 'Asesor Inmobiliario'}>
-                                {estate.user?.name || 'Asesor Inmobiliario'}
-                              </span>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[130px]" title={estate.user?.name || 'Asesor Inmobiliario'}>
+                                  {estate.user?.name || 'Asesor Inmobiliario'}
+                                </span>
+                                {Boolean((estate.user_id && user?.id && Number(estate.user_id) === Number(user?.id)) || (estate.user?.id && user?.id && Number(estate.user.id) === Number(user?.id))) && (
+                                  <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                                    (Tú)
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </td>
 
@@ -980,27 +1091,37 @@ export const EstatesPage: React.FC = () => {
 
                                       <div className="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
 
-                                      <button
-                                        onClick={() => {
-                                          setActiveMenuId(null);
-                                          handleOpenEditModal(estate);
-                                        }}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                      >
-                                        <Edit3 className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                                        <span>Editar Inmueble</span>
-                                      </button>
+                                      {canEditEstate(estate) && (
+                                        <button
+                                          onClick={() => {
+                                            setActiveMenuId(null);
+                                            handleOpenEditModal(estate);
+                                          }}
+                                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                        >
+                                          <Edit3 className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                          <span>Editar Inmueble</span>
+                                        </button>
+                                      )}
 
-                                      <button
-                                        onClick={() => {
-                                          setActiveMenuId(null);
-                                          handleDelete(estate.id);
-                                        }}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                                      >
-                                        <Trash2 className="w-4 h-4 flex-shrink-0" />
-                                        <span>Eliminar Inmueble</span>
-                                      </button>
+                                      {canDeleteEstate(estate) && (
+                                        <button
+                                          onClick={() => {
+                                            setActiveMenuId(null);
+                                            handleDelete(estate.id);
+                                          }}
+                                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                                        >
+                                          <Trash2 className="w-4 h-4 flex-shrink-0" />
+                                          <span>Eliminar Inmueble</span>
+                                        </button>
+                                      )}
+
+                                      {!canEditEstate(estate) && !canDeleteEstate(estate) && (
+                                        <div className="px-4 py-2 text-[10px] text-slate-400 dark:text-slate-500 italic bg-slate-50/50 dark:bg-slate-800/30">
+                                          Propiedad de la agencia (solo lectura)
+                                        </div>
+                                      )}
                                     </div>
                                   </>
                                 )}
@@ -1099,27 +1220,37 @@ export const EstatesPage: React.FC = () => {
 
                                 <div className="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
 
-                                <button
-                                  onClick={() => {
-                                    setActiveMenuId(null);
-                                    handleOpenEditModal(estate);
-                                  }}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                >
-                                  <Edit3 className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                                  <span>Editar Inmueble</span>
-                                </button>
+                                {canEditEstate(estate) && (
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuId(null);
+                                      handleOpenEditModal(estate);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                  >
+                                    <Edit3 className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                    <span>Editar Inmueble</span>
+                                  </button>
+                                )}
 
-                                <button
-                                  onClick={() => {
-                                    setActiveMenuId(null);
-                                    handleDelete(estate.id);
-                                  }}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-rose-600 hover:bg-rose-50 transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4 flex-shrink-0" />
-                                  <span>Eliminar Inmueble</span>
-                                </button>
+                                {canDeleteEstate(estate) && (
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuId(null);
+                                      handleDelete(estate.id);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4 flex-shrink-0" />
+                                    <span>Eliminar Inmueble</span>
+                                  </button>
+                                )}
+
+                                {!canEditEstate(estate) && !canDeleteEstate(estate) && (
+                                  <div className="px-4 py-2 text-[10px] text-slate-400 dark:text-slate-500 italic bg-slate-50/50 dark:bg-slate-800/30">
+                                    Propiedad de la agencia (solo lectura)
+                                  </div>
+                                )}
                               </div>
                             </>
                           )}
@@ -1143,9 +1274,16 @@ export const EstatesPage: React.FC = () => {
                               <span>{estate.user?.name ? estate.user.name.charAt(0).toUpperCase() : 'A'}</span>
                             )}
                           </div>
-                          <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate" title={estate.user?.name || 'Asesor Inmobiliario'}>
-                            {estate.user?.name || 'Asesor Inmobiliario'}
-                          </span>
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate" title={estate.user?.name || 'Asesor Inmobiliario'}>
+                              {estate.user?.name || 'Asesor Inmobiliario'}
+                            </span>
+                            {Boolean((estate.user_id && user?.id && Number(estate.user_id) === Number(user?.id)) || (estate.user?.id && user?.id && Number(estate.user.id) === Number(user?.id))) && (
+                              <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1 py-0.2 rounded">
+                                (Tú)
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1225,27 +1363,37 @@ export const EstatesPage: React.FC = () => {
 
                                 <div className="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
 
-                                <button 
-                                  onClick={() => {
-                                    setActiveMenuId(null);
-                                    handleOpenEditModal(estate);
-                                  }} 
-                                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                >
-                                  <Edit3 className="w-4 h-4 text-amber-600" />
-                                  <span>Editar</span>
-                                </button>
+                                {canEditEstate(estate) && (
+                                  <button 
+                                    onClick={() => {
+                                      setActiveMenuId(null);
+                                      handleOpenEditModal(estate);
+                                    }} 
+                                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                  >
+                                    <Edit3 className="w-4 h-4 text-amber-600" />
+                                    <span>Editar</span>
+                                  </button>
+                                )}
 
-                                <button 
-                                  onClick={() => {
-                                    setActiveMenuId(null);
-                                    handleDelete(estate.id);
-                                  }} 
-                                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  <span>Eliminar</span>
-                                </button>
+                                {canDeleteEstate(estate) && (
+                                  <button 
+                                    onClick={() => {
+                                      setActiveMenuId(null);
+                                      handleDelete(estate.id);
+                                    }} 
+                                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Eliminar</span>
+                                  </button>
+                                )}
+
+                                {!canEditEstate(estate) && !canDeleteEstate(estate) && (
+                                  <div className="px-4 py-2 text-[10px] text-slate-400 dark:text-slate-500 italic bg-slate-50/50 dark:bg-slate-800/30">
+                                    Propiedad de la agencia (solo lectura)
+                                  </div>
+                                )}
                               </div>
                             </>
                           )}

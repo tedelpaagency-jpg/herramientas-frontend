@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
   Building2, ArrowLeft, ImagePlus, Upload, Trash2, GripVertical,
-  Save, X, CheckSquare, Square, Loader2
+  Save, X, CheckSquare, Square, Loader2, User as UserIcon
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import estateService from '../services/estateService';
 import estateCatalogService, { LocationsHierarchyData } from '../services/estateCatalogService';
 import { useAuth } from '../context/AuthContext';
@@ -47,12 +48,22 @@ interface ImageItem {
 
 export const EstateFormPage: React.FC = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, dashboardType } = useAuth();
   const params = useParams();
   const id = params?.id as string | undefined;
   const isEditing = Boolean(id);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isWhiteLabelOrSuperAdmin = dashboardType === 'white_label_admin' || dashboardType === 'super_admin' || user?.role === 'white_label_admin' || user?.role === 'super_admin';
+
+  const isAgencyAdmin = Boolean(
+    isWhiteLabelOrSuperAdmin ||
+    dashboardType === 'agency_admin' ||
+    ['agency_admin', 'admin', 'gerente', 'gerente_comercial'].includes(user?.role || '') ||
+    user?.roles?.some((r: any) => ['agency_admin', 'admin', 'gerente', 'gerente_comercial', 'super_admin', 'white_label_admin'].includes(r.name))
+  );
+
+  const [creatorUser, setCreatorUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(isEditing);
   const [isSaving, setIsSaving] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -143,6 +154,17 @@ export const EstateFormPage: React.FC = () => {
       try {
         const estateData = await estateService.getEstate(Number(id));
         const e: any = estateData;
+        const creator = e.user || (e.user_id ? { id: e.user_id, name: e.user_name || `Asesor #${e.user_id}` } : null);
+        setCreatorUser(creator);
+
+        // Standard advisers cannot modify someone else's property
+        const currentUserId = Number(user?.id);
+        const creatorId = Number(e.user_id || e.user?.id);
+        if (!isAgencyAdmin && currentUserId && creatorId && currentUserId !== creatorId) {
+          toast.error('No tienes permisos para modificar este inmueble. Solo puedes editar tus propias propiedades.');
+          router.replace('/estates');
+          return;
+        }
 
         setForm({
           title: e.title || '',
@@ -263,6 +285,8 @@ export const EstateFormPage: React.FC = () => {
       };
 
       if (isEditing && id) {
+        delete payload.user_id;
+        delete payload.user_type;
         await estateService.updateEstate(Number(id), payload);
         if (uploadedImages.length > 0) {
           await estateService.updateImages(Number(id), uploadedImages.map(img => img.filename));
@@ -393,7 +417,16 @@ export const EstateFormPage: React.FC = () => {
               <Building2 className="w-6 h-6 text-blue-600" />
               {isEditing ? 'Editar Inmueble' : 'Agregar Inmueble'}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Completa todos los campos y guarda los cambios.</p>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400">Completa todos los campos y guarda los cambios.</p>
+              {isEditing && creatorUser && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  <UserIcon className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Asesor Creador: <strong className="text-slate-900 dark:text-white">{creatorUser.name || `ID #${creatorUser.id}`}</strong></span>
+                  <span className="text-[10px] text-slate-400 font-normal ml-0.5">(Inmutable)</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
