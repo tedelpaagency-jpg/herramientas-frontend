@@ -606,10 +606,10 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
               <span>Red de Confianza</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Nuestros Aliados Comerciales
+              {agency?.details?.allies_title || 'Nuestros Aliados Comerciales'}
             </h2>
             <p className="text-xs sm:text-sm text-slate-600">
-              Colaboramos con las instituciones financieras, notarías y constructoras más prestigiosas para garantizar operaciones ágiles, seguras y transparentes.
+              {agency?.details?.allies_subtitle || 'Colaboramos con las instituciones financieras, notarías y constructoras más prestigiosas para garantizar operaciones ágiles, seguras y transparentes.'}
             </p>
           </div>
 

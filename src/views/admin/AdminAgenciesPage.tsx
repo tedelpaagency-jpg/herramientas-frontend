@@ -20,15 +20,17 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import whiteLabelService from '../../services/whiteLabelService';
+import estateCatalogService from '../../services/estateCatalogService';
 import { WhiteLabel } from '../../types/whiteLabel';
 import { TableSkeleton } from '@/components/Skeleton';
 
 export const AdminAgenciesPage: React.FC = () => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, currentWhiteLabel } = useAuth();
   const isSuperAdmin = currentUser?.role === 'super_admin' || currentUser?.roles?.some(r => r.name === 'super_admin');
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [whiteLabels, setWhiteLabels] = useState<WhiteLabel[]>([]);
+  const [availableCountries, setAvailableCountries] = useState<any[]>([]);
   const [whiteLabelFilter, setWhiteLabelFilter] = useState<number | ''>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,18 +51,10 @@ export const AdminAgenciesPage: React.FC = () => {
     address: '',
     city: '',
     province: '',
+    country: 'Ecuador',
+    pais_id: 1 as string | number,
     domain: '',
     white_label_id: '' as string | number,
-    stripe_publishable_key: '',
-    stripe_secret_key: '',
-    stripe_webhook_secret: '',
-    stripe_mode: 'test' as 'test' | 'live',
-    stripe_test_publishable_key: '',
-    stripe_test_secret_key: '',
-    stripe_test_webhook_secret: '',
-    stripe_live_publishable_key: '',
-    stripe_live_secret_key: '',
-    stripe_live_webhook_secret: '',
     plan_id: '' as string | number,
     status: 1,
   });
@@ -96,11 +90,28 @@ export const AdminAgenciesPage: React.FC = () => {
       whiteLabelService.getWhiteLabels()
         .then(res => setWhiteLabels(Array.isArray(res) ? res : res?.data || []))
         .catch(err => console.error('Error cargando Marcas Blancas:', err));
+    } else if (currentWhiteLabel) {
+      setWhiteLabels([currentWhiteLabel]);
+    } else if ((currentUser as any)?.white_labels?.length > 0) {
+      setWhiteLabels((currentUser as any).white_labels);
     }
-  }, [isSuperAdmin]);
+  }, [isSuperAdmin, currentWhiteLabel, currentUser]);
+
+  useEffect(() => {
+    estateCatalogService.getLocationsHierarchy()
+      .then(res => {
+        if (res?.countries && Array.isArray(res.countries)) {
+          setAvailableCountries(res.countries);
+        } else if ((res as any)?.data?.countries && Array.isArray((res as any).data.countries)) {
+          setAvailableCountries((res as any).data.countries);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const openCreateModal = () => {
     setEditingAgency(null);
+    const defaultWlId = !isSuperAdmin ? (currentWhiteLabel?.id || (currentUser as any)?.white_labels?.[0]?.id || '') : '';
     setFormData({
       name: '',
       razon_social: '',
@@ -110,18 +121,10 @@ export const AdminAgenciesPage: React.FC = () => {
       address: '',
       city: '',
       province: '',
+      country: 'Ecuador',
+      pais_id: 1,
       domain: '',
-      white_label_id: '',
-      stripe_publishable_key: '',
-      stripe_secret_key: '',
-      stripe_webhook_secret: '',
-      stripe_mode: 'test' as 'test' | 'live',
-      stripe_test_publishable_key: '',
-      stripe_test_secret_key: '',
-      stripe_test_webhook_secret: '',
-      stripe_live_publishable_key: '',
-      stripe_live_secret_key: '',
-      stripe_live_webhook_secret: '',
+      white_label_id: defaultWlId,
       plan_id: plans[0]?.id || '',
       status: 1,
     });
@@ -130,6 +133,7 @@ export const AdminAgenciesPage: React.FC = () => {
 
   const openEditModal = (agency: Agency) => {
     setEditingAgency(agency);
+    const defaultWlId = agency.white_label_id || currentWhiteLabel?.id || (currentUser as any)?.white_labels?.[0]?.id || '';
     setFormData({
       name: agency.name,
       razon_social: agency.razon_social || '',
@@ -139,18 +143,10 @@ export const AdminAgenciesPage: React.FC = () => {
       address: agency.address || '',
       city: agency.city || '',
       province: agency.province || '',
+      country: agency.country || (agency as any).country_name || (agency as any).country_rel?.name || 'Ecuador',
+      pais_id: agency.pais_id || (agency as any).country_rel?.id || 1,
       domain: agency.domain || '',
-      white_label_id: agency.white_label_id || '',
-      stripe_publishable_key: agency.stripe_publishable_key || '',
-      stripe_secret_key: agency.stripe_secret_key || '',
-      stripe_webhook_secret: agency.stripe_webhook_secret || '',
-      stripe_mode: (agency.stripe_mode as 'test' | 'live') || 'test',
-      stripe_test_publishable_key: agency.stripe_test_publishable_key || (agency.stripe_mode === 'test' ? agency.stripe_publishable_key : '') || '',
-      stripe_test_secret_key: agency.stripe_test_secret_key || (agency.stripe_mode === 'test' ? agency.stripe_secret_key : '') || '',
-      stripe_test_webhook_secret: agency.stripe_test_webhook_secret || (agency.stripe_mode === 'test' ? agency.stripe_webhook_secret : '') || '',
-      stripe_live_publishable_key: agency.stripe_live_publishable_key || (agency.stripe_mode === 'live' ? agency.stripe_publishable_key : '') || '',
-      stripe_live_secret_key: agency.stripe_live_secret_key || (agency.stripe_mode === 'live' ? agency.stripe_secret_key : '') || '',
-      stripe_live_webhook_secret: agency.stripe_live_webhook_secret || (agency.stripe_mode === 'live' ? agency.stripe_webhook_secret : '') || '',
+      white_label_id: defaultWlId,
       plan_id: agency.plan_id || '',
       status: agency.status ?? 1,
     });
@@ -162,22 +158,20 @@ export const AdminAgenciesPage: React.FC = () => {
     setError(null);
     setSuccess(null);
 
-    const activePublishableKey = formData.stripe_mode === 'live'
-      ? (formData.stripe_live_publishable_key || formData.stripe_publishable_key)
-      : (formData.stripe_test_publishable_key || formData.stripe_publishable_key);
-    const activeSecretKey = formData.stripe_mode === 'live'
-      ? (formData.stripe_live_secret_key || formData.stripe_secret_key)
-      : (formData.stripe_test_secret_key || formData.stripe_secret_key);
-    const activeWebhookSecret = formData.stripe_mode === 'live'
-      ? (formData.stripe_live_webhook_secret || formData.stripe_webhook_secret)
-      : (formData.stripe_test_webhook_secret || formData.stripe_webhook_secret);
-
     const payload: any = {
-      ...formData,
-      stripe_publishable_key: activePublishableKey,
-      stripe_secret_key: activeSecretKey,
-      stripe_webhook_secret: activeWebhookSecret,
+      name: formData.name,
+      razon_social: formData.razon_social,
+      ruc: formData.ruc,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+      city: formData.city,
+      province: formData.province,
+      country: formData.country || 'Ecuador',
+      pais_id: formData.pais_id ? Number(formData.pais_id) : 1,
+      domain: formData.domain,
       white_label_id: formData.white_label_id ? Number(formData.white_label_id) : null,
+      status: formData.status,
     };
 
     if (editingAgency) {
@@ -478,12 +472,51 @@ export const AdminAgenciesPage: React.FC = () => {
                 </div>
 
                 <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">País</label>
+                  <select
+                    value={formData.country || 'Ecuador'}
+                    onChange={(e) => {
+                      const cName = e.target.value;
+                      const cObj = availableCountries.find(c => c.name.toLowerCase() === cName.toLowerCase());
+                      setFormData({
+                        ...formData,
+                        country: cName,
+                        pais_id: cObj?.id || 1,
+                      });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
+                  >
+                    {(availableCountries.length > 0 ? availableCountries : [
+                      { id: 1, name: 'Ecuador' },
+                      { id: 2, name: 'Colombia' },
+                      { id: 3, name: 'España' },
+                      { id: 4, name: 'Estados Unidos' }
+                    ]).map((c) => (
+                      <option key={c.id || c.name} value={c.name}>
+                        🌎 {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Provincia</label>
+                  <input
+                    type="text"
+                    value={formData.province || ''}
+                    onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                    placeholder="Pichincha, Guayas, etc."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+
+                <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Ciudad</label>
                   <input
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="Lima"
+                    placeholder="Quito, Guayaquil, etc."
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 </div>
@@ -523,20 +556,34 @@ export const AdminAgenciesPage: React.FC = () => {
 
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Marca Blanca {editingAgency ? '(Reasignar)' : ''}
+                    Marca Blanca {editingAgency && isSuperAdmin ? '(Reasignar)' : ''}
                   </label>
-                  <select
-                    value={formData.white_label_id}
-                    onChange={(e) => setFormData({ ...formData, white_label_id: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
-                  >
-                    <option value="">Sin Marca Blanca Asignada</option>
-                    {whiteLabels.map((wl) => (
-                      <option key={wl.id} value={wl.id}>
-                        🏢 {wl.name}
-                      </option>
-                    ))}
-                  </select>
+                  {isSuperAdmin ? (
+                    <select
+                      value={formData.white_label_id}
+                      onChange={(e) => setFormData({ ...formData, white_label_id: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
+                    >
+                      <option value="">Sin Marca Blanca Asignada</option>
+                      {whiteLabels.map((wl) => (
+                        <option key={wl.id} value={wl.id}>
+                          🏢 {wl.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="p-2.5 px-3 bg-blue-50/60 dark:bg-blue-950/20 rounded-xl border border-blue-200/60 dark:border-blue-900/40 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4 text-blue-600" />
+                        <span className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                          {currentWhiteLabel?.name || editingAgency?.white_label?.name || (currentUser as any)?.white_labels?.[0]?.name || 'Mi Marca Blanca'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] bg-blue-200/60 text-blue-900 dark:bg-blue-900/60 dark:text-blue-200 px-2 py-0.5 rounded-full font-bold">
+                        Asignada
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -549,152 +596,6 @@ export const AdminAgenciesPage: React.FC = () => {
                   placeholder="Av. Principal 123, Of. 401"
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:border-amber-500 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 />
-              </div>
-
-              {/* Stripe API Keys */}
-              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400 block">
-                      Credenciales Pasarela Stripe
-                    </span>
-                    <span className="text-[9px] text-slate-400">
-                      Registre claves por separado e indique cuál entorno está activo.
-                    </span>
-                  </div>
-
-                  {/* Selector de Modo Activo */}
-                  <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-900 p-0.5 rounded-lg">
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, stripe_mode: 'test' })}
-                      className={`px-2.5 py-1 rounded text-[10px] font-extrabold flex items-center gap-1 transition-all ${
-                        formData.stripe_mode === 'test'
-                          ? 'bg-amber-500 text-slate-950 shadow-xs'
-                          : 'text-slate-600 dark:text-slate-400'
-                      }`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${formData.stripe_mode === 'test' ? 'bg-slate-950 animate-ping' : 'bg-slate-400'}`} />
-                      Modo Pruebas
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, stripe_mode: 'live' })}
-                      className={`px-2.5 py-1 rounded text-[10px] font-extrabold flex items-center gap-1 transition-all ${
-                        formData.stripe_mode === 'live'
-                          ? 'bg-emerald-500 text-white shadow-xs'
-                          : 'text-slate-600 dark:text-slate-400'
-                      }`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${formData.stripe_mode === 'live' ? 'bg-white animate-ping' : 'bg-slate-400'}`} />
-                      Modo Producción
-                    </button>
-                  </div>
-                </div>
-
-                {/* Bloque 1: Credenciales Modo Pruebas */}
-                <div className={`p-2.5 rounded-lg border space-y-1.5 transition-all ${
-                  formData.stripe_mode === 'test'
-                    ? 'bg-amber-500/5 dark:bg-amber-950/20 border-amber-500/40 ring-1 ring-amber-500/20'
-                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 opacity-80'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                      🧪 Claves de Modo Pruebas (Test)
-                    </span>
-                    {formData.stripe_mode === 'test' ? (
-                      <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-amber-500 text-slate-950">
-                        ● Activo
-                      </span>
-                    ) : (
-                      <span className="text-[8px] text-slate-400 font-semibold">Guardado / Inactivo</span>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div>
-                      <label className="block text-[9px] text-slate-500 mb-0.5 font-bold">Publishable Key (Test)</label>
-                      <input
-                        type="text"
-                        placeholder="pk_test_..."
-                        value={formData.stripe_test_publishable_key || ''}
-                        onChange={(e) => setFormData({ ...formData, stripe_test_publishable_key: e.target.value })}
-                        className="w-full px-2 py-1 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] text-slate-500 mb-0.5 font-bold">Secret Key (Test)</label>
-                      <input
-                        type="password"
-                        placeholder="sk_test_..."
-                        value={formData.stripe_test_secret_key || ''}
-                        onChange={(e) => setFormData({ ...formData, stripe_test_secret_key: e.target.value })}
-                        className="w-full px-2 py-1 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] text-slate-500 mb-0.5 font-bold">Webhook Secret (Test)</label>
-                      <input
-                        type="text"
-                        placeholder="whsec_..."
-                        value={formData.stripe_test_webhook_secret || ''}
-                        onChange={(e) => setFormData({ ...formData, stripe_test_webhook_secret: e.target.value })}
-                        className="w-full px-2 py-1 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bloque 2: Credenciales Modo Producción */}
-                <div className={`p-2.5 rounded-lg border space-y-1.5 transition-all ${
-                  formData.stripe_mode === 'live'
-                    ? 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/40 ring-1 ring-emerald-500/20'
-                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 opacity-80'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                      🚀 Claves de Modo Producción (Live)
-                    </span>
-                    {formData.stripe_mode === 'live' ? (
-                      <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-emerald-500 text-white">
-                        ● Activo
-                      </span>
-                    ) : (
-                      <span className="text-[8px] text-slate-400 font-semibold">Guardado / Inactivo</span>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div>
-                      <label className="block text-[9px] text-slate-500 mb-0.5 font-bold">Publishable Key (Live)</label>
-                      <input
-                        type="text"
-                        placeholder="pk_live_..."
-                        value={formData.stripe_live_publishable_key || ''}
-                        onChange={(e) => setFormData({ ...formData, stripe_live_publishable_key: e.target.value })}
-                        className="w-full px-2 py-1 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] text-slate-500 mb-0.5 font-bold">Secret Key (Live)</label>
-                      <input
-                        type="password"
-                        placeholder="sk_live_..."
-                        value={formData.stripe_live_secret_key || ''}
-                        onChange={(e) => setFormData({ ...formData, stripe_live_secret_key: e.target.value })}
-                        className="w-full px-2 py-1 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] text-slate-500 mb-0.5 font-bold">Webhook Secret (Live)</label>
-                      <input
-                        type="text"
-                        placeholder="whsec_..."
-                        value={formData.stripe_live_webhook_secret || ''}
-                        onChange={(e) => setFormData({ ...formData, stripe_live_webhook_secret: e.target.value })}
-                        className="w-full px-2 py-1 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                      />
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">

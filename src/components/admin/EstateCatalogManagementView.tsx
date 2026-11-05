@@ -20,6 +20,9 @@ import {
   Search,
   Lock,
   Compass,
+  ArrowRight,
+  ArrowLeft,
+  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -44,17 +47,24 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
   const isSuperAdmin =
     user?.role === 'super_admin' ||
     user?.roles?.some((r: any) => r.name === 'super_admin');
-  const isWhiteLabelAdmin =
-    user?.role === 'white_label_admin' ||
-    user?.roles?.some((r: any) => r.name === 'white_label_admin');
-  const canManage = Boolean(isSuperAdmin || isWhiteLabelAdmin);
+  const canManage = Boolean(isSuperAdmin);
 
-  const [activeTab, setActiveTab] = useState<"countries" | "provinces" | "cities" | "parroquias" | "categories">("countries");
+  // Tab principal: jerarquía de ubicaciones o categorías
+  const [mainTab, setMainTab] = useState<"locations" | "categories">("locations");
+
+  // Navegación jerárquica de ubicaciones:
+  // selectedCountryId == null => Nivel 1: Países
+  // selectedCountryId != null && selectedProvinceId == null => Nivel 2: Provincias de ese país
+  // selectedProvinceId != null && selectedCityId == null => Nivel 3: Ciudades de esa provincia
+  // selectedCityId != null => Nivel 4: Parroquias de esa ciudad
+  const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
+  const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(null);
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [seeding, setSeeding] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedCityFilter, setSelectedCityFilter] = useState<string>("");
 
   const [countries, setCountries] = useState<EstateCountryItem[]>([]);
   const [provinces, setProvinces] = useState<EstateProvinceItem[]>([]);
@@ -142,7 +152,7 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
 
   const handleSeedDefaults = async () => {
     if (!canManage) {
-      toast.error("Solo el administrador de la Marca Blanca puede poblar datos en el catálogo.");
+      toast.error("Solo el Super Administrador puede poblar datos en el catálogo.");
       return;
     }
     if (!confirm("¿Deseas poblar el catálogo con países, ciudades y categorías sugeridas con fotos de alta resolución?")) {
@@ -194,13 +204,14 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
     setModalType("country");
   };
 
-  const openProvinceModal = (province?: EstateProvinceItem) => {
+  const openProvinceModal = (province?: EstateProvinceItem, defaultCountryId?: number) => {
+    const targetCountryId = defaultCountryId ?? selectedCountryId ?? (countries[0]?.id ?? undefined);
     if (province) {
       setEditingItem(province);
       setProvinceForm({
         name: province.name,
         code: province.code || "",
-        country_id: province.country_id || (countries[0]?.id ?? undefined),
+        country_id: province.country_id || targetCountryId,
         image: province.image || "",
         image_file: null,
         status: province.status,
@@ -212,7 +223,7 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
       setProvinceForm({
         name: "",
         code: "",
-        country_id: countries[0]?.id ?? undefined,
+        country_id: targetCountryId,
         image: "",
         image_file: null,
         status: true,
@@ -223,14 +234,18 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
     setModalType("province");
   };
 
-  const openCityModal = (city?: EstateCityItem) => {
+  const openCityModal = (city?: EstateCityItem, defaultCountryId?: number, defaultProvinceId?: number) => {
+    const targetCountryId = defaultCountryId ?? selectedCountryId ?? (countries[0]?.id ?? undefined);
+    const targetProvinceId = defaultProvinceId ?? selectedProvinceId ?? (provinces[0]?.id ?? undefined);
+    const provObj = provinces.find((p) => p.id === targetProvinceId);
+
     if (city) {
       setEditingItem(city);
       setCityForm({
         name: city.name,
-        province: city.province || "",
-        province_id: city.province_id || (city.provinceRel?.id ?? undefined),
-        country_id: city.country_id || (countries[0]?.id ?? undefined),
+        province: city.province || (provObj?.name || ""),
+        province_id: city.province_id || targetProvinceId,
+        country_id: city.country_id || targetCountryId,
         image: city.image || "",
         image_file: null,
         status: city.status,
@@ -241,9 +256,9 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
       setEditingItem(null);
       setCityForm({
         name: "",
-        province: "",
-        province_id: provinces[0]?.id ?? undefined,
-        country_id: countries[0]?.id ?? undefined,
+        province: provObj?.name || "",
+        province_id: targetProvinceId,
+        country_id: targetCountryId,
         image: "",
         image_file: null,
         status: true,
@@ -254,22 +269,22 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
     setModalType("city");
   };
 
-  const openParroquiaModal = (parroquia?: EstateParroquiaItem) => {
+  const openParroquiaModal = (parroquia?: EstateParroquiaItem, defaultCityId?: number) => {
+    const targetCityId = defaultCityId ?? selectedCityId ?? (cities[0]?.id ?? undefined);
     if (parroquia) {
       setEditingItem(parroquia);
       setParroquiaForm({
         name: parroquia.name,
-        city_id: parroquia.city_id || (cities[0]?.id ?? undefined),
+        city_id: parroquia.city_id || targetCityId,
         type: (parroquia.type as any) || "urbana",
         status: parroquia.status,
         order: parroquia.order || 0,
       });
     } else {
       setEditingItem(null);
-      const defaultCityId = selectedCityFilter ? Number(selectedCityFilter) : (cities[0]?.id ?? undefined);
       setParroquiaForm({
         name: "",
-        city_id: defaultCityId,
+        city_id: targetCityId,
         type: "urbana",
         status: true,
         order: parroquias.length + 1,
@@ -518,7 +533,7 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
 
   const handleToggleCountryStatus = async (id: number) => {
     if (!canManage) {
-      toast.error("Solo el administrador de la Marca Blanca puede cambiar el estado.");
+      toast.error("Solo el Super Administrador puede cambiar el estado.");
       return;
     }
     try {
@@ -534,7 +549,7 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
 
   const handleToggleProvinceStatus = async (id: number) => {
     if (!canManage) {
-      toast.error("Solo el administrador de la Marca Blanca puede cambiar el estado.");
+      toast.error("Solo el Super Administrador puede cambiar el estado.");
       return;
     }
     try {
@@ -550,7 +565,7 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
 
   const handleToggleCityStatus = async (id: number) => {
     if (!canManage) {
-      toast.error("Solo el administrador de la Marca Blanca puede cambiar el estado.");
+      toast.error("Solo el Super Administrador puede cambiar el estado.");
       return;
     }
     try {
@@ -566,7 +581,7 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
 
   const handleToggleParroquiaStatus = async (id: number) => {
     if (!canManage) {
-      toast.error("Solo el administrador de la Marca Blanca puede cambiar el estado.");
+      toast.error("Solo el Super Administrador puede cambiar el estado.");
       return;
     }
     try {
@@ -582,7 +597,7 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
 
   const handleToggleCategoryStatus = async (id: number) => {
     if (!canManage) {
-      toast.error("Solo el administrador de la Marca Blanca puede cambiar el estado.");
+      toast.error("Solo el Super Administrador puede cambiar el estado.");
       return;
     }
     try {
@@ -596,26 +611,49 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
     }
   };
 
-  // Filtrado por buscador
-  const filteredCountries = countries.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const filteredProvinces = provinces.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.code && p.code.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-  const filteredCities = cities.filter(
+  // Objetos y relaciones del nivel activo en la jerarquía
+  const selectedCountry = countries.find((c) => c.id === selectedCountryId);
+  const selectedProvince = provinces.find((p) => p.id === selectedProvinceId);
+  const selectedCity = cities.find((c) => c.id === selectedCityId);
+
+  // Sub-items del nivel actual en la jerarquía:
+  const activeLevelProvinces = selectedCountryId
+    ? provinces.filter((p) => p.country_id === selectedCountryId)
+    : [];
+
+  const activeLevelCities = selectedProvinceId
+    ? cities.filter(
+        (c) =>
+          c.province_id === selectedProvinceId ||
+          (selectedCountryId && c.country_id === selectedCountryId && c.province === selectedProvince?.name)
+      )
+    : [];
+
+  const activeLevelParroquias = selectedCityId
+    ? parroquias.filter((p) => p.city_id === selectedCityId)
+    : [];
+
+  // Filtrado por buscador según el nivel activo:
+  const filteredCountries = countries.filter(
     (c) =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.province && c.province.toLowerCase().includes(searchTerm.toLowerCase()))
+      (c.code && c.code.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-  const filteredParroquias = parroquias.filter((p) => {
-    const matchesSearch =
+
+  const filteredProvinces = activeLevelProvinces.filter(
+    (p) =>
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.city?.name && p.city.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCity = selectedCityFilter ? p.city_id === Number(selectedCityFilter) : true;
-    return matchesSearch && matchesCity;
-  });
+      (p.code && p.code.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const filteredCities = activeLevelCities.filter((c) =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredParroquias = activeLevelParroquias.filter((p) =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const filteredCategories = categories.filter((c) =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -710,161 +748,46 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
           <div className="mt-5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs flex items-center gap-2.5">
             <Lock className="w-4 h-4 shrink-0 text-amber-400" />
             <span>
-              <strong>Modo de solo lectura:</strong> Únicamente el Administrador de Marca Blanca tiene permisos para crear, editar o eliminar países, provincias, ciudades, parroquias y categorías del catálogo.
+              <strong>Modo de solo lectura:</strong> Únicamente el Super Administrador tiene permisos para crear, editar o eliminar países, provincias, ciudades, parroquias y categorías del catálogo.
             </span>
           </div>
         )}
       </div>
 
-      {/* Selector de Pestañas y Buscador */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+      {/* Selector de Pestaña Principal: Jerarquía de Ubicaciones vs Categorías */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="flex items-center gap-2 overflow-x-auto">
           <button
             type="button"
-            onClick={() => setActiveTab("countries")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === "countries"
+            onClick={() => {
+              setMainTab("locations");
+              setSearchTerm("");
+            }}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+              mainTab === "locations"
                 ? "bg-emerald-600 text-white shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
-            <Globe className="w-3.5 h-3.5" />
-            <span>Países ({countries.length})</span>
+            <Globe className="w-4 h-4" />
+            <span>Jerarquía de Ubicaciones (País ➔ Provincia ➔ Ciudad ➔ Parroquia)</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab("provinces")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === "provinces"
+            onClick={() => {
+              setMainTab("categories");
+              setSearchTerm("");
+            }}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+              mainTab === "categories"
                 ? "bg-emerald-600 text-white shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Provincias ({provinces.length})</span>
+            <Tag className="w-4 h-4" />
+            <span>Categorías Inmobiliarias ({categories.length})</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("cities")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === "cities"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Ciudades ({cities.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("parroquias")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === "parroquias"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>Parroquias ({parroquias.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("categories")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === "categories"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Tag className="w-3.5 h-3.5" />
-            <span>Categorías ({categories.length})</span>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {activeTab === "parroquias" && cities.length > 0 && (
-            <select
-              value={selectedCityFilter}
-              onChange={(e) => setSelectedCityFilter(e.target.value)}
-              className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 font-bold text-slate-700 dark:text-slate-300 max-w-[140px]"
-              title="Filtrar por ciudad"
-            >
-              <option value="">Todas las ciudades</option>
-              {cities.map((city) => (
-                <option key={city.id} value={city.id}>{city.name}</option>
-              ))}
-            </select>
-          )}
-
-          <div className="relative flex-1 sm:w-48">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            />
-          </div>
-
-          {canManage && activeTab === "countries" && (
-            <button
-              type="button"
-              onClick={() => openCountryModal()}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nuevo País</span>
-            </button>
-          )}
-
-          {canManage && activeTab === "provinces" && (
-            <button
-              type="button"
-              onClick={() => openProvinceModal()}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nueva Provincia</span>
-            </button>
-          )}
-
-          {canManage && activeTab === "cities" && (
-            <button
-              type="button"
-              onClick={() => openCityModal()}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nueva Ciudad</span>
-            </button>
-          )}
-
-          {canManage && activeTab === "parroquias" && (
-            <button
-              type="button"
-              onClick={() => openParroquiaModal()}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nueva Parroquia</span>
-            </button>
-          )}
-
-          {canManage && activeTab === "categories" && (
-            <button
-              type="button"
-              onClick={() => openCategoryModal()}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nueva Categoría</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -874,319 +797,789 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
           <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
           <p className="text-xs font-bold text-slate-500">Cargando catálogo...</p>
         </div>
-      ) : (
-        <>
-          {/* TAB 1: PAÍSES */}
-          {activeTab === "countries" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredCountries.map((c) => (
-                <div
-                  key={c.id}
-                  className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
+      ) : mainTab === "locations" ? (
+        <div className="space-y-5">
+          {/* Barra de Migas de Pan (Breadcrumbs) de Navegación Jerárquica */}
+          <div className="flex items-center flex-wrap gap-2 p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCountryId(null);
+                setSelectedProvinceId(null);
+                setSelectedCityId(null);
+                setSearchTerm("");
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                selectedCountryId === null
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5 text-emerald-500" />
+              <span>1. Países Globales ({countries.length})</span>
+            </button>
+
+            {selectedCountry && (
+              <>
+                <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedProvinceId(null);
+                    setSelectedCityId(null);
+                    setSearchTerm("");
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                    selectedProvinceId === null
+                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
                 >
-                  <div className="relative aspect-[16/10] bg-slate-800 overflow-hidden">
-                    {c.image ? (
-                      <img
-                        src={c.image}
-                        alt={c.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800">
-                        <ImageIcon className="w-8 h-8" />
-                      </div>
-                    )}
-                    <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider">
-                      {c.code || "EC"}
-                    </span>
-                    {canManage ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleCountryStatus(c.id);
-                        }}
-                        title="Click para cambiar estado (Activo / Inactivo)"
-                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
-                          c.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
-                        }`}
-                      >
-                        {c.status ? "Activo" : "Inactivo"}
-                      </button>
-                    ) : (
-                      <span
-                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
-                          c.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
-                        }`}
-                      >
-                        {c.status ? "Activo" : "Inactivo"}
-                      </span>
-                    )}
-                  </div>
+                  <Layers className="w-3.5 h-3.5 text-teal-500" />
+                  <span>2. {selectedCountry.name} ({activeLevelProvinces.length} provs)</span>
+                </button>
+              </>
+            )}
 
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white">{c.name}</h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Orden de visualización: #{c.order}</p>
-                    </div>
-
-                    {canManage && (
-                      <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                        <button
-                          type="button"
-                          onClick={() => openCountryModal(c)}
-                          className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
-                          title="Editar País"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete("country", c.id, c.name)}
-                          className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
-                          title="Eliminar País"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {filteredCountries.length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-400 text-xs">
-                  No se encontraron países registrados. Haz clic en &quot;Nuevo País&quot; o &quot;Cargar Sugeridos con Fotos&quot;.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 2: PROVINCIAS */}
-          {activeTab === "provinces" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredProvinces.map((prov) => (
-                <div
-                  key={prov.id}
-                  className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
+            {selectedProvince && (
+              <>
+                <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCityId(null);
+                    setSearchTerm("");
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                    selectedCityId === null
+                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
                 >
-                  <div className="relative aspect-[16/10] bg-gradient-to-br from-teal-900 to-slate-900 overflow-hidden">
-                    {prov.image ? (
-                      <img
-                        src={prov.image}
-                        alt={prov.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-teal-300/60 p-4">
-                        <Layers className="w-10 h-10 mb-1" />
-                        <span className="text-[11px] font-black tracking-widest uppercase opacity-75">{prov.code || "EC"}</span>
-                      </div>
-                    )}
-                    <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider">
-                      {prov.country?.name || "Ecuador"}
-                    </span>
-                    {canManage ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleProvinceStatus(prov.id);
-                        }}
-                        title="Click para cambiar estado (Activa / Inactiva)"
-                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
-                          prov.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
-                        }`}
-                      >
-                        {prov.status ? "Activa" : "Inactiva"}
-                      </button>
-                    ) : (
-                      <span
-                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
-                          prov.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
-                        }`}
-                      >
-                        {prov.status ? "Activa" : "Inactiva"}
-                      </span>
-                    )}
+                  <Building2 className="w-3.5 h-3.5 text-blue-500" />
+                  <span>3. {selectedProvince.name} ({activeLevelCities.length} ciudades)</span>
+                </button>
+              </>
+            )}
+
+            {selectedCity && (
+              <>
+                <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+                <div className="px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-purple-500" />
+                  <span>4. {selectedCity.name} ({activeLevelParroquias.length} parroquias)</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* NIVEL 1: PAÍSES (selectedCountryId === null) */}
+          {selectedCountryId === null && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-emerald-600" />
+                    Países Disponibles en la Plataforma
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Selecciona o explora las provincias de un país para gestionar su subdivisión territorial.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 sm:w-48">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar país o código..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
                   </div>
 
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                        <span>{prov.name}</span>
-                      </h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {prov.code ? `Código: ${prov.code}` : "Ecuador"} &bull; Orden: #{prov.order}
-                      </p>
-                    </div>
-
-                    {canManage && (
-                      <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                        <button
-                          type="button"
-                          onClick={() => openProvinceModal(prov)}
-                          className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
-                          title="Editar Provincia"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete("province", prov.id, prov.name)}
-                          className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
-                          title="Eliminar Provincia"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => openCountryModal()}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Nuevo País</span>
+                    </button>
+                  )}
                 </div>
-              ))}
-              {filteredProvinces.length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-400 text-xs">
-                  No se encontraron provincias registradas. Haz clic en &quot;Nueva Provincia&quot;.
-                </div>
-              )}
-            </div>
-          )}
+              </div>
 
-          {/* TAB 2: CIUDADES */}
-          {activeTab === "cities" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredCities.map((city) => (
-                <div
-                  key={city.id}
-                  className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
-                >
-                  <div className="relative aspect-[16/10] bg-slate-800 overflow-hidden">
-                    {city.image ? (
-                      <img
-                        src={city.image}
-                        alt={city.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800">
-                        <ImageIcon className="w-8 h-8" />
-                      </div>
-                    )}
-                    {city.country && (
-                      <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider">
-                        {city.country.name}
-                      </span>
-                    )}
-                    {canManage ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleCityStatus(city.id);
-                        }}
-                        title="Click para cambiar estado (Activa / Inactiva)"
-                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
-                          city.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
-                        }`}
-                      >
-                        {city.status ? "Activa" : "Inactiva"}
-                      </button>
-                    ) : (
-                      <span
-                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
-                          city.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
-                        }`}
-                      >
-                        {city.status ? "Activa" : "Inactiva"}
-                      </span>
-                    )}
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredCountries.map((c) => {
+                  const provCount = provinces.filter((p) => p.country_id === c.id).length;
+                  const cityCount = cities.filter((ci) => ci.country_id === c.id).length;
 
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>{city.name}</span>
-                      </h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {city.province ? `Provincia: ${city.province}` : "Sin provincia"} &bull; #{city.order}
-                      </p>
-                    </div>
-
-                    {canManage && (
-                      <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                        <button
-                          type="button"
-                          onClick={() => openCityModal(city)}
-                          className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
-                          title="Editar Ciudad"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete("city", city.id, city.name)}
-                          className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
-                          title="Eliminar Ciudad"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {filteredCities.length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-400 text-xs">
-                  No se encontraron ciudades registradas.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 4: PARROQUIAS */}
-          {activeTab === "parroquias" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredParroquias.map((parr) => (
-                <div
-                  key={parr.id}
-                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200/50 dark:border-purple-800/50">
-                        {parr.type || "urbana"}
-                      </span>
-                      {canManage ? (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleParroquiaStatus(parr.id)}
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase transition-all active:scale-90 cursor-pointer ${
-                            parr.status ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
-                          }`}
-                        >
-                          {parr.status ? "Activa" : "Inactiva"}
-                        </button>
-                      ) : (
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                            parr.status ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {parr.status ? "Activa" : "Inactiva"}
+                  return (
+                    <div
+                      key={c.id}
+                      className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
+                    >
+                      <div className="relative aspect-[16/10] bg-slate-800 overflow-hidden">
+                        {c.image ? (
+                          <img
+                            src={c.image}
+                            alt={c.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800">
+                            <ImageIcon className="w-8 h-8" />
+                          </div>
+                        )}
+                        <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider">
+                          {c.code || "EC"}
                         </span>
-                      )}
+                        {canManage ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleCountryStatus(c.id);
+                            }}
+                            title="Click para cambiar estado"
+                            className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
+                              c.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
+                            }`}
+                          >
+                            {c.status ? "Activo" : "Inactivo"}
+                          </button>
+                        ) : (
+                          <span
+                            className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
+                              c.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                            }`}
+                          >
+                            {c.status ? "Activo" : "Inactivo"}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white">{c.name}</h4>
+                          <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300">
+                              {provCount} Provincias
+                            </span>
+                            <span className="text-slate-300">&bull;</span>
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300">
+                              {cityCount} Ciudades
+                            </span>
+                          </p>
+                        </div>
+
+                        <div className="space-y-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCountryId(c.id);
+                              setSelectedProvinceId(null);
+                              setSelectedCityId(null);
+                              setSearchTerm("");
+                            }}
+                            className="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 font-black text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <span>Explorar Provincias</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+
+                          {canManage && (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => openCountryModal(c)}
+                                className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
+                                title="Editar País"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete("country", c.id, c.name)}
+                                className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
+                                title="Eliminar País"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {filteredCountries.length === 0 && (
+                  <div className="col-span-full py-12 text-center text-slate-400 text-xs">
+                    No se encontraron países registrados. Haz clic en &quot;Nuevo País&quot; o &quot;Cargar Sugeridos con Fotos&quot;.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* NIVEL 2: PROVINCIAS (selectedCountryId !== null && selectedProvinceId === null) */}
+          {selectedCountryId !== null && selectedProvinceId === null && selectedCountry && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCountryId(null);
+                      setSearchTerm("");
+                    }}
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
+                    title="Volver a Países"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-teal-600" />
+                      Provincias de {selectedCountry.name} ({activeLevelProvinces.length})
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Haz clic en &quot;Explorar Ciudades&quot; para ingresar a los cantones de cada provincia.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 sm:w-48">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar provincia o código..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => openProvinceModal(undefined, selectedCountryId)}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Nueva Provincia</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredProvinces.map((prov) => {
+                  const cityCount = cities.filter(
+                    (ci) =>
+                      ci.province_id === prov.id ||
+                      (ci.country_id === selectedCountryId && ci.province === prov.name)
+                  ).length;
+
+                  return (
+                    <div
+                      key={prov.id}
+                      className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
+                    >
+                      <div className="relative aspect-[16/10] bg-gradient-to-br from-teal-900 to-slate-900 overflow-hidden">
+                        {prov.image ? (
+                          <img
+                            src={prov.image}
+                            alt={prov.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-teal-300/60 p-4">
+                            <Layers className="w-10 h-10 mb-1" />
+                            <span className="text-[11px] font-black tracking-widest uppercase opacity-75">{prov.code || "EC"}</span>
+                          </div>
+                        )}
+                        <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider">
+                          {selectedCountry.name}
+                        </span>
+                        {canManage ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleProvinceStatus(prov.id);
+                            }}
+                            title="Click para cambiar estado"
+                            className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
+                              prov.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
+                            }`}
+                          >
+                            {prov.status ? "Activa" : "Inactiva"}
+                          </button>
+                        ) : (
+                          <span
+                            className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
+                              prov.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                            }`}
+                          >
+                            {prov.status ? "Activa" : "Inactiva"}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <Layers className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                            <span>{prov.name}</span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300">
+                              {prov.code ? `Código: ${prov.code}` : "Provincia"}
+                            </span>
+                            <span className="text-slate-300">&bull;</span>
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300">
+                              {cityCount} Ciudades
+                            </span>
+                          </p>
+                        </div>
+
+                        <div className="space-y-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedProvinceId(prov.id);
+                              setSelectedCityId(null);
+                              setSearchTerm("");
+                            }}
+                            className="w-full py-2 px-3 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300 font-black text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <span>Explorar Ciudades</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+
+                          {canManage && (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => openProvinceModal(prov, selectedCountryId)}
+                                className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
+                                title="Editar Provincia"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete("province", prov.id, prov.name)}
+                                className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
+                                title="Eliminar Provincia"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {filteredProvinces.length === 0 && (
+                  <div className="col-span-full py-12 text-center text-slate-400 text-xs">
+                    No se encontraron provincias para {selectedCountry.name}. Haz clic en &quot;Nueva Provincia&quot;.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* NIVEL 3: CIUDADES / CANTONES (selectedProvinceId !== null && selectedCityId === null) */}
+          {selectedProvinceId !== null && selectedCityId === null && selectedProvince && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedProvinceId(null);
+                      setSearchTerm("");
+                    }}
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
+                    title="Volver a Provincias"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-blue-600" />
+                      Ciudades / Cantones de {selectedProvince.name} ({activeLevelCities.length})
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Haz clic en &quot;Explorar Parroquias&quot; para ingresar a los sectores y parroquias de cada ciudad.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 sm:w-48">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar ciudad..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => openCityModal(undefined, selectedCountryId ?? undefined, selectedProvinceId)}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Nueva Ciudad</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredCities.map((city) => {
+                  const parroquiaCount = parroquias.filter((p) => p.city_id === city.id).length;
+
+                  return (
+                    <div
+                      key={city.id}
+                      className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
+                    >
+                      <div className="relative aspect-[16/10] bg-slate-800 overflow-hidden">
+                        {city.image ? (
+                          <img
+                            src={city.image}
+                            alt={city.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800">
+                            <ImageIcon className="w-8 h-8" />
+                          </div>
+                        )}
+                        <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider">
+                          {selectedProvince.name}
+                        </span>
+                        {canManage ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleCityStatus(city.id);
+                            }}
+                            title="Click para cambiar estado"
+                            className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
+                              city.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
+                            }`}
+                          >
+                            {city.status ? "Activa" : "Inactiva"}
+                          </button>
+                        ) : (
+                          <span
+                            className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
+                              city.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                            }`}
+                          >
+                            {city.status ? "Activa" : "Inactiva"}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span>{city.name}</span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300">
+                              {parroquiaCount} Parroquias
+                            </span>
+                            <span className="text-slate-300">&bull;</span>
+                            <span className="text-slate-400">#{city.order}</span>
+                          </p>
+                        </div>
+
+                        <div className="space-y-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCityId(city.id);
+                              setSearchTerm("");
+                            }}
+                            className="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 font-black text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <span>Explorar Parroquias</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+
+                          {canManage && (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => openCityModal(city, selectedCountryId ?? undefined, selectedProvinceId)}
+                                className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
+                                title="Editar Ciudad"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete("city", city.id, city.name)}
+                                className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
+                                title="Eliminar Ciudad"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {filteredCities.length === 0 && (
+                  <div className="col-span-full py-12 text-center text-slate-400 text-xs">
+                    No se encontraron ciudades para {selectedProvince.name}. Haz clic en &quot;Nueva Ciudad&quot;.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* NIVEL 4: PARROQUIAS (selectedCityId !== null) */}
+          {selectedCityId !== null && selectedCity && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCityId(null);
+                      setSearchTerm("");
+                    }}
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
+                    title="Volver a Ciudades"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-purple-600" />
+                      Parroquias de {selectedCity.name} ({activeLevelParroquias.length})
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Sectores y parroquias urbanas/rurales registradas para {selectedCity.name}, {selectedProvince?.name}.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 sm:w-48">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar parroquia..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => openParroquiaModal(undefined, selectedCityId)}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Nueva Parroquia</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredParroquias.map((parr) => (
+                  <div
+                    key={parr.id}
+                    className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200/50 dark:border-purple-800/50">
+                          {parr.type || "urbana"}
+                        </span>
+                        {canManage ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleParroquiaStatus(parr.id)}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase transition-all active:scale-90 cursor-pointer ${
+                              parr.status ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                            }`}
+                          >
+                            {parr.status ? "Activa" : "Inactiva"}
+                          </button>
+                        ) : (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                              parr.status ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {parr.status ? "Activa" : "Inactiva"}
+                          </span>
+                        )}
+                      </div>
+
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                        <span>{parr.name}</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                        <Building2 className="w-3 h-3 text-slate-400" />
+                        <span>{selectedCity.name}</span>
+                        <span className="text-slate-300">&bull;</span>
+                        <span>#{parr.order}</span>
+                      </p>
                     </div>
 
-                    <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                      <span>{parr.name}</span>
-                    </h4>
-                    <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-                      <Building2 className="w-3 h-3 text-slate-400" />
-                      <span>{parr.city?.name || "Ciudad no asignada"}</span>
-                      <span className="text-slate-300">&bull;</span>
-                      <span>#{parr.order}</span>
+                    {canManage && (
+                      <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => openParroquiaModal(parr, selectedCityId)}
+                          className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
+                          title="Editar Parroquia"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete("parroquia", parr.id, parr.name)}
+                          className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
+                          title="Eliminar Parroquia"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {filteredParroquias.length === 0 && (
+                  <div className="col-span-full py-12 text-center text-slate-400 text-xs">
+                    No se encontraron parroquias para {selectedCity.name}. Haz clic en &quot;Nueva Parroquia&quot;.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* PESTAÑA: CATEGORÍAS */
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Tag className="w-4 h-4 text-emerald-600" />
+                Categorías de Inmuebles ({categories.length})
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Tipos de propiedad disponibles (Casas, Departamentos, Terrenos, etc.) con sus imágenes y slugs oficiales.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 sm:w-48">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar categoría..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              {canManage && (
+                <button
+                  type="button"
+                  onClick={() => openCategoryModal()}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nueva Categoría</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredCategories.map((cat) => (
+              <div
+                key={cat.id}
+                className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
+              >
+                <div className="relative aspect-[16/10] bg-slate-800 overflow-hidden">
+                  {cat.image ? (
+                    <img
+                      src={cat.image}
+                      alt={cat.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800">
+                      <ImageIcon className="w-8 h-8" />
+                    </div>
+                  )}
+                  <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                    <Tag className="w-3 h-3 text-emerald-400" /> Tipo #{cat.property_type || 1}
+                  </span>
+                  {canManage ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleCategoryStatus(cat.id);
+                      }}
+                      title="Click para cambiar estado (Visible / Oculta)"
+                      className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
+                        cat.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
+                      }`}
+                    >
+                      {cat.status ? "Visible" : "Oculta"}
+                    </button>
+                  ) : (
+                    <span
+                      className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
+                        cat.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                      }`}
+                    >
+                      {cat.status ? "Visible" : "Oculta"}
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white">{cat.name}</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Slug: /{cat.slug || "cat"} &bull; Icono: {cat.icon || "home"} &bull; #{cat.order}
                     </p>
                   </div>
 
@@ -1194,119 +1587,32 @@ export const EstateCatalogManagementView: React.FC<EstateCatalogManagementViewPr
                     <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
                       <button
                         type="button"
-                        onClick={() => openParroquiaModal(parr)}
+                        onClick={() => openCategoryModal(cat)}
                         className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
-                        title="Editar Parroquia"
+                        title="Editar Categoría"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete("parroquia", parr.id, parr.name)}
+                        onClick={() => handleDelete("category", cat.id, cat.name)}
                         className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
-                        title="Eliminar Parroquia"
+                        title="Eliminar Categoría"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )}
                 </div>
-              ))}
-              {filteredParroquias.length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-400 text-xs">
-                  No se encontraron parroquias registradas{selectedCityFilter ? " para esta ciudad" : ""}. Haz clic en &quot;Nueva Parroquia&quot;.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 5: CATEGORÍAS */}
-          {activeTab === "categories" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredCategories.map((cat) => (
-                <div
-                  key={cat.id}
-                  className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
-                >
-                  <div className="relative aspect-[16/10] bg-slate-800 overflow-hidden">
-                    {cat.image ? (
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800">
-                        <ImageIcon className="w-8 h-8" />
-                      </div>
-                    )}
-                    <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-                      <Tag className="w-3 h-3 text-emerald-400" /> Tipo #{cat.property_type || 1}
-                    </span>
-                    {canManage ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleCategoryStatus(cat.id);
-                        }}
-                        title="Click para cambiar estado (Visible / Oculta)"
-                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs transition-transform active:scale-90 cursor-pointer ${
-                          cat.status ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
-                        }`}
-                      >
-                        {cat.status ? "Visible" : "Oculta"}
-                      </button>
-                    ) : (
-                      <span
-                        className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase shadow-xs ${
-                          cat.status ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
-                        }`}
-                      >
-                        {cat.status ? "Visible" : "Oculta"}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white">{cat.name}</h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Slug: /{cat.slug || "cat"} &bull; Icono: {cat.icon || "home"} &bull; #{cat.order}
-                      </p>
-                    </div>
-
-                    {canManage && (
-                      <div className="flex items-center justify-end gap-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                        <button
-                          type="button"
-                          onClick={() => openCategoryModal(cat)}
-                          className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-all cursor-pointer"
-                          title="Editar Categoría"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete("category", cat.id, cat.name)}
-                          className="p-1.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/50 active:scale-90 transition-all cursor-pointer"
-                          title="Eliminar Categoría"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {filteredCategories.length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-400 text-xs">
-                  No se encontraron categorías registradas.
-                </div>
-              )}
-            </div>
-          )}
-        </>
+              </div>
+            ))}
+            {filteredCategories.length === 0 && (
+              <div className="col-span-full py-12 text-center text-slate-400 text-xs">
+                No se encontraron categorías registradas.
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* ================= MODAL PAÍS ================= */}

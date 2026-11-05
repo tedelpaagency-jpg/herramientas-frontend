@@ -61,6 +61,8 @@ export interface Agency {
   address?: string;
   city?: string;
   province?: string;
+  country?: string | null;
+  pais_id?: number | null;
   domain?: string;
   logo?: string | null;
   logo_2?: string | null;

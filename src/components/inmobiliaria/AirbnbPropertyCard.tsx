@@ -44,6 +44,7 @@ interface AirbnbPropertyCardProps {
   estate: PublicEstateItem;
   currency?: string;
   primaryColor?: string;
+  secondaryColor?: string;
   domainParam?: string | null;
   isSelected?: boolean;
   onSelect?: (estate: PublicEstateItem) => void;
@@ -55,12 +56,15 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
   estate,
   currency = 'USD',
   primaryColor = '#00a884',
+  secondaryColor,
   domainParam,
   isSelected = false,
   onSelect,
   onMouseEnter,
   onMouseLeave,
 }) => {
+  const [isClicked, setIsClicked] = useState(false);
+  const resolvedSecondary = secondaryColor || (typeof window !== 'undefined' ? getComputedStyle(document.documentElement).getPropertyValue('--brand-secondary')?.trim() : '') || '#0f172a';
   const images = getEstateImages(estate);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -320,8 +324,11 @@ export const AirbnbPropertyCard: React.FC<AirbnbPropertyCardProps> = ({
         <div className="pt-1">
           <Link
             href={detailHref}
-            onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: primaryColor }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsClicked(true);
+            }}
+            style={{ backgroundColor: isClicked ? (resolvedSecondary || '#0f172a') : primaryColor }}
             className="w-full py-1.5 sm:py-2 px-3 rounded-xl text-white font-black text-[11px] sm:text-xs flex items-center justify-center gap-1.5 shadow-xs hover:opacity-90 active:scale-95 transition-all text-center tracking-tight"
           >
             <span>Ver Propiedad</span>

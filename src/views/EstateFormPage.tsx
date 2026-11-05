@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import estateService from '../services/estateService';
 import estateCatalogService, { LocationsHierarchyData } from '../services/estateCatalogService';
+import { useAuth } from '../context/AuthContext';
 import dynamic from 'next/dynamic';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
@@ -46,6 +47,7 @@ interface ImageItem {
 
 export const EstateFormPage: React.FC = () => {
   const router = useRouter();
+  const { user } = useAuth();
   const params = useParams();
   const id = params?.id as string | undefined;
   const isEditing = Boolean(id);
@@ -104,6 +106,28 @@ export const EstateFormPage: React.FC = () => {
         setLoadingLocations(true);
         const data = await estateCatalogService.getLocationsHierarchy();
         setLocationsData(data);
+
+        // Preselección de país asignado a la agencia del usuario
+        if (!isEditing && data?.countries?.length) {
+          const agencyCountryName = user?.agency?.country;
+          const agencyPaisId = user?.agency?.pais_id;
+          const matchedCountry =
+            data.countries.find(
+              (c) =>
+                (agencyPaisId && Number(c.id) === Number(agencyPaisId)) ||
+                (agencyCountryName && c.name.toLowerCase() === agencyCountryName.toLowerCase())
+            ) ||
+            data.countries.find((c) => c.name.toLowerCase() === 'ecuador') ||
+            data.countries[0];
+
+          if (matchedCountry) {
+            setForm((prev) => ({
+              ...prev,
+              pais_id: Number(matchedCountry.id),
+              country: matchedCountry.name,
+            }));
+          }
+        }
       } catch (err) {
         console.error('Error loading locations:', err);
       } finally {
@@ -111,7 +135,7 @@ export const EstateFormPage: React.FC = () => {
       }
     };
     fetchLocations();
-  }, []);
+  }, [user?.agency?.country, user?.agency?.pais_id, isEditing]);
 
   useEffect(() => {
     if (!isEditing) return;

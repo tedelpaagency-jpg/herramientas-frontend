@@ -101,6 +101,8 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       featured_title: 'Propiedades Destacadas',
       featured_subtitle: 'Selección curada de inmuebles residenciales y comerciales con alta plusvalía y respaldo legal.',
       featured_btn_text: 'Ver Todo el Catálogo de Propiedades',
+      allies_title: 'Nuestros Aliados Comerciales',
+      allies_subtitle: 'Colaboramos con las instituciones financieras, notarías y constructoras más prestigiosas para garantizar operaciones ágiles, seguras y transparentes.',
       about_stat1_num: '15',
       about_stat1_label: 'Años de Trayectoria',
       about_stat2_num: '3,500',
@@ -233,6 +235,8 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         featured_title: parsedDetails?.featured_title || 'Propiedades Destacadas',
         featured_subtitle: parsedDetails?.featured_subtitle || 'Selección curada de inmuebles residenciales y comerciales con alta plusvalía y respaldo legal.',
         featured_btn_text: parsedDetails?.featured_btn_text || 'Ver Todo el Catálogo de Propiedades',
+        allies_title: parsedDetails?.allies_title || 'Nuestros Aliados Comerciales',
+        allies_subtitle: parsedDetails?.allies_subtitle || 'Colaboramos con las instituciones financieras, notarías y constructoras más prestigiosas para garantizar operaciones ágiles, seguras y transparentes.',
         about_stat1_num: parsedDetails?.about_stat1_num || '15',
         about_stat1_label: parsedDetails?.about_stat1_label || 'Años de Trayectoria',
         about_stat2_num: parsedDetails?.about_stat2_num || '3,500',
@@ -636,17 +640,19 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
               <span>Legal &amp; CRM</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('catalog')}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'catalog' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Destinos &amp; Categorías</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase">WL</span>
-            </button>
+            {isSuperAdmin && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('catalog')}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'catalog' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Destinos &amp; Categorías</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase">SUPER ADMIN</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -1570,6 +1576,34 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                         <Plus className="w-3 h-3" />
                         <span>Agregar Aliado</span>
                       </button>
+                    </div>
+
+                    {/* Campos de Título y Subtítulo de la Sección de Aliados */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Título de la Sección de Aliados:
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.allies_title ?? 'Nuestros Aliados Comerciales'}
+                          onChange={(e) => updateDetailField('allies_title', e.target.value)}
+                          placeholder="Nuestros Aliados Comerciales"
+                          className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold focus:border-blue-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Subtítulo de la Sección de Aliados:
+                        </label>
+                        <input
+                          type="text"
+                          value={form.details?.allies_subtitle ?? 'Colaboramos con las instituciones financieras, notarías y constructoras más prestigiosas para garantizar operaciones ágiles, seguras y transparentes.'}
+                          onChange={(e) => updateDetailField('allies_subtitle', e.target.value)}
+                          placeholder="Colaboramos con las instituciones financieras..."
+                          className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:border-blue-500 outline-none"
+                        />
+                      </div>
                     </div>
 
                     {(!form.details?.commercial_allies || form.details.commercial_allies.length === 0) ? (
@@ -2875,8 +2909,8 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
               </div>
             )}
 
-            {/* PESTAÑA 9: DESTINOS & CATEGORÍAS (Países, Ciudades y Categorías de Marca Blanca) */}
-            {activeTab === 'catalog' && (
+            {/* PESTAÑA 9: DESTINOS & CATEGORÍAS (Países, Ciudades y Categorías Globales - Solo Super Admin) */}
+            {isSuperAdmin && activeTab === 'catalog' && (
               <div className="space-y-6 animate-in fade-in-50 duration-200">
                 <EstateCatalogManagementView
                   whiteLabelId={agencies.find((a: any) => a.id === selectedAgencyId)?.white_label_id}

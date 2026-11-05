@@ -380,20 +380,54 @@ export const AgencyDetailPage: React.FC<AgencyDetailPageProps> = ({ agencyId }) 
 
             <div className="space-y-3 text-xs">
               <div>
-                <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Gerente Comercial Asignado:</span>
-                {agency.gerente_comercial ? (
-                  <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center">
-                      {agency.gerente_comercial.name?.substring(0, 2).toUpperCase()}
+                <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Administrador de Marca Blanca:
+                </span>
+                {(() => {
+                  const wlAdmin = 
+                    (agency.white_label?.users && agency.white_label.users.find((u: any) => u.pivot?.role === 'white_label_admin' || u.role === 'white_label_admin')) ||
+                    agency.white_label?.creator ||
+                    (agency as any).white_label_admin ||
+                    agency.white_label?.users?.[0];
+
+                  if (!wlAdmin) {
+                    return (
+                      <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 italic">
+                        Sin Administrador de Marca Blanca asignado
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="p-3 bg-blue-50/60 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900/40 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center shrink-0 shadow-xs">
+                        {wlAdmin.name?.substring(0, 2).toUpperCase() || 'WL'}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-bold text-slate-900 dark:text-slate-100 text-xs truncate">{wlAdmin.name}</p>
+                          <span className="px-1.5 py-0.2 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-[9px] font-black uppercase">
+                            Admin Marca Blanca
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-blue-700 dark:text-blue-400 font-medium truncate">{wlAdmin.email}</p>
+                        {wlAdmin.phone && (
+                          <p className="text-[10px] text-slate-500 font-mono mt-0.5">{wlAdmin.phone}</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-indigo-950">{agency.gerente_comercial.name}</p>
-                      <p className="text-[11px] text-indigo-700 font-medium">{agency.gerente_comercial.email}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <span className="text-slate-400 italic">No asignado</span>
-                )}
+                  );
+                })()}
+              </div>
+
+              <div>
+                <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1">País Asignado:</span>
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2">
+                  <span className="text-base">🌎</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                    {agency.country || (agency as any).country_name || (agency as any).country_rel?.name || 'Ecuador'}
+                  </span>
+                </div>
               </div>
 
               <div>

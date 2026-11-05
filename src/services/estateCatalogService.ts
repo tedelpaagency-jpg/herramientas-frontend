@@ -9,6 +9,8 @@ export interface EstateCountryItem {
   status: boolean;
   order: number;
   cities?: EstateCityItem[];
+  provinces_count?: number;
+  cities_count?: number;
 }
 
 export interface EstateProvinceItem {
@@ -22,6 +24,7 @@ export interface EstateProvinceItem {
   order: number;
   country?: EstateCountryItem;
   cities?: EstateCityItem[];
+  cities_count?: number;
 }
 
 export interface EstateCityItem {
@@ -37,6 +40,7 @@ export interface EstateCityItem {
   country?: EstateCountryItem;
   provinceRel?: EstateProvinceItem;
   parroquias?: EstateParroquiaItem[];
+  parroquias_count?: number;
 }
 
 export interface EstateParroquiaItem {
