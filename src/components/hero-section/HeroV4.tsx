@@ -615,8 +615,18 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
     { label: 'Hasta $1M+', value: '1000000' },
   ];
 
+  const heroBannerMode = agency?.details?.hero_banner_mode || agency?.details?.hero_layout_mode || 'boxed';
+  const isFullWidth = heroBannerMode === 'full_width';
+
   return (
-    <div className="inmo-hero-wrapper px-3 sm:px-6 py-4 lg:py-6" style={{ maxWidth: '1540px', margin: '0 auto', width: '100%' }}>
+    <div
+      className={`inmo-hero-wrapper ${isFullWidth ? 'p-0 m-0 w-full' : 'px-3 sm:px-6 py-4 lg:py-6'}`}
+      style={{
+        maxWidth: isFullWidth ? '100%' : '1540px',
+        margin: isFullWidth ? '0' : '0 auto',
+        width: '100%',
+      }}
+    >
       <style jsx global>{`
         @keyframes inmoSpin {
           0% { transform: rotate(0deg); }
@@ -626,7 +636,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         /* Hero Frame Canvas (Grande, espacioso y centrado) */
         .inmo-hero-canvas {
           position: relative;
-          border-radius: 36px;
+          border-radius: ${isFullWidth ? '0px !important' : '36px'};
           overflow: visible !important;
           background-color: transparent !important;
           display: flex;
@@ -635,10 +645,10 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           justify-content: space-between;
           min-height: clamp(680px, 78vh, 800px);
           padding: 70px 24px 44px 24px;
-          box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.35);
+          box-shadow: ${isFullWidth ? 'none !important' : '0 20px 45px -15px rgba(0, 0, 0, 0.35)'};
           width: 100%;
-          max-width: 1480px;
-          margin: 0 auto;
+          max-width: ${isFullWidth ? '100% !important' : '1480px'};
+          margin: ${isFullWidth ? '0 !important' : '0 auto'};
         }
 
         @media (max-width: 991px) {
@@ -650,10 +660,10 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
         @media (max-width: 767px) {
           .inmo-hero-canvas {
-            border-radius: 24px;
+            border-radius: ${isFullWidth ? '0px !important' : '24px'};
             min-height: 560px;
             padding: 36px 14px 28px 14px;
-            box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.15);
+            box-shadow: ${isFullWidth ? 'none !important' : '0 10px 25px -10px rgba(0, 0, 0, 0.15)'};
             background-color: transparent !important;
           }
         }

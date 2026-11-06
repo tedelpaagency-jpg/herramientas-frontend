@@ -7,7 +7,7 @@ import {
   Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
   Target, Compass, Users, Megaphone, Video, Play, MapPin, SlidersHorizontal,
   Briefcase, Plus, Trash2, Handshake, BadgeCheck, FileSpreadsheet, ArrowUp, ArrowDown, Code, GripVertical,
-  ChevronDown, ChevronUp, Scale
+  ChevronDown, ChevronUp, Scale, Layout, Maximize2
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -229,6 +229,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       cookies_message: '',
       hero_media_type: 'video',
       banner_video: '/assets/video/home4-banner-video.mp4',
+      hero_banner_mode: 'boxed',
       hero_tab1: 'En Venta',
       hero_tab2: 'En Renta',
       hero_tab3: 'Terrenos & Lotes',
@@ -391,6 +392,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         cookies_message: parsedDetails?.cookies_message || '',
         hero_media_type: parsedDetails?.hero_media_type || (ag.banner_video || parsedDetails?.banner_video ? 'video' : (ag.banner_image ? 'image' : 'video')),
         banner_video: parsedDetails?.banner_video || ag.banner_video || '/assets/video/home4-banner-video.mp4',
+        hero_banner_mode: parsedDetails?.hero_banner_mode || 'boxed',
         hero_tab1: parsedDetails?.hero_tab1 || 'En Venta',
         hero_tab2: parsedDetails?.hero_tab2 || 'En Renta',
         hero_tab3: parsedDetails?.hero_tab3 || 'Terrenos & Lotes',
@@ -1185,6 +1187,104 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                         </div>
                       </div>
                     )}
+
+                    {/* Selector de Modo de Diseño del Banner: Enmarcado (Default) vs Extendido Full Width */}
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                          Modo de Diseño del Banner Principal (Hero):
+                        </label>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          Elige cómo se presentará el banner de video o imagen en la cabecera de la página principal.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Opción 1: Enmarcado / Estándar (Default) */}
+                        <div
+                          onClick={() => updateDetailField('hero_banner_mode', 'boxed')}
+                          className={`relative p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
+                            (form.details?.hero_banner_mode || 'boxed') === 'boxed'
+                              ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 ring-2 ring-emerald-400/40'
+                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                                <Layout className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className="text-xs font-black text-slate-900 dark:text-white">
+                                  Enmarcado con Márgenes
+                                </div>
+                                <div className="text-[10px] text-slate-500 font-medium">
+                                  Por Defecto
+                                </div>
+                              </div>
+                            </div>
+                            {(form.details?.hero_banner_mode || 'boxed') === 'boxed' && (
+                              <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                                <Check className="w-3 h-3 stroke-[3]" />
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Mini Diagrama Visual */}
+                          <div className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800/80 p-2 flex items-center justify-center border border-slate-200 dark:border-slate-700/60">
+                            <div className="w-[84%] h-[80%] rounded-lg bg-emerald-600/30 border border-emerald-500/50 flex items-center justify-center text-[9px] font-bold text-emerald-800 dark:text-emerald-200">
+                              Banner Enmarcado
+                            </div>
+                          </div>
+
+                          <p className="text-[10.5px] text-slate-600 dark:text-slate-400 m-0 leading-snug">
+                            Diseño estándar con bordes redondeados y márgenes elegantes superior, inferior y laterales.
+                          </p>
+                        </div>
+
+                        {/* Opción 2: Extendido / Full Width */}
+                        <div
+                          onClick={() => updateDetailField('hero_banner_mode', 'full_width')}
+                          className={`relative p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
+                            form.details?.hero_banner_mode === 'full_width'
+                              ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 ring-2 ring-emerald-400/40'
+                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                                <Maximize2 className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className="text-xs font-black text-slate-900 dark:text-white">
+                                  Video Extendido (Full Width)
+                                </div>
+                                <div className="text-[10px] text-slate-500 font-medium">
+                                  Sin Márgenes
+                                </div>
+                              </div>
+                            </div>
+                            {form.details?.hero_banner_mode === 'full_width' && (
+                              <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                                <Check className="w-3 h-3 stroke-[3]" />
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Mini Diagrama Visual */}
+                          <div className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800/80 p-0 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700/60">
+                            <div className="w-full h-full bg-emerald-600/40 border-y border-emerald-500/50 flex items-center justify-center text-[9px] font-bold text-emerald-800 dark:text-emerald-200">
+                              Borde a Borde (100% Ancho)
+                            </div>
+                          </div>
+
+                          <p className="text-[10.5px] text-slate-600 dark:text-slate-400 m-0 leading-snug">
+                            El video/imagen se expande de extremo a extremo sin márgenes superior, inferior, izquierdo ni derecho.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Pestañas del Buscador Inmobiliario */}
