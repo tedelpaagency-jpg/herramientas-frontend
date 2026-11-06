@@ -42,9 +42,18 @@ export default function RootLayout({
                                  p.startsWith('/products') ||
                                  p.startsWith('/settings');
 
-                  var isPublic = !hasToken && !isAppRoute && (
+                  var isPublic = !isAppRoute && (
                                  p.startsWith('/travel-agency-03') ||
                                  p.startsWith('/properties') ||
+                                 p.startsWith('/services') ||
+                                 p.startsWith('/servicios') ||
+                                 p.startsWith('/about') ||
+                                 p.startsWith('/conocenos') ||
+                                 p.startsWith('/contact') ||
+                                 p.startsWith('/contacto') ||
+                                 p.startsWith('/privacy') ||
+                                 p.startsWith('/privacidad') ||
+                                 p.startsWith('/politica-de-privacidad') ||
                                  p.startsWith('/landing') ||
                                  p === '/'
                   );

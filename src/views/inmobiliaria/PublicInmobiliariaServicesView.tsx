@@ -33,6 +33,15 @@ import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInject
 import Footer from '@/components/layout/Footer';
 import { DEFAULT_FALLBACK_AGENCY } from '@/constants/realEstateDefaults';
 
+// Stylesheets for Public Real Estate Portal
+import '../../../public/assets/css/bootstrap.min.css';
+import '../../../public/assets/css/bootstrap-icons.css';
+import '../../../public/assets/css/animate.min.css';
+import '../../../public/assets/css/swiper-bundle.min.css';
+import '../../../public/assets/css/nice-select.css';
+import '../../../public/assets/css/boxicons.min.css';
+import '../../../public/assets/css/style.css';
+
 export interface RealEstateServiceItem {
   id?: string | number;
   title: string;
