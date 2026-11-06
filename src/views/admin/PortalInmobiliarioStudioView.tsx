@@ -251,6 +251,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       featured_btn_text: 'Ver Todo el Catálogo de Propiedades',
       allies_title: 'Nuestros Aliados Comerciales',
       allies_subtitle: '',
+      our_agents: [],
       our_clients: [],
       clients_title: 'Nuestros Clientes',
       clients_subtitle: '',
@@ -423,6 +424,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         featured_btn_text: parsedDetails?.featured_btn_text || 'Ver Todo el Catálogo de Propiedades',
         allies_title: parsedDetails?.allies_title ?? 'Nuestros Aliados Comerciales',
         allies_subtitle: parsedDetails?.allies_subtitle ?? '',
+        our_agents: Array.isArray(parsedDetails?.our_agents) ? parsedDetails.our_agents : [],
         our_clients: Array.isArray(parsedDetails?.our_clients) ? parsedDetails.our_clients : [],
         clients_title: parsedDetails?.clients_title ?? 'Nuestros Clientes',
         clients_subtitle: parsedDetails?.clients_subtitle ?? '',
@@ -2141,10 +2143,13 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                         </div>
                         <div>
                           <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
-                            Sección de Asesores / Agentes
+                            <span>Sección de Asesores / Agentes</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                              {form.details?.our_agents?.length || 0} asesores
+                            </span>
                           </h4>
                           <p className="text-[11px] text-slate-500 m-0">
-                            Título y subtítulo del equipo sincronizado de la agencia.
+                            Administra manualmente los asesores, foto, correo y teléfono en carrusel.
                           </p>
                         </div>
                       </div>
@@ -2156,34 +2161,226 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                     </div>
 
                     {!collapsedAboutSections.team && (
-                      <div className="p-4 space-y-3 border-t border-slate-100 dark:border-slate-800">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between flex-wrap gap-2 pb-2">
+                          <p className="text-xs text-slate-500 m-0">
+                            Agrega los asesores de forma manual con foto, nombre, teléfono y correo para contactarlos.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = Array.isArray(form.details?.our_agents) ? [...form.details.our_agents] : [];
+                              list.push({
+                                id: Date.now(),
+                                name: '',
+                                email: '',
+                                phone: '',
+                                image: '',
+                              });
+                              updateDetailField('our_agents', list);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Agregar Asesor / Agente</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
                           <div>
-                            <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                               Título de la Sección Agentes:
                             </label>
                             <input
                               type="text"
-                              value={form.details?.team_title || 'Nuestro Equipo de Asesores'}
+                              value={form.details?.team_title ?? 'Conoce a Nuestro Equipo de Asesores'}
                               onChange={(e) => updateDetailField('team_title', e.target.value)}
-                              className="w-full px-3 py-2 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                              placeholder="Ej: Conoce a Nuestro Equipo de Asesores"
+                              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold focus:border-emerald-500 outline-none"
                             />
+                            <span className="text-[10px] text-slate-400 mt-1 block">
+                              * Este título adoptará automáticamente el color primario de la marca.
+                            </span>
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
-                              Subtítulo de la Sección:
+                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Subtítulo de la Sección (Opcional):
                             </label>
                             <input
                               type="text"
-                              value={form.details?.team_subtitle || 'Expertos profesionales listos para asesorarte en cada paso'}
+                              value={form.details?.team_subtitle ?? ''}
                               onChange={(e) => updateDetailField('team_subtitle', e.target.value)}
-                              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                              placeholder="Dejar vacío si no deseas mostrar subtítulo"
+                              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:border-emerald-500 outline-none"
                             />
+                            <span className="text-[10px] text-slate-400 mt-1 block">
+                              * Si está vacío, no se renderizará subtítulo ni espacio extra en el frontend.
+                            </span>
                           </div>
                         </div>
-                        <p className="text-[11px] text-slate-500 italic">
-                          * Los asesores mostrados se sincronizan automáticamente desde los agentes activos registrados en la agencia.
-                        </p>
+
+                        {(!form.details?.our_agents || form.details.our_agents.length === 0) ? (
+                          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
+                            <p className="text-xs text-slate-500 m-0">
+                              No has agregado asesores personalizados. El portal mostrará el equipo de ejemplo predeterminado.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateDetailField('our_agents', [
+                                  {
+                                    id: 1,
+                                    name: 'Arq. Carlos Mendoza',
+                                    email: 'cmendoza@inmobiliaria.com',
+                                    phone: '+593 99 123 4567',
+                                    image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80',
+                                  },
+                                  {
+                                    id: 2,
+                                    name: 'Ing. Sofía Valenzuela',
+                                    email: 'svalenzuela@inmobiliaria.com',
+                                    phone: '+593 98 765 4321',
+                                    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+                                  },
+                                  {
+                                    id: 3,
+                                    name: 'Lic. David Paredes',
+                                    email: 'dparedes@inmobiliaria.com',
+                                    phone: '+593 99 888 7766',
+                                    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80',
+                                  },
+                                  {
+                                    id: 4,
+                                    name: 'Dra. Elena Robalino',
+                                    email: 'erobalino@inmobiliaria.com',
+                                    phone: '+593 97 111 2233',
+                                    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80',
+                                  },
+                                ]);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 font-bold text-xs cursor-pointer transition-all border border-emerald-200 dark:border-emerald-800"
+                            >
+                              Cargar Asesores de Ejemplo
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {form.details.our_agents.map((agent: any, idx: number) => (
+                              <div key={agent.id || idx} className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-3">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[10px] font-black uppercase text-slate-400">Asesor / Agente #{idx + 1}</span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={idx === 0}
+                                      onClick={() => {
+                                        if (idx === 0) return;
+                                        const next = [...form.details.our_agents];
+                                        const [moved] = next.splice(idx, 1);
+                                        next.splice(idx - 1, 0, moved);
+                                        updateDetailField('our_agents', next);
+                                      }}
+                                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                      title="Subir"
+                                    >
+                                      <ArrowUp className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={idx === form.details.our_agents.length - 1}
+                                      onClick={() => {
+                                        if (idx === form.details.our_agents.length - 1) return;
+                                        const next = [...form.details.our_agents];
+                                        const [moved] = next.splice(idx, 1);
+                                        next.splice(idx + 1, 0, moved);
+                                        updateDetailField('our_agents', next);
+                                      }}
+                                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                      title="Bajar"
+                                    >
+                                      <ArrowDown className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const list = form.details.our_agents.filter((_: any, i: number) => i !== idx);
+                                        updateDetailField('our_agents', list);
+                                      }}
+                                      className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                      title="Eliminar asesor"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Nombre del Asesor / Agente:</label>
+                                    <input
+                                      type="text"
+                                      value={agent.name || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.our_agents];
+                                        list[idx] = { ...list[idx], name: e.target.value };
+                                        updateDetailField('our_agents', list);
+                                      }}
+                                      placeholder="Ej: Arq. Carlos Mendoza"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Correo Electrónico (Opcional):</label>
+                                    <input
+                                      type="email"
+                                      value={agent.email || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.our_agents];
+                                        list[idx] = { ...list[idx], email: e.target.value };
+                                        updateDetailField('our_agents', list);
+                                      }}
+                                      placeholder="cmendoza@inmobiliaria.com"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Teléfono / WhatsApp (Opcional):</label>
+                                    <input
+                                      type="text"
+                                      value={agent.phone || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.our_agents];
+                                        list[idx] = { ...list[idx], phone: e.target.value };
+                                        updateDetailField('our_agents', list);
+                                      }}
+                                      placeholder="+593 99 123 4567"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Foto o Imagen del Asesor:</label>
+                                  <MediaPicker
+                                    value={agent.image || agent.image_url || agent.photo || ''}
+                                    onChange={(selected) => {
+                                      const list = [...form.details.our_agents];
+                                      list[idx] = {
+                                        ...list[idx],
+                                        image: selected?.url || '',
+                                        image_url: selected?.url || '',
+                                        photo: selected?.url || '',
+                                      };
+                                      updateDetailField('our_agents', list);
+                                    }}
+                                    label="Seleccionar o Subir Foto del Asesor"
+                                    type="image"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

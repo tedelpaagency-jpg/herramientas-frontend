@@ -92,6 +92,41 @@ const DEFAULT_COMMERCIAL_ALLIES = [
   },
 ];
 
+const DEFAULT_AGENTS = [
+  {
+    id: 1,
+    name: 'Arq. Carlos Mendoza',
+    email: 'cmendoza@inmobiliaria.com',
+    phone: '+593 99 123 4567',
+    image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80',
+    role: 'Asesor Inmobiliario',
+  },
+  {
+    id: 2,
+    name: 'Ing. Sofía Valenzuela',
+    email: 'svalenzuela@inmobiliaria.com',
+    phone: '+593 98 765 4321',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+    role: 'Asesora de Inversiones',
+  },
+  {
+    id: 3,
+    name: 'Lic. David Paredes',
+    email: 'dparedes@inmobiliaria.com',
+    phone: '+593 99 888 7766',
+    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80',
+    role: 'Asesor Comercial',
+  },
+  {
+    id: 4,
+    name: 'Dra. Elena Robalino',
+    email: 'erobalino@inmobiliaria.com',
+    phone: '+593 97 111 2233',
+    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80',
+    role: 'Asesora Legal & Patrimonial',
+  },
+];
+
 const DEFAULT_CLIENTS = [
   {
     id: 1,
@@ -291,21 +326,13 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
     return combined.filter((key) => !hidden.includes(key));
   }, [details?.about_sections_order, details?.about_sections_hidden, details?.about_html_sections]);
 
-  // Agentes
-  const rawAgents: AgentItem[] = effectiveAgency.agents || [];
-  const agents: AgentItem[] = useMemo(() => {
-    if (rawAgents.length > 0) return rawAgents;
-    return [
-      {
-        id: 1,
-        name: effectiveAgency.name || 'Asesor Inmobiliario',
-        email: effectiveAgency.email || 'contacto@inmobiliaria.com',
-        phone: effectiveAgency.phone || effectiveAgency.whatsapp || '+593 99 999 9999',
-        photo: null,
-        role: 'Director de Asesoría Inmobiliaria',
-      },
-    ];
-  }, [rawAgents, effectiveAgency]);
+  // Agentes / Asesores (administrados manualmente desde el studio, desacoplados de los usuarios de base de datos)
+  const ourAgents = useMemo(() => {
+    if (Array.isArray(details?.our_agents) && details.our_agents.length > 0) {
+      return details.our_agents.filter((a: any) => a && (a.name || a.image || a.image_url || a.photo));
+    }
+    return DEFAULT_AGENTS;
+  }, [details?.our_agents]);
 
   const rawAgencyName = effectiveAgency.name || 'Inmobiliaria';
   const agencyName =
@@ -532,155 +559,173 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
     </section>
   );
 
-  // 3. Equipo de Asesores
-  const renderTeamSection = () => (
-    <section key="team" className="py-16 lg:py-24 bg-white border-b border-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-800 text-xs font-black tracking-wide uppercase mb-2 border border-slate-200">
-              <Users className="w-3.5 h-3.5" style={{ color: primaryColor }} />
-              <span>Equipo Inmobiliario</span>
+  // 3. Equipo de Asesores (Carrusel dinámico configurable)
+  const renderTeamSection = () => {
+    if (ourAgents.length === 0) return null;
+
+    // Aseguramos slides suficientes para que Swiper realice un loop infinito continuo y fluido como en clientes
+    const carouselAgents = ourAgents.length > 0 && ourAgents.length < 8
+      ? [...ourAgents, ...ourAgents, ...ourAgents]
+      : ourAgents;
+
+    return (
+      <section key="team" className="py-16 lg:py-24 bg-white border-b border-slate-100 overflow-hidden w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-800 text-xs font-black tracking-wide uppercase mb-2 border border-slate-200">
+                <Users className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+                <span>Equipo Inmobiliario</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: primaryColor }}>
+                {teamTitle}
+              </h2>
+              {teamSubtitle && (
+                <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl font-normal">
+                  {teamSubtitle}
+                </p>
+              )}
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: primaryColor }}>
-              {teamTitle}
-            </h2>
-            {teamSubtitle && (
-              <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl font-normal">
-                {teamSubtitle}
-              </p>
-            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="team-slider-prev w-10 h-10 rounded-full border border-slate-200 bg-white hover:bg-slate-900 hover:text-white flex items-center justify-center text-slate-700 transition-all cursor-pointer active:scale-95 shadow-2xs"
+                aria-label="Agente anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                className="team-slider-next w-10 h-10 rounded-full border border-slate-200 bg-white hover:bg-slate-900 hover:text-white flex items-center justify-center text-slate-700 transition-all cursor-pointer active:scale-95 shadow-2xs"
+                aria-label="Agente siguiente"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="team-slider-prev w-10 h-10 rounded-full border border-slate-200 bg-white hover:bg-slate-900 hover:text-white flex items-center justify-center text-slate-700 transition-all cursor-pointer active:scale-95 shadow-2xs"
-              aria-label="Agente anterior"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              className="team-slider-next w-10 h-10 rounded-full border border-slate-200 bg-white hover:bg-slate-900 hover:text-white flex items-center justify-center text-slate-700 transition-all cursor-pointer active:scale-95 shadow-2xs"
-              aria-label="Agente siguiente"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+          <Swiper
+            modules={[Navigation, Autoplay]}
+            navigation={{
+              prevEl: '.team-slider-prev',
+              nextEl: '.team-slider-next',
+            }}
+            autoplay={{
+              delay: 3500,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true,
+            }}
+            loop={carouselAgents.length > 2}
+            speed={600}
+            spaceBetween={24}
+            slidesPerView={1}
+            breakpoints={{
+              540: { slidesPerView: 2 },
+              900: { slidesPerView: 3 },
+              1200: { slidesPerView: 4 },
+            }}
+            className="pb-4"
+          >
+            {carouselAgents.map((agent: any, idx: number) => {
+              const photoUrl = agent.image || agent.image_url || agent.photo;
+              const rawPhone = (agent.phone || '').trim();
+              const cleanPhone = rawPhone.replace(/\s+/g, '').replace(/[^0-9+]/g, '');
+              const waPhone = cleanPhone.replace('+', '');
+              const email = (agent.email || '').trim();
 
-        <Swiper
-          modules={[Navigation, Autoplay, Pagination]}
-          navigation={{
-            prevEl: '.team-slider-prev',
-            nextEl: '.team-slider-next',
-          }}
-          autoplay={{
-            delay: 4500,
-            disableOnInteraction: false,
-          }}
-          spaceBetween={24}
-          slidesPerView={1}
-          breakpoints={{
-            640: { slidesPerView: 2 },
-            1024: { slidesPerView: 3 },
-            1280: { slidesPerView: 4 },
-          }}
-          className="pb-10"
-        >
-          {agents.map((agent) => {
-            const cleanPhone = (agent.phone || effectiveAgency.phone || effectiveAgency.whatsapp || '')
-              .replace(/\s+/g, '')
-              .replace(/[^0-9+]/g, '');
-            const waPhone = cleanPhone.replace('+', '');
-            const email = agent.email || effectiveAgency.email || 'contacto@inmobiliaria.com';
+              const hasPhone = Boolean(cleanPhone);
+              const hasEmail = Boolean(email);
+              const hasContact = hasPhone || hasEmail;
 
-            return (
-              <SwiperSlide key={agent.id}>
-                <div className="group rounded-3xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col justify-between h-full">
-                  <div className="relative aspect-[4/3] bg-gradient-to-tr from-slate-800 to-slate-700 overflow-hidden">
-                    {agent.photo ? (
-                      <img
-                        src={agent.photo}
-                        alt={agent.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-white bg-gradient-to-br from-slate-800 via-slate-900 to-emerald-950 p-4">
-                        <div
-                          className="w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-lg border-2 border-white/20 mb-2"
-                          style={{ backgroundColor: primaryColor }}
-                        >
-                          {agent.name.charAt(0).toUpperCase()}
+              return (
+                <SwiperSlide key={`${agent.id || idx}-${idx}`}>
+                  <div className="group rounded-3xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col justify-between h-full">
+                    <div className="relative aspect-[4/3] bg-gradient-to-tr from-slate-800 to-slate-700 overflow-hidden">
+                      {photoUrl ? (
+                        <img
+                          src={photoUrl}
+                          alt={agent.name || 'Asesor Inmobiliario'}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-white bg-gradient-to-br from-slate-800 via-slate-900 to-emerald-950 p-4">
+                          <div
+                            className="w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-lg border-2 border-white/20 mb-2"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            {(agent.name || 'A').charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-xs font-bold text-slate-300">Asesor Verificado</span>
                         </div>
-                        <span className="text-xs font-bold text-slate-300">Asesor Verificado</span>
+                      )}
+
+                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-[10px] font-bold text-white border border-white/10 uppercase tracking-wider">
+                        {agent.role || 'Asesor Inmobiliario'}
                       </div>
-                    )}
-
-                    <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-[10px] font-bold text-white border border-white/10 uppercase tracking-wider">
-                      {agent.role || 'Asesor Inmobiliario'}
-                    </div>
-                  </div>
-
-                  <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
-                    <div>
-                      <h4 className="text-base font-black text-slate-900 tracking-tight group-hover:text-emerald-700 transition-colors">
-                        {agent.name}
-                      </h4>
-                      <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                        {agent.role || 'Asesor Inmobiliario Profesional'}
-                      </p>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                      {cleanPhone ? (
-                        <a
-                          href={`tel:${cleanPhone}`}
-                          className="flex-1 py-2 px-2 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200/80 shadow-2xs active:scale-95 cursor-pointer"
-                          title={`Llamar a ${agent.name}`}
-                        >
-                          <Phone className="w-3.5 h-3.5 text-blue-600 group-hover:text-white" />
-                          <span className="hidden sm:inline">Llamar</span>
-                        </a>
-                      ) : null}
+                    <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
+                      <div>
+                        <h4 className="text-base font-black text-slate-900 tracking-tight group-hover:text-emerald-700 transition-colors">
+                          {agent.name || 'Asesor Inmobiliario'}
+                        </h4>
+                        <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                          {agent.role || 'Asesor Inmobiliario'}
+                        </p>
+                      </div>
 
-                      {waPhone ? (
-                        <a
-                          href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
-                            `Hola ${agent.name}, vi su perfil en el portal de ${agencyName} y me gustaría recibir asesoría inmobiliaria.`
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 py-2 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-emerald-200/60 shadow-2xs active:scale-95 cursor-pointer"
-                          title={`Escribir por WhatsApp a ${agent.name}`}
-                        >
-                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600 group-hover:text-white" />
-                          <span>WhatsApp</span>
-                        </a>
-                      ) : null}
+                      {hasContact ? (
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                          {hasPhone ? (
+                            <a
+                              href={`tel:${cleanPhone}`}
+                              className="flex-1 py-2 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200/80 shadow-2xs active:scale-95 cursor-pointer"
+                              title={`Llamar a ${agent.name}`}
+                            >
+                              <Phone className="w-3.5 h-3.5 text-blue-600 group-hover:text-white" />
+                              <span className="hidden sm:inline">Llamar</span>
+                            </a>
+                          ) : null}
 
-                      {email ? (
-                        <a
-                          href={`mailto:${email}?subject=${encodeURIComponent(
-                            `Consulta Inmobiliaria — ${agencyName}`
-                          )}`}
-                          className="p-2 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-700 text-xs font-bold transition-all flex items-center justify-center border border-slate-200/80 shadow-2xs active:scale-95 cursor-pointer"
-                          title={`Enviar correo a ${email}`}
-                        >
-                          <Mail className="w-3.5 h-3.5 text-slate-600 group-hover:text-white" />
-                        </a>
+                          {hasPhone ? (
+                            <a
+                              href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
+                                `Hola ${agent.name}, vi su contacto en el portal y me gustaría recibir asesoría inmobiliaria.`
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-emerald-200/60 shadow-2xs active:scale-95 cursor-pointer"
+                              title={`Escribir por WhatsApp a ${agent.name}`}
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600 group-hover:text-white" />
+                              <span>WhatsApp</span>
+                            </a>
+                          ) : null}
+
+                          {hasEmail ? (
+                            <a
+                              href={`mailto:${email}?subject=${encodeURIComponent(
+                                `Consulta Inmobiliaria — ${agent.name}`
+                              )}`}
+                              className="p-2 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-700 text-xs font-bold transition-all flex items-center justify-center border border-slate-200/80 shadow-2xs active:scale-95 cursor-pointer"
+                              title={`Enviar correo a ${email}`}
+                            >
+                              <Mail className="w-3.5 h-3.5 text-slate-600 group-hover:text-white" />
+                            </a>
+                          ) : null}
+                        </div>
                       ) : null}
                     </div>
                   </div>
-                </div>
-              </SwiperSlide>
-            );
-          })}
-        </Swiper>
-      </div>
-    </section>
-  );
+                </SwiperSlide>
+              );
+            })}
+          </Swiper>
+        </div>
+      </section>
+    );
+  };
 
   // 4. Nuestros Clientes (Carrusel de logos horizontal grande y destacado exacto como Imagen 2)
   const renderClientsSection = () => {
