@@ -103,6 +103,24 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
     agency?.province ||
     "Ecuador";
 
+  // Imagen central de la tarjeta modal (configurable desde el panel administrativo)
+  const displayImage =
+    countryImage ||
+    agency?.details?.loader_image ||
+    agency?.loader_image ||
+    agency?.country_image ||
+    (agency?.details as any)?.country_image ||
+    null;
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && displayImage) {
+      try {
+        const pre = new Image();
+        pre.src = displayImage;
+      } catch {}
+    }
+  }, [displayImage]);
+
   useEffect(() => {
     if (!activeMessages || activeMessages.length === 0) return;
 
@@ -152,6 +170,22 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
           backgroundColor: 'rgba(15, 23, 42, 0.75)',
         }}
       >
+        {/* Imagen de Fondo Central (Configurable desde el Studio Administrativo) */}
+        {displayImage && (
+          <div className="absolute inset-0 w-full h-full z-0">
+            <img
+              src={displayImage}
+              alt={displayCountry}
+              className="w-full h-full object-cover object-center"
+              loading="eager"
+              decoding="sync"
+              fetchPriority="high"
+            />
+            {/* Overlay sutil para garantizar contraste con el texto y spinner */}
+            <div className="absolute inset-0 bg-slate-950/45" />
+          </div>
+        )}
+
         {/* --- PIGMENTOS DE COLOR DE MARCA (Flares / Resplandores) --- */}
         <div
           className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full mix-blend-screen blur-[65px] opacity-60 pointer-events-none z-0 transition-colors duration-500"

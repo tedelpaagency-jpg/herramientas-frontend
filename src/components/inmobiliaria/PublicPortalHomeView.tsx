@@ -144,7 +144,7 @@ export default function PublicPortalHomeView({
       <PublicPortalLoader
         isOpen={loading}
         countryName={agency?.country_name || agency?.country}
-        countryImage={agency?.country_image}
+        countryImage={agency?.details?.loader_image || agency?.country_image}
         brandColor={agency?.primary_color}
         textColor={agency?.details?.loader_text_color}
         duration={agency?.details?.loader_duration}

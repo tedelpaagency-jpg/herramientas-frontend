@@ -352,7 +352,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
         <PublicPortalLoader
           isOpen={loading}
           countryName={fallbackAgency.country_name || fallbackAgency.country}
-          countryImage={fallbackAgency.country_image}
+          countryImage={fallbackAgency.details?.loader_image || fallbackAgency.country_image}
           agency={fallbackAgency}
           message="Un momento por favor, estamos preparando los detalles del inmueble."
         />

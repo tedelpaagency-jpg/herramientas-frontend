@@ -298,6 +298,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       counter3_label: 'Familias Satisfechas',
       counter4_num: '99',
       counter4_label: 'Tasa de Satisfacción',
+      loader_image: '',
       loader_text_color: '#ffffff',
       loader_duration: 2.5,
       map_pin_bg_color: '#ffffff',
@@ -475,6 +476,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         counter3_label: parsedDetails?.counter3_label || 'Familias Satisfechas',
         counter4_num: parsedDetails?.counter4_num || '99',
         counter4_label: parsedDetails?.counter4_label || 'Tasa de Satisfacción',
+        loader_image: parsedDetails?.loader_image || '',
         loader_text_color: parsedDetails?.loader_text_color || '#ffffff',
         loader_duration: parsedDetails?.loader_duration !== undefined ? Number(parsedDetails.loader_duration) : 2.5,
         map_pin_bg_color: parsedDetails?.map_pin_bg_color || '#ffffff',
@@ -605,6 +607,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
           x_twitter: form.details?.x_twitter || form.details?.twitter || '',
           whatsapp: form.whatsapp || form.details?.whatsapp || '',
           footer_about_text: form.details?.footer_about_text || '',
+          loader_image: form.details?.loader_image || '',
         },
       };
 
@@ -4968,8 +4971,32 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                       <Sparkles className="w-4 h-4 text-emerald-600" /> Pantalla de Carga (Loader de Bienvenida)
                     </h4>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      Personaliza los degradados dinámicos con tu color de marca, el color de la tipografía y el tiempo de duración que se mostrará la tarjeta de carga a los visitantes.
+                      Personaliza la imagen central, los degradados dinámicos con tu color de marca, la tipografía y el tiempo de duración que se mostrará la tarjeta de carga a los visitantes.
                     </p>
+                  </div>
+
+                  {/* Imagen de Fondo Central del Loader (Tarjeta Principal) */}
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                      Imagen Central del Loader (Tarjeta Principal):
+                    </label>
+                    <MediaPicker
+                      value={form.details?.loader_image || ''}
+                      onChange={(selected) =>
+                        setForm({
+                          ...form,
+                          details: {
+                            ...(form.details || {}),
+                            loader_image: selected?.url || '',
+                          },
+                        })
+                      }
+                      label="Seleccionar o Subir Imagen para la Tarjeta del Loader"
+                      type="image"
+                    />
+                    <span className="text-[10px] text-slate-400 block">
+                      * Esta imagen solo se proyectará en la sección principal central del loader. El fondo exterior de la pantalla mantendrá únicamente el efecto backdrop difuminado.
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -5680,7 +5707,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
           <PublicPortalLoader
             isOpen={true}
             countryName={form.country_name || form.country || 'Ecuador'}
-            countryImage={form.country_image}
+            countryImage={form.details?.loader_image || form.country_image}
             brandColor={form.primary_color || '#00a884'}
             textColor={form.details?.loader_text_color || '#ffffff'}
             duration={

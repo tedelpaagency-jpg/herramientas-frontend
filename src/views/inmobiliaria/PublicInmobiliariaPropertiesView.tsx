@@ -772,7 +772,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
       <PublicPortalLoader
         isOpen={loading}
         countryName={fallbackAgency.country_name || fallbackAgency.country}
-        countryImage={fallbackAgency.country_image}
+        countryImage={fallbackAgency.details?.loader_image || fallbackAgency.country_image}
         brandColor={fallbackAgency.primary_color}
         textColor={fallbackAgency.details?.loader_text_color}
         duration={fallbackAgency.details?.loader_duration}
