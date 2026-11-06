@@ -212,6 +212,12 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
   const buttonColor = primaryColor;
   const rawName = effectiveAgency?.name || effectiveAgency?.commercial_name;
   const agencyName = rawName || '';
+  const playStoreUrl =
+    effectiveAgency?.details?.play_store_url ||
+    effectiveAgency?.play_store_url ||
+    (effectiveAgency?.id === 394 || effectiveAgency?.name?.toLowerCase()?.includes('immobillis')
+      ? 'https://play.google.com/store/apps/details?id=com.sims.immobillis'
+      : null);
 
   return (
     <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`} style={{ position: 'relative', zIndex: 1090 }} suppressHydrationWarning>
@@ -568,8 +574,30 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                 </Link>
               </div>
 
+              {/* Botón Descargar App en Mobile si está disponible */}
+              {playStoreUrl && (
+                <div className="pt-2 w-100">
+                  <a
+                    href={playStoreUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-100 d-flex align-items-center justify-content-between px-3 py-2.5 rounded-xl font-bold text-xs text-decoration-none transition-all text-slate-800 bg-emerald-50/80 hover:bg-emerald-100/80 border border-emerald-200/80"
+                  >
+                    <span className="d-flex align-items-center gap-2">
+                      <svg className="w-4 h-4 fill-current shrink-0 text-emerald-600" viewBox="0 0 24 24">
+                        <path d="M3.609 1.814L13.793 12 3.61 22.186a2.38 2.38 0 0 1-.61-.786 2.36 2.36 0 0 1-.22-.979V3.579c0-.353.076-.69.22-.98.143-.29.356-.563.609-.785zm11.256 11.258l2.25 2.25-11.442 6.608 9.192-8.858zm0-2.144L5.673 2.07l11.442 6.608-2.25 2.25zm1.536 1.072l3.414 1.972a1.44 1.44 0 0 1 0 2.496l-3.414 1.972-2.183-2.183 2.183-2.257z" />
+                      </svg>
+                      <span>Descargar en Google Play</span>
+                    </span>
+                    <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                      App
+                    </span>
+                  </a>
+                </div>
+              )}
+
               {/* Botón Acceso Agentes / Mi Panel en Mobile */}
-              <div className="pt-4 mt-3 border-t border-slate-100 w-100">
+              <div className="pt-3 mt-2 border-t border-slate-100 w-100">
                 <button
                   type="button"
                   onClick={() => {
@@ -606,6 +634,21 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
 
         {/* 3. Lado Derecho: Botón Acceso Agentes + Botón Navegación Móvil */}
         <div className="nav-right d-flex align-items-center justify-content-end gap-2 shrink-0" style={{ flex: '0 0 auto' }}>
+          {playStoreUrl && (
+            <a
+              href={playStoreUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="d-none d-lg-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all no-underline shadow-2xs"
+              title="Descargar en Google Play"
+            >
+              <svg className="w-3.5 h-3.5 fill-current shrink-0 text-slate-700" viewBox="0 0 24 24">
+                <path d="M3.609 1.814L13.793 12 3.61 22.186a2.38 2.38 0 0 1-.61-.786 2.36 2.36 0 0 1-.22-.979V3.579c0-.353.076-.69.22-.98.143-.29.356-.563.609-.785zm11.256 11.258l2.25 2.25-11.442 6.608 9.192-8.858zm0-2.144L5.673 2.07l11.442 6.608-2.25 2.25zm1.536 1.072l3.414 1.972a1.44 1.44 0 0 1 0 2.496l-3.414 1.972-2.183-2.183 2.183-2.257z" />
+              </svg>
+              <span>App</span>
+            </a>
+          )}
+
           <button
             type="button"
             onClick={() => {

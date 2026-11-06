@@ -27,6 +27,12 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
   const cleanPhone = phoneDisplay.replace(/[^0-9]/g, '') || '593984113967';
   const emailDisplay = agency?.email || 'informacion@immobillis.com';
   const locationDisplay = [agency?.city || 'Quevedo', agency?.country || 'Ecuador'].filter(Boolean).join(' - ');
+  const playStoreUrl =
+    agency?.details?.play_store_url ||
+    agency?.play_store_url ||
+    (agency?.id === 394 || agency?.name?.toLowerCase()?.includes('immobillis')
+      ? 'https://play.google.com/store/apps/details?id=com.sims.immobillis'
+      : null);
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,10 +122,36 @@ const Footer: React.FC<FooterProps> = ({ agency }) => {
               </ul>
             </div>
 
-            {/* Columna 3: Horario de atencion */}
+            {/* Columna 3: Horario de atencion & App Móvil */}
             <div>
               <h4 className="text-sm font-bold text-white mb-5">Horario de atencion</h4>
-              <p className="text-xs text-slate-300 m-0">08:00 am a 06:00 pm</p>
+              <p className="text-xs text-slate-300 m-0 mb-4">08:00 am a 06:00 pm</p>
+
+              {playStoreUrl && (
+                <div className="pt-3 border-t border-slate-800/80">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    Nuestra App
+                  </div>
+                  <a
+                    href={playStoreUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white transition-all no-underline shadow-xs hover:border-slate-500 group"
+                  >
+                    <svg className="w-5 h-5 fill-current shrink-0 text-white" viewBox="0 0 24 24">
+                      <path d="M3.609 1.814L13.793 12 3.61 22.186a2.38 2.38 0 0 1-.61-.786 2.36 2.36 0 0 1-.22-.979V3.579c0-.353.076-.69.22-.98.143-.29.356-.563.609-.785zm11.256 11.258l2.25 2.25-11.442 6.608 9.192-8.858zm0-2.144L5.673 2.07l11.442 6.608-2.25 2.25zm1.536 1.072l3.414 1.972a1.44 1.44 0 0 1 0 2.496l-3.414 1.972-2.183-2.183 2.183-2.257z" />
+                    </svg>
+                    <div className="text-left">
+                      <div className="text-[8.5px] uppercase tracking-wider text-slate-400 font-semibold leading-none">
+                        Disponible en
+                      </div>
+                      <div className="text-xs font-bold text-white leading-tight">
+                        Google Play
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Columna 4: Boletines */}

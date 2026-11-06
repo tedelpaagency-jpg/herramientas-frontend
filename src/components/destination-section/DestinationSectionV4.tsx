@@ -1,9 +1,6 @@
 "use client";
 import Link from "next/link";
 import React, { useMemo } from "react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import { SwiperOptions } from "swiper/types";
 import { PublicEstateCategory } from "@/services/publicInmobiliariaService";
 import { DEFAULT_REAL_ESTATE_CATEGORIES } from "@/constants/realEstateDefaults";
 
@@ -51,49 +48,6 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
   const rawColor = agency?.primary_color || agency?.details?.primary_color;
   const primaryColor = rawColor || '#00a884';
 
-  const settings: SwiperOptions = useMemo(() => {
-    return {
-      slidesPerView: 2,
-      speed: 700,
-      spaceBetween: 14,
-      autoplay: {
-        delay: 3500,
-        pauseOnMouseEnter: true,
-        disableOnInteraction: false,
-      },
-      navigation: {
-        nextEl: ".destination-slider-next",
-        prevEl: ".destination-slider-prev",
-      },
-      pagination: {
-        el: ".swiper-pagination1",
-        clickable: true,
-      },
-      breakpoints: {
-        640: {
-          slidesPerView: 3,
-          spaceBetween: 14,
-        },
-        768: {
-          slidesPerView: 4,
-          spaceBetween: 14,
-        },
-        1024: {
-          slidesPerView: 5,
-          spaceBetween: 14,
-        },
-        1280: {
-          slidesPerView: 6,
-          spaceBetween: 14,
-        },
-        1536: {
-          slidesPerView: 6,
-          spaceBetween: 16,
-        },
-      },
-    };
-  }, []);
-
   return (
     <div className="home4-destination-section mb-14 sm:mb-20 pt-4" id="categorias">
       <style jsx global>{`
@@ -133,55 +87,55 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
           </div>
         </div>
 
-        {/* VISTA MÓVIL: Carrusel de 2 filas de 3 visibles con diseño de tarjeta original */}
-        <div className="md:hidden mb-6">
-          <div className="grid grid-rows-2 grid-flow-col auto-cols-[calc((100vw-44px)/3)] sm:auto-cols-[calc((100%-16px)/3)] gap-2.5 overflow-x-auto pb-3 pt-1 px-1 scrollbar-none snap-x snap-mandatory">
-            {displayCategories.map((cat, index) => {
+        {/* CUADRÍCULA 3x3 DE CATEGORÍAS */}
+        <div className="mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {displayCategories.slice(0, 9).map((cat, index) => {
               const fallbackImg = DEFAULT_REAL_ESTATE_CATEGORIES[index % DEFAULT_REAL_ESTATE_CATEGORIES.length].image;
               const imgSrc = cat.image || fallbackImg;
               const categoryUrl = `/properties?property_type=${cat.id}`;
               const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '') as string;
-              const description = (cat as any).description || CATEGORY_DESCRIPTIONS[slug] || 'Propiedades seleccionadas.';
+              const description = (cat as any).description || CATEGORY_DESCRIPTIONS[slug] || 'Propiedades seleccionadas con los más altos estándares de calidad.';
 
               return (
                 <Link
                   key={cat.id || index}
                   href={categoryUrl}
-                  className="group inmo-cat-card-item relative block aspect-[3/4.2] min-h-[160px] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md transition-all duration-300 ease-out text-decoration-none select-none border border-white/10 active:scale-[0.97] snap-start"
+                  className="group inmo-cat-card-item relative block min-h-[240px] sm:min-h-[280px] lg:min-h-[300px] aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md hover:shadow-xl transition-all duration-300 ease-out text-decoration-none select-none border border-white/10 active:scale-[0.98]"
                 >
-                  {/* Imagen de Fondo con zoom suave */}
+                  {/* Imagen de fondo con zoom fluido al hover */}
                   <img
                     src={imgSrc}
                     alt={cat.name}
-                    className="w-full h-full object-cover object-center filter brightness-[0.80] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-105"
+                    className="w-full h-full object-cover object-center filter brightness-[0.80] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-108"
                     loading="lazy"
                   />
 
-                  {/* Viñeta degradada oscura permanente para legibilidad */}
+                  {/* Viñeta degradada oscura permanente para legibilidad óptima */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-transparent pointer-events-none" />
 
                   {/* Badge superior con cantidad disponible */}
-                  <div className="inmo-cat-badge absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9px] font-bold text-white border border-white/15 shadow-xs transition-colors duration-300">
-                    {cat.count || 0}
+                  <div className="inmo-cat-badge absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10.5px] font-bold text-white border border-white/15 shadow-xs transition-colors duration-300">
+                    {cat.count || 0} inmuebles
                   </div>
 
-                  {/* Botón flecha móvil animado con hover en color primario */}
-                  <div className="inmo-cat-card-arrow absolute top-2 right-2 w-5 h-5 rounded-full backdrop-blur-md flex items-center justify-center shadow-md">
-                    <svg width={9} height={9} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  {/* Botón flecha animado con color corporativo */}
+                  <div className="inmo-cat-card-arrow absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center shadow-md">
+                    <svg width={12} height={12} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
                       <path d="M1 13C5.94664 8.05336 13 1 13 1M13 1C10.1852 1.52778 6.69444 2.58333 3 1M13 1C12.4722 3.63889 11.4167 6.77778 13 11" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </div>
 
-                  {/* Contenido inferior: Título, subtexto y enlace */}
-                  <div className="absolute bottom-2.5 left-2 right-2 text-left pointer-events-none">
-                    <h5 className="text-[12px] font-black leading-tight drop-shadow-md mb-0.5 line-clamp-1" style={{ color: '#ffffff' }}>
+                  {/* Contenido inferior */}
+                  <div className="absolute bottom-4 left-4 right-4 text-left pointer-events-none">
+                    <h5 className="text-[17px] font-black leading-tight drop-shadow-md mb-1.5" style={{ color: '#ffffff' }}>
                       {cat.name}
                     </h5>
-                    <p className="text-[9.5px] leading-tight font-medium line-clamp-1 drop-shadow-sm mb-1" style={{ color: '#ffffff' }}>
+                    <p className="text-[11.5px] leading-relaxed font-medium line-clamp-2 drop-shadow-sm mb-2" style={{ color: '#ffffff' }}>
                       {description}
                     </p>
-                    <span className="inline-flex items-center gap-1 text-[9px] font-bold drop-shadow-sm" style={{ color: '#ffffff' }}>
-                      <span>Ver</span>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold drop-shadow-sm" style={{ color: '#ffffff' }}>
+                      <span>Ver inmuebles</span>
                       <span>→</span>
                     </span>
                   </div>
@@ -189,77 +143,18 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
               );
             })}
           </div>
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 mt-1 font-medium">
-            <span>← Desliza para ver más categorías →</span>
-          </div>
-        </div>
 
-        {/* VISTA ESCRITORIO Y TABLET: Carrusel 1x6 en PC con todas las categorías de la app */}
-        <div className="hidden md:block">
-          <div className="destination-slider-area mb-4">
-            <Swiper {...settings} modules={[Navigation, Pagination, Autoplay]} className="swiper home3-destination-slider !pb-4">
-              <div className="swiper-wrapper">
-                {displayCategories.map((cat, index) => {
-                  const fallbackImg = DEFAULT_REAL_ESTATE_CATEGORIES[index % DEFAULT_REAL_ESTATE_CATEGORIES.length].image;
-                  const imgSrc = cat.image || fallbackImg;
-                  const categoryUrl = `/properties?property_type=${cat.id}`;
-                  const slug = (cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '') as string;
-                  const description = (cat as any).description || CATEGORY_DESCRIPTIONS[slug] || 'Propiedades seleccionadas con los más altos estándares de calidad.';
-
-                  return (
-                    <SwiperSlide key={cat.id || index} className="swiper-slide">
-                      <Link
-                        href={categoryUrl}
-                        className="group inmo-cat-card-item relative block min-h-[300px] aspect-[3/4.2] w-full rounded-2xl overflow-hidden bg-slate-900 shadow-md transition-all duration-300 ease-out text-decoration-none select-none border border-white/10"
-                      >
-                        {/* Imagen de fondo con zoom fluido al hover */}
-                        <img
-                          src={imgSrc}
-                          alt={cat.name}
-                          className="w-full h-full object-cover object-center filter brightness-[0.80] contrast-[1.05] transition-transform duration-700 ease-out group-hover:scale-108"
-                          loading="lazy"
-                        />
-
-                        {/* Viñeta degradada oscura permanente para legibilidad óptima */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-transparent pointer-events-none" />
-
-                        {/* Badge superior con cantidad disponible */}
-                        <div className="inmo-cat-badge absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10.5px] font-bold text-white border border-white/15 shadow-xs transition-colors duration-300">
-                          {cat.count || 0} inmuebles
-                        </div>
-
-                        {/* Botón flecha animado con color corporativo */}
-                        <div className="inmo-cat-card-arrow absolute top-3 right-3 w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center shadow-md">
-                          <svg width={12} height={12} viewBox="0 0 14 14" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 13C5.94664 8.05336 13 1 13 1M13 1C10.1852 1.52778 6.69444 2.58333 3 1M13 1C12.4722 3.63889 11.4167 6.77778 13 11" strokeWidth="2" strokeLinecap="round" />
-                          </svg>
-                        </div>
-
-                        {/* Contenido inferior */}
-                        <div className="absolute bottom-4 left-4 right-4 text-left pointer-events-none">
-                          <h5 className="text-[16px] font-black leading-tight drop-shadow-md mb-1.5" style={{ color: '#ffffff' }}>
-                            {cat.name}
-                          </h5>
-                          <p className="text-[11px] leading-tight font-medium line-clamp-2 drop-shadow-sm mb-2" style={{ color: '#ffffff' }}>
-                            {description}
-                          </p>
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold drop-shadow-sm" style={{ color: '#ffffff' }}>
-                            <span>Ver inmuebles</span>
-                            <span>→</span>
-                          </span>
-                        </div>
-                      </Link>
-                    </SwiperSlide>
-                  );
-                })}
-              </div>
-            </Swiper>
-          </div>
-          <div className="row">
-            <div className="col-12 d-flex justify-content-center">
-              <div className="swiper-pagination1" />
+          {displayCategories.length > 9 && (
+            <div className="mt-8 text-center">
+              <Link
+                href="/properties"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-slate-800 dark:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 shadow-2xs hover:shadow-sm"
+              >
+                <span>Ver todas las categorías en el catálogo ({displayCategories.length})</span>
+                <span>→</span>
+              </Link>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -33,15 +33,6 @@ import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInject
 import Footer from '@/components/layout/Footer';
 import { DEFAULT_FALLBACK_AGENCY } from '@/constants/realEstateDefaults';
 
-// Stylesheets for Public Real Estate Portal
-import '../../../public/assets/css/bootstrap.min.css';
-import '../../../public/assets/css/bootstrap-icons.css';
-import '../../../public/assets/css/animate.min.css';
-import '../../../public/assets/css/swiper-bundle.min.css';
-import '../../../public/assets/css/nice-select.css';
-import '../../../public/assets/css/boxicons.min.css';
-import '../../../public/assets/css/style.css';
-
 export interface RealEstateServiceItem {
   id?: string | number;
   title: string;
@@ -432,7 +423,7 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
   const renderProfessionalAdvisorySection = () => {
     if (profItems.length === 0) return null;
     return (
-      <section key="professional_advisory" className="py-16 lg:py-20 bg-slate-50/60 border-b border-slate-200/80">
+      <section key="professional_advisory" className="py-16 lg:py-20 bg-white border-b border-slate-200/80">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
             {profSubtitle && (
@@ -684,18 +675,16 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
   };
 
   return (
-    <div className="travel-agency-03-root min-h-screen flex flex-col bg-slate-50/50 text-slate-900 font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="travel-agency-03-root min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-emerald-500 selection:text-white">
       <BrandingThemeInjector agency={effectiveAgency} />
       <TopbarSlider agency={effectiveAgency} />
       <Header2Style3 agency={effectiveAgency} />
 
-      {/* Hero Breadcrumb Header idéntico al resto de la app */}
-      <section className="relative py-12 md:py-16 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#00a884_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <nav className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-slate-300 mb-4 border border-white/10">
-            <Link href="/" className="hover:text-white transition-colors">
+      {/* Hero Breadcrumb Header con fondo blanco / transparente */}
+      <section className="relative py-10 md:py-14 bg-white border-b border-slate-100 text-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <nav className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-xs font-semibold text-slate-600 mb-4 border border-slate-200">
+            <Link href="/" className="hover:text-slate-900 transition-colors">
               Inicio
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
@@ -704,14 +693,14 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
             </span>
           </nav>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white max-w-3xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 max-w-3xl mx-auto">
             {details?.services_hero_title || 'Nuestros Servicios Inmobiliarios'}
           </h1>
 
-          <p className="mt-3 text-sm sm:text-base text-slate-300 max-w-2xl mx-auto font-medium">
+          <p className="mt-3 text-sm sm:text-base text-slate-600 max-w-2xl mx-auto font-medium">
             {details?.services_hero_subtitle || (
               <>
-                En <strong className="text-white">{agencyName}</strong> ofrecemos soluciones integrales para que compres, vendas, rentes o desarrolles tus proyectos con total certeza técnica y respaldo jurídico.
+                En <strong className="text-slate-900">{agencyName}</strong> ofrecemos soluciones integrales para que compres, vendas, rentes o desarrolles tus proyectos con total certeza técnica y respaldo jurídico.
               </>
             )}
           </p>

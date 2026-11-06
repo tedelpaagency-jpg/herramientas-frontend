@@ -1500,6 +1500,21 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                         className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
                       />
                     </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-500 block mb-1">
+                        Link de App en Google Play Store (Opcional):
+                      </span>
+                      <input
+                        type="url"
+                        value={form.details?.play_store_url || ''}
+                        onChange={(e) => updateDetailField('play_store_url', e.target.value)}
+                        placeholder="https://play.google.com/store/apps/details?id=..."
+                        className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                      />
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        Si tu agencia tiene una aplicación en Google Play Store, se mostrará el botón de descarga en el encabezado y pie de página.
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
