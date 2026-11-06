@@ -269,6 +269,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Todas las Propiedades', path: '/estates', icon: Building2, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage'] },
         { label: 'Mis Propiedades', path: '/my-estates', icon: Key, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage'] },
         { label: 'Portal Inmobiliario (Web)', path: '/portal-inmobiliario', icon: Globe, permission: ['portal_inmobiliario.view', 'portal_inmobiliario.manage', 'portal_inmobiliario'] },
+        { label: 'Agenda de Citas', path: '/appointments', icon: Calendar, permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage', 'portal_inmobiliario.view', 'view_crm', 'manage_crm'] },
         ...((isWhiteLabelAdmin || isSuperAdmin)
           ? [
               {
