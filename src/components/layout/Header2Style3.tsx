@@ -131,7 +131,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const pathname = usePathname() as string;
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // Escuchar evento personalizado o query param para abrir el modal desde cualquier enlace
@@ -627,6 +627,35 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                   </svg>
                   <span>{isAuthenticated ? 'Mi Panel' : 'Acceso Agentes'}</span>
                 </button>
+
+                {isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (state.isSidebarOpen) toggleSidebar();
+                      logout();
+                    }}
+                    className="w-100 d-flex align-items-center justify-content-center gap-2 mt-2"
+                    style={{
+                      backgroundColor: '#f8fafc',
+                      borderRadius: '12px',
+                      padding: '10px 16px',
+                      fontWeight: 700,
+                      fontSize: '12.5px',
+                      color: '#e11d48',
+                      border: '1px solid #e2e8f0',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                    }}
+                  >
+                    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    <span>Cerrar Sesión</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

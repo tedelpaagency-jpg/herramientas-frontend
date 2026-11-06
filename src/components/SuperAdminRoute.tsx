@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, checkHasActivePortal } from '../context/AuthContext';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
 export const SuperAdminRoute: React.FC<{ children: React.ReactNode; allowWhiteLabelAdmin?: boolean }> = ({
@@ -15,6 +15,16 @@ export const SuperAdminRoute: React.FC<{ children: React.ReactNode; allowWhiteLa
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
+      if (typeof window !== 'undefined') {
+        const isLoggingOut = sessionStorage.getItem('santun_logging_out') === '1';
+        const logoutToFrontend = sessionStorage.getItem('santun_logout_to_frontend') === '1';
+        if (isLoggingOut || logoutToFrontend) {
+          if (logoutToFrontend || checkHasActivePortal()) {
+            window.location.href = '/';
+            return;
+          }
+        }
+      }
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);

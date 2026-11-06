@@ -153,6 +153,16 @@ apiClient.interceptors.response.use(
           localStorage.removeItem('santun_user');
           const isPublicRoute = (pathname: string): boolean => {
             return (
+              pathname === '/' ||
+              pathname.startsWith('/properties') ||
+              pathname.startsWith('/services') ||
+              pathname.startsWith('/servicios') ||
+              pathname.startsWith('/about') ||
+              pathname.startsWith('/conocenos') ||
+              pathname.startsWith('/contact') ||
+              pathname.startsWith('/contacto') ||
+              pathname.startsWith('/privacy') ||
+              pathname.startsWith('/privacidad') ||
               pathname === '/login' ||
               pathname.startsWith('/visa/show') ||
               pathname.startsWith('/contract/show') ||

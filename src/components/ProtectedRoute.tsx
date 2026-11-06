@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, checkHasActivePortal } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,6 +18,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, permis
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       if (typeof window !== 'undefined') {
+        // Si el usuario acaba de cerrar sesión y el portal está activo, redirigir al frontend (/)
+        const isLoggingOut = sessionStorage.getItem('santun_logging_out') === '1';
+        const logoutToFrontend = sessionStorage.getItem('santun_logout_to_frontend') === '1';
+        if (isLoggingOut || logoutToFrontend) {
+          if (logoutToFrontend || checkHasActivePortal()) {
+            window.location.href = '/';
+            return;
+          }
+        }
+
         const currentPath = window.location.pathname + window.location.search;
         if (currentPath && currentPath !== '/login' && !currentPath.startsWith('/login')) {
           router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);

@@ -31,6 +31,67 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export const checkHasActivePortal = (user?: any, agency?: any): boolean => {
+  if (typeof window === 'undefined') return false;
+
+  // 1. Flag de la agencia en sesión o parámetro
+  const effectiveAgency = agency || user?.agency;
+  if (
+    effectiveAgency?.frontend_enabled === true ||
+    effectiveAgency?.frontend_enabled === 1 ||
+    effectiveAgency?.frontend_enabled === 'true' ||
+    effectiveAgency?.frontend_enabled === '1'
+  ) {
+    return true;
+  }
+
+  // 2. Revisar el usuario guardado en localStorage
+  try {
+    const savedUserStr = localStorage.getItem('santun_user');
+    if (savedUserStr) {
+      const parsed = JSON.parse(savedUserStr);
+      const savedAg = parsed?.agency;
+      if (
+        savedAg?.frontend_enabled === true ||
+        savedAg?.frontend_enabled === 1 ||
+        savedAg?.frontend_enabled === 'true' ||
+        savedAg?.frontend_enabled === '1'
+      ) {
+        return true;
+      }
+    }
+  } catch {}
+
+  // 3. Revisar configuraciones cacheadas del portal inmobiliario
+  try {
+    const hostname = window.location.hostname.toLowerCase();
+    const keysToCheck = [
+      `inmo_cfg_${hostname}`,
+      'inmo_cfg_generic',
+      'inmo_cfg_inmosoft.pro',
+      'inmo_cfg_default',
+    ];
+    for (const key of keysToCheck) {
+      const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
+      if (raw) {
+        const cfg = JSON.parse(raw);
+        if (cfg?.frontend_enabled && !cfg?.redirect_to_login) {
+          return true;
+        }
+      }
+    }
+  } catch {}
+
+  // 4. Si es un dominio personalizado de agencia (no es tedelpa.com ni subdominio portal.)
+  const hostname = window.location.hostname.toLowerCase();
+  const isCrmOnly = hostname.includes('tedelpa.com') || hostname.startsWith('portal.');
+  if (!isCrmOnly && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    return true;
+  }
+
+  return false;
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -200,6 +261,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     setIsLoading(true);
+
+    // Detectar si el usuario o dominio actual tiene un portal público activo antes de limpiar el estado
+    const hasActivePortal = checkHasActivePortal(user, currentAgency);
+
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('santun_logging_out', '1');
+      if (hasActivePortal) {
+        sessionStorage.setItem('santun_logout_to_frontend', '1');
+      }
+    }
+
     try {
       await authService.logout();
     } catch (err) {
@@ -218,6 +290,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('santun_original_token');
       localStorage.removeItem('santun_original_user');
       setIsLoading(false);
+
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('santun_logging_out');
+        sessionStorage.removeItem('santun_logout_to_frontend');
+
+        // Si tiene portal activo, redirigir al frontend (/), sino al login
+        if (hasActivePortal) {
+          window.location.href = '/';
+        } else {
+          window.location.href = '/login';
+        }
+      }
     }
   };
 
