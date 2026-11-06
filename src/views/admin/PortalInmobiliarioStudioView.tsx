@@ -7,7 +7,7 @@ import {
   Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
   Target, Compass, Users, Megaphone, Video, Play, MapPin, SlidersHorizontal,
   Briefcase, Plus, Trash2, Handshake, BadgeCheck, FileSpreadsheet, ArrowUp, ArrowDown, Code, GripVertical,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Scale
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -33,6 +33,63 @@ const REAL_ESTATE_COLOR_PRESETS = [
   { name: 'Azul Zafiro', primary: '#2563eb', secondary: '#0f172a' },
   { name: 'Terracota Cálido', primary: '#ea580c', secondary: '#1c1917' },
   { name: 'Verde Bosque Lujo', primary: '#059669', secondary: '#064e3b' },
+];
+
+const DEFAULT_SERVICES_COMM_ITEMS_BOX1 = [
+  'Análisis de mercado (ACM) y avalúo profesional.',
+  'Fijación de precio óptimo según oferta y demanda.',
+  'Definición del cliente objetivo.',
+  'Gestión de prospectos, visitas y negociación.',
+  'Acompañamiento hasta el cierre.',
+];
+
+const DEFAULT_SERVICES_COMM_ITEMS_BOX2 = [
+  'Fotografía y video profesional.',
+  'Publicación en portales y redes sociales.',
+  'Campañas digitales segmentadas.',
+  'Difusión en nuestra red de clientes e inversionistas.',
+];
+
+const DEFAULT_SERVICES_PROF_ITEMS = [
+  {
+    id: 1,
+    title: 'Levantamiento topográfico',
+    image_url: 'https://old.immobillis.com/old/wp-content/uploads/2022/11/pngwing.com-5.png.avif',
+    description: 'Estudio técnico y descriptivo de un terreno, examinando la superficie terrestre en la cual se tienen en cuenta las características físicas, geográficas y geológicas del terreno, pero también sus variaciones y alteraciones, se denomina a este acopio de datos o plano que refleja al detalle y sirve como instrumento de planificación para edificaciones y construcciones.'
+  },
+  {
+    id: 2,
+    title: 'Diseño de proyectos arquitectónicos y urbanos',
+    image_url: 'https://old.immobillis.com/old/wp-content/uploads/2022/11/pngwing.com-4.png.avif',
+    description: 'Buscamos identificar la forma en que las personas usan las edificaciones y los espacios urbanos, y cómo se relacionan con los lugares donde viven, trabajan y pasean. Analiza básicamente una serie de consideraciones espaciales: diseño, escala, densidad, apariencia y paisaje.'
+  },
+  {
+    id: 3,
+    title: 'Representaciones, visualización en 3D y Renders.',
+    image_url: 'https://old.immobillis.com/old/wp-content/uploads/2022/11/pngwing.com-6-768x576.png.avif',
+    description: 'La representación en 3D es el proceso de crear una imagen fotorrealista en 2D a partir de modelos 3D. La representación en 3D es el paso final en el proceso de visualización en 3D, lo que conlleva la creación de modelos de objetos, la texturización de dichos objetos y la inclusión de luz en la escena.'
+  }
+];
+
+const DEFAULT_SERVICES_LEGAL_ITEMS = [
+  {
+    id: 1,
+    title: 'Servicios notariales',
+    image_url: 'https://old.immobillis.com/old/wp-content/uploads/2022/11/enrollment.png.avif',
+    description: 'Si estás buscando el hogar de tus sueños o si quieres vender algún inmueble, estos trámites ya no tendrán que pausarse. En inmobilis te contamos cuales son los trámites notariales o servicios inmobiliarios que puedes hacer.'
+  },
+  {
+    id: 2,
+    title: 'Escrituras, promesas de compra y venta.',
+    image_url: 'https://old.immobillis.com/old/wp-content/uploads/2022/11/icono_documentos_estudiantes.png.avif',
+    description: 'Una promesa de contrato que funciona como garantía, donde las partes se obligan recíprocamente a celebrar, en el futuro y con todos los requisitos que la Ley exige'
+  },
+  {
+    id: 3,
+    title: 'Poderes y Cartas-Permiso.',
+    image_url: 'https://old.immobillis.com/old/wp-content/uploads/2022/11/documentos-1-274x300.png.avif',
+    description: 'Se trata de un escrito mediante el cual una persona otorga o concede autorización a otra en su representación para que esta ejecute actos administrativos, mercantiles, judiciales o de dominio.'
+  }
 ];
 
 export const PortalInmobiliarioStudioView: React.FC = () => {
@@ -97,6 +154,45 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
     }));
   };
 
+  // Estados de colapso de secciones en Servicios
+  const [collapsedServicesSections, setCollapsedServicesSections] = useState<Record<string, boolean>>({
+    organizer: false,
+    comm_mkt: false,
+    prof_advisory: false,
+    legal_advisory: false,
+    services_catalog: false,
+    clients_allies: false,
+    html_manager: false,
+  });
+
+  const toggleServicesSectionCollapse = (key: string) => {
+    setCollapsedServicesSections((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const setAllServicesSectionsCollapse = (collapsed: boolean) => {
+    setCollapsedServicesSections({
+      organizer: collapsed,
+      comm_mkt: collapsed,
+      prof_advisory: collapsed,
+      legal_advisory: collapsed,
+      services_catalog: collapsed,
+      clients_allies: collapsed,
+      html_manager: collapsed,
+    });
+  };
+
+  const [collapsedServicesHtmlItems, setCollapsedServicesHtmlItems] = useState<Record<string, boolean>>({});
+
+  const toggleServicesHtmlItemCollapse = (id: string | number) => {
+    setCollapsedServicesHtmlItems((prev) => ({
+      ...prev,
+      [String(id)]: !prev[String(id)],
+    }));
+  };
+
   // Form state
   const [form, setForm] = useState<any>({
     name: '',
@@ -151,6 +247,28 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       about_sections_order: ['presentation', 'mission_vision', 'team', 'clients', 'allies', 'certifications'],
       about_sections_hidden: [],
       about_html_sections: [],
+      services_sections_order: ['commercial_marketing', 'professional_advisory', 'legal_advisory', 'clients', 'allies', 'services_catalog'],
+      services_sections_hidden: [],
+      services_html_sections: [],
+      services_comm_mkt_title: 'Aseroría comercial y marketing',
+      services_comm_mkt_subtitle: 'Explora nuestros servicios',
+      services_comm_mkt_desc: 'En Immobillis desarrollamos estrategias integrales para vender o alquilar tu propiedad en el menor tiempo y al mejor precio.',
+      services_comm_box1_title: 'Asesoría Comercial',
+      services_comm_box1_items: DEFAULT_SERVICES_COMM_ITEMS_BOX1,
+      services_comm_box2_title: 'Marketing Inmobiliario',
+      services_comm_box2_items: DEFAULT_SERVICES_COMM_ITEMS_BOX2,
+      services_prof_title: 'Asesoria Profesional',
+      services_prof_subtitle: 'Asesoria',
+      services_prof_items: DEFAULT_SERVICES_PROF_ITEMS,
+      services_legal_title: 'Asesoria Juridica',
+      services_legal_subtitle: 'Asesoria',
+      services_legal_items: DEFAULT_SERVICES_LEGAL_ITEMS,
+      services_clients_title: 'Nuestro Clientes',
+      services_clients_subtitle: '',
+      services_allies_title: 'ASOCIADOS A',
+      services_allies_subtitle: '',
+      services_catalog_title: 'Catálogo de Soluciones Integrales',
+      services_catalog_subtitle: '',
       about_stat1_num: '15',
       about_stat1_label: 'Años de Trayectoria',
       about_stat2_num: '3,500',
@@ -293,6 +411,30 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
           : ['presentation', 'mission_vision', 'team', 'clients', 'allies', 'certifications'],
         about_sections_hidden: Array.isArray(parsedDetails?.about_sections_hidden) ? parsedDetails.about_sections_hidden : [],
         about_html_sections: Array.isArray(parsedDetails?.about_html_sections) ? parsedDetails.about_html_sections : [],
+        services_sections_order: Array.isArray(parsedDetails?.services_sections_order)
+          ? parsedDetails.services_sections_order.filter((k: string) => k !== 'custom_html')
+          : ['commercial_marketing', 'professional_advisory', 'legal_advisory', 'clients', 'allies', 'services_catalog'],
+        services_sections_hidden: Array.isArray(parsedDetails?.services_sections_hidden) ? parsedDetails.services_sections_hidden : [],
+        services_html_sections: Array.isArray(parsedDetails?.services_html_sections) ? parsedDetails.services_html_sections : [],
+        services_comm_mkt_title: parsedDetails?.services_comm_mkt_title ?? 'Aseroría comercial y marketing',
+        services_comm_mkt_subtitle: parsedDetails?.services_comm_mkt_subtitle ?? 'Explora nuestros servicios',
+        services_comm_mkt_desc: parsedDetails?.services_comm_mkt_desc ?? 'En Immobillis desarrollamos estrategias integrales para vender o alquilar tu propiedad en el menor tiempo y al mejor precio.',
+        services_comm_box1_title: parsedDetails?.services_comm_box1_title ?? 'Asesoría Comercial',
+        services_comm_box1_items: Array.isArray(parsedDetails?.services_comm_box1_items) ? parsedDetails.services_comm_box1_items : DEFAULT_SERVICES_COMM_ITEMS_BOX1,
+        services_comm_box2_title: parsedDetails?.services_comm_box2_title ?? 'Marketing Inmobiliario',
+        services_comm_box2_items: Array.isArray(parsedDetails?.services_comm_box2_items) ? parsedDetails.services_comm_box2_items : DEFAULT_SERVICES_COMM_ITEMS_BOX2,
+        services_prof_title: parsedDetails?.services_prof_title ?? 'Asesoria Profesional',
+        services_prof_subtitle: parsedDetails?.services_prof_subtitle ?? 'Asesoria',
+        services_prof_items: Array.isArray(parsedDetails?.services_prof_items) ? parsedDetails.services_prof_items : DEFAULT_SERVICES_PROF_ITEMS,
+        services_legal_title: parsedDetails?.services_legal_title ?? 'Asesoria Juridica',
+        services_legal_subtitle: parsedDetails?.services_legal_subtitle ?? 'Asesoria',
+        services_legal_items: Array.isArray(parsedDetails?.services_legal_items) ? parsedDetails.services_legal_items : DEFAULT_SERVICES_LEGAL_ITEMS,
+        services_clients_title: parsedDetails?.services_clients_title ?? 'Nuestro Clientes',
+        services_clients_subtitle: parsedDetails?.services_clients_subtitle ?? '',
+        services_allies_title: parsedDetails?.services_allies_title ?? 'ASOCIADOS A',
+        services_allies_subtitle: parsedDetails?.services_allies_subtitle ?? '',
+        services_catalog_title: parsedDetails?.services_catalog_title ?? 'Catálogo de Soluciones Integrales',
+        services_catalog_subtitle: parsedDetails?.services_catalog_subtitle ?? '',
         about_stat1_num: parsedDetails?.about_stat1_num || '15',
         about_stat1_label: parsedDetails?.about_stat1_label || 'Años de Trayectoria',
         about_stat2_num: parsedDetails?.about_stat2_num || '3,500',
@@ -2838,196 +2980,1178 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
             {/* TAB: SERVICIOS INMOBILIARIOS CONFIGURABLES */}
             {activeTab === 'services' && (
-              <div className="space-y-6 animate-in fade-in-50 duration-200">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
                   <div>
                     <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-emerald-600" /> Servicios Inmobiliarios Configurables
+                      <Briefcase className="w-4 h-4 text-emerald-600" /> Página de Servicios / Catálogo y Asesorías
                     </h3>
                     <p className="text-xs text-slate-500 mt-1">
-                      Gestiona las tarjetas de servicios mostradas en la página pública <code>/services</code> con título, descripción, foto y botón de contacto.
+                      Gestiona el orden de secciones, asesorías comerciales, jurídicas y profesionales, carrusel de clientes, asociados comerciales y bloques HTML para la página <code>/services</code>.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const list = Array.isArray(form.details?.services) ? [...form.details.services] : [];
-                      list.push({
-                        id: Date.now(),
-                        title: 'Nuevo Servicio Inmobiliario',
-                        description: 'Descripción detallada de la asesoría o solución que brindamos a los clientes...',
-                        image_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
-                        cta_text: 'Solicitar Asesoría',
-                      });
-                      updateDetailField('services', list);
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer transition-all self-start sm:self-auto"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar Servicio</span>
-                  </button>
-                </div>
-
-                {(!form.details?.services || form.details.services.length === 0) ? (
-                  <div className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3">
-                    <Briefcase className="w-8 h-8 text-slate-400 mx-auto" />
-                    <div className="max-w-md mx-auto space-y-1">
-                      <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 m-0">
-                        Servicios predefinidos activos
-                      </h4>
-                      <p className="text-xs text-slate-500 m-0">
-                        Actualmente el portal público muestra los 6 servicios estándar (Compra/Venta, Alquiler, Legal, Hipotecario, Avalúos, Marketing).
-                      </p>
-                    </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
                     <button
                       type="button"
-                      onClick={() => {
-                        updateDetailField('services', [
-                          {
-                            id: 1,
-                            title: 'Compra y Venta de Inmuebles',
-                            description: 'Asesoría integral y personalizada para vender al mejor precio de mercado o adquirir tu propiedad soñada con total seguridad jurídica.',
-                            image_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
-                            cta_text: 'Consultar Compra / Venta',
-                          },
-                          {
-                            id: 2,
-                            title: 'Alquiler y Administración de Propiedades',
-                            description: 'Selección rigurosa de inquilinos, contratos blindados, cobro garantizado de rentas y gestión del mantenimiento preventivo.',
-                            image_url: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=800&q=80',
-                            cta_text: 'Administrar mi Inmueble',
-                          },
-                          {
-                            id: 3,
-                            title: 'Asesoría Legal e Inmobiliaria',
-                            description: 'Redacción y revisión de promesas de compraventa, levantamiento de hipotecas, regularización de linderos y trámites notariales.',
-                            image_url: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=800&q=80',
-                            cta_text: 'Solicitar Asesoría Legal',
-                          },
-                          {
-                            id: 4,
-                            title: 'Gestión de Créditos Hipotecarios',
-                            description: 'Canalización directa de solicitudes de crédito con el Biess y bancos privados con tasas preferenciales y respuesta ágil.',
-                            image_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80',
-                            cta_text: 'Precalificar Crédito',
-                          },
-                          {
-                            id: 5,
-                            title: 'Avalúos Comerciales y Peritajes',
-                            description: 'Determinación técnica, imparcial y documentada del valor comercial real de su propiedad basada en el mercado actual.',
-                            image_url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80',
-                            cta_text: 'Solicitar Avalúo Técnico',
-                          },
-                          {
-                            id: 6,
-                            title: 'Marketing Inmobiliario 360°',
-                            description: 'Fotografía profesional, recorridos virtuales 3D, tomas con drones y campañas digitales segmentadas de alto impacto.',
-                            image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-                            cta_text: 'Promocionar mi Propiedad',
-                          },
-                        ]);
-                      }}
-                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs cursor-pointer transition-all inline-flex items-center gap-2"
+                      onClick={() => setAllServicesSectionsCollapse(false)}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition-colors cursor-pointer"
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Cargar los 6 Servicios para Personalizarlos</span>
+                      Expandir Todas
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAllServicesSectionsCollapse(true)}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition-colors cursor-pointer"
+                    >
+                      Colapsar Todas
                     </button>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    {form.details.services.map((service: any, idx: number) => (
-                      <div
-                        key={service.id || idx}
-                        className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs space-y-3"
-                      >
-                        <div className="flex items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
-                          <span className="text-xs font-black uppercase text-emerald-600">
-                            Servicio #{idx + 1}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const list = form.details.services.filter((_: any, i: number) => i !== idx);
-                              updateDetailField('services', list);
-                            }}
-                            className="text-rose-500 hover:text-rose-700 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Eliminar</span>
-                          </button>
-                        </div>
+                </div>
 
+                <div className="space-y-4">
+                  {/* 1. Organizador y Visibilidad de Secciones de Servicios */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleServicesSectionCollapse('organizer')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
+                          <GripVertical className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Organizador y Visibilidad de Secciones (Servicios)</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                              Arrastra / Reordena
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Modifica el orden vertical y activa/desactiva secciones en la página <code>/services</code>.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const baseKeys = ['commercial_marketing', 'professional_advisory', 'legal_advisory', 'clients', 'allies', 'services_catalog'];
+                            const htmlKeys = (Array.isArray(form.details?.services_html_sections) ? form.details.services_html_sections : []).map(
+                              (s: any) => `html_${s.id}`
+                            );
+                            updateDetailField('services_sections_order', [...baseKeys, ...htmlKeys]);
+                            updateDetailField('services_sections_hidden', []);
+                          }}
+                          className="text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline cursor-pointer mr-2"
+                        >
+                          Restablecer Orden
+                        </button>
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                          {collapsedServicesSections.organizer ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </div>
+                      </div>
+                    </div>
+
+                    {!collapsedServicesSections.organizer && (
+                      <div className="p-4 space-y-2 border-t border-slate-100 dark:border-slate-800">
+                        {(() => {
+                          const htmlSectionsList: any[] = Array.isArray(form.details?.services_html_sections)
+                            ? form.details.services_html_sections
+                            : [];
+
+                          const baseSections = [
+                            { id: 'commercial_marketing', label: 'Asesoría Comercial y Marketing', icon: Briefcase, desc: 'Cajas de asesoría y marketing con viñetas' },
+                            { id: 'professional_advisory', label: 'Asesoría Profesional (Acordeón)', icon: Compass, desc: 'Topografía, arquitectura, renders 3D' },
+                            { id: 'legal_advisory', label: 'Asesoría Jurídica (Acordeón)', icon: Scale, desc: 'Servicios notariales, escrituras, poderes' },
+                            { id: 'clients', label: 'Nuestros Clientes (Carrusel)', icon: Sparkles, desc: 'Logos continuos sin fondo blanco' },
+                            { id: 'allies', label: 'Asociados Comerciales (ASOCIADOS A)', icon: Handshake, desc: 'Tarjetas con imagen, título y descripción' },
+                            { id: 'services_catalog', label: 'Catálogo de Servicios Generales', icon: Layers, desc: 'Tarjetas de servicios adicionales con botón WhatsApp' },
+                          ];
+
+                          const htmlSectionsMeta = htmlSectionsList.map((sec, i) => ({
+                            id: `html_${sec.id}`,
+                            rawId: sec.id,
+                            isHtml: true,
+                            label: sec.title && sec.title.trim() !== '' ? `Sección HTML: ${sec.title}` : `Sección HTML #${i + 1}`,
+                            icon: Code,
+                            desc: sec.subtitle || (sec.container === 'full' ? 'Ancho Completo' : 'Contenedor Enmarcado'),
+                          }));
+
+                          const allSections = [...baseSections, ...htmlSectionsMeta];
+
+                          const currentOrder: string[] = (
+                            Array.isArray(form.details?.services_sections_order) && form.details.services_sections_order.length > 0
+                              ? form.details.services_sections_order
+                              : allSections.map((s) => s.id)
+                          ).filter((k: string) => k !== 'custom_html');
+
+                          const fullOrder: string[] = [];
+                          currentOrder.forEach((sId) => {
+                            if (sId && !fullOrder.includes(sId)) fullOrder.push(sId);
+                          });
+                          allSections.forEach((s) => {
+                            if (!fullOrder.includes(s.id)) fullOrder.push(s.id);
+                          });
+
+                          const hiddenList: string[] = Array.isArray(form.details?.services_sections_hidden)
+                            ? form.details.services_sections_hidden
+                            : [];
+
+                          return fullOrder.map((secId, idx) => {
+                            const meta = allSections.find((s) => s.id === secId) || {
+                              id: secId,
+                              label: secId.startsWith('html_') ? `Sección HTML (${secId.replace('html_', '#')})` : secId,
+                              icon: secId.startsWith('html_') ? Code : Briefcase,
+                              desc: 'Sección personalizada',
+                            };
+                            const isHidden = hiddenList.includes(secId);
+                            const IconComp = meta.icon;
+
+                            return (
+                              <div
+                                key={secId}
+                                className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                                  isHidden
+                                    ? 'bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 opacity-60'
+                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xs'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 font-mono text-[10px] font-bold shrink-0">
+                                    {idx + 1}
+                                  </div>
+                                  <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 shrink-0">
+                                    <IconComp className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <h5 className="text-xs font-bold text-slate-800 dark:text-white truncate m-0">
+                                      {meta.label}
+                                    </h5>
+                                    <p className="text-[11px] text-slate-400 truncate m-0">
+                                      {meta.desc}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0 ml-3">
+                                  {/* Botón Mover Arriba */}
+                                  <button
+                                    type="button"
+                                    disabled={idx === 0}
+                                    onClick={() => {
+                                      if (idx === 0) return;
+                                      const next = [...fullOrder];
+                                      const [moved] = next.splice(idx, 1);
+                                      next.splice(idx - 1, 0, moved);
+                                      updateDetailField('services_sections_order', next);
+                                    }}
+                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                    title="Subir sección"
+                                  >
+                                    <ArrowUp className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Botón Mover Abajo */}
+                                  <button
+                                    type="button"
+                                    disabled={idx === fullOrder.length - 1}
+                                    onClick={() => {
+                                      if (idx === fullOrder.length - 1) return;
+                                      const next = [...fullOrder];
+                                      const [moved] = next.splice(idx, 1);
+                                      next.splice(idx + 1, 0, moved);
+                                      updateDetailField('services_sections_order', next);
+                                    }}
+                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                    title="Bajar sección"
+                                  >
+                                    <ArrowDown className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Botón Ocultar / Mostrar */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nextHidden = isHidden
+                                        ? hiddenList.filter((k: string) => k !== secId)
+                                        : [...hiddenList, secId];
+                                      updateDetailField('services_sections_hidden', nextHidden);
+                                    }}
+                                    className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                                      isHidden
+                                        ? 'border-rose-200 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:border-rose-900'
+                                        : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-900'
+                                    }`}
+                                    title={isHidden ? 'Sección oculta (clic para mostrar)' : 'Sección visible (clic para ocultar)'}
+                                  >
+                                    {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. Asesoría Comercial y Marketing */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleServicesSectionCollapse('comm_mkt')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600">
+                          <Briefcase className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Asesoría Comercial y Marketing</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
+                              2 Columnas con Viñetas
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Bloques de asesoría comercial y marketing inmobiliario.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        {collapsedServicesSections.comm_mkt ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                      </div>
+                    </div>
+
+                    {!collapsedServicesSections.comm_mkt && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                              Título del Servicio:
+                              Título Principal de la Sección:
                             </label>
                             <input
                               type="text"
-                              value={service.title || ''}
-                              onChange={(e) => {
-                                const list = [...form.details.services];
-                                list[idx] = { ...list[idx], title: e.target.value };
-                                updateDetailField('services', list);
-                              }}
-                              placeholder="Ej: Compra y Venta de Inmuebles"
+                              value={form.details?.services_comm_mkt_title ?? ''}
+                              onChange={(e) => updateDetailField('services_comm_mkt_title', e.target.value)}
+                              placeholder="Ej: Aseroría comercial y marketing"
                               className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
                             />
                           </div>
 
                           <div>
                             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                              Texto del Botón (CTA):
+                              Subtítulo Superior (opcional):
                             </label>
                             <input
                               type="text"
-                              value={service.cta_text || ''}
-                              onChange={(e) => {
-                                const list = [...form.details.services];
-                                list[idx] = { ...list[idx], cta_text: e.target.value };
-                                updateDetailField('services', list);
-                              }}
-                              placeholder="Ej: Solicitar Asesoría"
-                              className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                              value={form.details?.services_comm_mkt_subtitle ?? ''}
+                              onChange={(e) => updateDetailField('services_comm_mkt_subtitle', e.target.value)}
+                              placeholder="Ej: Explora nuestros servicios (dejar vacío si no deseas nada)"
+                              className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
                             />
                           </div>
                         </div>
 
                         <div>
                           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                            Descripción del Servicio:
+                            Descripción Introductoria:
                           </label>
                           <textarea
                             rows={2}
-                            value={service.description || ''}
-                            onChange={(e) => {
-                              const list = [...form.details.services];
-                              list[idx] = { ...list[idx], description: e.target.value };
-                              updateDetailField('services', list);
-                            }}
-                            placeholder="Detalle los beneficios y alcance del servicio..."
+                            value={form.details?.services_comm_mkt_desc ?? ''}
+                            onChange={(e) => updateDetailField('services_comm_mkt_desc', e.target.value)}
+                            placeholder="Descripción general de las estrategias..."
                             className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
                           />
                         </div>
 
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1.5">
-                            Foto / Imagen del Servicio:
-                          </label>
-                          <MediaPicker
-                            value={service.image_url || service.photo || ''}
-                            onChange={(selected) => {
-                              const list = [...form.details.services];
-                              list[idx] = { ...list[idx], image_url: selected?.url || '', photo: selected?.url || '' };
-                              updateDetailField('services', list);
-                            }}
-                            label="Seleccionar Foto del Servicio"
-                          />
+                        {/* Configuración de las 2 Cajas */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                          {/* Caja 1 */}
+                          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 space-y-3">
+                            <label className="block text-xs font-black uppercase text-slate-800 dark:text-white">
+                              Caja 1: Título y Viñetas
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.services_comm_box1_title ?? ''}
+                              onChange={(e) => updateDetailField('services_comm_box1_title', e.target.value)}
+                              placeholder="Ej: Asesoría Comercial"
+                              className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                            />
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                                Viñetas (una por línea):
+                              </label>
+                              <textarea
+                                rows={5}
+                                value={(form.details?.services_comm_box1_items || []).join('\n')}
+                                onChange={(e) => {
+                                  const lines = e.target.value.split('\n');
+                                  updateDetailField('services_comm_box1_items', lines);
+                                }}
+                                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border rounded-lg font-sans leading-relaxed"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Caja 2 */}
+                          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 space-y-3">
+                            <label className="block text-xs font-black uppercase text-slate-800 dark:text-white">
+                              Caja 2: Título y Viñetas
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.services_comm_box2_title ?? ''}
+                              onChange={(e) => updateDetailField('services_comm_box2_title', e.target.value)}
+                              placeholder="Ej: Marketing Inmobiliario"
+                              className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                            />
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                                Viñetas (una por línea):
+                              </label>
+                              <textarea
+                                rows={5}
+                                value={(form.details?.services_comm_box2_items || []).join('\n')}
+                                onChange={(e) => {
+                                  const lines = e.target.value.split('\n');
+                                  updateDetailField('services_comm_box2_items', lines);
+                                }}
+                                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border rounded-lg font-sans leading-relaxed"
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
+
+                  {/* 3. Asesoría Profesional (Acordeón) */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleServicesSectionCollapse('prof_advisory')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600">
+                          <Compass className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Asesoría Profesional (Acordeón Interactivo)</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                              {form.details?.services_prof_items?.length || 0} ítems
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Levantamientos topográficos, diseños arquitectónicos, renders 3D.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        {collapsedServicesSections.prof_advisory ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                      </div>
+                    </div>
+
+                    {!collapsedServicesSections.prof_advisory && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                              Título de la Sección:
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.services_prof_title ?? ''}
+                              onChange={(e) => updateDetailField('services_prof_title', e.target.value)}
+                              placeholder="Ej: Asesoria Profesional"
+                              className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                              Subtítulo Superior (opcional):
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.services_prof_subtitle ?? ''}
+                              onChange={(e) => updateDetailField('services_prof_subtitle', e.target.value)}
+                              placeholder="Ej: Asesoria (dejar vacío si no deseas subtítulo)"
+                              className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2">
+                          <span className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
+                            Ítems del Acordeón Profesional:
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = Array.isArray(form.details?.services_prof_items) ? [...form.details.services_prof_items] : [];
+                              list.push({
+                                id: Date.now(),
+                                title: 'Nueva Asesoría Profesional',
+                                image_url: 'https://old.immobillis.com/old/wp-content/uploads/2022/11/pngwing.com-5.png.avif',
+                                description: 'Descripción detallada del servicio técnico especializado...',
+                              });
+                              updateDetailField('services_prof_items', list);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Agregar Ítem</span>
+                          </button>
+                        </div>
+
+                        <div className="space-y-3">
+                          {(form.details?.services_prof_items || []).map((item: any, idx: number) => (
+                            <div
+                              key={item.id || idx}
+                              className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 space-y-3"
+                            >
+                              <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800">
+                                <span className="text-xs font-black uppercase text-indigo-600">
+                                  Ítem #{idx + 1}: {item.title || 'Sin título'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const list = form.details.services_prof_items.filter((_: any, i: number) => i !== idx);
+                                    updateDetailField('services_prof_items', list);
+                                  }}
+                                  className="text-rose-500 hover:text-rose-700 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Eliminar</span>
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                                    Título:
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.title || ''}
+                                    onChange={(e) => {
+                                      const list = [...form.details.services_prof_items];
+                                      list[idx] = { ...list[idx], title: e.target.value };
+                                      updateDetailField('services_prof_items', list);
+                                    }}
+                                    placeholder="Ej: Levantamiento topográfico"
+                                    className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                                    Imagen / Icono:
+                                  </label>
+                                  <MediaPicker
+                                    value={item.image_url || ''}
+                                    onChange={(selected) => {
+                                      const list = [...form.details.services_prof_items];
+                                      list[idx] = { ...list[idx], image_url: selected?.url || '' };
+                                      updateDetailField('services_prof_items', list);
+                                    }}
+                                    label="Seleccionar Imagen"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                                  Descripción / Explicación del Servicio:
+                                </label>
+                                <textarea
+                                  rows={3}
+                                  value={item.description || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.services_prof_items];
+                                    list[idx] = { ...list[idx], description: e.target.value };
+                                    updateDetailField('services_prof_items', list);
+                                  }}
+                                  placeholder="Detalle técnico y beneficios..."
+                                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border rounded-lg leading-relaxed"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 4. Asesoría Jurídica (Acordeón) */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleServicesSectionCollapse('legal_advisory')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600">
+                          <Scale className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Asesoría Jurídica (Acordeón Interactivo)</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                              {form.details?.services_legal_items?.length || 0} ítems
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Servicios notariales, escrituras, promesas de compraventa, cartas-permiso.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        {collapsedServicesSections.legal_advisory ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                      </div>
+                    </div>
+
+                    {!collapsedServicesSections.legal_advisory && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                              Título de la Sección:
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.services_legal_title ?? ''}
+                              onChange={(e) => updateDetailField('services_legal_title', e.target.value)}
+                              placeholder="Ej: Asesoria Juridica"
+                              className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                              Subtítulo Superior (opcional):
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.services_legal_subtitle ?? ''}
+                              onChange={(e) => updateDetailField('services_legal_subtitle', e.target.value)}
+                              placeholder="Ej: Asesoria (dejar vacío si no deseas subtítulo)"
+                              className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2">
+                          <span className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
+                            Ítems del Acordeón Jurídico:
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = Array.isArray(form.details?.services_legal_items) ? [...form.details.services_legal_items] : [];
+                              list.push({
+                                id: Date.now(),
+                                title: 'Nuevo Servicio Jurídico',
+                                image_url: 'https://old.immobillis.com/old/wp-content/uploads/2022/11/enrollment.png.avif',
+                                description: 'Descripción detallada de la gestión legal...',
+                              });
+                              updateDetailField('services_legal_items', list);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Agregar Ítem</span>
+                          </button>
+                        </div>
+
+                        <div className="space-y-3">
+                          {(form.details?.services_legal_items || []).map((item: any, idx: number) => (
+                            <div
+                              key={item.id || idx}
+                              className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 space-y-3"
+                            >
+                              <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800">
+                                <span className="text-xs font-black uppercase text-amber-600">
+                                  Ítem #{idx + 1}: {item.title || 'Sin título'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const list = form.details.services_legal_items.filter((_: any, i: number) => i !== idx);
+                                    updateDetailField('services_legal_items', list);
+                                  }}
+                                  className="text-rose-500 hover:text-rose-700 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Eliminar</span>
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                                    Título:
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.title || ''}
+                                    onChange={(e) => {
+                                      const list = [...form.details.services_legal_items];
+                                      list[idx] = { ...list[idx], title: e.target.value };
+                                      updateDetailField('services_legal_items', list);
+                                    }}
+                                    placeholder="Ej: Servicios notariales"
+                                    className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                                    Imagen / Icono:
+                                  </label>
+                                  <MediaPicker
+                                    value={item.image_url || ''}
+                                    onChange={(selected) => {
+                                      const list = [...form.details.services_legal_items];
+                                      list[idx] = { ...list[idx], image_url: selected?.url || '' };
+                                      updateDetailField('services_legal_items', list);
+                                    }}
+                                    label="Seleccionar Imagen"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                                  Descripción / Explicación del Trámite:
+                                </label>
+                                <textarea
+                                  rows={3}
+                                  value={item.description || ''}
+                                  onChange={(e) => {
+                                    const list = [...form.details.services_legal_items];
+                                    list[idx] = { ...list[idx], description: e.target.value };
+                                    updateDetailField('services_legal_items', list);
+                                  }}
+                                  placeholder="Detalle notarial o legal..."
+                                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border rounded-lg leading-relaxed"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 5. Nuestros Clientes y Asociados en Servicios */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleServicesSectionCollapse('clients_allies')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
+                          <Handshake className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Clientes y Asociados Comerciales (en Servicios)</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                              Carrusel + Tarjetas
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Títulos personalizados para el carrusel de logos y la sección de asociados en <code>/services</code>.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        {collapsedServicesSections.clients_allies ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                      </div>
+                    </div>
+
+                    {!collapsedServicesSections.clients_allies && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 space-y-2">
+                            <h5 className="text-xs font-bold uppercase text-slate-700 dark:text-slate-200 m-0">
+                              Carrusel: Nuestros Clientes
+                            </h5>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                                Título:
+                              </label>
+                              <input
+                                type="text"
+                                value={form.details?.services_clients_title ?? 'Nuestro Clientes'}
+                                onChange={(e) => updateDetailField('services_clients_title', e.target.value)}
+                                placeholder="Ej: Nuestro Clientes"
+                                className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                                Subtítulo (opcional):
+                              </label>
+                              <input
+                                type="text"
+                                value={form.details?.services_clients_subtitle ?? ''}
+                                onChange={(e) => updateDetailField('services_clients_subtitle', e.target.value)}
+                                placeholder="Dejar vacío si no deseas subtítulo"
+                                className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                            <p className="text-[10px] text-slate-400 m-0">
+                              Reutiliza los {form.details?.our_clients?.length || 0} logos configurados en Conócenos.
+                            </p>
+                          </div>
+
+                          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 space-y-2">
+                            <h5 className="text-xs font-bold uppercase text-slate-700 dark:text-slate-200 m-0">
+                              Tarjetas: Asociados Comerciales
+                            </h5>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                                Título:
+                              </label>
+                              <input
+                                type="text"
+                                value={form.details?.services_allies_title ?? 'ASOCIADOS A'}
+                                onChange={(e) => updateDetailField('services_allies_title', e.target.value)}
+                                placeholder="Ej: ASOCIADOS A"
+                                className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                                Subtítulo (opcional):
+                              </label>
+                              <input
+                                type="text"
+                                value={form.details?.services_allies_subtitle ?? ''}
+                                onChange={(e) => updateDetailField('services_allies_subtitle', e.target.value)}
+                                placeholder="Dejar vacío si no deseas subtítulo"
+                                className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                            <p className="text-[10px] text-slate-400 m-0">
+                              Reutiliza los {form.details?.commercial_allies?.length || 0} aliados comerciales configurados.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 6. Catálogo de Servicios Generales */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleServicesSectionCollapse('services_catalog')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600">
+                          <Layers className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Catálogo de Soluciones Adicionales (Tarjetas con WhatsApp)</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300">
+                              {form.details?.services?.length || 0} servicios
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Tarjetas de servicios adicionales con foto, descripción y botón de contacto.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        {collapsedServicesSections.services_catalog ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                      </div>
+                    </div>
+
+                    {!collapsedServicesSections.services_catalog && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
+                          <p className="text-xs text-slate-500 m-0">
+                            Puedes agregar servicios personalizados adicionales que se mostrarán en formato de cuadrícula.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = Array.isArray(form.details?.services) ? [...form.details.services] : [];
+                              list.push({
+                                id: Date.now(),
+                                title: 'Nuevo Servicio Inmobiliario',
+                                description: 'Descripción detallada de la solución o asesoría...',
+                                image_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
+                                cta_text: 'Solicitar Asesoría',
+                              });
+                              updateDetailField('services', list);
+                            }}
+                            className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Agregar Tarjeta de Servicio</span>
+                          </button>
+                        </div>
+
+                        {(!form.details?.services || form.details.services.length === 0) ? (
+                          <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-dashed text-center">
+                            <p className="text-xs text-slate-500 m-0">
+                              No hay servicios adicionales configurados. La página mostrará las asesorías principales de la agencia.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {form.details.services.map((service: any, idx: number) => (
+                              <div
+                                key={service.id || idx}
+                                className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 space-y-3"
+                              >
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800">
+                                  <span className="text-xs font-black uppercase text-teal-600">
+                                    Servicio #{idx + 1}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const list = form.details.services.filter((_: any, i: number) => i !== idx);
+                                      updateDetailField('services', list);
+                                    }}
+                                    className="text-rose-500 hover:text-rose-700 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Eliminar</span>
+                                  </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                                      Título del Servicio:
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={service.title || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.services];
+                                        list[idx] = { ...list[idx], title: e.target.value };
+                                        updateDetailField('services', list);
+                                      }}
+                                      placeholder="Ej: Compra y Venta de Inmuebles"
+                                      className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                                      Texto del Botón CTA:
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={service.cta_text || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.services];
+                                        list[idx] = { ...list[idx], cta_text: e.target.value };
+                                        updateDetailField('services', list);
+                                      }}
+                                      placeholder="Ej: Solicitar Asesoría"
+                                      className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                                    Descripción:
+                                  </label>
+                                  <textarea
+                                    rows={2}
+                                    value={service.description || ''}
+                                    onChange={(e) => {
+                                      const list = [...form.details.services];
+                                      list[idx] = { ...list[idx], description: e.target.value };
+                                      updateDetailField('services', list);
+                                    }}
+                                    placeholder="Detalle los beneficios del servicio..."
+                                    className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg leading-relaxed"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                                    Foto / Imagen del Servicio:
+                                  </label>
+                                  <MediaPicker
+                                    value={service.image_url || service.photo || ''}
+                                    onChange={(selected) => {
+                                      const list = [...form.details.services];
+                                      list[idx] = { ...list[idx], image_url: selected?.url || '', photo: selected?.url || '' };
+                                      updateDetailField('services', list);
+                                    }}
+                                    label="Seleccionar Foto del Servicio"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 7. Secciones Personalizadas con HTML Puro (Servicios) */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleServicesSectionCollapse('html_manager')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600">
+                          <Code className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Secciones Personalizadas con HTML Puro (Servicios)</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                              {form.details?.services_html_sections?.length || 0} secciones activas
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Crea secciones HTML independientes que puedes ubicar en cualquier posición de la página de servicios.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                          {collapsedServicesSections.html_manager ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </div>
+                      </div>
+                    </div>
+
+                    {!collapsedServicesSections.html_manager && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between flex-wrap gap-2 pb-2">
+                          <p className="text-xs text-slate-500 m-0">
+                            Inserta código HTML, banners o iframes. Cada sección tiene su propio control en el Organizador.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = Array.isArray(form.details?.services_html_sections)
+                                ? [...form.details.services_html_sections]
+                                : [];
+                              const newId = Date.now();
+                              list.push({
+                                id: newId,
+                                title: '',
+                                subtitle: '',
+                                container: 'boxed',
+                                bg_color: '',
+                                html: '<div class="text-center py-8">\n  <h3 class="text-xl font-bold">Título de la Sección</h3>\n  <p class="text-sm text-slate-600">Escribe aquí tu contenido HTML personalizado...</p>\n</div>',
+                                enabled: true,
+                              });
+                              updateDetailField('services_html_sections', list);
+
+                              const curOrder = Array.isArray(form.details?.services_sections_order)
+                                ? [...form.details.services_sections_order]
+                                : [];
+                              const newKey = `html_${newId}`;
+                              if (!curOrder.includes(newKey)) {
+                                curOrder.push(newKey);
+                                updateDetailField('services_sections_order', curOrder);
+                              }
+                            }}
+                            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer transition-all"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Nueva Sección HTML</span>
+                          </button>
+                        </div>
+
+                        {(!form.details?.services_html_sections || form.details.services_html_sections.length === 0) ? (
+                          <div className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
+                            <Code className="w-8 h-8 text-slate-400 mx-auto" />
+                            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 m-0">
+                              No hay secciones HTML personalizadas en Servicios
+                            </h4>
+                            <p className="text-xs text-slate-500 m-0 max-w-md mx-auto">
+                              Puedes crear secciones con banners publicitarios, calculadoras de inversión o cualquier contenido a medida.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {form.details.services_html_sections.map((sec: any, idx: number) => {
+                              const isItemCollapsed = !!collapsedServicesHtmlItems[sec.id];
+                              return (
+                                <div
+                                  key={sec.id || idx}
+                                  className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 overflow-hidden shadow-2xs"
+                                >
+                                  {/* Encabezado colapsable individual */}
+                                  <div
+                                    className="p-3.5 flex items-center justify-between cursor-pointer select-none bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 hover:bg-slate-50/80 transition-colors"
+                                    onClick={() => toggleServicesHtmlItemCollapse(sec.id)}
+                                  >
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="w-6 h-6 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 font-mono text-[10px] font-bold flex items-center justify-center">
+                                        #{idx + 1}
+                                      </div>
+                                      <div>
+                                        <h5 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2 m-0">
+                                          <span>{sec.title && sec.title.trim() !== '' ? sec.title : `Sección HTML #${idx + 1}`}</span>
+                                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                            {sec.container === 'full' ? 'Ancho Completo' : 'Enmarcado'}
+                                          </span>
+                                        </h5>
+                                        <p className="text-[10px] text-slate-400 font-mono m-0">
+                                          ID de sección: html_{sec.id}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const list = form.details.services_html_sections.filter((_: any, i: number) => i !== idx);
+                                          updateDetailField('services_html_sections', list);
+
+                                          const targetKey = `html_${sec.id}`;
+                                          if (Array.isArray(form.details?.services_sections_order)) {
+                                            updateDetailField(
+                                              'services_sections_order',
+                                              form.details.services_sections_order.filter((k: string) => k !== targetKey && k !== String(sec.id))
+                                            );
+                                          }
+                                          if (Array.isArray(form.details?.services_sections_hidden)) {
+                                            updateDetailField(
+                                              'services_sections_hidden',
+                                              form.details.services_sections_hidden.filter((k: string) => k !== targetKey && k !== String(sec.id))
+                                            );
+                                          }
+                                        }}
+                                        className="text-rose-500 hover:text-rose-700 text-xs font-bold flex items-center gap-1 cursor-pointer mr-2 px-2 py-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        <span>Eliminar</span>
+                                      </button>
+                                      <div className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400">
+                                        {isItemCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Cuerpo de la tarjeta HTML */}
+                                  {!isItemCollapsed && (
+                                    <div className="p-4 space-y-3">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Título de la Sección (Opcional):
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={sec.title || ''}
+                                            onChange={(e) => {
+                                              const list = [...form.details.services_html_sections];
+                                              list[idx] = { ...list[idx], title: e.target.value };
+                                              updateDetailField('services_html_sections', list);
+                                            }}
+                                            placeholder="Ej: ¿Cómo lo hacemos?"
+                                            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                          />
+                                        </div>
+
+                                        <div>
+                                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Subtítulo Superior (Opcional):
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={sec.subtitle || ''}
+                                            onChange={(e) => {
+                                              const list = [...form.details.services_html_sections];
+                                              list[idx] = { ...list[idx], subtitle: e.target.value };
+                                              updateDetailField('services_html_sections', list);
+                                            }}
+                                            placeholder="Dejar vacío si no deseas subtítulo"
+                                            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                          />
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Tipo de Contenedor:
+                                          </label>
+                                          <select
+                                            value={sec.container || 'boxed'}
+                                            onChange={(e) => {
+                                              const list = [...form.details.services_html_sections];
+                                              list[idx] = { ...list[idx], container: e.target.value };
+                                              updateDetailField('services_html_sections', list);
+                                            }}
+                                            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                          >
+                                            <option value="boxed">Enmarcado (max-w-7xl centrado con márgenes)</option>
+                                            <option value="full">Ancho Completo (Full Width fluido)</option>
+                                          </select>
+                                        </div>
+
+                                        <div>
+                                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Color de Fondo (Opcional):
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={sec.bg_color || ''}
+                                            onChange={(e) => {
+                                              const list = [...form.details.services_html_sections];
+                                              list[idx] = { ...list[idx], bg_color: e.target.value };
+                                              updateDetailField('services_html_sections', list);
+                                            }}
+                                            placeholder="Ej: #f8fafc o transparente"
+                                            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-mono"
+                                          />
+                                        </div>
+                                      </div>
+
+                                      <div>
+                                        <div className="flex items-center justify-between mb-1">
+                                          <label className="block text-[10px] font-bold text-slate-500 uppercase">
+                                            Código HTML Puro:
+                                          </label>
+                                          <span className="text-[10px] text-slate-400 font-mono">
+                                            Soporta divs, imágenes, iframes, estilos inline
+                                          </span>
+                                        </div>
+                                        <textarea
+                                          rows={6}
+                                          value={sec.html || ''}
+                                          onChange={(e) => {
+                                            const list = [...form.details.services_html_sections];
+                                            list[idx] = { ...list[idx], html: e.target.value };
+                                            updateDetailField('services_html_sections', list);
+                                          }}
+                                          placeholder="<div>...</div>"
+                                          className="w-full px-3 py-2 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none leading-relaxed"
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                </div>
               </div>
             )}
 
