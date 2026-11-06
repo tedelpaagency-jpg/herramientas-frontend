@@ -628,14 +628,14 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           position: relative;
           border-radius: 36px;
           overflow: visible !important;
-          background-color: #111827;
+          background-color: transparent !important;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: space-between;
           min-height: clamp(680px, 78vh, 800px);
           padding: 70px 24px 44px 24px;
-          box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.35);
           width: 100%;
           max-width: 1480px;
           margin: 0 auto;
@@ -650,9 +650,11 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
         @media (max-width: 767px) {
           .inmo-hero-canvas {
-            border-radius: 26px;
+            border-radius: 24px;
             min-height: 560px;
-            padding: 40px 14px 28px 14px;
+            padding: 36px 14px 28px 14px;
+            box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.15);
+            background-color: transparent !important;
           }
         }
 
@@ -809,7 +811,8 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             inset: 0,
             zIndex: 0,
             overflow: 'hidden',
-            borderRadius: '36px',
+            borderRadius: 'inherit',
+            backgroundColor: 'transparent',
           }}
         >
           {isVideo ? (
@@ -819,7 +822,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
               muted
               playsInline
               src={videoSrc}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }}
             />
           ) : (
             <div
@@ -829,6 +832,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                 backgroundImage: `url(${bannerImage || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1600&q=80'})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
+                borderRadius: 'inherit',
               }}
             />
           )}
@@ -837,6 +841,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             style={{
               position: 'absolute',
               inset: 0,
+              borderRadius: 'inherit',
               background: 'linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.70))',
             }}
           />

@@ -680,11 +680,13 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
       <TopbarSlider agency={effectiveAgency} />
       <Header2Style3 agency={effectiveAgency} />
 
-      {/* Hero Breadcrumb Header con fondo blanco / transparente */}
-      <section className="relative py-10 md:py-14 bg-white border-b border-slate-100 text-slate-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <nav className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-xs font-semibold text-slate-600 mb-4 border border-slate-200">
-            <Link href="/" className="hover:text-slate-900 transition-colors">
+      {/* Hero Breadcrumb Header con fondo oscuro original */}
+      <section className="relative py-12 md:py-16 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#00a884_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+          <nav className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-slate-300 mb-4 border border-white/10">
+            <Link href="/" className="hover:text-white transition-colors">
               Inicio
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
@@ -693,14 +695,14 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
             </span>
           </nav>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 max-w-3xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white max-w-3xl mx-auto">
             {details?.services_hero_title || 'Nuestros Servicios Inmobiliarios'}
           </h1>
 
-          <p className="mt-3 text-sm sm:text-base text-slate-600 max-w-2xl mx-auto font-medium">
+          <p className="mt-3 text-sm sm:text-base text-slate-300 max-w-2xl mx-auto font-medium">
             {details?.services_hero_subtitle || (
               <>
-                En <strong className="text-slate-900">{agencyName}</strong> ofrecemos soluciones integrales para que compres, vendas, rentes o desarrolles tus proyectos con total certeza técnica y respaldo jurídico.
+                En <strong className="text-white">{agencyName}</strong> ofrecemos soluciones integrales para que compres, vendas, rentes o desarrolles tus proyectos con total certeza técnica y respaldo jurídico.
               </>
             )}
           </p>
