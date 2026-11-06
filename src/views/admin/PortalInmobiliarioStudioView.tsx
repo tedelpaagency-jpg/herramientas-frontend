@@ -7,7 +7,7 @@ import {
   Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
   Target, Compass, Users, Megaphone, Video, Play, MapPin, SlidersHorizontal,
   Briefcase, Plus, Trash2, Handshake, BadgeCheck, FileSpreadsheet, ArrowUp, ArrowDown, Code, GripVertical,
-  ChevronDown, ChevronUp, Scale, Layout, Maximize2
+  ChevronDown, ChevronUp, Scale, Layout, Maximize2, Share2, Facebook, Instagram, Youtube, Linkedin
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -214,10 +214,19 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
     address: '',
     city: '',
     province: '',
+    facebook: '',
+    instagram: '',
+    tiktok: '',
     seo_title: '',
     seo_description: '',
     details: {
       target_workspace_id: '',
+      facebook: '',
+      instagram: '',
+      tiktok: '',
+      youtube: '',
+      linkedin: '',
+      x_twitter: '',
       show_topbar: true,
       topbar_text1: 'Propiedades Exclusivas con Asesoría Legal Garantizada',
       topbar_text2: '¿Deseas vender o rentar tu inmueble? Consigna tu propiedad con los expertos',
@@ -364,10 +373,19 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       address: ag.address || '',
       city: ag.city || '',
       province: ag.province || '',
+      facebook: ag.facebook || parsedDetails?.facebook || '',
+      instagram: ag.instagram || parsedDetails?.instagram || '',
+      tiktok: ag.tiktok || parsedDetails?.tiktok || '',
       seo_title: ag.seo_title || `${ag.name || 'Inmobiliaria'} — Portal Oficial`,
       seo_description: ag.seo_description || `Explora las mejores propiedades en venta y alquiler con ${ag.name || 'nuestra agencia'}.`,
       details: {
         ...(parsedDetails || {}),
+        facebook: parsedDetails?.facebook || ag.facebook || '',
+        instagram: parsedDetails?.instagram || ag.instagram || '',
+        tiktok: parsedDetails?.tiktok || ag.tiktok || '',
+        youtube: parsedDetails?.youtube || '',
+        linkedin: parsedDetails?.linkedin || '',
+        x_twitter: parsedDetails?.x_twitter || parsedDetails?.twitter || '',
         commercial_allies: Array.isArray(parsedDetails?.commercial_allies) ? parsedDetails.commercial_allies : [],
         certifications: Array.isArray(parsedDetails?.certifications) ? parsedDetails.certifications : [],
         services: Array.isArray(parsedDetails?.services) ? parsedDetails.services : [],
@@ -571,9 +589,20 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         province: form.province,
         seo_title: form.seo_title,
         seo_description: form.seo_description,
+        facebook: form.facebook || form.details?.facebook || '',
+        instagram: form.instagram || form.details?.instagram || '',
+        tiktok: form.tiktok || form.details?.tiktok || '',
         details: {
           ...(form.details || {}),
           banner_video: form.details?.banner_video || form.banner_video || '',
+          facebook: form.facebook || form.details?.facebook || '',
+          instagram: form.instagram || form.details?.instagram || '',
+          tiktok: form.tiktok || form.details?.tiktok || '',
+          youtube: form.details?.youtube || '',
+          linkedin: form.details?.linkedin || '',
+          x_twitter: form.details?.x_twitter || form.details?.twitter || '',
+          whatsapp: form.whatsapp || form.details?.whatsapp || '',
+          footer_about_text: form.details?.footer_about_text || '',
         },
       };
 
@@ -4536,6 +4565,205 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                   )}
                 </div>
 
+                {/* Redes Sociales Oficiales del Portal (Visibles en el Footer) */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <Share2 className="w-4 h-4 text-emerald-600" /> Redes Sociales Oficiales (Visibles en el Footer)
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Configura los enlaces directos a las redes sociales de tu agencia para que los visitantes puedan seguirte desde el pie de página.
+                    </p>
+                  </div>
+
+                  {/* Slogan o Descripción del Footer */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                      Descripción o Slogan para el Footer:
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={form.details?.footer_about_text ?? ''}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          details: {
+                            ...(form.details || {}),
+                            footer_about_text: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="Ej: Tu portal inmobiliario de confianza para comprar, vender y alquilar propiedades exclusivas."
+                      className="w-full px-3 py-2 text-xs font-medium bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Facebook */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1 flex items-center gap-1.5">
+                        <Facebook className="w-3.5 h-3.5 text-[#1877F2]" /> Facebook URL:
+                      </label>
+                      <input
+                        type="url"
+                        value={form.facebook || form.details?.facebook || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm({
+                            ...form,
+                            facebook: val,
+                            details: {
+                              ...(form.details || {}),
+                              facebook: val,
+                            },
+                          });
+                        }}
+                        placeholder="https://facebook.com/tu-agencia"
+                        className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+
+                    {/* Instagram */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1 flex items-center gap-1.5">
+                        <Instagram className="w-3.5 h-3.5 text-[#E4405F]" /> Instagram URL:
+                      </label>
+                      <input
+                        type="url"
+                        value={form.instagram || form.details?.instagram || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm({
+                            ...form,
+                            instagram: val,
+                            details: {
+                              ...(form.details || {}),
+                              instagram: val,
+                            },
+                          });
+                        }}
+                        placeholder="https://instagram.com/tu-agencia"
+                        className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+
+                    {/* TikTok */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1 flex items-center gap-1.5">
+                        <span className="text-[#EE1D52] font-black text-xs leading-none">♪</span> TikTok URL:
+                      </label>
+                      <input
+                        type="url"
+                        value={form.tiktok || form.details?.tiktok || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm({
+                            ...form,
+                            tiktok: val,
+                            details: {
+                              ...(form.details || {}),
+                              tiktok: val,
+                            },
+                          });
+                        }}
+                        placeholder="https://tiktok.com/@tu-agencia"
+                        className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+
+                    {/* YouTube */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1 flex items-center gap-1.5">
+                        <Youtube className="w-3.5 h-3.5 text-[#FF0000]" /> YouTube Canal / URL:
+                      </label>
+                      <input
+                        type="url"
+                        value={form.details?.youtube || ''}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            details: {
+                              ...(form.details || {}),
+                              youtube: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="https://youtube.com/@tu-canal"
+                        className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+
+                    {/* WhatsApp */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1 flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-[#25D366]" /> WhatsApp (Enlace o Número):
+                      </label>
+                      <input
+                        type="text"
+                        value={form.whatsapp || form.details?.whatsapp || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm({
+                            ...form,
+                            whatsapp: val,
+                            details: {
+                              ...(form.details || {}),
+                              whatsapp: val,
+                            },
+                          });
+                        }}
+                        placeholder="+593 99 999 9999 o enlace https://wa.me/..."
+                        className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+
+                    {/* LinkedIn */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1 flex items-center gap-1.5">
+                        <Linkedin className="w-3.5 h-3.5 text-[#0A66C2]" /> LinkedIn Empresa / Perfil:
+                      </label>
+                      <input
+                        type="url"
+                        value={form.details?.linkedin || ''}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            details: {
+                              ...(form.details || {}),
+                              linkedin: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="https://linkedin.com/company/tu-agencia"
+                        className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+
+                    {/* X (Twitter) */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1 flex items-center gap-1.5">
+                        <span className="font-bold text-xs leading-none">𝕏</span> X (Twitter) URL:
+                      </label>
+                      <input
+                        type="url"
+                        value={form.details?.x_twitter || form.details?.twitter || ''}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            details: {
+                              ...(form.details || {}),
+                              x_twitter: e.target.value,
+                              twitter: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="https://x.com/tu-agencia"
+                        className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Configuración de la Pantalla de Carga (Loader) */}
                 <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
                   <div>
@@ -4911,6 +5139,25 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                         {form.seo_description || 'Explora nuestro catálogo selecto de inmuebles exclusivos con certeza jurídica y asesoría profesional personalizada.'}
                       </p>
                     </div>
+                  </div>
+
+                  {/* Acceso directo a Redes Sociales */}
+                  <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                        <Share2 className="w-3.5 h-3.5" /> Redes Sociales del Portal (Footer)
+                      </span>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 m-0">
+                        Configura Facebook, Instagram, TikTok, YouTube, WhatsApp, LinkedIn y X desde la pestaña &quot;Colores &amp; Logotipo&quot;.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('identity')}
+                      className="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors shrink-0 shadow-xs cursor-pointer border-none"
+                    >
+                      Configurar Redes
+                    </button>
                   </div>
                 </div>
               </div>
