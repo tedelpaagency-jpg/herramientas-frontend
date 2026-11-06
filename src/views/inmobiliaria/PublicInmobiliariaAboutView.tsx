@@ -161,7 +161,6 @@ const DEFAULT_ABOUT_SECTIONS_ORDER = [
   'clients',
   'allies',
   'certifications',
-  'custom_html',
 ];
 
 interface AgentItem {
@@ -251,16 +250,29 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
 
   // 5. Orden y visibilidad de secciones
   const sectionsOrder = useMemo(() => {
-    const configuredOrder: string[] = Array.isArray(details?.about_sections_order) && details.about_sections_order.length > 0
+    const rawOrder: string[] = Array.isArray(details?.about_sections_order) && details.about_sections_order.length > 0
       ? details.about_sections_order
       : DEFAULT_ABOUT_SECTIONS_ORDER;
     const hidden: string[] = Array.isArray(details?.about_sections_hidden)
       ? details.about_sections_hidden
       : [];
 
-    const combined = [...configuredOrder];
+    // Ignorar 'custom_html' si ya existen secciones HTML individuales configuradas para evitar duplicación
+    const hasHtmlSections = Array.isArray(details?.about_html_sections) && details.about_html_sections.length > 0;
+    const filteredOrder = rawOrder.filter((key) => {
+      if (key === 'custom_html' && hasHtmlSections) return false;
+      return true;
+    });
+
+    const combined: string[] = [];
+    filteredOrder.forEach((key) => {
+      if (key && !combined.includes(key)) {
+        combined.push(key);
+      }
+    });
+
     DEFAULT_ABOUT_SECTIONS_ORDER.forEach((key) => {
-      if (!combined.includes(key)) {
+      if (key !== 'custom_html' && !combined.includes(key)) {
         combined.push(key);
       }
     });
@@ -268,6 +280,7 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
     // Agregar cualquier sección HTML individual que aún no esté en el orden configurado
     if (Array.isArray(details?.about_html_sections)) {
       details.about_html_sections.forEach((sec: any) => {
+        if (!sec || !sec.id) return;
         const secKey = `html_${sec.id}`;
         if (!combined.includes(secKey) && !combined.includes(String(sec.id))) {
           combined.push(secKey);
@@ -894,9 +907,16 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
     );
   };
 
+  // Set para asegurar que ninguna sección HTML se renderice más de una vez
+  const renderedHtmlIds = new Set<string | number>();
+
   // 7. Render de Sección HTML Individual (para ordenamiento independiente)
   const renderSingleHtmlSection = (sec: any) => {
     if (!sec || !sec.html) return null;
+    const secIdStr = String(sec.id);
+    if (renderedHtmlIds.has(secIdStr)) return null;
+    renderedHtmlIds.add(secIdStr);
+
     const customBgStyle = sec.bg_color ? { backgroundColor: sec.bg_color } : undefined;
     const bgClass = !sec.bg_color
       ? sec.bg === 'dark'
@@ -937,10 +957,11 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
 
   // Render para bloque agrupado fallback si estuviera presente 'custom_html'
   const renderCustomHtmlSection = () => {
-    if (aboutHtmlSections.length === 0) return null;
+    const unrendered = aboutHtmlSections.filter((s: any) => !renderedHtmlIds.has(String(s.id)));
+    if (unrendered.length === 0) return null;
     return (
       <div key="custom_html" className="space-y-0">
-        {aboutHtmlSections.map((sec: any) => renderSingleHtmlSection(sec))}
+        {unrendered.map((sec: any) => renderSingleHtmlSection(sec))}
       </div>
     );
   };

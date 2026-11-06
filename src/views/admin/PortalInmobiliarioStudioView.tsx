@@ -148,7 +148,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       our_clients: [],
       clients_title: 'Nuestros Clientes',
       clients_subtitle: '',
-      about_sections_order: ['presentation', 'mission_vision', 'team', 'clients', 'allies', 'certifications', 'custom_html'],
+      about_sections_order: ['presentation', 'mission_vision', 'team', 'clients', 'allies', 'certifications'],
       about_sections_hidden: [],
       about_html_sections: [],
       about_stat1_num: '15',
@@ -288,7 +288,9 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         our_clients: Array.isArray(parsedDetails?.our_clients) ? parsedDetails.our_clients : [],
         clients_title: parsedDetails?.clients_title ?? 'Nuestros Clientes',
         clients_subtitle: parsedDetails?.clients_subtitle ?? '',
-        about_sections_order: Array.isArray(parsedDetails?.about_sections_order) ? parsedDetails.about_sections_order : ['presentation', 'mission_vision', 'team', 'clients', 'allies', 'certifications', 'custom_html'],
+        about_sections_order: Array.isArray(parsedDetails?.about_sections_order)
+          ? parsedDetails.about_sections_order.filter((k: string) => k !== 'custom_html')
+          : ['presentation', 'mission_vision', 'team', 'clients', 'allies', 'certifications'],
         about_sections_hidden: Array.isArray(parsedDetails?.about_sections_hidden) ? parsedDetails.about_sections_hidden : [],
         about_html_sections: Array.isArray(parsedDetails?.about_html_sections) ? parsedDetails.about_html_sections : [],
         about_stat1_num: parsedDetails?.about_stat1_num || '15',
@@ -1465,11 +1467,16 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
                           const allSections = [...baseSections, ...htmlSectionsMeta];
 
-                          const currentOrder: string[] = Array.isArray(form.details?.about_sections_order) && form.details.about_sections_order.length > 0
-                            ? form.details.about_sections_order
-                            : allSections.map((s) => s.id);
+                          const currentOrder: string[] = (
+                            Array.isArray(form.details?.about_sections_order) && form.details.about_sections_order.length > 0
+                              ? form.details.about_sections_order
+                              : allSections.map((s) => s.id)
+                          ).filter((k: string) => k !== 'custom_html');
 
-                          const fullOrder = [...currentOrder];
+                          const fullOrder: string[] = [];
+                          currentOrder.forEach((sId) => {
+                            if (sId && !fullOrder.includes(sId)) fullOrder.push(sId);
+                          });
                           allSections.forEach((s) => {
                             if (!fullOrder.includes(s.id)) fullOrder.push(s.id);
                           });
