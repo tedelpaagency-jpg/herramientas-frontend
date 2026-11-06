@@ -663,9 +663,14 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
   const renderClientsSection = () => {
     if (ourClients.length === 0) return null;
 
+    // Aseguramos slides suficientes para que Swiper realice un loop infinito continuo y fluido
+    const carouselClients = ourClients.length > 0 && ourClients.length < 8
+      ? [...ourClients, ...ourClients, ...ourClients]
+      : ourClients;
+
     return (
-      <section key="clients" className="py-14 lg:py-24 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section key="clients" className="py-16 lg:py-24 overflow-hidden w-full">
+        <div className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10">
           <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
             <h2
               className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight"
@@ -680,35 +685,38 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
             )}
           </div>
 
-          <div className="relative">
+          <div className="relative w-full">
             <Swiper
               modules={[Autoplay]}
               autoplay={{
-                delay: 2500,
+                delay: 2200,
                 disableOnInteraction: false,
+                pauseOnMouseEnter: true,
               }}
-              loop={ourClients.length > 3}
-              spaceBetween={32}
-              slidesPerView={2}
+              loop={carouselClients.length > 2}
+              speed={700}
+              spaceBetween={24}
+              slidesPerView={1.5}
               breakpoints={{
-                480: { slidesPerView: 2, spaceBetween: 32 },
-                768: { slidesPerView: 3, spaceBetween: 40 },
-                1024: { slidesPerView: 4, spaceBetween: 48 },
-                1280: { slidesPerView: 4, spaceBetween: 56 },
+                480: { slidesPerView: 2, spaceBetween: 28 },
+                640: { slidesPerView: 2.5, spaceBetween: 36 },
+                768: { slidesPerView: 3, spaceBetween: 44 },
+                1024: { slidesPerView: 3.5, spaceBetween: 52 },
+                1280: { slidesPerView: 4, spaceBetween: 60 },
               }}
-              className="py-4 items-center"
+              className="py-4 items-center w-full"
             >
-              {ourClients.map((client: any, idx: number) => {
+              {carouselClients.map((client: any, idx: number) => {
                 const logoUrl = client.logo || client.image || client.logo_url || client.image_url;
                 if (!logoUrl) return null;
                 return (
-                  <SwiperSlide key={client.id || idx} className="!flex items-center justify-center">
-                    <div className="h-36 sm:h-44 lg:h-52 w-full flex items-center justify-center px-4 py-2">
+                  <SwiperSlide key={`${client.id || idx}-${idx}`} className="!flex items-center justify-center">
+                    <div className="h-44 sm:h-52 lg:h-64 w-full flex items-center justify-center px-4 py-2">
                       <img
                         src={logoUrl}
                         alt={client.name || `Cliente ${idx + 1}`}
                         loading="lazy"
-                        className="max-h-32 sm:max-h-40 lg:max-h-44 max-w-full w-auto h-auto object-contain transition-transform duration-300 hover:scale-105 select-none"
+                        className="h-36 sm:h-44 lg:h-56 max-h-56 w-auto max-w-full object-contain transition-transform duration-300 hover:scale-105 select-none"
                       />
                     </div>
                   </SwiperSlide>
