@@ -124,3 +124,4 @@ export const RejectAppointmentModal: React.FC<RejectAppointmentModalProps> = ({
     </div>
   );
 };
+
