@@ -1974,6 +1974,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 onSelectEstate={(est) => setSelectedEstate(est)}
                 domainParam={domainParam}
                 viewMode={viewMode}
+                selectedCity={searchParams?.get('city') || search || ''}
               />
             )}
           </div>

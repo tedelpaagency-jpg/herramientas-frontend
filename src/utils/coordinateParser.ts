@@ -174,3 +174,138 @@ function isValidLatLng(lat: number, lng: number): boolean {
   );
 }
 
+// Ecuadorian Cities, Cantons and Provinces GPS Reference Directory
+export const ECUADOR_CITY_COORDINATES: Record<string, [number, number]> = {
+  // Principales
+  quito: [-0.180653, -78.467834],
+  guayaquil: [-2.189412, -79.889069],
+  cuenca: [-2.900128, -79.005896],
+  quevedo: [-1.025452, -79.461677],
+  manta: [-0.967664, -80.708910],
+  portoviejo: [-1.054580, -80.454453],
+  salinas: [-2.214486, -80.951515],
+  ambato: [-1.249080, -78.616753],
+  'santo domingo': [-0.253050, -79.175362],
+  machala: [-3.258111, -79.955406],
+  loja: [-3.993130, -79.204224],
+  ibarra: [0.351710, -78.122330],
+  riobamba: [-1.663550, -78.654648],
+  esmeraldas: [0.968170, -79.651720],
+  babahoyo: [-1.802170, -79.534430],
+  'puerto quito': [0.122400, -79.255800],
+  latacunga: [-0.935210, -78.615540],
+  tulcan: [0.811560, -77.717270],
+  tulcán: [0.811560, -77.717270],
+  puyo: [-1.483690, -77.998050],
+  tena: [-0.993800, -77.812860],
+  macas: [-2.308680, -78.111350],
+  zamora: [-4.069220, -78.956790],
+  cotacachi: [0.301500, -78.263800],
+  otavalo: [0.224400, -78.261200],
+  samborondon: [-2.096300, -79.722500],
+  samborondón: [-2.096300, -79.722500],
+  daule: [-1.862100, -79.977400],
+  duran: [-2.170600, -79.822800],
+  durán: [-2.170600, -79.822800],
+  milagro: [-2.134000, -79.594000],
+  'la troncal': [-2.425800, -79.337500],
+  azogues: [-2.739700, -78.847500],
+  chone: [-0.698200, -80.093600],
+  'bahia de caraquez': [-0.598000, -80.423700],
+  'bahía de caráquez': [-0.598000, -80.423700],
+  pedernales: [0.071900, -80.052600],
+  playas: [-2.631900, -80.388100],
+  'general villamil': [-2.631900, -80.388100],
+  'santa elena': [-2.226700, -80.858700],
+  montañita: [-1.826700, -80.752800],
+  montanita: [-1.826700, -80.752800],
+  ayangue: [-1.977300, -80.750300],
+  olón: [-1.801400, -80.753300],
+  olon: [-1.801400, -80.753300],
+  montecristi: [-1.044400, -80.659200],
+  jipijapa: [-1.348900, -80.579400],
+  vinces: [-1.556100, -79.751700],
+  ventanas: [-1.442800, -79.459700],
+  'buena fe': [-0.893600, -79.492500],
+  valencia: [-0.950800, -79.352200],
+  mocache: [-1.183300, -79.508300],
+  palenque: [-1.433300, -79.750000],
+  montalvo: [-1.791700, -79.288900],
+  urdaneta: [-1.566700, -79.466700],
+  cuxibamba: [-3.993130, -79.204224],
+  atacames: [0.869700, -79.845800],
+  tonsupa: [0.887200, -79.814700],
+  same: [0.825800, -79.878900],
+  muisne: [0.612800, -80.019400],
+  cayambe: [0.041700, -78.143600],
+  ruminahui: [-0.333300, -78.450000],
+  sangolqui: [-0.333300, -78.450000],
+  sangolquí: [-0.333300, -78.450000],
+  cumbaya: [-0.200000, -78.433300],
+  cumbayá: [-0.200000, -78.433300],
+  tumbaco: [-0.216700, -78.400000],
+  guayllabamba: [-0.058300, -78.341700],
+  tabacundo: [0.050000, -78.216700],
+  machachi: [-0.510300, -78.567500],
+  yantzaza: [-3.833300, -78.766700],
+  'santa rosa': [-3.448900, -79.959700],
+  pasaje: [-3.325800, -79.805800],
+  huaquillas: [-3.475300, -80.228900],
+  pinas: [-3.681100, -79.680800],
+  piñas: [-3.681100, -79.680800],
+  zaruma: [-3.691700, -79.612500],
+  'el guabo': [-3.243900, -79.832200],
+  // Provincias
+  pichincha: [-0.180653, -78.467834],
+  guayas: [-2.189412, -79.889069],
+  azuay: [-2.900128, -79.005896],
+  manabi: [-1.054580, -80.454453],
+  manabí: [-1.054580, -80.454453],
+  'los rios': [-1.025452, -79.461677],
+  'los ríos': [-1.025452, -79.461677],
+  tungurahua: [-1.249080, -78.616753],
+  chimborazo: [-1.663550, -78.654648],
+  imbabura: [0.351710, -78.122330],
+  cotopaxi: [-0.935210, -78.615540],
+  'el oro': [-3.258111, -79.955406],
+  carchi: [0.811560, -77.717270],
+  pastaza: [-1.483690, -77.998050],
+  napo: [-0.993800, -77.812860],
+  'morona santiago': [-2.308680, -78.111350],
+};
+
+// Resolves GPS coordinates for a given city or province name
+export function getCityCoordinates(cityName?: string | null): [number, number] | null {
+  if (!cityName) return null;
+  const raw = String(cityName).trim();
+  if (!raw) return null;
+
+  const clean = raw
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+  if (!clean) return null;
+
+  // Direct match
+  if (ECUADOR_CITY_COORDINATES[clean]) {
+    return ECUADOR_CITY_COORDINATES[clean];
+  }
+
+  // Exact match without normalization
+  const lower = raw.toLowerCase();
+  if (ECUADOR_CITY_COORDINATES[lower]) {
+    return ECUADOR_CITY_COORDINATES[lower];
+  }
+
+  // Substring match
+  for (const [key, coords] of Object.entries(ECUADOR_CITY_COORDINATES)) {
+    const keyClean = key.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (clean.includes(keyClean) || keyClean.includes(clean)) {
+      return coords;
+    }
+  }
+
+  return null;
+}
+

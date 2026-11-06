@@ -26,29 +26,42 @@ import {
   PublicEstateItem,
 } from '@/services/publicInmobiliariaService';
 import { getEstateImages } from './AirbnbPropertyCard';
-import { resolveEstateCoordinates } from '@/utils/coordinateParser';
+import { resolveEstateCoordinates, getCityCoordinates } from '@/utils/coordinateParser';
 
-// Deterministic GPS coordinator so every property has a pin even if GPS is unpopulated in DB
+// Deterministic GPS coordinator so every property has an accurate pin in its city even if GPS is unpopulated in DB
 export const resolveEstateGPS = (
   estate: PublicEstateItem,
   index: number = 0,
-  baseCenter: [number, number] = [-0.9677, -80.7089] // Manta / Guayaquil default
+  fallbackBaseCenter?: [number, number] | null
 ): [number, number] => {
+  // 1. Direct explicit coordinates in estate
   const parsed = resolveEstateCoordinates(estate);
   if (parsed) {
     return parsed;
   }
-  const safeBaseLat = Number.isFinite(baseCenter?.[0]) ? baseCenter[0] : -0.9677;
-  const safeBaseLng = Number.isFinite(baseCenter?.[1]) ? baseCenter[1] : -80.7089;
+
+  // 2. City, neighborhood, or province from the estate itself
+  const estateLoc =
+    (estate as any)?.neighborhood ||
+    (estate as any)?.city ||
+    (estate as any)?.canton ||
+    (estate as any)?.province ||
+    (estate as any)?.parroquia;
+
+  const cityCoords = getCityCoordinates(estateLoc) || fallbackBaseCenter || [-1.025452, -79.461677];
+
+  const safeBaseLat = Number.isFinite(cityCoords?.[0]) ? cityCoords[0] : -1.025452;
+  const safeBaseLng = Number.isFinite(cityCoords?.[1]) ? cityCoords[1] : -79.461677;
   const safeIdx = Number(index) || 0;
-  // Golden ratio spiral distribution around city center
+
+  // Golden ratio spiral distribution around city center so multiple properties in same city don't stack on top of each other
   const angle = (safeIdx * 137.5 * Math.PI) / 180;
-  const radius = 0.012 + ((safeIdx % 6) * 0.007);
+  const radius = 0.008 + ((safeIdx % 6) * 0.005);
   const resLat = Number((safeBaseLat + radius * Math.cos(angle)).toFixed(6));
   const resLng = Number((safeBaseLng + radius * Math.sin(angle) * 1.2).toFixed(6));
   return [
-    Number.isFinite(resLat) ? resLat : -0.9677,
-    Number.isFinite(resLng) ? resLng : -80.7089,
+    Number.isFinite(resLat) ? resLat : safeBaseLat,
+    Number.isFinite(resLng) ? resLng : safeBaseLng,
   ];
 };
 
@@ -214,9 +227,17 @@ function MapFlyTo({ coords }: { coords: [number, number] | null }) {
   return null;
 }
 
-// Component to auto fit map bounds
-function MapBoundsFitter({ points }: { points: [number, number][] }) {
+// Component to auto fit map bounds and relocate map when city filter changes
+function CityAndBoundsController({
+  selectedCity,
+  points,
+}: {
+  selectedCity?: string | null;
+  points: [number, number][];
+}) {
   const map = useMap();
+  const lastProcessedRef = React.useRef<string>('');
+
   useEffect(() => {
     try {
       const size = map.getSize();
@@ -231,16 +252,42 @@ function MapBoundsFitter({ points }: { points: [number, number][] }) {
           Math.abs(p[0]) <= 90 &&
           Math.abs(p[1]) <= 180
       );
+
+      const cityKey = (selectedCity || '').trim().toLowerCase();
+      const pointsKey = validPoints
+        .slice(0, 10)
+        .map((p) => `${p[0].toFixed(3)},${p[1].toFixed(3)}`)
+        .join('|');
+      const stateKey = `${cityKey}::${pointsKey}::${validPoints.length}`;
+
+      if (stateKey === lastProcessedRef.current) return;
+      lastProcessedRef.current = stateKey;
+
+      // 1. If we have properties on the map:
       if (validPoints.length > 0) {
-        const bounds = L.latLngBounds(validPoints);
-        if (bounds.isValid()) {
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+        if (validPoints.length === 1) {
+          map.setView(validPoints[0], 14, { animate: true });
+        } else {
+          const bounds = L.latLngBounds(validPoints);
+          if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: true });
+          }
+        }
+        return;
+      }
+
+      // 2. If 0 properties were returned for this city, but a city was selected:
+      if (cityKey) {
+        const cityCenter = getCityCoordinates(cityKey);
+        if (cityCenter) {
+          map.flyTo(cityCenter, 13, { animate: true, duration: 0.8 });
         }
       }
     } catch (err) {
-      console.warn('MapBoundsFitter error ignored:', err);
+      console.warn('[CityAndBoundsController] error:', err);
     }
-  }, [points, map]);
+  }, [selectedCity, points, map]);
+
   return null;
 }
 
@@ -581,6 +628,7 @@ export interface PublicPropertiesSplitMapProps {
   onSelectEstate: (estate: PublicEstateItem | null) => void;
   domainParam?: string | null;
   viewMode?: string;
+  selectedCity?: string | null;
 }
 
 export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> = ({
@@ -591,16 +639,20 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
   onSelectEstate,
   domainParam,
   viewMode,
+  selectedCity,
 }) => {
+  const cityCoords = useMemo(() => {
+    return getCityCoordinates(selectedCity);
+  }, [selectedCity]);
+
   // Map of estateId to GPS coords
   const estateCoords = useMemo(() => {
     const map = new Map<number, [number, number]>();
-    const baseCenter: [number, number] = [-0.9677, -80.7089]; // Default Ecuador (Manta / Guayas)
     estates.forEach((estate, idx) => {
-      map.set(estate.id, resolveEstateGPS(estate, idx, baseCenter));
+      map.set(estate.id, resolveEstateGPS(estate, idx, cityCoords));
     });
     return map;
-  }, [estates]);
+  }, [estates, cityCoords]);
 
   const allPoints = useMemo(() => {
     return Array.from(estateCoords.values()).filter(
@@ -614,7 +666,7 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
     );
   }, [estateCoords]);
 
-  const initialCenter: [number, number] = allPoints[0] || [-0.9677, -80.7089];
+  const initialCenter: [number, number] = allPoints[0] || cityCoords || [-1.025452, -79.461677];
 
   // Close card on Escape key (a11y)
   useEffect(() => {
@@ -649,7 +701,7 @@ export const PublicPropertiesSplitMap: React.FC<PublicPropertiesSplitMapProps> =
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <MapBoundsFitter points={allPoints} />
+          <CityAndBoundsController selectedCity={selectedCity} points={allPoints} />
           <MapFlyTo coords={selectedCoords} />
 
           {estates.map((estate) => {
