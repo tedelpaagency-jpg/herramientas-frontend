@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import BlogV4 from '@/components/blog/BlogV4';
 import DestinationSectionV4 from '@/components/destination-section/DestinationSectionV4';
+import TravelPackageV4 from '@/components/travel-package-section/TravelPackageV4';
+import FeaturedEstatesSection from '@/components/featured-section/FeaturedEstatesSection';
 import HeroV4 from '@/components/hero-section/HeroV4';
 import Footer from '@/components/layout/Footer';
 import Header2Style3 from '@/components/layout/Header2Style3';
 import CookieConsentBanner from '@/components/inmobiliaria/CookieConsentBanner';
 import TopbarSlider from '@/components/topbar/TopbarSlider';
-import TravelPackageV4 from '@/components/travel-package-section/TravelPackageV4';
 import BrandingThemeInjector from '@/components/inmobiliaria/BrandingThemeInjector';
 import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
 import publicInmobiliariaService, {
@@ -25,14 +26,18 @@ import {
 
 export interface PublicPortalHomeViewProps {
   initialAgency?: PublicAgencyConfig | null;
+  initialRecommendedEstates?: PublicEstateItem[];
   initialFeaturedEstates?: PublicEstateItem[];
   initialRecentEstates?: PublicEstateItem[];
   initialCategories?: PublicEstateCategory[];
   domain?: string;
 }
 
+const DEFAULT_SECTIONS_ORDER = ['categories', 'recommended', 'featured', 'recent'];
+
 export default function PublicPortalHomeView({
   initialAgency,
+  initialRecommendedEstates,
   initialFeaturedEstates,
   initialRecentEstates,
   initialCategories,
@@ -46,6 +51,10 @@ export default function PublicPortalHomeView({
     }
     return DEFAULT_FALLBACK_AGENCY;
   });
+
+  const [recommendedEstates, setRecommendedEstates] = useState<PublicEstateItem[]>(
+    initialRecommendedEstates || DEFAULT_REAL_ESTATE_PROPERTIES
+  );
   const [featuredEstates, setFeaturedEstates] = useState<PublicEstateItem[]>(
     initialFeaturedEstates || DEFAULT_REAL_ESTATE_PROPERTIES.slice(0, 8)
   );
@@ -84,8 +93,9 @@ export default function PublicPortalHomeView({
           domain ||
           (typeof window !== 'undefined' ? window.location.hostname : '');
 
-        const [configRes, estatesRes, recentRes, catsRes] = await Promise.allSettled([
+        const [configRes, recRes, featRes, recentRes, catsRes] = await Promise.allSettled([
           publicInmobiliariaService.getConfig(hostname),
+          publicInmobiliariaService.getRecommendedEstates(hostname, 32),
           publicInmobiliariaService.getFeaturedEstates(hostname, 8),
           publicInmobiliariaService.getRecentEstates(hostname, 8),
           publicInmobiliariaService.getCategories(hostname),
@@ -97,8 +107,12 @@ export default function PublicPortalHomeView({
           setAgency(configRes.value.data);
         }
 
-        if (estatesRes.status === 'fulfilled' && estatesRes.value?.data?.length) {
-          setFeaturedEstates(estatesRes.value.data);
+        if (recRes.status === 'fulfilled' && recRes.value?.data?.length) {
+          setRecommendedEstates(recRes.value.data);
+        }
+
+        if (featRes.status === 'fulfilled' && featRes.value?.data?.length) {
+          setFeaturedEstates(featRes.value.data);
         }
 
         if (recentRes.status === 'fulfilled' && recentRes.value?.data?.length) {
@@ -130,6 +144,34 @@ export default function PublicPortalHomeView({
     };
   }, [domain]);
 
+  // Orden configurable de las secciones abajo del banner
+  const sectionsOrder = useMemo<string[]>(() => {
+    const rawOrder = agency?.details?.sections_order;
+    if (Array.isArray(rawOrder) && rawOrder.length > 0) {
+      const merged = [...rawOrder];
+      for (const s of DEFAULT_SECTIONS_ORDER) {
+        if (!merged.includes(s)) merged.push(s);
+      }
+      return merged;
+    }
+    return DEFAULT_SECTIONS_ORDER;
+  }, [agency?.details?.sections_order]);
+
+  const renderSection = (sectionKey: string) => {
+    switch (sectionKey) {
+      case 'categories':
+        return <DestinationSectionV4 key="categories" categories={categories} agency={agency} />;
+      case 'recommended':
+        return <TravelPackageV4 key="recommended" recommendedEstates={recommendedEstates} agency={agency} />;
+      case 'featured':
+        return <FeaturedEstatesSection key="featured" featuredEstates={featuredEstates} agency={agency} />;
+      case 'recent':
+        return <BlogV4 key="recent" recentEstates={recentEstates} agency={agency} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div
       className="public-portal-isolated-scope"
@@ -154,9 +196,10 @@ export default function PublicPortalHomeView({
       <TopbarSlider agency={agency} />
       <Header2Style3 agency={agency} />
       <HeroV4 agency={agency} />
-      <DestinationSectionV4 categories={categories} agency={agency} />
-      <TravelPackageV4 featuredEstates={featuredEstates} agency={agency} />
-      <BlogV4 recentEstates={recentEstates} agency={agency} />
+
+      {/* Secciones Abajo del Banner ordenadas dinámicamente según configuración */}
+      {sectionsOrder.map((sectionKey) => renderSection(sectionKey))}
+
       <Footer agency={agency} />
       <CookieConsentBanner agency={agency} domainParam={domain} />
     </div>

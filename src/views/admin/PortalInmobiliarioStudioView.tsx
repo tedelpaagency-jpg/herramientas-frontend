@@ -7,7 +7,8 @@ import {
   Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
   Target, Compass, Users, Megaphone, Video, Play, MapPin, SlidersHorizontal,
   Briefcase, Plus, Trash2, Handshake, BadgeCheck, FileSpreadsheet, ArrowUp, ArrowDown, Code, GripVertical,
-  ChevronDown, ChevronUp, Scale, Layout, Maximize2, Share2, Facebook, Instagram, Youtube, Linkedin
+  ChevronDown, ChevronUp, Scale, Layout, Maximize2, Share2, Facebook, Instagram, Youtube, Linkedin,
+  Clock
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -1374,12 +1375,131 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-emerald-600" /> Textos de Todas las Secciones del Frontend
+                    <FileText className="w-4 h-4 text-emerald-600" /> Textos y Orden de Secciones del Frontend
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Edita los encabezados, descripciones y llamadas a la acción de cada componente de tu página.
+                    Configura el orden de visualización de los módulos debajo del banner principal y personaliza sus títulos y descripciones.
                   </p>
                 </div>
+
+                {/* Bloque: Orden de Secciones (Abajo del Banner) */}
+                {(() => {
+                  const defaultOrder = ['categories', 'recommended', 'featured', 'recent'];
+                  const rawOrder = form.details?.sections_order;
+                  const currentOrder: string[] = (Array.isArray(rawOrder) && rawOrder.length > 0)
+                    ? (() => {
+                        const merged = [...rawOrder];
+                        for (const s of defaultOrder) {
+                          if (!merged.includes(s)) merged.push(s);
+                        }
+                        return merged;
+                      })()
+                    : defaultOrder;
+
+                  const sectionMeta: Record<string, { label: string; desc: string; icon: any }> = {
+                    categories: {
+                      label: 'Categorías Principales',
+                      desc: 'Carrusel de categorías de inmuebles (Casas, Departamentos, etc.)',
+                      icon: Layers,
+                    },
+                    recommended: {
+                      label: 'Propiedades Recomendadas',
+                      desc: 'Pestañas de operaciones (En Venta, Renta, Remates) con 8 resultados cada una',
+                      icon: Building2,
+                    },
+                    featured: {
+                      label: 'Propiedades Destacadas',
+                      desc: 'Últimas 8 propiedades destacadas del catálogo',
+                      icon: Sparkles,
+                    },
+                    recent: {
+                      label: 'Propiedades Recientes',
+                      desc: 'Últimas 8 propiedades recién agregadas al portal',
+                      icon: Clock,
+                    },
+                  };
+
+                  const handleMove = (index: number, direction: 'up' | 'down') => {
+                    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+                    if (targetIndex < 0 || targetIndex >= currentOrder.length) return;
+                    const next = [...currentOrder];
+                    const [item] = next.splice(index, 1);
+                    next.splice(targetIndex, 0, item);
+                    updateDetailField('sections_order', next);
+                  };
+
+                  return (
+                    <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-800 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-black uppercase text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                          <SlidersHorizontal className="w-3.5 h-3.5" /> Orden de Secciones (Abajo del Banner)
+                        </h4>
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-full">
+                          4 Módulos Activos
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        Usa los botones <span className="font-bold text-slate-700">Subir</span> y <span className="font-bold text-slate-700">Bajar</span> para organizar cómo se verán los módulos inmediatamente debajo del banner hero.
+                      </p>
+
+                      <div className="space-y-2 pt-1">
+                        {currentOrder.map((sectionKey, idx) => {
+                          const meta = sectionMeta[sectionKey] || {
+                            label: sectionKey,
+                            desc: 'Módulo del portal',
+                            icon: Layers,
+                          };
+                          const IconComp = meta.icon;
+
+                          return (
+                            <div
+                              key={sectionKey}
+                              className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs hover:border-emerald-400 transition-all"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                                  {idx + 1}
+                                </div>
+                                <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                                  <IconComp className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                                    {meta.label}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 mt-0.5">
+                                    {meta.desc}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={() => handleMove(idx, 'up')}
+                                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                  title="Subir sección"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === currentOrder.length - 1}
+                                  onClick={() => handleMove(idx, 'down')}
+                                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                  title="Bajar sección"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Bloque: Categorías */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
@@ -1408,10 +1528,49 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Bloque: Propiedades Destacadas */}
+                {/* Bloque: Propiedades Recomendadas (Pestañas de Operación - 8 por pestaña) */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
                   <h4 className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5" /> Sección de Propiedades Destacadas
+                    <Building2 className="w-3.5 h-3.5" /> Sección de Propiedades Recomendadas (Con Pestañas)
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Muestra pestañas interactivas de operaciones (En Venta, Renta, Remates) con 8 resultados en cada una.
+                  </p>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-500 block mb-1">Título de la Sección:</span>
+                      <input
+                        type="text"
+                        value={form.details?.recommended_title || 'Propiedades Recomendadas'}
+                        onChange={(e) => updateDetailField('recommended_title', e.target.value)}
+                        className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-500 block mb-1">Subtítulo o Descripción:</span>
+                      <input
+                        type="text"
+                        value={form.details?.recommended_subtitle || 'Filtra y explora nuestra mejor selección de propiedades recomendadas en venta, alquiler y remate con alta plusvalía.'}
+                        onChange={(e) => updateDetailField('recommended_subtitle', e.target.value)}
+                        className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-500 block mb-1">Texto del Botón Inferior:</span>
+                      <input
+                        type="text"
+                        value={form.details?.recommended_btn_text || 'Ver Todas las Propiedades Recomendadas'}
+                        onChange={(e) => updateDetailField('recommended_btn_text', e.target.value)}
+                        className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bloque: Propiedades Destacadas (Últimas 8 Destacadas) */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                  <h4 className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" /> Sección de Propiedades Destacadas (Últimas 8)
                   </h4>
                   <div className="space-y-2">
                     <div>
@@ -1427,7 +1586,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                       <span className="text-[10px] font-bold text-slate-500 block mb-1">Subtítulo o Descripción:</span>
                       <input
                         type="text"
-                        value={form.details?.featured_subtitle || 'Selección curada de inmuebles residenciales y comerciales con alta plusvalía y respaldo legal.'}
+                        value={form.details?.featured_subtitle || 'Conoce nuestra colección más selecta de inmuebles destacados con acabados premium y alta plusvalía.'}
                         onChange={(e) => updateDetailField('featured_subtitle', e.target.value)}
                         className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl"
                       />
@@ -1436,8 +1595,44 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                       <span className="text-[10px] font-bold text-slate-500 block mb-1">Texto del Botón Inferior:</span>
                       <input
                         type="text"
-                        value={form.details?.featured_btn_text || 'Ver Todo el Catálogo de Propiedades'}
+                        value={form.details?.featured_btn_text || 'Ver Todas las Propiedades Destacadas'}
                         onChange={(e) => updateDetailField('featured_btn_text', e.target.value)}
+                        className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bloque: Propiedades Recientes */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                  <h4 className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" /> Sección de Propiedades Recientes
+                  </h4>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-500 block mb-1">Título de la Sección:</span>
+                      <input
+                        type="text"
+                        value={form.details?.recent_title || 'Últimas Propiedades Incorporadas'}
+                        onChange={(e) => updateDetailField('recent_title', e.target.value)}
+                        className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-500 block mb-1">Subtítulo o Descripción:</span>
+                      <input
+                        type="text"
+                        value={form.details?.recent_subtitle || 'Descubre los inmuebles recién listados en nuestro portafolio de venta y renta con alta plusvalía.'}
+                        onChange={(e) => updateDetailField('recent_subtitle', e.target.value)}
+                        className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-500 block mb-1">Texto del Botón Inferior:</span>
+                      <input
+                        type="text"
+                        value={form.details?.recent_btn_text || 'Ver Todas las Nuevas Propiedades'}
+                        onChange={(e) => updateDetailField('recent_btn_text', e.target.value)}
                         className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl"
                       />
                     </div>

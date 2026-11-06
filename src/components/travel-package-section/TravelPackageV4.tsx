@@ -6,7 +6,8 @@ import { DEFAULT_REAL_ESTATE_PROPERTIES } from '@/constants/realEstateDefaults';
 import AirbnbPropertyCard from '@/components/inmobiliaria/AirbnbPropertyCard';
 
 interface TravelPackageV4Props {
-  featuredEstates?: PublicEstateItem[];
+  recommendedEstates?: PublicEstateItem[];
+  featuredEstates?: PublicEstateItem[]; // Retrocompatibilidad
   agency?: any;
 }
 
@@ -17,25 +18,35 @@ const OPERATION_TABS = [
   { id: 'auction', label: 'Remates' },
 ];
 
-const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agency }) => {
+const TravelPackageV4: React.FC<TravelPackageV4Props> = ({
+  recommendedEstates,
+  featuredEstates,
+  agency,
+}) => {
   const [selectedOperation, setSelectedOperation] = useState<string>('all');
 
-  const displayEstates = (featuredEstates && featuredEstates.length > 0)
+  const incomingEstates = (recommendedEstates && recommendedEstates.length > 0)
+    ? recommendedEstates
+    : (featuredEstates && featuredEstates.length > 0)
     ? featuredEstates
     : DEFAULT_REAL_ESTATE_PROPERTIES;
 
   const agencyCurrency = agency?.currency || 'USD';
-  const sectionTitle = agency?.details?.featured_title || 'Propiedades por Tipo de Operación';
-  const sectionSubtitle = agency?.details?.featured_subtitle || 'Filtra y explora las mejores opciones inmobiliarias en venta, alquiler y remate con total respaldo legal.';
-  const btnText = agency?.details?.featured_btn_text || 'Ver Todo el Catálogo de Propiedades';
+  const sectionTitle = agency?.details?.recommended_title || 'Propiedades Recomendadas';
+  const sectionSubtitle =
+    agency?.details?.recommended_subtitle ||
+    'Filtra y explora nuestra mejor selección de propiedades recomendadas en venta, alquiler y remate con alta plusvalía.';
+  const btnText = agency?.details?.recommended_btn_text || 'Ver Todas las Propiedades Recomendadas';
+
   const rawColor = agency?.primary_color || agency?.details?.primary_color;
   const primaryColor = (!rawColor || rawColor.toLowerCase() === '#00a884') ? '#e2b728' : rawColor;
   const secondaryColor = agency?.secondary_color || agency?.details?.secondary_color || '#161a1b';
   const buttonColor = primaryColor;
 
+  // Filtrar y asegurar SIEMPRE 8 resultados por cada pestaña
   const filteredEstates = useMemo(() => {
-    if (selectedOperation === 'all') return displayEstates;
-    return displayEstates.filter((e) => {
+    let matches = incomingEstates.filter((e) => {
+      if (selectedOperation === 'all') return true;
       const statusNum = Number(e.property_status ?? e.action ?? 0);
       const statusStr = String(e.status_name || e.operation_type || e.action || '').toLowerCase();
       if (selectedOperation === 'sale') {
@@ -49,10 +60,43 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
       }
       return true;
     });
-  }, [displayEstates, selectedOperation]);
+
+    // Si la pestaña tiene menos de 8 resultados, autocompletar hasta 8 usando el catálogo base
+    if (matches.length < 8) {
+      const fallbackPool = DEFAULT_REAL_ESTATE_PROPERTIES.map((def, idx) => {
+        let opStatus = 2;
+        let opName = 'En Venta';
+        if (selectedOperation === 'rent') {
+          opStatus = 1;
+          opName = 'En Renta';
+        } else if (selectedOperation === 'auction') {
+          opStatus = 3;
+          opName = 'Remate Bancario';
+        } else if (idx % 2 === 1) {
+          opStatus = 1;
+          opName = 'En Renta';
+        }
+        return {
+          ...def,
+          id: 80000 + idx + (selectedOperation === 'rent' ? 100 : selectedOperation === 'auction' ? 200 : 0),
+          property_status: opStatus,
+          status_name: opName,
+        };
+      });
+
+      for (const fb of fallbackPool) {
+        if (matches.length >= 8) break;
+        if (!matches.some(m => m.id === fb.id || m.title === fb.title)) {
+          matches.push(fb);
+        }
+      }
+    }
+
+    return matches.slice(0, 8);
+  }, [incomingEstates, selectedOperation]);
 
   return (
-    <div className="home4-travel-package-section mt-100 mb-100" id="destacadas">
+    <div className="home4-travel-package-section mt-100 mb-100" id="recomendadas">
       <div className="container">
         <div className="row justify-content-center mb-40 wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
           <div className="col-xl-8 col-lg-10">
@@ -89,52 +133,34 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({ featuredEstates, agen
           </div>
         </div>
 
-        {/* Cuadrícula de 4 columnas y 2 filas (8 propiedades) con AirbnbPropertyCard */}
+        {/* Cuadrícula de 4 columnas y 2 filas (8 propiedades por pestaña) con AirbnbPropertyCard */}
         <div className="row gy-3 gy-sm-4 gx-2 gx-sm-3">
-          {filteredEstates.length === 0 ? (
-            <div className="col-12 py-12 text-center">
-              <div className="max-w-md mx-auto p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
-                <p className="text-sm font-bold text-slate-500 mb-3">
-                  No hay propiedades registradas en este tipo de operación en este momento.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setSelectedOperation('all')}
-                  className="px-4 py-2 rounded-xl text-xs font-black text-white"
-                  style={{ backgroundColor: buttonColor }}
-                >
-                  Ver todas las propiedades
-                </button>
-              </div>
-            </div>
-          ) : (
-            filteredEstates.slice(0, 8).map((estate, index) => {
-              const fallbackImg = DEFAULT_REAL_ESTATE_PROPERTIES[index % DEFAULT_REAL_ESTATE_PROPERTIES.length].image;
-              const estateWithFallback = {
-                ...estate,
-                image: estate.image || fallbackImg,
-              };
+          {filteredEstates.map((estate, index) => {
+            const fallbackImg = DEFAULT_REAL_ESTATE_PROPERTIES[index % DEFAULT_REAL_ESTATE_PROPERTIES.length].image;
+            const estateWithFallback = {
+              ...estate,
+              image: estate.image || fallbackImg,
+            };
 
-              return (
-                <div
-                  key={estate.id || index}
-                  className="col-6 col-sm-6 col-lg-3 px-1.5 px-sm-2 mb-3 mb-sm-4 wow animate fadeInDown flex"
-                  data-wow-delay={`${(index % 4) * 100 + 100}ms`}
-                  data-wow-duration="1200ms"
-                >
-                  <div className="w-full h-full flex flex-col">
-                    <AirbnbPropertyCard
-                      estate={estateWithFallback}
-                      currency={agencyCurrency}
-                      primaryColor={primaryColor}
-                      secondaryColor={secondaryColor}
-                      domainParam={agency?.domain}
-                    />
-                  </div>
+            return (
+              <div
+                key={estate.id || index}
+                className="col-6 col-sm-6 col-lg-3 px-1.5 px-sm-2 mb-3 mb-sm-4 wow animate fadeInDown flex"
+                data-wow-delay={`${(index % 4) * 100 + 100}ms`}
+                data-wow-duration="1200ms"
+              >
+                <div className="w-full h-full flex flex-col">
+                  <AirbnbPropertyCard
+                    estate={estateWithFallback}
+                    currency={agencyCurrency}
+                    primaryColor={primaryColor}
+                    secondaryColor={secondaryColor}
+                    domainParam={agency?.domain}
+                  />
                 </div>
-              );
-            })
-          )}
+              </div>
+            );
+          })}
         </div>
 
         <div className="row mt-50">

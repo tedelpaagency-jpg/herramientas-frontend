@@ -284,7 +284,7 @@ export const publicInmobiliariaService = {
     return res;
   },
 
-  getFeaturedEstates: async (domain?: string, limit: number = 6): Promise<{ status: string; data: PublicEstateItem[] }> => {
+  getFeaturedEstates: async (domain?: string, limit: number = 8): Promise<{ status: string; data: PublicEstateItem[] }> => {
     const effectiveDomain = resolveEffectiveDomain(domain);
     return fetchPublicApi<{ status: string; data: PublicEstateItem[] }>(
       `/v1/public/estates/featured?domain=${encodeURIComponent(effectiveDomain)}&limit=${limit}`,
@@ -292,7 +292,15 @@ export const publicInmobiliariaService = {
     );
   },
 
-  getRecentEstates: async (domain?: string, limit: number = 6): Promise<{ status: string; data: PublicEstateItem[] }> => {
+  getRecommendedEstates: async (domain?: string, limit: number = 32): Promise<{ status: string; data: PublicEstateItem[] }> => {
+    const effectiveDomain = resolveEffectiveDomain(domain);
+    return fetchPublicApi<{ status: string; data: PublicEstateItem[] }>(
+      `/v1/public/estates/recommended?domain=${encodeURIComponent(effectiveDomain)}&limit=${limit}`,
+      effectiveDomain
+    );
+  },
+
+  getRecentEstates: async (domain?: string, limit: number = 8): Promise<{ status: string; data: PublicEstateItem[] }> => {
     const effectiveDomain = resolveEffectiveDomain(domain);
     return fetchPublicApi<{ status: string; data: PublicEstateItem[] }>(
       `/v1/public/estates/recent?domain=${encodeURIComponent(effectiveDomain)}&limit=${limit}`,
