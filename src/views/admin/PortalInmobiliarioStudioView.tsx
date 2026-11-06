@@ -6,7 +6,8 @@ import {
   RefreshCw, Loader2, ExternalLink, Eye, EyeOff, Image as ImageIcon, Laptop, Tablet, Smartphone,
   Search, Check, Palette, Save, Phone, Mail, FileText, HelpCircle, Layers, Copy,
   Target, Compass, Users, Megaphone, Video, Play, MapPin, SlidersHorizontal,
-  Briefcase, Plus, Trash2, Handshake, BadgeCheck, FileSpreadsheet, ArrowUp, ArrowDown, Code, GripVertical
+  Briefcase, Plus, Trash2, Handshake, BadgeCheck, FileSpreadsheet, ArrowUp, ArrowDown, Code, GripVertical,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { whiteLabelService } from '@/services/whiteLabelService';
@@ -54,6 +55,47 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
   const [showLoaderPreview, setShowLoaderPreview] = useState<boolean>(false);
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [loadingWorkspaces, setLoadingWorkspaces] = useState<boolean>(false);
+
+  // Estados de colapso de secciones en Conócenos
+  const [collapsedAboutSections, setCollapsedAboutSections] = useState<Record<string, boolean>>({
+    organizer: false,
+    presentation: false,
+    mission_vision: false,
+    team: false,
+    clients: false,
+    allies: false,
+    certifications: false,
+    html_manager: false,
+  });
+
+  const toggleAboutSectionCollapse = (key: string) => {
+    setCollapsedAboutSections((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const setAllAboutSectionsCollapse = (collapsed: boolean) => {
+    setCollapsedAboutSections({
+      organizer: collapsed,
+      presentation: collapsed,
+      mission_vision: collapsed,
+      team: collapsed,
+      clients: collapsed,
+      allies: collapsed,
+      certifications: collapsed,
+      html_manager: collapsed,
+    });
+  };
+
+  const [collapsedHtmlItems, setCollapsedHtmlItems] = useState<Record<string, boolean>>({});
+
+  const toggleHtmlItemCollapse = (id: string | number) => {
+    setCollapsedHtmlItems((prev) => ({
+      ...prev,
+      [String(id)]: !prev[String(id)],
+    }));
+  };
 
   // Form state
   const [form, setForm] = useState<any>({
@@ -1322,1170 +1364,1464 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
             {/* TAB 3: CONÓCENOS (NOSOTROS) */}
             {activeTab === 'about' && (
               <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-emerald-600" /> Sección Conócenos / Identidad Institucional
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Configura el orden de las secciones, clientes, aliados comerciales, certificaciones y bloques HTML personalizados para la página pública de Conócenos.
-                  </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-emerald-600" /> Sección Conócenos / Identidad Institucional
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Configura el orden de las secciones, clientes, asociados, certificaciones y bloques HTML independientes.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setAllAboutSectionsCollapse(false)}
+                      className="px-2.5 py-1 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Expandir Todas
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAllAboutSectionsCollapse(true)}
+                      className="px-2.5 py-1 text-[11px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Colapsar Todas
+                    </button>
+                  </div>
                 </div>
 
-                <div className="space-y-6">
-                  {/* ORGANIZADOR Y VISIBILIDAD DE SECCIONES */}
-                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div>
-                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
-                          <GripVertical className="w-3.5 h-3.5 text-emerald-600" />
-                          Orden y Visibilidad de Secciones en Conócenos
-                        </h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Usa las flechas para cambiar el orden de las secciones o el ojo para activar u ocultarlas.
-                        </p>
+                <div className="space-y-5">
+                  {/* ORGANIZADOR Y VISIBILIDAD DE SECCIONES (INCLUYE CADA SECCIÓN HTML DE FORMA INDEPENDIENTE) */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleAboutSectionCollapse('organizer')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
+                          <GripVertical className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Orden y Visibilidad de Secciones en Conócenos</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 lowercase">
+                              interactivo
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Reordena y activa/oculta cada sección (incluyendo cada bloque HTML de forma independiente).
+                          </p>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateDetailField('about_sections_order', [
-                            'presentation',
-                            'mission_vision',
-                            'team',
-                            'clients',
-                            'allies',
-                            'certifications',
-                            'custom_html',
-                          ]);
-                          updateDetailField('about_sections_hidden', []);
-                        }}
-                        className="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline cursor-pointer"
-                      >
-                        Restablecer Orden
-                      </button>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const baseKeys = ['presentation', 'mission_vision', 'team', 'clients', 'allies', 'certifications'];
+                            const htmlKeys = (Array.isArray(form.details?.about_html_sections) ? form.details.about_html_sections : []).map(
+                              (s: any) => `html_${s.id}`
+                            );
+                            updateDetailField('about_sections_order', [...baseKeys, ...htmlKeys]);
+                            updateDetailField('about_sections_hidden', []);
+                          }}
+                          className="text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 underline cursor-pointer mr-2"
+                        >
+                          Restablecer Orden
+                        </button>
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                          {collapsedAboutSections.organizer ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="space-y-1.5 pt-1">
-                      {(() => {
-                        const allSections = [
-                          { id: 'presentation', label: 'Quiénes Somos / Presentación', icon: Building2, desc: 'Historia institucional, imagen y puntos clave' },
-                          { id: 'mission_vision', label: 'Misión y Visión', icon: Target, desc: 'Tarjetas de propósito corporativo' },
-                          { id: 'team', label: 'Equipo de Asesores', icon: Users, desc: 'Listado sincronizado de agentes de la agencia' },
-                          { id: 'clients', label: 'Nuestros Clientes (Carrusel de Logos)', icon: Sparkles, desc: 'Carrusel continuo de empresas clientes (Estilo Imagen 1)' },
-                          { id: 'allies', label: 'Asociados Comerciales', icon: Handshake, desc: 'Tarjetas con imagen, título y descripción (Estilo Imagen 2)' },
-                          { id: 'certifications', label: 'Certificaciones y Acreditaciones', icon: BadgeCheck, desc: 'Licencias oficiales y avales profesionales' },
-                          { id: 'custom_html', label: 'Secciones Personalizadas (HTML Puro)', icon: Code, desc: 'Bloques de código HTML libre, banners o widgets' },
-                        ];
+                    {!collapsedAboutSections.organizer && (
+                      <div className="p-4 space-y-2 border-t border-slate-100 dark:border-slate-800">
+                        {(() => {
+                          const htmlSectionsList: any[] = Array.isArray(form.details?.about_html_sections)
+                            ? form.details.about_html_sections
+                            : [];
 
-                        const currentOrder: string[] = Array.isArray(form.details?.about_sections_order) && form.details.about_sections_order.length > 0
-                          ? form.details.about_sections_order
-                          : allSections.map((s) => s.id);
+                          const baseSections = [
+                            { id: 'presentation', label: 'Quiénes Somos / Presentación', icon: Building2, desc: 'Historia institucional, imagen y puntos clave' },
+                            { id: 'mission_vision', label: 'Misión y Visión', icon: Target, desc: 'Tarjetas de propósito corporativo' },
+                            { id: 'team', label: 'Equipo de Asesores', icon: Users, desc: 'Listado sincronizado de agentes de la agencia' },
+                            { id: 'clients', label: 'Nuestros Clientes (Carrusel de Logos)', icon: Sparkles, desc: 'Carrusel de logos de clientes destacados' },
+                            { id: 'allies', label: 'Asociados Comerciales', icon: Handshake, desc: 'Tarjetas con imagen, título y descripción' },
+                            { id: 'certifications', label: 'Certificaciones y Acreditaciones', icon: BadgeCheck, desc: 'Licencias oficiales y avales profesionales' },
+                          ];
 
-                        const fullOrder = [...currentOrder];
-                        allSections.forEach((s) => {
-                          if (!fullOrder.includes(s.id)) fullOrder.push(s.id);
-                        });
+                          // Cada sección HTML se mapea como una sección independiente en el organizador
+                          const htmlSectionsMeta = htmlSectionsList.map((sec, i) => ({
+                            id: `html_${sec.id}`,
+                            rawId: sec.id,
+                            isHtml: true,
+                            label: sec.title && sec.title.trim() !== '' ? `Sección HTML: ${sec.title}` : `Sección HTML #${i + 1}`,
+                            icon: Code,
+                            desc: sec.subtitle || (sec.container === 'full' ? 'Ancho Completo' : 'Contenedor Enmarcado'),
+                          }));
 
-                        const hiddenList: string[] = Array.isArray(form.details?.about_sections_hidden)
-                          ? form.details.about_sections_hidden
-                          : [];
+                          const allSections = [...baseSections, ...htmlSectionsMeta];
 
-                        return fullOrder.map((secId, idx) => {
-                          const meta = allSections.find((s) => s.id === secId);
-                          if (!meta) return null;
-                          const isHidden = hiddenList.includes(secId);
-                          const IconComp = meta.icon;
+                          const currentOrder: string[] = Array.isArray(form.details?.about_sections_order) && form.details.about_sections_order.length > 0
+                            ? form.details.about_sections_order
+                            : allSections.map((s) => s.id);
 
-                          return (
-                            <div
-                              key={secId}
-                              className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
-                                isHidden
-                                  ? 'bg-slate-100/60 dark:bg-slate-950/40 border-slate-200/60 dark:border-slate-800/60 opacity-60'
-                                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <span className="w-5 h-5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
-                                  {idx + 1}
-                                </span>
-                                <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 shrink-0">
-                                  <IconComp className="w-3.5 h-3.5" />
-                                </div>
-                                <div className="truncate">
-                                  <div className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                    <span>{meta.label}</span>
-                                    {isHidden && (
-                                      <span className="text-[10px] font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/50 px-1.5 py-0.5 rounded-md">
-                                        Oculta
-                                      </span>
-                                    )}
+                          const fullOrder = [...currentOrder];
+                          allSections.forEach((s) => {
+                            if (!fullOrder.includes(s.id)) fullOrder.push(s.id);
+                          });
+
+                          const hiddenList: string[] = Array.isArray(form.details?.about_sections_hidden)
+                            ? form.details.about_sections_hidden
+                            : [];
+
+                          return fullOrder.map((secId, idx) => {
+                            const meta = allSections.find((s) => s.id === secId) || {
+                              id: secId,
+                              label: secId.startsWith('html_') ? `Sección HTML (${secId.replace('html_', '#')})` : secId,
+                              icon: secId.startsWith('html_') ? Code : Building2,
+                              desc: 'Sección personalizada',
+                            };
+                            const isHidden = hiddenList.includes(secId);
+                            const IconComp = meta.icon;
+
+                            return (
+                              <div
+                                key={secId}
+                                className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
+                                  isHidden
+                                    ? 'bg-slate-100/60 dark:bg-slate-950/40 border-slate-200/60 dark:border-slate-800/60 opacity-60'
+                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <span className="w-5 h-5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
+                                    {idx + 1}
+                                  </span>
+                                  <div className={`p-1.5 rounded-lg shrink-0 ${
+                                    secId.startsWith('html_')
+                                      ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600'
+                                      : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600'
+                                  }`}>
+                                    <IconComp className="w-3.5 h-3.5" />
                                   </div>
-                                  <p className="text-[10px] text-slate-500 truncate m-0">{meta.desc}</p>
+                                  <div className="truncate">
+                                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                      <span>{meta.label}</span>
+                                      {secId.startsWith('html_') && (
+                                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded-md bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                                          HTML Independiente
+                                        </span>
+                                      )}
+                                      {isHidden && (
+                                        <span className="text-[10px] font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/50 px-1.5 py-0.5 rounded-md">
+                                          Oculta
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 truncate m-0">{meta.desc}</p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    disabled={idx === 0}
+                                    onClick={() => {
+                                      if (idx === 0) return;
+                                      const next = [...fullOrder];
+                                      const [moved] = next.splice(idx, 1);
+                                      next.splice(idx - 1, 0, moved);
+                                      updateDetailField('about_sections_order', next);
+                                    }}
+                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                    title="Subir posición"
+                                  >
+                                    <ArrowUp className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={idx === fullOrder.length - 1}
+                                    onClick={() => {
+                                      if (idx === fullOrder.length - 1) return;
+                                      const next = [...fullOrder];
+                                      const [moved] = next.splice(idx, 1);
+                                      next.splice(idx + 1, 0, moved);
+                                      updateDetailField('about_sections_order', next);
+                                    }}
+                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                    title="Bajar posición"
+                                  >
+                                    <ArrowDown className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nextHidden = isHidden
+                                        ? hiddenList.filter((k) => k !== secId)
+                                        : [...hiddenList, secId];
+                                      updateDetailField('about_sections_hidden', nextHidden);
+                                    }}
+                                    className={`p-1.5 rounded-lg border cursor-pointer transition-all ${
+                                      isHidden
+                                        ? 'border-rose-200 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:border-rose-800'
+                                        : 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:border-emerald-800'
+                                    }`}
+                                    title={isHidden ? 'Activar sección' : 'Ocultar sección'}
+                                  >
+                                    {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  </button>
                                 </div>
                               </div>
-
-                              <div className="flex items-center gap-1 shrink-0">
-                                <button
-                                  type="button"
-                                  disabled={idx === 0}
-                                  onClick={() => {
-                                    if (idx === 0) return;
-                                    const next = [...fullOrder];
-                                    const [moved] = next.splice(idx, 1);
-                                    next.splice(idx - 1, 0, moved);
-                                    updateDetailField('about_sections_order', next);
-                                  }}
-                                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                                  title="Subir posición"
-                                >
-                                  <ArrowUp className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={idx === fullOrder.length - 1}
-                                  onClick={() => {
-                                    if (idx === fullOrder.length - 1) return;
-                                    const next = [...fullOrder];
-                                    const [moved] = next.splice(idx, 1);
-                                    next.splice(idx + 1, 0, moved);
-                                    updateDetailField('about_sections_order', next);
-                                  }}
-                                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                                  title="Bajar posición"
-                                >
-                                  <ArrowDown className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const nextHidden = isHidden
-                                      ? hiddenList.filter((k) => k !== secId)
-                                      : [...hiddenList, secId];
-                                    updateDetailField('about_sections_hidden', nextHidden);
-                                  }}
-                                  className={`p-1.5 rounded-lg border cursor-pointer transition-all ${
-                                    isHidden
-                                      ? 'border-rose-200 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:border-rose-800'
-                                      : 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:border-emerald-800'
-                                  }`}
-                                  title={isHidden ? 'Activar sección' : 'Ocultar sección'}
-                                >
-                                  {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
                   </div>
 
                   {/* 1. Quiénes Somos */}
-                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
-                    <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-emerald-600" />
-                      Quiénes Somos / Presentación
-                    </h4>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                        Título de Presentación:
-                      </label>
-                      <input
-                        type="text"
-                        value={form.about_title || ''}
-                        onChange={(e) => setForm({ ...form, about_title: e.target.value })}
-                        placeholder="Ej: Somos Tu Aliado Inmobiliario de Confianza"
-                        className="w-full px-4 py-2.5 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                      />
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleAboutSectionCollapse('presentation')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            Quiénes Somos / Presentación
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Historia institucional, texto principal, imagen y puntos de valor.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-slate-400 hidden sm:inline">
+                          {form.about_title ? (form.about_title.length > 25 ? form.about_title.slice(0, 25) + '...' : form.about_title) : 'Configurado'}
+                        </span>
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                          {collapsedAboutSections.presentation ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </div>
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                        Texto de Presentación e Historia:
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={form.about_text || ''}
-                        onChange={(e) => setForm({ ...form, about_text: e.target.value })}
-                        placeholder="Especialistas en la comercialización, compraventa y arrendamiento..."
-                        className="w-full px-4 py-2.5 text-xs font-medium bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                      />
-                    </div>
+                    {!collapsedAboutSections.presentation && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                            Título de Presentación:
+                          </label>
+                          <input
+                            type="text"
+                            value={form.about_title || ''}
+                            onChange={(e) => setForm({ ...form, about_title: e.target.value })}
+                            placeholder="Ej: Somos Tu Aliado Inmobiliario de Confianza"
+                            className="w-full px-4 py-2.5 text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                          />
+                        </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1.5">
-                        Imagen de Quiénes Somos:
-                      </label>
-                      <MediaPicker
-                        value={form.details?.about_image || ''}
-                        onChange={(selected) => updateDetailField('about_image', selected?.url || '')}
-                        label="Seleccionar o Subir Imagen Quiénes Somos"
-                        type="image"
-                      />
-                    </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                            Texto de Presentación e Historia:
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={form.about_text || ''}
+                            onChange={(e) => setForm({ ...form, about_text: e.target.value })}
+                            placeholder="Especialistas en la comercialización, compraventa y arrendamiento..."
+                            className="w-full px-4 py-2.5 text-xs font-medium bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1.5">
+                            Imagen de Quiénes Somos:
+                          </label>
+                          <MediaPicker
+                            value={form.details?.about_image || ''}
+                            onChange={(selected) => updateDetailField('about_image', selected?.url || '')}
+                            label="Seleccionar o Subir Imagen Quiénes Somos"
+                            type="image"
+                          />
+                        </div>
+
+                        {/* Puntos Clave */}
+                        <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                            Puntos de Certeza y Valor:
+                          </label>
+                          <input
+                            type="text"
+                            value={form.details?.about_item1 || 'Propiedades 100% Verificadas Jurídicamente'}
+                            onChange={(e) => updateDetailField('about_item1', e.target.value)}
+                            className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            value={form.details?.about_item2 || 'Asesoría en Créditos Hipotecarios & Notariales'}
+                            onChange={(e) => updateDetailField('about_item2', e.target.value)}
+                            className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            value={form.details?.about_item3 || 'Acompañamiento Personalizado de Principio a Fin'}
+                            onChange={(e) => updateDetailField('about_item3', e.target.value)}
+                            className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                          />
+                        </div>
+
+                        {/* Estadísticas de Nosotros */}
+                        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Años de Trayectoria:</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={form.details?.about_stat1_num || '15'}
+                                onChange={(e) => updateDetailField('about_stat1_num', e.target.value)}
+                                className="w-16 px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg font-bold"
+                              />
+                              <input
+                                type="text"
+                                value={form.details?.about_stat1_label || 'Años de Trayectoria'}
+                                onChange={(e) => updateDetailField('about_stat1_label', e.target.value)}
+                                className="flex-grow px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Clientes Satisfechos:</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={form.details?.about_stat2_num || '3,500'}
+                                onChange={(e) => updateDetailField('about_stat2_num', e.target.value)}
+                                className="w-20 px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg font-bold"
+                              />
+                              <input
+                                type="text"
+                                value={form.details?.about_stat2_label || 'Clientes Satisfechos'}
+                                onChange={(e) => updateDetailField('about_stat2_label', e.target.value)}
+                                className="flex-grow px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* 2. Misión y Visión */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Misión */}
-                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
-                      <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
-                        <Target className="w-3.5 h-3.5 text-emerald-600" />
-                        Nuestra Misión
-                      </h4>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
-                          Título Misión:
-                        </label>
-                        <input
-                          type="text"
-                          value={form.details?.mission_title || 'Nuestra Misión'}
-                          onChange={(e) => updateDetailField('mission_title', e.target.value)}
-                          className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                        />
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleAboutSectionCollapse('mission_vision')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600">
+                          <Target className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            Misión y Visión Institucional
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Propósito, valores de futuro e imágenes corporativas.
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
-                          Texto Misión:
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={form.details?.mission_text || ''}
-                          onChange={(e) => updateDetailField('mission_text', e.target.value)}
-                          placeholder="Brindar soluciones inmobiliarias seguras, transparentes e innovadoras..."
-                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
-                          Imagen Misión:
-                        </label>
-                        <MediaPicker
-                          value={form.details?.mission_image || ''}
-                          onChange={(selected) => updateDetailField('mission_image', selected?.url || '')}
-                          label="Subir Imagen de Misión"
-                          type="image"
-                        />
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                          {collapsedAboutSections.mission_vision ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Visión */}
-                    <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
-                      <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
-                        <Compass className="w-3.5 h-3.5 text-blue-600" />
-                        Nuestra Visión
-                      </h4>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
-                          Título Visión:
-                        </label>
-                        <input
-                          type="text"
-                          value={form.details?.vision_title || 'Nuestra Visión'}
-                          onChange={(e) => updateDetailField('vision_title', e.target.value)}
-                          className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                        />
+                    {!collapsedAboutSections.mission_vision && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Misión */}
+                          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-3">
+                            <h5 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                              <Target className="w-3.5 h-3.5 text-emerald-600" />
+                              Nuestra Misión
+                            </h5>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                                Título Misión:
+                              </label>
+                              <input
+                                type="text"
+                                value={form.details?.mission_title || 'Nuestra Misión'}
+                                onChange={(e) => updateDetailField('mission_title', e.target.value)}
+                                className="w-full px-3 py-2 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                                Texto Misión:
+                              </label>
+                              <textarea
+                                rows={3}
+                                value={form.details?.mission_text || ''}
+                                onChange={(e) => updateDetailField('mission_text', e.target.value)}
+                                placeholder="Brindar soluciones inmobiliarias seguras..."
+                                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                                Imagen Misión:
+                              </label>
+                              <MediaPicker
+                                value={form.details?.mission_image || ''}
+                                onChange={(selected) => updateDetailField('mission_image', selected?.url || '')}
+                                label="Subir Imagen de Misión"
+                                type="image"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Visión */}
+                          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-3">
+                            <h5 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
+                              <Compass className="w-3.5 h-3.5 text-blue-600" />
+                              Nuestra Visión
+                            </h5>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                                Título Visión:
+                              </label>
+                              <input
+                                type="text"
+                                value={form.details?.vision_title || 'Nuestra Visión'}
+                                onChange={(e) => updateDetailField('vision_title', e.target.value)}
+                                className="w-full px-3 py-2 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                                Texto Visión:
+                              </label>
+                              <textarea
+                                rows={3}
+                                value={form.details?.vision_text || ''}
+                                onChange={(e) => updateDetailField('vision_text', e.target.value)}
+                                placeholder="Ser la agencia inmobiliaria líder..."
+                                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                                Imagen Visión:
+                              </label>
+                              <MediaPicker
+                                value={form.details?.vision_image || ''}
+                                onChange={(selected) => updateDetailField('vision_image', selected?.url || '')}
+                                label="Subir Imagen de Visión"
+                                type="image"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
-                          Texto Visión:
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={form.details?.vision_text || ''}
-                          onChange={(e) => updateDetailField('vision_text', e.target.value)}
-                          placeholder="Ser la agencia inmobiliaria de referencia por excelencia, liderando con tecnología..."
-                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
-                          Imagen Visión:
-                        </label>
-                        <MediaPicker
-                          value={form.details?.vision_image || ''}
-                          onChange={(selected) => updateDetailField('vision_image', selected?.url || '')}
-                          label="Subir Imagen de Visión"
-                          type="image"
-                        />
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* 3. Valores y Equipo de Asesores */}
-                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
-                    <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-emerald-600" />
-                      Sección de Asesores / Agentes
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
-                          Título de la Sección Agentes:
-                        </label>
-                        <input
-                          type="text"
-                          value={form.details?.team_title || 'Nuestro Equipo de Asesores'}
-                          onChange={(e) => updateDetailField('team_title', e.target.value)}
-                          className="w-full px-3 py-2 text-xs font-bold bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                        />
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleAboutSectionCollapse('team')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
+                          <Users className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            Sección de Asesores / Agentes
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Título y subtítulo del equipo sincronizado de la agencia.
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
-                          Subtítulo de la Sección:
-                        </label>
-                        <input
-                          type="text"
-                          value={form.details?.team_subtitle || 'Expertos profesionales listos para asesorarte en cada paso'}
-                          onChange={(e) => updateDetailField('team_subtitle', e.target.value)}
-                          className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-slate-500 italic">
-                      * Los asesores mostrados se sincronizan automáticamente desde los usuarios y agentes registrados y activos en la plataforma para tu agencia.
-                    </p>
-                  </div>
-
-                  {/* Puntos Clave */}
-                  <div className="space-y-2 pt-1">
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
-                      Puntos de Certeza y Valor:
-                    </label>
-                    <input
-                      type="text"
-                      value={form.details?.about_item1 || 'Propiedades 100% Verificadas Jurídicamente'}
-                      onChange={(e) => updateDetailField('about_item1', e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                    />
-                    <input
-                      type="text"
-                      value={form.details?.about_item2 || 'Asesoría en Créditos Hipotecarios & Notariales'}
-                      onChange={(e) => updateDetailField('about_item2', e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                    />
-                    <input
-                      type="text"
-                      value={form.details?.about_item3 || 'Acompañamiento Personalizado de Principio a Fin'}
-                      onChange={(e) => updateDetailField('about_item3', e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                    />
-                  </div>
-
-                  {/* Estadísticas de Nosotros */}
-                  <div className="grid grid-cols-2 gap-3 pt-1">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Años de Trayectoria:</span>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={form.details?.about_stat1_num || '15'}
-                          onChange={(e) => updateDetailField('about_stat1_num', e.target.value)}
-                          className="w-16 px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg font-bold"
-                        />
-                        <input
-                          type="text"
-                          value={form.details?.about_stat1_label || 'Años de Trayectoria'}
-                          onChange={(e) => updateDetailField('about_stat1_label', e.target.value)}
-                          className="flex-grow px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                        />
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                          {collapsedAboutSections.team ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </div>
                       </div>
                     </div>
 
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Clientes Satisfechos:</span>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={form.details?.about_stat2_num || '3,500'}
-                          onChange={(e) => updateDetailField('about_stat2_num', e.target.value)}
-                          className="w-20 px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg font-bold"
-                        />
-                        <input
-                          type="text"
-                          value={form.details?.about_stat2_label || 'Clientes Satisfechos'}
-                          onChange={(e) => updateDetailField('about_stat2_label', e.target.value)}
-                          className="flex-grow px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border rounded-lg"
-                        />
+                    {!collapsedAboutSections.team && (
+                      <div className="p-4 space-y-3 border-t border-slate-100 dark:border-slate-800">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                              Título de la Sección Agentes:
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.team_title || 'Nuestro Equipo de Asesores'}
+                              onChange={(e) => updateDetailField('team_title', e.target.value)}
+                              className="w-full px-3 py-2 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+                              Subtítulo de la Sección:
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.team_subtitle || 'Expertos profesionales listos para asesorarte en cada paso'}
+                              onChange={(e) => updateDetailField('team_subtitle', e.target.value)}
+                              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                            />
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-slate-500 italic">
+                          * Los asesores mostrados se sincronizan automáticamente desde los agentes activos registrados en la agencia.
+                        </p>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* 4. NUESTROS CLIENTES (CARRUSEL DE LOGOS) */}
-                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div>
-                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                          Nuestros Clientes (Carrusel de Logos)
-                        </h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Agrega los logos o imágenes de empresas clientes. En el frontend se listarán en un carrusel dinámico continuo como en la Imagen 1.
-                        </p>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleAboutSectionCollapse('clients')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-500">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Nuestros Clientes (Carrusel de Logos)</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                              {form.details?.our_clients?.length || 0} logos
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Logos e imágenes de empresas en carrusel horizontal panorámico.
+                          </p>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const list = Array.isArray(form.details?.our_clients) ? [...form.details.our_clients] : [];
-                          list.push({
-                            id: Date.now(),
-                            name: '',
-                            logo: '',
-                          });
-                          updateDetailField('our_clients', list);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shadow-xs"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>Agregar Logo / Cliente</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                          Título de la Sección de Clientes:
-                        </label>
-                        <input
-                          type="text"
-                          value={form.details?.clients_title ?? 'Nuestros Clientes'}
-                          onChange={(e) => updateDetailField('clients_title', e.target.value)}
-                          placeholder="Ej: Nuestros Clientes"
-                          className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold focus:border-amber-500 outline-none"
-                        />
-                        <span className="text-[10px] text-slate-400 mt-1 block">
-                          * Este título adoptará automáticamente el color primario de la marca.
-                        </span>
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                          Subtítulo de la Sección de Clientes (Opcional):
-                        </label>
-                        <input
-                          type="text"
-                          value={form.details?.clients_subtitle ?? ''}
-                          onChange={(e) => updateDetailField('clients_subtitle', e.target.value)}
-                          placeholder="Dejar vacío si no deseas mostrar subtítulo"
-                          className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:border-amber-500 outline-none"
-                        />
-                        <span className="text-[10px] text-slate-400 mt-1 block">
-                          * Si está vacío, no se renderizará ningún subtítulo ni espacio extra en el frontend.
-                        </span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                          {collapsedAboutSections.clients ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </div>
                       </div>
                     </div>
 
-                    {(!form.details?.our_clients || form.details.our_clients.length === 0) ? (
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
-                        <p className="text-xs text-slate-500 m-0">
-                          No has agregado clientes personalizados. El portal mostrará los logos predeterminados del sistema.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            updateDetailField('our_clients', [
-                              { id: 1, name: 'Grupo Manobanda', logo: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=300&q=80' },
-                              { id: 2, name: 'Inmoconstrucción Expo 2024 Quevedo', logo: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=300&q=80' },
-                              { id: 3, name: 'Banco Pichincha', logo: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=300&q=80' },
-                              { id: 4, name: 'Tesalia cbc', logo: 'https://images.unsplash.com/photo-1516876437184-593fda40c7ce?auto=format&fit=crop&w=300&q=80' },
-                            ]);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 font-bold text-xs cursor-pointer transition-all border border-amber-200 dark:border-amber-800"
-                        >
-                          Cargar Logos de Ejemplo
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {form.details.our_clients.map((client: any, idx: number) => (
-                          <div key={client.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-black uppercase text-slate-400">Cliente / Logo #{idx + 1}</span>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  disabled={idx === 0}
-                                  onClick={() => {
-                                    if (idx === 0) return;
-                                    const next = [...form.details.our_clients];
-                                    const [moved] = next.splice(idx, 1);
-                                    next.splice(idx - 1, 0, moved);
-                                    updateDetailField('our_clients', next);
-                                  }}
-                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
-                                  title="Subir"
-                                >
-                                  <ArrowUp className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={idx === form.details.our_clients.length - 1}
-                                  onClick={() => {
-                                    if (idx === form.details.our_clients.length - 1) return;
-                                    const next = [...form.details.our_clients];
-                                    const [moved] = next.splice(idx, 1);
-                                    next.splice(idx + 1, 0, moved);
-                                    updateDetailField('our_clients', next);
-                                  }}
-                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
-                                  title="Bajar"
-                                >
-                                  <ArrowDown className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const list = form.details.our_clients.filter((_: any, i: number) => i !== idx);
-                                    updateDetailField('our_clients', list);
-                                  }}
-                                  className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
-                                  title="Eliminar cliente"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Nombre de la Empresa / Cliente (Opcional):</label>
-                                <input
-                                  type="text"
-                                  value={client.name || ''}
-                                  onChange={(e) => {
-                                    const list = [...form.details.our_clients];
-                                    list[idx] = { ...list[idx], name: e.target.value };
-                                    updateDetailField('our_clients', list);
-                                  }}
-                                  placeholder="Ej: Grupo Manobanda"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Logo o Imagen de la Empresa:</label>
-                                <MediaPicker
-                                  value={client.logo || client.image_url || client.image || ''}
-                                  onChange={(selected) => {
-                                    const list = [...form.details.our_clients];
-                                    list[idx] = {
-                                      ...list[idx],
-                                      logo: selected?.url || '',
-                                      image_url: selected?.url || '',
-                                      image: selected?.url || '',
-                                    };
-                                    updateDetailField('our_clients', list);
-                                  }}
-                                  label="Seleccionar o Subir Logo del Cliente"
-                                  type="image"
-                                />
-                              </div>
-                            </div>
+                    {!collapsedAboutSections.clients && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between flex-wrap gap-2 pb-2">
+                          <p className="text-xs text-slate-500 m-0">
+                            Agrega los logos o imágenes de empresas clientes. Se mostrarán sin fondo ni bordes de forma fluida.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = Array.isArray(form.details?.our_clients) ? [...form.details.our_clients] : [];
+                              list.push({
+                                id: Date.now(),
+                                name: '',
+                                logo: '',
+                              });
+                              updateDetailField('our_clients', list);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Agregar Logo / Cliente</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Título de la Sección de Clientes:
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.clients_title ?? 'Nuestros Clientes'}
+                              onChange={(e) => updateDetailField('clients_title', e.target.value)}
+                              placeholder="Ej: Nuestros Clientes"
+                              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold focus:border-amber-500 outline-none"
+                            />
+                            <span className="text-[10px] text-slate-400 mt-1 block">
+                              * Este título adoptará automáticamente el color primario de la marca.
+                            </span>
                           </div>
-                        ))}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Subtítulo de la Sección de Clientes (Opcional):
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.clients_subtitle ?? ''}
+                              onChange={(e) => updateDetailField('clients_subtitle', e.target.value)}
+                              placeholder="Dejar vacío si no deseas mostrar subtítulo"
+                              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:border-amber-500 outline-none"
+                            />
+                            <span className="text-[10px] text-slate-400 mt-1 block">
+                              * Si está vacío, no se renderizará ningún subtítulo ni espacio extra en el frontend.
+                            </span>
+                          </div>
+                        </div>
+
+                        {(!form.details?.our_clients || form.details.our_clients.length === 0) ? (
+                          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
+                            <p className="text-xs text-slate-500 m-0">
+                              No has agregado clientes personalizados. El portal mostrará los logos predeterminados del sistema.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateDetailField('our_clients', [
+                                  { id: 1, name: 'Grupo Manobanda', logo: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&w=300&q=80' },
+                                  { id: 2, name: 'Inmoconstrucción Expo 2024 Quevedo', logo: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=300&q=80' },
+                                  { id: 3, name: 'Banco Pichincha', logo: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=300&q=80' },
+                                  { id: 4, name: 'Tesalia cbc', logo: 'https://images.unsplash.com/photo-1516876437184-593fda40c7ce?auto=format&fit=crop&w=300&q=80' },
+                                ]);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 font-bold text-xs cursor-pointer transition-all border border-amber-200 dark:border-amber-800"
+                            >
+                              Cargar Logos de Ejemplo
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {form.details.our_clients.map((client: any, idx: number) => (
+                              <div key={client.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[10px] font-black uppercase text-slate-400">Cliente / Logo #{idx + 1}</span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={idx === 0}
+                                      onClick={() => {
+                                        if (idx === 0) return;
+                                        const next = [...form.details.our_clients];
+                                        const [moved] = next.splice(idx, 1);
+                                        next.splice(idx - 1, 0, moved);
+                                        updateDetailField('our_clients', next);
+                                      }}
+                                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                      title="Subir"
+                                    >
+                                      <ArrowUp className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={idx === form.details.our_clients.length - 1}
+                                      onClick={() => {
+                                        if (idx === form.details.our_clients.length - 1) return;
+                                        const next = [...form.details.our_clients];
+                                        const [moved] = next.splice(idx, 1);
+                                        next.splice(idx + 1, 0, moved);
+                                        updateDetailField('our_clients', next);
+                                      }}
+                                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                      title="Bajar"
+                                    >
+                                      <ArrowDown className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const list = form.details.our_clients.filter((_: any, i: number) => i !== idx);
+                                        updateDetailField('our_clients', list);
+                                      }}
+                                      className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                      title="Eliminar cliente"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Nombre de la Empresa / Cliente (Opcional):</label>
+                                    <input
+                                      type="text"
+                                      value={client.name || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.our_clients];
+                                        list[idx] = { ...list[idx], name: e.target.value };
+                                        updateDetailField('our_clients', list);
+                                      }}
+                                      placeholder="Ej: Grupo Manobanda"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Logo o Imagen de la Empresa:</label>
+                                    <MediaPicker
+                                      value={client.logo || client.image_url || client.image || ''}
+                                      onChange={(selected) => {
+                                        const list = [...form.details.our_clients];
+                                        list[idx] = {
+                                          ...list[idx],
+                                          logo: selected?.url || '',
+                                          image_url: selected?.url || '',
+                                          image: selected?.url || '',
+                                        };
+                                        updateDetailField('our_clients', list);
+                                      }}
+                                      label="Seleccionar o Subir Logo del Cliente"
+                                      type="image"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
 
                   {/* 5. Asociados Comerciales (Aliados) */}
-                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div>
-                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
-                          <Handshake className="w-3.5 h-3.5 text-blue-600" />
-                          Asociados Comerciales (Bancos, Notarías, Aseguradoras, Gremios)
-                        </h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          En el frontend se listarán como tarjetas limpias con imagen destacada arriba, título y descripción como en la Imagen 2.
-                        </p>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleAboutSectionCollapse('allies')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600">
+                          <Handshake className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Asociados Comerciales (Tarjetas)</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
+                              {form.details?.commercial_allies?.length || 0} aliados
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Entidades financieras, notarías, aseguradoras y gremios en tarjetas limpias.
+                          </p>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const list = Array.isArray(form.details?.commercial_allies) ? [...form.details.commercial_allies] : [];
-                          list.push({
-                            id: Date.now(),
-                            name: '',
-                            category: 'Entidad Financiera',
-                            description: '',
-                            website: '',
-                          });
-                          updateDetailField('commercial_allies', list);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>Agregar Aliado</span>
-                      </button>
-                    </div>
-
-                    {/* Campos de Título y Subtítulo de la Sección de Aliados */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                          Título de la Sección de Asociados:
-                        </label>
-                        <input
-                          type="text"
-                          value={form.details?.allies_title ?? 'Nuestros Aliados Comerciales'}
-                          onChange={(e) => updateDetailField('allies_title', e.target.value)}
-                          placeholder="Ej: Asociados a / Aliados Comerciales"
-                          className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold focus:border-blue-500 outline-none"
-                        />
-                        <span className="text-[10px] text-slate-400 mt-1 block">
-                          * Este título adoptará automáticamente el color primario configurado.
-                        </span>
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                          Subtítulo de la Sección de Asociados (Opcional):
-                        </label>
-                        <input
-                          type="text"
-                          value={form.details?.allies_subtitle ?? ''}
-                          onChange={(e) => updateDetailField('allies_subtitle', e.target.value)}
-                          placeholder="Dejar vacío si no deseas mostrar subtítulo"
-                          className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:border-blue-500 outline-none"
-                        />
-                        <span className="text-[10px] text-slate-400 mt-1 block">
-                          * Si está vacío, no se renderizará ningún subtítulo ni espacio extra en el frontend.
-                        </span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                          {collapsedAboutSections.allies ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </div>
                       </div>
                     </div>
 
-                    {(!form.details?.commercial_allies || form.details.commercial_allies.length === 0) ? (
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
-                        <p className="text-xs text-slate-500 m-0">
-                          No has agregado aliados comerciales personalizados. El portal muestra los 6 aliados predefinidos del sistema.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            updateDetailField('commercial_allies', [
-                              { id: 1, name: 'Banco Pichincha', category: 'Entidad Financiera', description: 'Créditos hipotecarios preferenciales y precalificación inmediata.', website: 'https://www.pichincha.com', logo: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80' },
-                              { id: 2, name: 'Notaría Primera del Cantón', category: 'Seguridad Notarial', description: 'Asesoría jurídica integral, revisión de títulos y solemnización de escrituras.', website: '#', logo: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=600&q=80' },
-                              { id: 3, name: 'Seguros Equinoccial', category: 'Pólizas & Aseguradora', description: 'Pólizas de seguro contra incendios, sismos y protección patrimonial.', website: 'https://www.segurosequinoccial.com', logo: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80' },
-                              { id: 4, name: 'Biess - Banco del IESS', category: 'Crédito Hipotecario Público', description: 'Canalización directa de préstamos hipotecarios para afiliados y jubilados.', website: 'https://www.biess.fin.ec', logo: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&w=600&q=80' },
-                            ]);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer transition-all"
-                        >
-                          Cargar Aliados de Ejemplo para Editar
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {form.details.commercial_allies.map((ally: any, idx: number) => (
-                          <div key={ally.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-black uppercase text-slate-400">Aliado #{idx + 1}</span>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  disabled={idx === 0}
-                                  onClick={() => {
-                                    if (idx === 0) return;
-                                    const next = [...form.details.commercial_allies];
-                                    const [moved] = next.splice(idx, 1);
-                                    next.splice(idx - 1, 0, moved);
-                                    updateDetailField('commercial_allies', next);
-                                  }}
-                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
-                                  title="Subir"
-                                >
-                                  <ArrowUp className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={idx === form.details.commercial_allies.length - 1}
-                                  onClick={() => {
-                                    if (idx === form.details.commercial_allies.length - 1) return;
-                                    const next = [...form.details.commercial_allies];
-                                    const [moved] = next.splice(idx, 1);
-                                    next.splice(idx + 1, 0, moved);
-                                    updateDetailField('commercial_allies', next);
-                                  }}
-                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
-                                  title="Bajar"
-                                >
-                                  <ArrowDown className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const list = form.details.commercial_allies.filter((_: any, i: number) => i !== idx);
-                                    updateDetailField('commercial_allies', list);
-                                  }}
-                                  className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
-                                  title="Eliminar aliado"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Nombre:</label>
-                                <input
-                                  type="text"
-                                  value={ally.name || ''}
-                                  onChange={(e) => {
-                                    const list = [...form.details.commercial_allies];
-                                    list[idx] = { ...list[idx], name: e.target.value };
-                                    updateDetailField('commercial_allies', list);
-                                  }}
-                                  placeholder="Ej: Banco Pichincha"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Categoría:</label>
-                                <input
-                                  type="text"
-                                  value={ally.category || ''}
-                                  onChange={(e) => {
-                                    const list = [...form.details.commercial_allies];
-                                    list[idx] = { ...list[idx], category: e.target.value };
-                                    updateDetailField('commercial_allies', list);
-                                  }}
-                                  placeholder="Ej: Entidad Financiera / Notaría"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Descripción de la Alianza:</label>
-                              <input
-                                type="text"
-                                value={ally.description || ''}
-                                onChange={(e) => {
-                                  const list = [...form.details.commercial_allies];
-                                  list[idx] = { ...list[idx], description: e.target.value };
-                                  updateDetailField('commercial_allies', list);
-                                }}
-                                placeholder="Ej: Créditos hipotecarios preferenciales..."
-                                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Sitio Web (Opcional):</label>
-                              <input
-                                type="text"
-                                value={ally.website || ''}
-                                onChange={(e) => {
-                                  const list = [...form.details.commercial_allies];
-                                  list[idx] = { ...list[idx], website: e.target.value };
-                                  updateDetailField('commercial_allies', list);
-                                }}
-                                placeholder="https://..."
-                                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Logo / Imagen del Aliado (Banner o Logo):</label>
-                              <MediaPicker
-                                value={ally.logo || ally.image_url || ally.image || ''}
-                                onChange={(selected) => {
-                                  const list = [...form.details.commercial_allies];
-                                  list[idx] = {
-                                    ...list[idx],
-                                    logo: selected?.url || '',
-                                    image_url: selected?.url || '',
-                                    image: selected?.url || '',
-                                  };
-                                  updateDetailField('commercial_allies', list);
-                                }}
-                                label="Seleccionar o Subir Imagen/Logo del Aliado"
-                              />
-                            </div>
+                    {!collapsedAboutSections.allies && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between flex-wrap gap-2 pb-2">
+                          <p className="text-xs text-slate-500 m-0">
+                            En el frontend se listarán como tarjetas limpias sin marco blanco forzado según el diseño acordado.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = Array.isArray(form.details?.commercial_allies) ? [...form.details.commercial_allies] : [];
+                              list.push({
+                                id: Date.now(),
+                                name: '',
+                                category: 'Entidad Financiera',
+                                description: '',
+                                website: '',
+                              });
+                              updateDetailField('commercial_allies', list);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Agregar Aliado</span>
+                          </button>
+                        </div>
+
+                        {/* Campos de Título y Subtítulo de la Sección de Aliados */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Título de la Sección de Asociados:
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.allies_title ?? 'Nuestros Aliados Comerciales'}
+                              onChange={(e) => updateDetailField('allies_title', e.target.value)}
+                              placeholder="Ej: Asociados a / Aliados Comerciales"
+                              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold focus:border-blue-500 outline-none"
+                            />
+                            <span className="text-[10px] text-slate-400 mt-1 block">
+                              * Este título adoptará automáticamente el color primario configurado.
+                            </span>
                           </div>
-                        ))}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Subtítulo de la Sección de Asociados (Opcional):
+                            </label>
+                            <input
+                              type="text"
+                              value={form.details?.allies_subtitle ?? ''}
+                              onChange={(e) => updateDetailField('allies_subtitle', e.target.value)}
+                              placeholder="Dejar vacío si no deseas mostrar subtítulo"
+                              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:border-blue-500 outline-none"
+                            />
+                            <span className="text-[10px] text-slate-400 mt-1 block">
+                              * Si está vacío, no se renderizará ningún subtítulo ni espacio extra en el frontend.
+                            </span>
+                          </div>
+                        </div>
+
+                        {(!form.details?.commercial_allies || form.details.commercial_allies.length === 0) ? (
+                          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
+                            <p className="text-xs text-slate-500 m-0">
+                              No has agregado aliados comerciales personalizados. El portal muestra los 6 aliados predefinidos del sistema.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateDetailField('commercial_allies', [
+                                  { id: 1, name: 'Banco Pichincha', category: 'Entidad Financiera', description: 'Créditos hipotecarios preferenciales y precalificación inmediata.', website: 'https://www.pichincha.com', logo: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80' },
+                                  { id: 2, name: 'Notaría Primera del Cantón', category: 'Seguridad Notarial', description: 'Asesoría jurídica integral, revisión de títulos y solemnización de escrituras.', website: '#', logo: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=600&q=80' },
+                                  { id: 3, name: 'Seguros Equinoccial', category: 'Pólizas & Aseguradora', description: 'Pólizas de seguro contra incendios, sismos y protección patrimonial.', website: 'https://www.segurosequinoccial.com', logo: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80' },
+                                  { id: 4, name: 'Biess - Banco del IESS', category: 'Crédito Hipotecario Público', description: 'Canalización directa de préstamos hipotecarios para afiliados y jubilados.', website: 'https://www.biess.fin.ec', logo: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&w=600&q=80' },
+                                ]);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer transition-all"
+                            >
+                              Cargar Aliados de Ejemplo para Editar
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {form.details.commercial_allies.map((ally: any, idx: number) => (
+                              <div key={ally.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[10px] font-black uppercase text-slate-400">Aliado #{idx + 1}</span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={idx === 0}
+                                      onClick={() => {
+                                        if (idx === 0) return;
+                                        const next = [...form.details.commercial_allies];
+                                        const [moved] = next.splice(idx, 1);
+                                        next.splice(idx - 1, 0, moved);
+                                        updateDetailField('commercial_allies', next);
+                                      }}
+                                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                      title="Subir"
+                                    >
+                                      <ArrowUp className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={idx === form.details.commercial_allies.length - 1}
+                                      onClick={() => {
+                                        if (idx === form.details.commercial_allies.length - 1) return;
+                                        const next = [...form.details.commercial_allies];
+                                        const [moved] = next.splice(idx, 1);
+                                        next.splice(idx + 1, 0, moved);
+                                        updateDetailField('commercial_allies', next);
+                                      }}
+                                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                      title="Bajar"
+                                    >
+                                      <ArrowDown className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const list = form.details.commercial_allies.filter((_: any, i: number) => i !== idx);
+                                        updateDetailField('commercial_allies', list);
+                                      }}
+                                      className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                      title="Eliminar aliado"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Nombre:</label>
+                                    <input
+                                      type="text"
+                                      value={ally.name || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.commercial_allies];
+                                        list[idx] = { ...list[idx], name: e.target.value };
+                                        updateDetailField('commercial_allies', list);
+                                      }}
+                                      placeholder="Ej: Banco Pichincha"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Categoría:</label>
+                                    <input
+                                      type="text"
+                                      value={ally.category || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.commercial_allies];
+                                        list[idx] = { ...list[idx], category: e.target.value };
+                                        updateDetailField('commercial_allies', list);
+                                      }}
+                                      placeholder="Ej: Entidad Financiera / Notaría"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Descripción de la Alianza:</label>
+                                  <input
+                                    type="text"
+                                    value={ally.description || ''}
+                                    onChange={(e) => {
+                                      const list = [...form.details.commercial_allies];
+                                      list[idx] = { ...list[idx], description: e.target.value };
+                                      updateDetailField('commercial_allies', list);
+                                    }}
+                                    placeholder="Ej: Créditos hipotecarios preferenciales..."
+                                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Sitio Web (Opcional):</label>
+                                  <input
+                                    type="text"
+                                    value={ally.website || ''}
+                                    onChange={(e) => {
+                                      const list = [...form.details.commercial_allies];
+                                      list[idx] = { ...list[idx], website: e.target.value };
+                                      updateDetailField('commercial_allies', list);
+                                    }}
+                                    placeholder="https://..."
+                                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Logo / Imagen del Aliado (Banner o Logo):</label>
+                                  <MediaPicker
+                                    value={ally.logo || ally.image_url || ally.image || ''}
+                                    onChange={(selected) => {
+                                      const list = [...form.details.commercial_allies];
+                                      list[idx] = {
+                                        ...list[idx],
+                                        logo: selected?.url || '',
+                                        image_url: selected?.url || '',
+                                        image: selected?.url || '',
+                                      };
+                                      updateDetailField('commercial_allies', list);
+                                    }}
+                                    label="Seleccionar o Subir Imagen/Logo del Aliado"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
 
                   {/* 6. Certificaciones y Acreditaciones */}
-                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
-                        <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />
-                        Certificaciones y Acreditaciones de la Agencia
-                      </h4>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const list = Array.isArray(form.details?.certifications) ? [...form.details.certifications] : [];
-                          list.push({
-                            id: Date.now(),
-                            title: '',
-                            entity: '',
-                            code: '',
-                            year: 'Vigente',
-                            description: '',
-                          });
-                          updateDetailField('certifications', list);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>Agregar Certificado</span>
-                      </button>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleAboutSectionCollapse('certifications')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
+                          <BadgeCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Certificaciones y Acreditaciones</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                              {form.details?.certifications?.length || 0} certificados
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Licencias oficiales, avales y membresías gremiales.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                          {collapsedAboutSections.certifications ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </div>
+                      </div>
                     </div>
 
-                    {(!form.details?.certifications || form.details.certifications.length === 0) ? (
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
-                        <p className="text-xs text-slate-500 m-0">
-                          No has agregado certificaciones personalizadas. El portal muestra las acreditaciones predefinidas del sistema.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            updateDetailField('certifications', [
-                              { id: 1, title: 'Licencia Profesional de Corretaje Inmobiliario', entity: 'Ministerio de Desarrollo Urbano y Vivienda', code: 'MIDUVI-LIC-09412', year: 'Vigente', description: 'Acreditación oficial que certifica el ejercicio legal y ético de la intermediación de bienes raíces.', image_url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80' },
-                              { id: 2, title: 'Miembro Activo ACBIR', entity: 'Asociación de Corredores de Bienes Raíces', code: 'ACBIR-SOCIO-REG-884', year: 'Certificado Anual', description: 'Garantía de apego a las normas gremiales de transparencia y honestidad.', image_url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80' },
-                              { id: 3, title: 'Acreditación MLS Internacional', entity: 'Multiple Listing Service Network', code: 'MLS-ID-EC-22910', year: 'Acreditado', description: 'Acceso a la mayor red internacional de compradores calificados.', image_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80' },
-                            ]);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer transition-all"
-                        >
-                          Cargar Certificaciones de Ejemplo para Editar
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {form.details.certifications.map((cert: any, idx: number) => (
-                          <div key={cert.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-black uppercase text-slate-400">Certificación #{idx + 1}</span>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  disabled={idx === 0}
-                                  onClick={() => {
-                                    if (idx === 0) return;
-                                    const next = [...form.details.certifications];
-                                    const [moved] = next.splice(idx, 1);
-                                    next.splice(idx - 1, 0, moved);
-                                    updateDetailField('certifications', next);
-                                  }}
-                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
-                                  title="Subir"
-                                >
-                                  <ArrowUp className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={idx === form.details.certifications.length - 1}
-                                  onClick={() => {
-                                    if (idx === form.details.certifications.length - 1) return;
-                                    const next = [...form.details.certifications];
-                                    const [moved] = next.splice(idx, 1);
-                                    next.splice(idx + 1, 0, moved);
-                                    updateDetailField('certifications', next);
-                                  }}
-                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
-                                  title="Bajar"
-                                >
-                                  <ArrowDown className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const list = form.details.certifications.filter((_: any, i: number) => i !== idx);
-                                    updateDetailField('certifications', list);
-                                  }}
-                                  className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
-                                  title="Eliminar certificación"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Título del Certificado:</label>
-                                <input
-                                  type="text"
-                                  value={cert.title || ''}
-                                  onChange={(e) => {
-                                    const list = [...form.details.certifications];
-                                    list[idx] = { ...list[idx], title: e.target.value };
-                                    updateDetailField('certifications', list);
-                                  }}
-                                  placeholder="Ej: Licencia Profesional de Corretaje"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Entidad Emisora:</label>
-                                <input
-                                  type="text"
-                                  value={cert.entity || ''}
-                                  onChange={(e) => {
-                                    const list = [...form.details.certifications];
-                                    list[idx] = { ...list[idx], entity: e.target.value };
-                                    updateDetailField('certifications', list);
-                                  }}
-                                  placeholder="Ej: ACBIR / Ministerio de Vivienda"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
-                                />
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Nº de Registro / Código:</label>
-                                <input
-                                  type="text"
-                                  value={cert.code || ''}
-                                  onChange={(e) => {
-                                    const list = [...form.details.certifications];
-                                    list[idx] = { ...list[idx], code: e.target.value };
-                                    updateDetailField('certifications', list);
-                                  }}
-                                  placeholder="Ej: REG-1048-INMO"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-mono"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Vigencia / Año:</label>
-                                <input
-                                  type="text"
-                                  value={cert.year || ''}
-                                  onChange={(e) => {
-                                    const list = [...form.details.certifications];
-                                    list[idx] = { ...list[idx], year: e.target.value };
-                                    updateDetailField('certifications', list);
-                                  }}
-                                  placeholder="Ej: Vigente 2025 - 2026"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Descripción Breve:</label>
-                              <input
-                                type="text"
-                                value={cert.description || ''}
-                                onChange={(e) => {
-                                  const list = [...form.details.certifications];
-                                  list[idx] = { ...list[idx], description: e.target.value };
-                                  updateDetailField('certifications', list);
-                                }}
-                                placeholder="Ej: Acreditación oficial que certifica el ejercicio legal..."
-                                className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Foto / Insignia de la Certificación:</label>
-                              <MediaPicker
-                                value={cert.image_url || cert.image || cert.badge_url || cert.logo || ''}
-                                onChange={(selected) => {
-                                  const list = [...form.details.certifications];
-                                  list[idx] = {
-                                    ...list[idx],
-                                    image_url: selected?.url || '',
-                                    image: selected?.url || '',
-                                    badge_url: selected?.url || '',
-                                  };
-                                  updateDetailField('certifications', list);
-                                }}
-                                label="Seleccionar o Subir Imagen de la Certificación"
-                              />
-                            </div>
+                    {!collapsedAboutSections.certifications && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between flex-wrap gap-2 pb-2">
+                          <p className="text-xs text-slate-500 m-0">
+                            Certificaciones jurídicas y licencias profesionales otorgadas a la agencia.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const list = Array.isArray(form.details?.certifications) ? [...form.details.certifications] : [];
+                              list.push({
+                                id: Date.now(),
+                                title: '',
+                                entity: '',
+                                code: '',
+                                year: 'Vigente',
+                                description: '',
+                              });
+                              updateDetailField('certifications', list);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Agregar Certificado</span>
+                          </button>
+                        </div>
+
+                        {(!form.details?.certifications || form.details.certifications.length === 0) ? (
+                          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-2">
+                            <p className="text-xs text-slate-500 m-0">
+                              No has agregado certificaciones personalizadas. El portal muestra las acreditaciones predefinidas del sistema.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateDetailField('certifications', [
+                                  { id: 1, title: 'Licencia Profesional de Corretaje Inmobiliario', entity: 'Ministerio de Desarrollo Urbano y Vivienda', code: 'MIDUVI-LIC-09412', year: 'Vigente', description: 'Acreditación oficial que certifica el ejercicio legal y ético de la intermediación de bienes raíces.', image_url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80' },
+                                  { id: 2, title: 'Miembro Activo ACBIR', entity: 'Asociación de Corredores de Bienes Raíces', code: 'ACBIR-SOCIO-REG-884', year: 'Certificado Anual', description: 'Garantía de apego a las normas gremiales de transparencia y honestidad.', image_url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80' },
+                                  { id: 3, title: 'Acreditación MLS Internacional', entity: 'Multiple Listing Service Network', code: 'MLS-ID-EC-22910', year: 'Acreditado', description: 'Acceso a la mayor red internacional de compradores calificados.', image_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80' },
+                                ]);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs cursor-pointer transition-all"
+                            >
+                              Cargar Certificaciones de Ejemplo para Editar
+                            </button>
                           </div>
-                        ))}
+                        ) : (
+                          <div className="space-y-3">
+                            {form.details.certifications.map((cert: any, idx: number) => (
+                              <div key={cert.id || idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[10px] font-black uppercase text-slate-400">Certificación #{idx + 1}</span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={idx === 0}
+                                      onClick={() => {
+                                        if (idx === 0) return;
+                                        const next = [...form.details.certifications];
+                                        const [moved] = next.splice(idx, 1);
+                                        next.splice(idx - 1, 0, moved);
+                                        updateDetailField('certifications', next);
+                                      }}
+                                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                      title="Subir"
+                                    >
+                                      <ArrowUp className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={idx === form.details.certifications.length - 1}
+                                      onClick={() => {
+                                        if (idx === form.details.certifications.length - 1) return;
+                                        const next = [...form.details.certifications];
+                                        const [moved] = next.splice(idx, 1);
+                                        next.splice(idx + 1, 0, moved);
+                                        updateDetailField('certifications', next);
+                                      }}
+                                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                      title="Bajar"
+                                    >
+                                      <ArrowDown className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const list = form.details.certifications.filter((_: any, i: number) => i !== idx);
+                                        updateDetailField('certifications', list);
+                                      }}
+                                      className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                      title="Eliminar certificación"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Título del Certificado:</label>
+                                    <input
+                                      type="text"
+                                      value={cert.title || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.certifications];
+                                        list[idx] = { ...list[idx], title: e.target.value };
+                                        updateDetailField('certifications', list);
+                                      }}
+                                      placeholder="Ej: Licencia Profesional de Corretaje"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Entidad Emisora:</label>
+                                    <input
+                                      type="text"
+                                      value={cert.entity || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.certifications];
+                                        list[idx] = { ...list[idx], entity: e.target.value };
+                                        updateDetailField('certifications', list);
+                                      }}
+                                      placeholder="Ej: ACBIR / Ministerio de Vivienda"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Nº de Registro / Código:</label>
+                                    <input
+                                      type="text"
+                                      value={cert.code || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.certifications];
+                                        list[idx] = { ...list[idx], code: e.target.value };
+                                        updateDetailField('certifications', list);
+                                      }}
+                                      placeholder="Ej: REG-1048-INMO"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-mono"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Vigencia / Año:</label>
+                                    <input
+                                      type="text"
+                                      value={cert.year || ''}
+                                      onChange={(e) => {
+                                        const list = [...form.details.certifications];
+                                        list[idx] = { ...list[idx], year: e.target.value };
+                                        updateDetailField('certifications', list);
+                                      }}
+                                      placeholder="Ej: Vigente 2025 - 2026"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Descripción Breve:</label>
+                                  <input
+                                    type="text"
+                                    value={cert.description || ''}
+                                    onChange={(e) => {
+                                      const list = [...form.details.certifications];
+                                      list[idx] = { ...list[idx], description: e.target.value };
+                                      updateDetailField('certifications', list);
+                                    }}
+                                    placeholder="Ej: Acreditación oficial que certifica el ejercicio legal..."
+                                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Foto / Insignia de la Certificación:</label>
+                                  <MediaPicker
+                                    value={cert.image_url || cert.image || cert.badge_url || cert.logo || ''}
+                                    onChange={(selected) => {
+                                      const list = [...form.details.certifications];
+                                      list[idx] = {
+                                        ...list[idx],
+                                        image_url: selected?.url || '',
+                                        image: selected?.url || '',
+                                        badge_url: selected?.url || '',
+                                      };
+                                      updateDetailField('certifications', list);
+                                    }}
+                                    label="Seleccionar o Subir Imagen de la Certificación"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
 
-                  {/* 7. SECCIONES PERSONALIZADAS CON HTML PURO */}
-                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div>
-                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-1.5">
-                          <Code className="w-3.5 h-3.5 text-indigo-600" />
-                          Secciones Personalizadas con HTML Puro
-                        </h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Agrega bloques de código HTML, widgets embebidos, iframes de video o mapas personalizados directamente en Conócenos.
-                        </p>
+                  {/* 7. SECCIONES PERSONALIZADAS CON HTML PURO (INDEPENDIENTES) */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
+                      onClick={() => toggleAboutSectionCollapse('html_manager')}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600">
+                          <Code className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
+                            <span>Secciones Personalizadas con HTML Puro</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                              {form.details?.about_html_sections?.length || 0} independientes
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 m-0">
+                            Cada bloque HTML se posiciona de forma autónoma en el Organizador de arriba.
+                          </p>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const list = Array.isArray(form.details?.about_html_sections) ? [...form.details.about_html_sections] : [];
-                          list.push({
-                            id: Date.now(),
-                            title: '',
-                            subtitle: '',
-                            container: 'boxed',
-                            bg_color: '',
-                            html: '<div className="p-8 text-center bg-slate-50 rounded-3xl border border-slate-200">\n  <h3 className="text-xl font-bold text-slate-900 mb-2">Sección Personalizada</h3>\n  <p className="text-sm text-slate-600">Escribe aquí tu código HTML o incrusta contenido.</p>\n</div>',
-                          });
-                          updateDetailField('about_html_sections', list);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shadow-xs"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>Agregar Sección HTML</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                          {collapsedAboutSections.html_manager ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </div>
+                      </div>
                     </div>
 
-                    {(!form.details?.about_html_sections || form.details.about_html_sections.length === 0) ? (
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-1">
-                        <p className="text-xs text-slate-500 m-0">
-                          No tienes secciones de HTML puro configuradas. Puedes agregar una haciendo clic en el botón superior.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {form.details.about_html_sections.map((sec: any, idx: number) => (
-                          <div key={sec.id || idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 space-y-3">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">
-                                Sección HTML #{idx + 1}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  disabled={idx === 0}
-                                  onClick={() => {
-                                    if (idx === 0) return;
-                                    const next = [...form.details.about_html_sections];
-                                    const [moved] = next.splice(idx, 1);
-                                    next.splice(idx - 1, 0, moved);
-                                    updateDetailField('about_html_sections', next);
-                                  }}
-                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
-                                  title="Subir"
-                                >
-                                  <ArrowUp className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={idx === form.details.about_html_sections.length - 1}
-                                  onClick={() => {
-                                    if (idx === form.details.about_html_sections.length - 1) return;
-                                    const next = [...form.details.about_html_sections];
-                                    const [moved] = next.splice(idx, 1);
-                                    next.splice(idx + 1, 0, moved);
-                                    updateDetailField('about_html_sections', next);
-                                  }}
-                                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
-                                  title="Bajar"
-                                >
-                                  <ArrowDown className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const list = form.details.about_html_sections.filter((_: any, i: number) => i !== idx);
-                                    updateDetailField('about_html_sections', list);
-                                  }}
-                                  className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
-                                  title="Eliminar sección HTML"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
+                    {!collapsedAboutSections.html_manager && (
+                      <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between flex-wrap gap-2 pb-2">
+                          <p className="text-xs text-slate-500 m-0">
+                            Puedes crear tantas secciones HTML como necesites y ordenarlas individualmente entre las demás secciones de Conócenos.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newId = Date.now();
+                              const list = Array.isArray(form.details?.about_html_sections) ? [...form.details.about_html_sections] : [];
+                              list.push({
+                                id: newId,
+                                title: '',
+                                subtitle: '',
+                                container: 'boxed',
+                                bg_color: '',
+                                html: '<div className="p-8 text-center bg-slate-50 rounded-3xl border border-slate-200">\n  <h3 className="text-xl font-bold text-slate-900 mb-2">Sección Personalizada</h3>\n  <p className="text-sm text-slate-600">Escribe aquí tu código HTML o incrusta contenido.</p>\n</div>',
+                              });
+                              updateDetailField('about_html_sections', list);
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                                  Título de la Sección (Opcional):
-                                </label>
-                                <input
-                                  type="text"
-                                  value={sec.title || ''}
-                                  onChange={(e) => {
-                                    const list = [...form.details.about_html_sections];
-                                    list[idx] = { ...list[idx], title: e.target.value };
-                                    updateDetailField('about_html_sections', list);
-                                  }}
-                                  placeholder="Ej: Nuestra Infraestructura Tecnológica"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
-                                />
-                                <span className="text-[10px] text-slate-400 mt-0.5 block">
-                                  * Si se define, usará el color primario seleccionado.
-                                </span>
-                              </div>
+                              // Agregar al orden de secciones de inmediato
+                              const curOrder = Array.isArray(form.details?.about_sections_order) ? [...form.details.about_sections_order] : [];
+                              const newKey = `html_${newId}`;
+                              if (!curOrder.includes(newKey)) {
+                                curOrder.push(newKey);
+                                updateDetailField('about_sections_order', curOrder);
+                              }
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Agregar Sección HTML</span>
+                          </button>
+                        </div>
 
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                                  Subtítulo de la Sección (Opcional):
-                                </label>
-                                <input
-                                  type="text"
-                                  value={sec.subtitle || ''}
-                                  onChange={(e) => {
-                                    const list = [...form.details.about_html_sections];
-                                    list[idx] = { ...list[idx], subtitle: e.target.value };
-                                    updateDetailField('about_html_sections', list);
-                                  }}
-                                  placeholder="Dejar vacío si no deseas subtítulo"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                                  Tipo de Contenedor:
-                                </label>
-                                <select
-                                  value={sec.container || 'boxed'}
-                                  onChange={(e) => {
-                                    const list = [...form.details.about_html_sections];
-                                    list[idx] = { ...list[idx], container: e.target.value };
-                                    updateDetailField('about_html_sections', list);
-                                  }}
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
-                                >
-                                  <option value="boxed">Enmarcado (Centrado con márgenes - Container)</option>
-                                  <option value="full">Ancho Completo (Full Width)</option>
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                                  Color de Fondo (Opcional):
-                                </label>
-                                <input
-                                  type="text"
-                                  value={sec.bg_color || ''}
-                                  onChange={(e) => {
-                                    const list = [...form.details.about_html_sections];
-                                    list[idx] = { ...list[idx], bg_color: e.target.value };
-                                    updateDetailField('about_html_sections', list);
-                                  }}
-                                  placeholder="Ej: #f8fafc o transparente"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-mono"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase">
-                                  Código HTML Puro:
-                                </label>
-                                <span className="text-[10px] text-slate-400 font-mono">
-                                  Soporta divs, imágenes, iframes, estilos inline
-                                </span>
-                              </div>
-                              <textarea
-                                rows={6}
-                                value={sec.html || ''}
-                                onChange={(e) => {
-                                  const list = [...form.details.about_html_sections];
-                                  list[idx] = { ...list[idx], html: e.target.value };
-                                  updateDetailField('about_html_sections', list);
-                                }}
-                                placeholder="<div>...</div>"
-                                className="w-full px-3 py-2 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none leading-relaxed"
-                              />
-                            </div>
+                        {(!form.details?.about_html_sections || form.details.about_html_sections.length === 0) ? (
+                          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-1">
+                            <p className="text-xs text-slate-500 m-0">
+                              No tienes secciones de HTML puro configuradas. Puedes agregar una con el botón superior.
+                            </p>
                           </div>
-                        ))}
+                        ) : (
+                          <div className="space-y-4">
+                            {form.details.about_html_sections.map((sec: any, idx: number) => {
+                              const isItemCollapsed = Boolean(collapsedHtmlItems[String(sec.id)]);
+                              return (
+                                <div key={sec.id || idx} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 overflow-hidden space-y-0 transition-all">
+                                  {/* Encabezado colapsable individual para cada sección HTML */}
+                                  <div
+                                    className="p-3 bg-slate-100/70 dark:bg-slate-900/60 flex items-center justify-between gap-2 cursor-pointer select-none"
+                                    onClick={() => toggleHtmlItemCollapse(sec.id)}
+                                  >
+                                    <div className="flex items-center gap-2 truncate">
+                                      <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">
+                                        Sección HTML #{idx + 1}
+                                      </span>
+                                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                                        {sec.title && sec.title.trim() !== '' ? sec.title : '(Sin título)'}
+                                      </span>
+                                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+                                        {sec.container === 'full' ? 'Ancho Completo' : 'Enmarcado'}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                      <button
+                                        type="button"
+                                        disabled={idx === 0}
+                                        onClick={() => {
+                                          if (idx === 0) return;
+                                          const next = [...form.details.about_html_sections];
+                                          const [moved] = next.splice(idx, 1);
+                                          next.splice(idx - 1, 0, moved);
+                                          updateDetailField('about_html_sections', next);
+                                        }}
+                                        className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                        title="Subir"
+                                      >
+                                        <ArrowUp className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={idx === form.details.about_html_sections.length - 1}
+                                        onClick={() => {
+                                          if (idx === form.details.about_html_sections.length - 1) return;
+                                          const next = [...form.details.about_html_sections];
+                                          const [moved] = next.splice(idx, 1);
+                                          next.splice(idx + 1, 0, moved);
+                                          updateDetailField('about_html_sections', next);
+                                        }}
+                                        className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                                        title="Bajar"
+                                      >
+                                        <ArrowDown className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const list = form.details.about_html_sections.filter((_: any, i: number) => i !== idx);
+                                          updateDetailField('about_html_sections', list);
+
+                                          // Limpiar de about_sections_order y hidden
+                                          const targetKey = `html_${sec.id}`;
+                                          if (Array.isArray(form.details?.about_sections_order)) {
+                                            updateDetailField(
+                                              'about_sections_order',
+                                              form.details.about_sections_order.filter((k: string) => k !== targetKey && k !== String(sec.id))
+                                            );
+                                          }
+                                          if (Array.isArray(form.details?.about_sections_hidden)) {
+                                            updateDetailField(
+                                              'about_sections_hidden',
+                                              form.details.about_sections_hidden.filter((k: string) => k !== targetKey && k !== String(sec.id))
+                                            );
+                                          }
+                                        }}
+                                        className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                        title="Eliminar sección HTML"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <div className="w-6 h-6 flex items-center justify-center text-slate-400">
+                                        {isItemCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {!isItemCollapsed && (
+                                    <div className="p-3.5 space-y-3 border-t border-slate-200 dark:border-slate-800">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Título de la Sección (Opcional):
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={sec.title || ''}
+                                            onChange={(e) => {
+                                              const list = [...form.details.about_html_sections];
+                                              list[idx] = { ...list[idx], title: e.target.value };
+                                              updateDetailField('about_html_sections', list);
+                                            }}
+                                            placeholder="Ej: Nuestra Infraestructura Tecnológica"
+                                            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                          />
+                                          <span className="text-[10px] text-slate-400 mt-0.5 block">
+                                            * Si se define, usará el color primario seleccionado.
+                                          </span>
+                                        </div>
+
+                                        <div>
+                                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Subtítulo de la Sección (Opcional):
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={sec.subtitle || ''}
+                                            onChange={(e) => {
+                                              const list = [...form.details.about_html_sections];
+                                              list[idx] = { ...list[idx], subtitle: e.target.value };
+                                              updateDetailField('about_html_sections', list);
+                                            }}
+                                            placeholder="Dejar vacío si no deseas subtítulo"
+                                            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
+                                          />
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Tipo de Contenedor:
+                                          </label>
+                                          <select
+                                            value={sec.container || 'boxed'}
+                                            onChange={(e) => {
+                                              const list = [...form.details.about_html_sections];
+                                              list[idx] = { ...list[idx], container: e.target.value };
+                                              updateDetailField('about_html_sections', list);
+                                            }}
+                                            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-bold"
+                                          >
+                                            <option value="boxed">Enmarcado (Centrado con márgenes - Container)</option>
+                                            <option value="full">Ancho Completo (Full Width)</option>
+                                          </select>
+                                        </div>
+
+                                        <div>
+                                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                                            Color de Fondo (Opcional):
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={sec.bg_color || ''}
+                                            onChange={(e) => {
+                                              const list = [...form.details.about_html_sections];
+                                              list[idx] = { ...list[idx], bg_color: e.target.value };
+                                              updateDetailField('about_html_sections', list);
+                                            }}
+                                            placeholder="Ej: #f8fafc o transparente"
+                                            className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg font-mono"
+                                          />
+                                        </div>
+                                      </div>
+
+                                      <div>
+                                        <div className="flex items-center justify-between mb-1">
+                                          <label className="block text-[10px] font-bold text-slate-500 uppercase">
+                                            Código HTML Puro:
+                                          </label>
+                                          <span className="text-[10px] text-slate-400 font-mono">
+                                            Soporta divs, imágenes, iframes, estilos inline
+                                          </span>
+                                        </div>
+                                        <textarea
+                                          rows={6}
+                                          value={sec.html || ''}
+                                          onChange={(e) => {
+                                            const list = [...form.details.about_html_sections];
+                                            list[idx] = { ...list[idx], html: e.target.value };
+                                            updateDetailField('about_html_sections', list);
+                                          }}
+                                          placeholder="<div>...</div>"
+                                          className="w-full px-3 py-2 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none leading-relaxed"
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

@@ -265,8 +265,18 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
       }
     });
 
+    // Agregar cualquier sección HTML individual que aún no esté en el orden configurado
+    if (Array.isArray(details?.about_html_sections)) {
+      details.about_html_sections.forEach((sec: any) => {
+        const secKey = `html_${sec.id}`;
+        if (!combined.includes(secKey) && !combined.includes(String(sec.id))) {
+          combined.push(secKey);
+        }
+      });
+    }
+
     return combined.filter((key) => !hidden.includes(key));
-  }, [details?.about_sections_order, details?.about_sections_hidden]);
+  }, [details?.about_sections_order, details?.about_sections_hidden, details?.about_html_sections]);
 
   // Agentes
   const rawAgents: AgentItem[] = effectiveAgency.agents || [];
@@ -884,44 +894,53 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
     );
   };
 
-  // 7. Secciones con HTML Puro
-  const renderCustomHtmlSection = () => {
-    if (aboutHtmlSections.length === 0) return null;
+  // 7. Render de Sección HTML Individual (para ordenamiento independiente)
+  const renderSingleHtmlSection = (sec: any) => {
+    if (!sec || !sec.html) return null;
+    const customBgStyle = sec.bg_color ? { backgroundColor: sec.bg_color } : undefined;
+    const bgClass = !sec.bg_color
+      ? sec.bg === 'dark'
+        ? 'bg-slate-950 text-white'
+        : sec.bg === 'slate'
+        ? 'bg-slate-50 text-slate-900'
+        : 'bg-white text-slate-900'
+      : '';
+    const containerClass = sec.container === 'full' ? 'w-full px-4' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8';
 
     return (
-      <div key="custom_html" className="space-y-0">
-        {aboutHtmlSections.map((sec: any, idx: number) => {
-          const bgClass =
-            sec.bg === 'dark'
-              ? 'bg-slate-950 text-white'
-              : sec.bg === 'slate'
-              ? 'bg-slate-50 text-slate-900'
-              : 'bg-white text-slate-900';
-          const containerClass = sec.container === 'full' ? 'w-full px-4' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8';
+      <section
+        key={`single_html_${sec.id}`}
+        style={customBgStyle}
+        className={`py-16 lg:py-20 border-b border-slate-200/80 ${bgClass}`}
+      >
+        <div className={containerClass}>
+          {sec.title && sec.title.trim() !== '' && (
+            <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: primaryColor }}>
+                {sec.title}
+              </h2>
+              {sec.subtitle && sec.subtitle.trim() !== '' && (
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
+                  {sec.subtitle}
+                </p>
+              )}
+            </div>
+          )}
+          <div
+            className="w-full overflow-hidden"
+            dangerouslySetInnerHTML={{ __html: sec.html }}
+          />
+        </div>
+      </section>
+    );
+  };
 
-          return (
-            <section key={sec.id || idx} className={`py-16 lg:py-20 border-b border-slate-200/80 ${bgClass}`}>
-              <div className={containerClass}>
-                {sec.title && sec.title.trim() !== '' && (
-                  <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: primaryColor }}>
-                      {sec.title}
-                    </h2>
-                    {sec.subtitle && sec.subtitle.trim() !== '' && (
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
-                        {sec.subtitle}
-                      </p>
-                    )}
-                  </div>
-                )}
-                <div
-                  className="w-full overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: sec.html }}
-                />
-              </div>
-            </section>
-          );
-        })}
+  // Render para bloque agrupado fallback si estuviera presente 'custom_html'
+  const renderCustomHtmlSection = () => {
+    if (aboutHtmlSections.length === 0) return null;
+    return (
+      <div key="custom_html" className="space-y-0">
+        {aboutHtmlSections.map((sec: any) => renderSingleHtmlSection(sec))}
       </div>
     );
   };
@@ -972,8 +991,16 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
             return renderCertificationsSection();
           case 'custom_html':
             return renderCustomHtmlSection();
-          default:
+          default: {
+            // Sección HTML individual
+            const foundHtml = aboutHtmlSections.find(
+              (s: any) => `html_${s.id}` === sectionKey || String(s.id) === String(sectionKey)
+            );
+            if (foundHtml) {
+              return renderSingleHtmlSection(foundHtml);
+            }
             return null;
+          }
         }
       })}
 
