@@ -161,7 +161,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
     prof_advisory: false,
     legal_advisory: false,
     services_catalog: false,
-    clients_allies: false,
+    hero_cta: false,
     html_manager: false,
   });
 
@@ -179,7 +179,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       prof_advisory: collapsed,
       legal_advisory: collapsed,
       services_catalog: collapsed,
-      clients_allies: collapsed,
+      hero_cta: collapsed,
       html_manager: collapsed,
     });
   };
@@ -247,9 +247,13 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       about_sections_order: ['presentation', 'mission_vision', 'team', 'clients', 'allies', 'certifications'],
       about_sections_hidden: [],
       about_html_sections: [],
-      services_sections_order: ['commercial_marketing', 'professional_advisory', 'legal_advisory', 'clients', 'allies', 'services_catalog'],
+      services_sections_order: ['commercial_marketing', 'professional_advisory', 'legal_advisory', 'services_catalog'],
       services_sections_hidden: [],
       services_html_sections: [],
+      services_hero_title: 'Nuestros Servicios Inmobiliarios',
+      services_hero_subtitle: '',
+      services_cta_title: '¿Necesitas una solución inmobiliaria a la medida?',
+      services_cta_subtitle: 'Nuestro equipo de asesores legales, técnicos y comerciales está listo para orientarte.',
       services_comm_mkt_title: 'Aseroría comercial y marketing',
       services_comm_mkt_subtitle: 'Explora nuestros servicios',
       services_comm_mkt_desc: 'En Immobillis desarrollamos estrategias integrales para vender o alquilar tu propiedad en el menor tiempo y al mejor precio.',
@@ -263,10 +267,6 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       services_legal_title: 'Asesoria Juridica',
       services_legal_subtitle: 'Asesoria',
       services_legal_items: DEFAULT_SERVICES_LEGAL_ITEMS,
-      services_clients_title: 'Nuestro Clientes',
-      services_clients_subtitle: '',
-      services_allies_title: 'ASOCIADOS A',
-      services_allies_subtitle: '',
       services_catalog_title: 'Catálogo de Soluciones Integrales',
       services_catalog_subtitle: '',
       about_stat1_num: '15',
@@ -412,10 +412,14 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         about_sections_hidden: Array.isArray(parsedDetails?.about_sections_hidden) ? parsedDetails.about_sections_hidden : [],
         about_html_sections: Array.isArray(parsedDetails?.about_html_sections) ? parsedDetails.about_html_sections : [],
         services_sections_order: Array.isArray(parsedDetails?.services_sections_order)
-          ? parsedDetails.services_sections_order.filter((k: string) => k !== 'custom_html')
-          : ['commercial_marketing', 'professional_advisory', 'legal_advisory', 'clients', 'allies', 'services_catalog'],
+          ? parsedDetails.services_sections_order.filter((k: string) => k !== 'custom_html' && k !== 'clients' && k !== 'allies')
+          : ['commercial_marketing', 'professional_advisory', 'legal_advisory', 'services_catalog'],
         services_sections_hidden: Array.isArray(parsedDetails?.services_sections_hidden) ? parsedDetails.services_sections_hidden : [],
         services_html_sections: Array.isArray(parsedDetails?.services_html_sections) ? parsedDetails.services_html_sections : [],
+        services_hero_title: parsedDetails?.services_hero_title ?? 'Nuestros Servicios Inmobiliarios',
+        services_hero_subtitle: parsedDetails?.services_hero_subtitle ?? '',
+        services_cta_title: parsedDetails?.services_cta_title ?? '¿Necesitas una solución inmobiliaria a la medida?',
+        services_cta_subtitle: parsedDetails?.services_cta_subtitle ?? 'Nuestro equipo de asesores legales, técnicos y comerciales está listo para orientarte.',
         services_comm_mkt_title: parsedDetails?.services_comm_mkt_title ?? 'Aseroría comercial y marketing',
         services_comm_mkt_subtitle: parsedDetails?.services_comm_mkt_subtitle ?? 'Explora nuestros servicios',
         services_comm_mkt_desc: parsedDetails?.services_comm_mkt_desc ?? 'En Immobillis desarrollamos estrategias integrales para vender o alquilar tu propiedad en el menor tiempo y al mejor precio.',
@@ -429,10 +433,6 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         services_legal_title: parsedDetails?.services_legal_title ?? 'Asesoria Juridica',
         services_legal_subtitle: parsedDetails?.services_legal_subtitle ?? 'Asesoria',
         services_legal_items: Array.isArray(parsedDetails?.services_legal_items) ? parsedDetails.services_legal_items : DEFAULT_SERVICES_LEGAL_ITEMS,
-        services_clients_title: parsedDetails?.services_clients_title ?? 'Nuestro Clientes',
-        services_clients_subtitle: parsedDetails?.services_clients_subtitle ?? '',
-        services_allies_title: parsedDetails?.services_allies_title ?? 'ASOCIADOS A',
-        services_allies_subtitle: parsedDetails?.services_allies_subtitle ?? '',
         services_catalog_title: parsedDetails?.services_catalog_title ?? 'Catálogo de Soluciones Integrales',
         services_catalog_subtitle: parsedDetails?.services_catalog_subtitle ?? '',
         about_stat1_num: parsedDetails?.about_stat1_num || '15',
@@ -3036,7 +3036,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const baseKeys = ['commercial_marketing', 'professional_advisory', 'legal_advisory', 'clients', 'allies', 'services_catalog'];
+                            const baseKeys = ['commercial_marketing', 'professional_advisory', 'legal_advisory', 'services_catalog'];
                             const htmlKeys = (Array.isArray(form.details?.services_html_sections) ? form.details.services_html_sections : []).map(
                               (s: any) => `html_${s.id}`
                             );
@@ -3064,8 +3064,6 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                             { id: 'commercial_marketing', label: 'Asesoría Comercial y Marketing', icon: Briefcase, desc: 'Cajas de asesoría y marketing con viñetas' },
                             { id: 'professional_advisory', label: 'Asesoría Profesional (Acordeón)', icon: Compass, desc: 'Topografía, arquitectura, renders 3D' },
                             { id: 'legal_advisory', label: 'Asesoría Jurídica (Acordeón)', icon: Scale, desc: 'Servicios notariales, escrituras, poderes' },
-                            { id: 'clients', label: 'Nuestros Clientes (Carrusel)', icon: Sparkles, desc: 'Logos continuos sin fondo blanco' },
-                            { id: 'allies', label: 'Asociados Comerciales (ASOCIADOS A)', icon: Handshake, desc: 'Tarjetas con imagen, título y descripción' },
                             { id: 'services_catalog', label: 'Catálogo de Servicios Generales', icon: Layers, desc: 'Tarjetas de servicios adicionales con botón WhatsApp' },
                           ];
 
@@ -3084,7 +3082,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                             Array.isArray(form.details?.services_sections_order) && form.details.services_sections_order.length > 0
                               ? form.details.services_sections_order
                               : allSections.map((s) => s.id)
-                          ).filter((k: string) => k !== 'custom_html');
+                          ).filter((k: string) => k !== 'custom_html' && k !== 'clients' && k !== 'allies');
 
                           const fullOrder: string[] = [];
                           currentOrder.forEach((sId) => {
@@ -3644,100 +3642,94 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                     )}
                   </div>
 
-                  {/* 5. Nuestros Clientes y Asociados en Servicios */}
+                  {/* 5. Cabecera Hero y Banner CTA de Servicios */}
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs transition-all">
                     <div
                       className="p-4 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 transition-colors"
-                      onClick={() => toggleServicesSectionCollapse('clients_allies')}
+                      onClick={() => toggleServicesSectionCollapse('hero_cta')}
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
-                          <Handshake className="w-4 h-4" />
+                          <Sparkles className="w-4 h-4" />
                         </div>
                         <div>
                           <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase flex items-center gap-2">
-                            <span>Clientes y Asociados Comerciales (en Servicios)</span>
+                            <span>Cabecera Hero y Banner CTA de Servicios</span>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                              Carrusel + Tarjetas
+                              Hero + Banner CTA
                             </span>
                           </h4>
                           <p className="text-[11px] text-slate-500 m-0">
-                            Títulos personalizados para el carrusel de logos y la sección de asociados en <code>/services</code>.
+                            Títulos y descripciones del encabezado superior y del banner de contacto inferior en <code>/services</code>.
                           </p>
                         </div>
                       </div>
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                        {collapsedServicesSections.clients_allies ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        {collapsedServicesSections.hero_cta ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                       </div>
                     </div>
 
-                    {!collapsedServicesSections.clients_allies && (
+                    {!collapsedServicesSections.hero_cta && (
                       <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 space-y-2">
                             <h5 className="text-xs font-bold uppercase text-slate-700 dark:text-slate-200 m-0">
-                              Carrusel: Nuestros Clientes
+                              Cabecera Hero (Principal)
                             </h5>
                             <div>
                               <label className="block text-[11px] font-bold text-slate-500 mb-1">
-                                Título:
+                                Título Hero:
                               </label>
                               <input
                                 type="text"
-                                value={form.details?.services_clients_title ?? 'Nuestro Clientes'}
-                                onChange={(e) => updateDetailField('services_clients_title', e.target.value)}
-                                placeholder="Ej: Nuestro Clientes"
+                                value={form.details?.services_hero_title ?? 'Nuestros Servicios Inmobiliarios'}
+                                onChange={(e) => updateDetailField('services_hero_title', e.target.value)}
+                                placeholder="Ej: Nuestros Servicios Inmobiliarios"
                                 className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
                               />
                             </div>
                             <div>
                               <label className="block text-[11px] font-bold text-slate-500 mb-1">
-                                Subtítulo (opcional):
+                                Subtítulo Hero (opcional):
                               </label>
-                              <input
-                                type="text"
-                                value={form.details?.services_clients_subtitle ?? ''}
-                                onChange={(e) => updateDetailField('services_clients_subtitle', e.target.value)}
-                                placeholder="Dejar vacío si no deseas subtítulo"
+                              <textarea
+                                rows={2}
+                                value={form.details?.services_hero_subtitle ?? ''}
+                                onChange={(e) => updateDetailField('services_hero_subtitle', e.target.value)}
+                                placeholder="Dejar vacío para usar el texto por defecto con el nombre de tu agencia"
                                 className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
                               />
                             </div>
-                            <p className="text-[10px] text-slate-400 m-0">
-                              Reutiliza los {form.details?.our_clients?.length || 0} logos configurados en Conócenos.
-                            </p>
                           </div>
 
                           <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 space-y-2">
                             <h5 className="text-xs font-bold uppercase text-slate-700 dark:text-slate-200 m-0">
-                              Tarjetas: Asociados Comerciales
+                              Banner CTA (Llamado a la Acción Inferior)
                             </h5>
                             <div>
                               <label className="block text-[11px] font-bold text-slate-500 mb-1">
-                                Título:
+                                Título Banner CTA:
                               </label>
                               <input
                                 type="text"
-                                value={form.details?.services_allies_title ?? 'ASOCIADOS A'}
-                                onChange={(e) => updateDetailField('services_allies_title', e.target.value)}
-                                placeholder="Ej: ASOCIADOS A"
+                                value={form.details?.services_cta_title ?? '¿Necesitas una solución inmobiliaria a la medida?'}
+                                onChange={(e) => updateDetailField('services_cta_title', e.target.value)}
+                                placeholder="Ej: ¿Necesitas una solución inmobiliaria a la medida?"
                                 className="w-full px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border rounded-lg"
                               />
                             </div>
                             <div>
                               <label className="block text-[11px] font-bold text-slate-500 mb-1">
-                                Subtítulo (opcional):
+                                Subtítulo Banner CTA:
                               </label>
                               <input
                                 type="text"
-                                value={form.details?.services_allies_subtitle ?? ''}
-                                onChange={(e) => updateDetailField('services_allies_subtitle', e.target.value)}
-                                placeholder="Dejar vacío si no deseas subtítulo"
+                                value={form.details?.services_cta_subtitle ?? 'Nuestro equipo de asesores legales, técnicos y comerciales está listo para orientarte.'}
+                                onChange={(e) => updateDetailField('services_cta_subtitle', e.target.value)}
+                                placeholder="Ej: Nuestro equipo de asesores legales..."
                                 className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border rounded-lg"
                               />
                             </div>
-                            <p className="text-[10px] text-slate-400 m-0">
-                              Reutiliza los {form.details?.commercial_allies?.length || 0} aliados comerciales configurados.
-                            </p>
                           </div>
                         </div>
                       </div>

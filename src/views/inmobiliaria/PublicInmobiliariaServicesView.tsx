@@ -20,13 +20,7 @@ import {
   Compass,
   Layers,
   FileText,
-  Handshake,
 } from 'lucide-react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Autoplay, Pagination } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 
 import {
   getCachedAgencyConfig,
@@ -105,37 +99,11 @@ const IMMOBILLIS_LEGAL_ITEMS: AdvisoryAccordionItem[] = [
   },
 ];
 
-const IMMOBILLIS_ALLIES_DEFAULT = [
-  {
-    id: 1,
-    name: 'CAINEC',
-    image_url: 'https://old.immobillis.com/public/assets/images/asociates/CAINEC.jpg',
-    description:
-      'Organismo de presencia nacional que INTEGRA a Profesionales, Empresas y Organizaciones afines al sector en una sola ESTRUCTURA, compartiendo la misma visión y el propósito de promover el desarrollo, profesionalización y crecimiento de la INDUSTRIA INMOBILIARIA del Ecuador.',
-  },
-  {
-    id: 2,
-    name: 'Cámara de comercio de Quevedo',
-    image_url: 'https://old.immobillis.com/public/assets/images/asociates/camara.png',
-    description:
-      'La Cámara de Comercio de Quevedo fue fundada el 15 de Enero de 1959, somos un gremio empresarial y de emprendedores.',
-  },
-  {
-    id: 3,
-    name: 'Acbir Guayas',
-    image_url: 'https://old.immobillis.com/public/assets/images/asociates/Acbir.jpg',
-    description:
-      'Institución que, autorizada por las leyes ecuatorianas, agrupa a los Corredores Profesionales de Bienes Raíces de la provincia del Guayas para desarrollar el mercado inmobiliario dentro de un marco ético, altamente profesional con espíritu de investigación e innovación tecnológica.',
-  },
-];
-
 export const DEFAULT_SERVICES_SECTIONS_ORDER = [
   'commercial_marketing',
   'professional_advisory',
   'legal_advisory',
   'services_catalog',
-  'clients',
-  'allies',
 ];
 
 export const PublicInmobiliariaServicesView: React.FC = () => {
@@ -202,25 +170,27 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
       : 'Estrategias integrales y multidisciplinarias para comercializar o gestionar tus inmuebles con la mayor rentabilidad.');
 
   const commBox1Title = details?.services_comm_box1_title || 'Asesoría Comercial';
-  const commBox1Items: string[] = Array.isArray(details?.services_comm_box1_items) && details.services_comm_box1_items.length > 0
-    ? details.services_comm_box1_items
-    : [
-        'Análisis de mercado (ACM) y avalúo profesional.',
-        'Fijación de precio óptimo según oferta y demanda.',
-        'Definición del cliente objetivo.',
-        'Gestión de prospectos, visitas y negociación.',
-        'Acompañamiento hasta el cierre.',
-      ];
+  const commBox1Items: string[] =
+    Array.isArray(details?.services_comm_box1_items) && details.services_comm_box1_items.length > 0
+      ? details.services_comm_box1_items
+      : [
+          'Análisis de mercado (ACM) y avalúo profesional.',
+          'Fijación de precio óptimo según oferta y demanda.',
+          'Definición del cliente objetivo.',
+          'Gestión de prospectos, visitas y negociación.',
+          'Acompañamiento hasta el cierre.',
+        ];
 
   const commBox2Title = details?.services_comm_box2_title || 'Marketing Inmobiliario';
-  const commBox2Items: string[] = Array.isArray(details?.services_comm_box2_items) && details.services_comm_box2_items.length > 0
-    ? details.services_comm_box2_items
-    : [
-        'Fotografía y video profesional.',
-        'Publicación en portales y redes sociales.',
-        'Campañas digitales segmentadas.',
-        'Difusión en nuestra red de clientes e inversionistas.',
-      ];
+  const commBox2Items: string[] =
+    Array.isArray(details?.services_comm_box2_items) && details.services_comm_box2_items.length > 0
+      ? details.services_comm_box2_items
+      : [
+          'Fotografía y video profesional.',
+          'Publicación en portales y redes sociales.',
+          'Campañas digitales segmentadas.',
+          'Difusión en nuestra red de clientes e inversionistas.',
+        ];
 
   // 2. Asesoría Profesional (Acordeón)
   const profTitle =
@@ -235,8 +205,8 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
     if (Array.isArray(details?.services_prof_items) && details.services_prof_items.length > 0) {
       return details.services_prof_items;
     }
-    return isImmobillis ? IMMOBILLIS_PROFESSIONAL_ITEMS : IMMOBILLIS_PROFESSIONAL_ITEMS;
-  }, [details?.services_prof_items, isImmobillis]);
+    return IMMOBILLIS_PROFESSIONAL_ITEMS;
+  }, [details?.services_prof_items]);
 
   // 3. Asesoría Jurídica (Acordeón)
   const legalTitle =
@@ -251,46 +221,10 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
     if (Array.isArray(details?.services_legal_items) && details.services_legal_items.length > 0) {
       return details.services_legal_items;
     }
-    return isImmobillis ? IMMOBILLIS_LEGAL_ITEMS : IMMOBILLIS_LEGAL_ITEMS;
-  }, [details?.services_legal_items, isImmobillis]);
+    return IMMOBILLIS_LEGAL_ITEMS;
+  }, [details?.services_legal_items]);
 
-  // 4. Nuestros Clientes (Carrusel)
-  const clientsTitle = details?.services_clients_title || details?.clients_title || 'Nuestro Clientes';
-  const clientsSubtitle =
-    typeof details?.services_clients_subtitle === 'string'
-      ? details.services_clients_subtitle.trim()
-      : '';
-  const ourClients: any[] = useMemo(() => {
-    if (Array.isArray(details?.our_clients) && details.our_clients.length > 0) {
-      return details.our_clients;
-    }
-    if (isImmobillis) {
-      return [
-        { id: 1, name: 'Grupo Manobanda', logo: 'https://old.immobillis.com/public/assets/images/aliados/Imagen1.png' },
-        { id: 2, name: 'Inmoconstrucción expo', logo: 'https://old.immobillis.com/public/assets/images/aliados/Imagen2.png' },
-        { id: 3, name: 'Banco Pichincha', logo: 'https://old.immobillis.com/public/assets/images/aliados/Imagen3.png' },
-        { id: 4, name: 'Tesalia cbc', logo: 'https://old.immobillis.com/public/assets/images/aliados/Imagen4.png' },
-        { id: 5, name: 'Aliado 5', logo: 'https://old.immobillis.com/public/assets/images/aliados/Imagen5.png' },
-        { id: 6, name: 'Aliado 6', logo: 'https://old.immobillis.com/public/assets/images/aliados/Imagen6.png' },
-      ];
-    }
-    return [];
-  }, [details?.our_clients, isImmobillis]);
-
-  // 5. Asociados Comerciales (Aliados)
-  const alliesTitle = details?.services_allies_title || (isImmobillis ? 'ASOCIADOS A' : details?.allies_title || 'Nuestros Aliados Comerciales');
-  const alliesSubtitle =
-    typeof details?.services_allies_subtitle === 'string'
-      ? details.services_allies_subtitle.trim()
-      : '';
-  const alliesList: any[] = useMemo(() => {
-    if (Array.isArray(details?.commercial_allies) && details.commercial_allies.length > 0) {
-      return details.commercial_allies;
-    }
-    return isImmobillis ? IMMOBILLIS_ALLIES_DEFAULT : IMMOBILLIS_ALLIES_DEFAULT;
-  }, [details?.commercial_allies, isImmobillis]);
-
-  // 6. Catálogo de Servicios Generales
+  // 4. Catálogo de Servicios Generales
   const servicesCatalogTitle = details?.services_catalog_title || 'Catálogo de Soluciones Integrales';
   const servicesCatalogSubtitle =
     typeof details?.services_catalog_subtitle === 'string'
@@ -303,7 +237,7 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
     return [];
   }, [details?.services]);
 
-  // 7. Secciones HTML Puro para Servicios
+  // 5. Secciones HTML Puro para Servicios
   const servicesHtmlSections = useMemo(() => {
     if (Array.isArray(details?.services_html_sections)) {
       return details.services_html_sections.filter(
@@ -313,7 +247,7 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
     return [];
   }, [details?.services_html_sections]);
 
-  // 8. Orden y visibilidad de secciones
+  // 6. Orden y visibilidad de secciones (Excluyendo explícitamente clientes y aliados)
   const sectionsOrder = useMemo(() => {
     const rawOrder: string[] =
       Array.isArray(details?.services_sections_order) && details.services_sections_order.length > 0
@@ -323,12 +257,10 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
       ? details.services_sections_hidden
       : [];
 
-    const hasHtmlSections =
-      Array.isArray(details?.services_html_sections) && details.services_html_sections.length > 0;
-    const filteredOrder = rawOrder.filter((key) => {
-      if (key === 'custom_html' && hasHtmlSections) return false;
-      return true;
-    });
+    // Filtrar estrictamente claves eliminadas: 'clients', 'allies', 'custom_html'
+    const filteredOrder = rawOrder.filter(
+      (key) => key !== 'custom_html' && key !== 'clients' && key !== 'allies'
+    );
 
     const combined: string[] = [];
     filteredOrder.forEach((key) => {
@@ -338,7 +270,7 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
     });
 
     DEFAULT_SERVICES_SECTIONS_ORDER.forEach((key) => {
-      if (key !== 'custom_html' && !combined.includes(key)) {
+      if (!combined.includes(key)) {
         combined.push(key);
       }
     });
@@ -487,7 +419,7 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
     );
   };
 
-  // 2. Render Asesoría Profesional (Acordeón idéntico a old.immobillis.com)
+  // 2. Render Asesoría Profesional (Acordeón interactivo)
   const renderProfessionalAdvisorySection = () => {
     if (profItems.length === 0) return null;
     return (
@@ -510,7 +442,6 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
           <div className="space-y-4">
             {profItems.map((item, idx) => {
               const isOpen = openProfItem === item.id;
-              // Alternar posición de imagen: par (izq), impar (der)
               const imageOnRight = idx % 2 === 1;
 
               return (
@@ -575,7 +506,7 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
     );
   };
 
-  // 3. Render Asesoría Jurídica (Acordeón idéntico a old.immobillis.com)
+  // 3. Render Asesoría Jurídica (Acordeón interactivo)
   const renderLegalAdvisorySection = () => {
     if (legalItems.length === 0) return null;
     return (
@@ -662,128 +593,7 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
     );
   };
 
-  // 4. Render Nuestros Clientes (Carrusel idéntico al de Conócenos: sin fondo ni bordes)
-  const renderClientsSection = () => {
-    if (ourClients.length === 0) return null;
-
-    const carouselClients =
-      ourClients.length > 0 && ourClients.length < 8
-        ? [...ourClients, ...ourClients, ...ourClients]
-        : ourClients;
-
-    return (
-      <section key="clients" className="py-14 lg:py-20 overflow-hidden bg-transparent border-b border-slate-200/80">
-        <div className="w-full max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-10 space-y-2">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight" style={{ color: primaryColor }}>
-              {clientsTitle}
-            </h2>
-            {clientsSubtitle && (
-              <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                {clientsSubtitle}
-              </p>
-            )}
-          </div>
-
-          <div className="relative w-full">
-            <Swiper
-              modules={[Autoplay]}
-              autoplay={{
-                delay: 2000,
-                disableOnInteraction: false,
-                pauseOnMouseEnter: true,
-              }}
-              loop={carouselClients.length >= 4}
-              speed={1000}
-              spaceBetween={30}
-              breakpoints={{
-                320: { slidesPerView: 2, spaceBetween: 20 },
-                640: { slidesPerView: 3, spaceBetween: 30 },
-                1024: { slidesPerView: 4, spaceBetween: 40 },
-                1280: { slidesPerView: 5, spaceBetween: 50 },
-              }}
-              className="w-full py-4"
-            >
-              {carouselClients.map((client: any, idx: number) => {
-                const logoSrc = client.logo || client.image_url || client.image;
-                if (!logoSrc) return null;
-                return (
-                  <SwiperSlide key={`${client.id || idx}-${idx}`} className="!flex items-center justify-center">
-                    <div className="h-36 sm:h-44 lg:h-52 w-full flex items-center justify-center px-4 py-2">
-                      <img
-                        src={logoSrc}
-                        alt={client.name || 'Cliente'}
-                        className="max-h-full max-w-full object-contain filter hover:scale-105 transition-all duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-                  </SwiperSlide>
-                );
-              })}
-            </Swiper>
-          </div>
-        </div>
-      </section>
-    );
-  };
-
-  // 5. Render Asociados Comerciales (ASOCIADOS A)
-  const renderAlliesSection = () => {
-    if (alliesList.length === 0) return null;
-    return (
-      <section key="allies" className="py-16 lg:py-20 bg-slate-50/70 border-b border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-12 space-y-2">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight" style={{ color: primaryColor }}>
-              {alliesTitle}
-            </h2>
-            {alliesSubtitle && (
-              <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                {alliesSubtitle}
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {alliesList.map((ally: any, idx: number) => {
-              const photo = ally.image_url || ally.photo || ally.logo || ally.image;
-              return (
-                <div
-                  key={ally.id || idx}
-                  className="rounded-3xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col"
-                >
-                  {photo && (
-                    <div className="relative aspect-[16/10] bg-slate-900 flex items-center justify-center overflow-hidden">
-                      <img
-                        src={photo}
-                        alt={ally.name || 'Asociado'}
-                        loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                      />
-                    </div>
-                  )}
-                  <div className="p-6 flex-1 flex flex-col justify-between space-y-3">
-                    <div>
-                      <h3 className="text-lg font-black text-slate-900 m-0 leading-snug">
-                        {ally.name}
-                      </h3>
-                      {ally.description && (
-                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2.5 mb-0 text-justify">
-                          {ally.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-    );
-  };
-
-  // 6. Render Catálogo de Servicios Generales
+  // 4. Render Catálogo de Servicios Generales
   const renderServicesCatalogSection = () => {
     if (servicesList.length === 0) return null;
     return (
@@ -865,17 +675,17 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-800 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="travel-agency-03-root min-h-screen flex flex-col bg-slate-50/50 text-slate-900 font-sans selection:bg-emerald-500 selection:text-white">
       <BrandingThemeInjector agency={effectiveAgency} />
       <TopbarSlider agency={effectiveAgency} />
       <Header2Style3 agency={effectiveAgency} />
 
-      {/* Hero Header */}
-      <section className="relative py-14 lg:py-20 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
+      {/* Hero Breadcrumb Header idéntico al resto de la app */}
+      <section className="relative py-12 md:py-16 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#00a884_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
 
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-          <nav className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-slate-300 mb-2 border border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+          <nav className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-slate-300 mb-4 border border-white/10">
             <Link href="/" className="hover:text-white transition-colors">
               Inicio
             </Link>
@@ -885,12 +695,16 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
             </span>
           </nav>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-            Nuestros Servicios
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white max-w-3xl mx-auto">
+            {details?.services_hero_title || 'Nuestros Servicios Inmobiliarios'}
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            En <span className="text-white font-bold">{agencyName}</span> ofrecemos soluciones integrales para que compres, vendas, rentes o desarrolles tus proyectos con total certeza técnica y respaldo jurídico.
+          <p className="mt-3 text-sm sm:text-base text-slate-300 max-w-2xl mx-auto font-medium">
+            {details?.services_hero_subtitle || (
+              <>
+                En <strong className="text-white">{agencyName}</strong> ofrecemos soluciones integrales para que compres, vendas, rentes o desarrolles tus proyectos con total certeza técnica y respaldo jurídico.
+              </>
+            )}
           </p>
         </div>
       </section>
@@ -904,10 +718,6 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
             return renderProfessionalAdvisorySection();
           case 'legal_advisory':
             return renderLegalAdvisorySection();
-          case 'clients':
-            return renderClientsSection();
-          case 'allies':
-            return renderAlliesSection();
           case 'services_catalog':
             return renderServicesCatalogSection();
           default: {
@@ -933,10 +743,11 @@ export const PublicInmobiliariaServicesView: React.FC = () => {
               Atención Personalizada
             </span>
             <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight m-0">
-              {details?.cta_title || '¿Necesitas una solución inmobiliaria a la medida?'}
+              {details?.services_cta_title || '¿Necesitas una solución inmobiliaria a la medida?'}
             </h3>
             <p className="text-xs sm:text-sm text-slate-300 m-0">
-              Nuestro equipo de asesores legales, técnicos y comerciales está listo para orientarte.
+              {details?.services_cta_subtitle ||
+                'Nuestro equipo de asesores legales, técnicos y comerciales está listo para orientarte.'}
             </p>
           </div>
 
