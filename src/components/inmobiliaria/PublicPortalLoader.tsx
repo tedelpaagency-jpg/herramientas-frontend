@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PublicAgencyConfig, getCachedAgencyConfig, getCachedBrandColor, getCachedLoaderImage } from "@/services/publicInmobiliariaService";
+import { PublicAgencyConfig, getCachedAgencyConfig, getCachedBrandColor } from "@/services/publicInmobiliariaService";
 
 export interface PublicPortalLoaderProps {
   countryName?: string;
@@ -103,24 +103,6 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
     agency?.province ||
     "Ecuador";
 
-  // Resolver imagen cacheada de inmediato para eliminar retraso visual en frame 0
-  const cachedImg = typeof window !== 'undefined' ? (getCachedLoaderImage() || (getCachedAgencyConfig() as any)?.country_image || (getCachedAgencyConfig()?.details as any)?.country_image) : null;
-  const displayImage =
-    countryImage ||
-    agency?.country_image ||
-    (agency?.details as any)?.country_image ||
-    cachedImg ||
-    "https://images.unsplash.com/photo-1589802829985-817e51171b92?auto=format&fit=crop&w=1200&q=85";
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && displayImage) {
-      try {
-        const pre = new Image();
-        pre.src = displayImage;
-      } catch {}
-    }
-  }, [displayImage]);
-
   useEffect(() => {
     if (!activeMessages || activeMessages.length === 0) return;
 
@@ -164,28 +146,12 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
       {/* Contenedor Principal (Modal) - Con degradados y bordes del color primario */}
       <div
-        className="relative z-10 w-[90%] max-w-[500px] h-[500px] sm:h-[500px] rounded-[20px] overflow-hidden flex flex-col transition-all duration-500 select-none"
+        className="relative z-10 w-[90%] max-w-[500px] h-[500px] sm:h-[500px] rounded-[20px] overflow-hidden flex flex-col transition-all duration-500 select-none backdrop-blur-xl"
         style={{
           boxShadow: `0 25px 60px -15px rgba(0,0,0,0.9), inset 0 0 0 1.5px ${effectiveBrandColor}, inset 0 0 50px -15px ${effectiveBrandColor}`,
-          backgroundColor: hexToRgba(effectiveBrandColor, 0.85),
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
         }}
       >
-        {/* Imagen de Fondo Central */}
-        <div className="absolute inset-0 w-full h-full z-0">
-          <img
-            src={displayImage}
-            alt={displayCountry}
-            className="w-full h-full object-cover object-center"
-            loading="eager"
-            decoding="sync"
-            fetchPriority="high"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src =
-                'https://inmobiliaria.inmosoft.pro/public/assets/images/locations/bcb83c8c9ddaff31bfa8a873df69e6a4ecu.jpg';
-            }}
-          />
-        </div>
-
         {/* --- PIGMENTOS DE COLOR DE MARCA (Flares / Resplandores) --- */}
         <div
           className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full mix-blend-screen blur-[65px] opacity-60 pointer-events-none z-0 transition-colors duration-500"
