@@ -659,22 +659,22 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
     </section>
   );
 
-  // 4. Nuestros Clientes (Carrusel de logos horizontal exacto como Imagen 1)
+  // 4. Nuestros Clientes (Carrusel de logos horizontal grande y destacado exacto como Imagen 2)
   const renderClientsSection = () => {
     if (ourClients.length === 0) return null;
 
     return (
-      <section key="clients" className="py-14 lg:py-20 overflow-hidden">
+      <section key="clients" className="py-14 lg:py-24 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
+          <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
             <h2
-              className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight"
+              className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight"
               style={{ color: primaryColor }}
             >
               {clientsTitle}
             </h2>
             {clientsSubtitle && (
-              <p className="mt-2 text-xs sm:text-sm text-slate-600 font-medium max-w-2xl mx-auto">
+              <p className="mt-3 text-sm sm:text-base text-slate-600 font-medium max-w-2xl mx-auto">
                 {clientsSubtitle}
               </p>
             )}
@@ -691,24 +691,24 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
               spaceBetween={32}
               slidesPerView={2}
               breakpoints={{
-                480: { slidesPerView: 2, spaceBetween: 24 },
-                640: { slidesPerView: 3, spaceBetween: 32 },
-                1024: { slidesPerView: 4, spaceBetween: 40 },
-                1280: { slidesPerView: 5, spaceBetween: 48 },
+                480: { slidesPerView: 2, spaceBetween: 32 },
+                768: { slidesPerView: 3, spaceBetween: 40 },
+                1024: { slidesPerView: 4, spaceBetween: 48 },
+                1280: { slidesPerView: 4, spaceBetween: 56 },
               }}
-              className="py-2 items-center"
+              className="py-4 items-center"
             >
               {ourClients.map((client: any, idx: number) => {
                 const logoUrl = client.logo || client.image || client.logo_url || client.image_url;
                 if (!logoUrl) return null;
                 return (
-                  <SwiperSlide key={client.id || idx} className="flex items-center justify-center">
-                    <div className="h-24 sm:h-28 w-full flex items-center justify-center p-2">
+                  <SwiperSlide key={client.id || idx} className="!flex items-center justify-center">
+                    <div className="h-36 sm:h-44 lg:h-52 w-full flex items-center justify-center px-4 py-2">
                       <img
                         src={logoUrl}
                         alt={client.name || `Cliente ${idx + 1}`}
                         loading="lazy"
-                        className="max-h-16 sm:max-h-20 max-w-[180px] sm:max-w-[220px] w-auto h-auto object-contain transition-transform duration-300 hover:scale-105"
+                        className="max-h-32 sm:max-h-40 lg:max-h-44 max-w-full w-auto h-auto object-contain transition-transform duration-300 hover:scale-105 select-none"
                       />
                     </div>
                   </SwiperSlide>
