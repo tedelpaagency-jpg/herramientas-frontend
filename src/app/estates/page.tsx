@@ -9,7 +9,7 @@ export default function EstatesRoute() {
   return (
     <ProtectedRoute permission="view_estates">
       <Layout>
-        <EstatesPage />
+        <EstatesPage initialScope="all_agency" />
       </Layout>
     </ProtectedRoute>
   );

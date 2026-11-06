@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Estate, User } from '../types';
@@ -75,10 +75,22 @@ const getPageNumbers = (current: number, total: number): (number | string)[] => 
   return pages;
 };
 
-export const EstatesPage: React.FC = () => {
+export interface EstatesPageProps {
+  initialScope?: 'all_agency' | 'my_estates';
+}
+
+export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const viewParam = searchParams ? searchParams.get('view') : null;
+  const scopeParam = searchParams ? searchParams.get('scope') : null;
+
+  const isMyEstatesUrl =
+    pathname === '/my-estates' ||
+    scopeParam === 'my_estates' ||
+    scopeParam === 'my' ||
+    initialScope === 'my_estates';
 
   const { user, dashboardType, currentAgency } = useAuth();
   const isWhiteLabelOrSuperAdmin = dashboardType === 'white_label_admin' || dashboardType === 'super_admin' || user?.role === 'white_label_admin' || user?.role === 'super_admin';
@@ -93,7 +105,17 @@ export const EstatesPage: React.FC = () => {
   // Ámbito de visualización:
   // 'all_agency' => Todas las propiedades de la agencia (Solo lectura para asesores normales)
   // 'my_estates' => Solo las propiedades subidas por el usuario actual (Modificación y eliminación habilitada)
-  const [scopeTab, setScopeTab] = useState<'all_agency' | 'my_estates'>('all_agency');
+  const [scopeTab, setScopeTab] = useState<'all_agency' | 'my_estates'>(
+    isMyEstatesUrl ? 'my_estates' : 'all_agency'
+  );
+
+  useEffect(() => {
+    if (isMyEstatesUrl) {
+      setScopeTab('my_estates');
+    } else {
+      setScopeTab('all_agency');
+    }
+  }, [pathname, scopeParam, isMyEstatesUrl]);
 
   const [estates, setEstates] = useState<Estate[]>([]);
   const [mapEstates, setMapEstates] = useState<Estate[]>([]);
@@ -314,11 +336,6 @@ export const EstatesPage: React.FC = () => {
     }
   }, [viewMode, search, typeFilter, statusFilter, agentFilter, agencyFilter, scopeTab]);
 
-  const handleScopeChange = (newScope: 'all_agency' | 'my_estates') => {
-    setScopeTab(newScope);
-    setPage(1);
-  };
-
   const canEditEstate = (estate: Estate): boolean => {
     if (isAgencyAdmin) return true;
     if (scopeTab === 'all_agency') return false;
@@ -483,10 +500,12 @@ export const EstatesPage: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <Building2 className="w-7 h-7 text-primary" />
-            Directorio Inmobiliario SANTUN
+            {scopeTab === 'my_estates' ? 'Mis Propiedades' : 'Todas las Propiedades'}
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
-            Gestión de propiedades con exportación para WhatsApp, Canvas y PDF.
+            {scopeTab === 'my_estates'
+              ? 'Tus inmuebles registrados con permisos directos de edición y administración.'
+              : 'Directorio completo de propiedades de la agencia con exportación para WhatsApp, Canvas y PDF.'}
           </p>
         </div>
 
@@ -565,66 +584,7 @@ export const EstatesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Scope Switcher Tabs (Todas las Propiedades de la Agencia vs Mis Propiedades Subidas) */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl">
-          <button
-            type="button"
-            onClick={() => handleScopeChange('all_agency')}
-            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              scopeTab === 'all_agency'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Building2 className={`w-4 h-4 ${scopeTab === 'all_agency' ? 'text-blue-600' : 'text-slate-400'}`} />
-            <span>Todas las de la Agencia</span>
-            {!isAgencyAdmin && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700 text-slate-600 dark:text-slate-300 ml-1">
-                Solo Lectura
-              </span>
-            )}
-          </button>
 
-          <button
-            type="button"
-            onClick={() => handleScopeChange('my_estates')}
-            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              scopeTab === 'my_estates'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <UserIcon className={`w-4 h-4 ${scopeTab === 'my_estates' ? 'text-blue-600' : 'text-slate-400'}`} />
-            <span>Mis Propiedades Subidas</span>
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 ml-1">
-              Edición Habilitada
-            </span>
-          </button>
-        </div>
-
-        {/* Explicación de contexto según permisos */}
-        <div className="flex items-center gap-2 px-3 py-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
-          {scopeTab === 'all_agency' ? (
-            isAgencyAdmin ? (
-              <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-[11px]">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                Modo Administrador: Puedes editar y gestionar cualquier propiedad de la agencia.
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
-                <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                Mostrando el catálogo completo de la agencia (Solo lectura). Cambia a &ldquo;Mis Propiedades&rdquo; para editar las tuyas.
-              </span>
-            )
-          ) : (
-            <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 text-[11px]">
-              <UserIcon className="w-3.5 h-3.5" />
-              Mostrando únicamente las propiedades creadas por ti con permisos completos de edición y eliminación.
-            </span>
-          )}
-        </div>
-      </div>
 
       {/* Filter & View Switcher Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-4 items-center justify-between">

@@ -377,6 +377,13 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                   <li><Link href="/properties?property_status=2">En Venta</Link></li>
                   <li><Link href="/properties?property_status=1">En Alquiler / Renta</Link></li>
                   <li><Link href="/properties?property_status=3">En Remate</Link></li>
+                  {isAuthenticated && (
+                    <li style={{ borderTop: '1px dashed #e2e8f0', marginTop: '4px', paddingTop: '4px' }}>
+                      <Link href="/my-estates" className="text-blue-600 font-bold">
+                        Mis Propiedades (Gestión)
+                      </Link>
+                    </li>
+                  )}
 
                   <li style={{ padding: '10px 16px 2px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.05em', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
                     Tipos de Inmueble
@@ -465,6 +472,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                             { label: 'En Venta', href: '/properties?property_status=2' },
                             { label: 'En Alquiler / Renta', href: '/properties?property_status=1' },
                             { label: 'En Remate', href: '/properties?property_status=3' },
+                            ...(isAuthenticated ? [{ label: 'Mis Propiedades (Gestión)', href: '/my-estates' }] : []),
                           ].map((op) => (
                             <Link
                               key={op.href}

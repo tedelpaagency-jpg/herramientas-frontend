@@ -113,12 +113,21 @@ const SYSTEM_MODULES: ModuleItem[] = [
   },
   {
     id: 'mod-estates',
-    label: 'Propiedades e Inmuebles',
+    label: 'Todas las Propiedades',
     path: '/estates',
     icon: Building2,
     category: 'MODULO INMOBILIARIO',
     permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage'],
-    keywords: ['propiedades', 'inmuebles', 'casas', 'departamentos', 'terrenos', 'bienes raices', 'lotes'],
+    keywords: ['todas las propiedades', 'inmuebles', 'casas', 'departamentos', 'terrenos', 'bienes raices', 'lotes', 'catalogo agencia'],
+  },
+  {
+    id: 'mod-my-estates',
+    label: 'Mis Propiedades',
+    path: '/my-estates',
+    icon: Key,
+    category: 'MODULO INMOBILIARIO',
+    permission: ['view_estates', 'manage_estates', 'estates.view', 'estates.create', 'estates.manage'],
+    keywords: ['mis propiedades', 'mis inmuebles', 'mis captaciones', 'propiedades subidas', 'mis casas'],
   },
 
   // VISAS MINORISTAS & MAYORISTAS

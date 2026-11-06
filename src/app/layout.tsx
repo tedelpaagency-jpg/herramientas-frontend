@@ -30,6 +30,7 @@ export default function RootLayout({
                   var p = window.location.pathname;
                   var hasToken = !!localStorage.getItem('santun_auth_token');
                   var isAppRoute = p.startsWith('/estates') ||
+                                 p.startsWith('/my-estates') ||
                                  p.startsWith('/admin') ||
                                  p.startsWith('/crm') ||
                                  p.startsWith('/tasks') ||
