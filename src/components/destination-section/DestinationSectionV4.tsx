@@ -147,8 +147,31 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
           width: 20px;
           border-radius: 4px;
         }
+        .swiper-pagination1 {
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          text-align: center !important;
+          width: 100% !important;
+          position: static !important;
+          margin: 16px auto 0 auto !important;
+          gap: 6px !important;
+        }
+        .swiper-pagination1 .swiper-pagination-bullet {
+          display: inline-block !important;
+          background: #94a3b8;
+          opacity: 0.45;
+          width: 8px;
+          height: 8px;
+          margin: 0 3px !important;
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
         .swiper-pagination1 .swiper-pagination-bullet-active {
           background: ${primaryColor} !important;
+          opacity: 1;
+          width: 24px;
+          border-radius: 4px;
         }
       `}</style>
 
@@ -295,10 +318,8 @@ const DestinationSectionV4: React.FC<DestinationSectionV4Props> = ({ categories,
               </div>
             </Swiper>
           </div>
-          <div className="row">
-            <div className="col-12 d-flex justify-content-center">
-              <div className="swiper-pagination1" />
-            </div>
+          <div className="flex justify-center items-center w-full mt-2">
+            <div className="swiper-pagination1 flex justify-center items-center" />
           </div>
         </div>
       </div>
