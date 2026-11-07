@@ -641,17 +641,18 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
               return (
                 <SwiperSlide key={`${agent.id || idx}-${idx}`}>
                   <div className="group rounded-3xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col justify-between h-full">
-                    <div className="relative aspect-[4/3] bg-gradient-to-tr from-slate-800 to-slate-700 overflow-hidden">
+                    <div className="relative w-full bg-slate-50 flex items-center justify-center overflow-hidden">
                       {photoUrl ? (
                         <img
                           src={photoUrl}
                           alt={agent.name || 'Asesor Inmobiliario'}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-auto object-contain block group-hover:scale-[1.02] transition-transform duration-500"
+                          loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-white bg-gradient-to-br from-slate-800 via-slate-900 to-emerald-950 p-4">
+                        <div className="w-full aspect-[9/16] flex flex-col items-center justify-center text-white bg-gradient-to-br from-slate-800 via-slate-900 to-emerald-950 p-6">
                           <div
-                            className="w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-lg border-2 border-white/20 mb-2"
+                            className="w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl shadow-lg border-2 border-white/20 mb-3"
                             style={{ backgroundColor: primaryColor }}
                           >
                             {(agent.name || 'A').charAt(0).toUpperCase()}
@@ -659,64 +660,51 @@ export const PublicInmobiliariaAboutView: React.FC = () => {
                           <span className="text-xs font-bold text-slate-300">Asesor Verificado</span>
                         </div>
                       )}
-
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-[10px] font-bold text-white border border-white/10 uppercase tracking-wider">
-                        {agent.role || 'Asesor Inmobiliario'}
-                      </div>
                     </div>
 
-                    <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
-                      <div>
-                        <h4 className="text-base font-black text-slate-900 tracking-tight group-hover:text-emerald-700 transition-colors">
-                          {agent.name || 'Asesor Inmobiliario'}
-                        </h4>
-                        <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                          {agent.role || 'Asesor Inmobiliario'}
-                        </p>
+                    {hasContact ? (
+                      <div className="p-3 sm:p-4 bg-white border-t border-slate-100 flex items-center justify-between gap-2">
+                        {hasPhone ? (
+                          <a
+                            href={`tel:${cleanPhone}`}
+                            className="flex-1 py-2 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200/80 shadow-2xs active:scale-95 cursor-pointer"
+                            title={agent.name ? `Llamar a ${agent.name}` : 'Llamar'}
+                          >
+                            <Phone className="w-3.5 h-3.5 text-blue-600 group-hover:text-white" />
+                            <span className="hidden sm:inline">Llamar</span>
+                          </a>
+                        ) : null}
+
+                        {hasPhone ? (
+                          <a
+                            href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
+                              agent.name
+                                ? `Hola ${agent.name}, vi su contacto en el portal y me gustaría recibir asesoría inmobiliaria.`
+                                : `Hola, vi su contacto en el portal y me gustaría recibir asesoría inmobiliaria.`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-emerald-200/60 shadow-2xs active:scale-95 cursor-pointer"
+                            title={agent.name ? `Escribir por WhatsApp a ${agent.name}` : 'Escribir por WhatsApp'}
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-emerald-600 group-hover:text-white" />
+                            <span>WhatsApp</span>
+                          </a>
+                        ) : null}
+
+                        {hasEmail ? (
+                          <a
+                            href={`mailto:${email}?subject=${encodeURIComponent(
+                              agent.name ? `Consulta Inmobiliaria — ${agent.name}` : 'Consulta Inmobiliaria'
+                            )}`}
+                            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-700 text-xs font-bold transition-all flex items-center justify-center border border-slate-200/80 shadow-2xs active:scale-95 cursor-pointer"
+                            title={`Enviar correo a ${email}`}
+                          >
+                            <Mail className="w-3.5 h-3.5 text-slate-600 group-hover:text-white" />
+                          </a>
+                        ) : null}
                       </div>
-
-                      {hasContact ? (
-                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                          {hasPhone ? (
-                            <a
-                              href={`tel:${cleanPhone}`}
-                              className="flex-1 py-2 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200/80 shadow-2xs active:scale-95 cursor-pointer"
-                              title={`Llamar a ${agent.name}`}
-                            >
-                              <Phone className="w-3.5 h-3.5 text-blue-600 group-hover:text-white" />
-                              <span className="hidden sm:inline">Llamar</span>
-                            </a>
-                          ) : null}
-
-                          {hasPhone ? (
-                            <a
-                              href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
-                                `Hola ${agent.name}, vi su contacto en el portal y me gustaría recibir asesoría inmobiliaria.`
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-1 py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-emerald-200/60 shadow-2xs active:scale-95 cursor-pointer"
-                              title={`Escribir por WhatsApp a ${agent.name}`}
-                            >
-                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600 group-hover:text-white" />
-                              <span>WhatsApp</span>
-                            </a>
-                          ) : null}
-
-                          {hasEmail ? (
-                            <a
-                              href={`mailto:${email}?subject=${encodeURIComponent(
-                                `Consulta Inmobiliaria — ${agent.name}`
-                              )}`}
-                              className="p-2 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-700 text-xs font-bold transition-all flex items-center justify-center border border-slate-200/80 shadow-2xs active:scale-95 cursor-pointer"
-                              title={`Enviar correo a ${email}`}
-                            >
-                              <Mail className="w-3.5 h-3.5 text-slate-600 group-hover:text-white" />
-                            </a>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
+                    ) : null}
                   </div>
                 </SwiperSlide>
               );
