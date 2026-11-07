@@ -290,24 +290,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
           : []),
       ],
     },
-    {
-      title: 'VISAS MINORISTAS',
-      items: [
-        { label: 'Visas Minoristas (Formularios)', path: '/visas', icon: FileCheck, permission: ['view_visas', 'visas.view', 'manage_visas'] },
-      ],
-    },
-    ...((isWhiteLabelAdmin || isSuperAdmin)
+    ...(isWhiteLabelAdmin || isSuperAdmin
       ? [
           {
-            title: 'VISAS MAYORISTAS & B2B',
+            title: 'OPERACIONES DE VISAS B2B',
             items: [
               { label: 'Operaciones Mayorista B2B', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view', 'manage_visas'] },
-              { label: 'Agencias Afiliadas B2B', path: '/visas/mayorista/agencias', icon: Building2, permission: ['view_visas', 'visas.view', 'manage_visas'] },
+              { label: 'Agencias Afiliadas B2B', path: '/visas/mayorista/agencias', icon: Users, permission: ['view_visas', 'visas.view', 'manage_visas'] },
               { label: 'Configurar Visas B2B', path: '/visas/tipos', icon: Layers, permission: ['view_visas', 'visas.view', 'visas.processes.manage', 'manage_visas'] },
+              { label: 'Formularios para Clientes', path: '/visas', icon: FileCheck, permission: ['view_visas', 'visas.view', 'manage_visas'] },
             ],
           },
         ]
-      : []),
+      : [
+          {
+            title: 'TRÁMITES DE VISAS & B2B',
+            items: [
+              { label: 'Expedientes de Visas B2B', path: '/visas/mayorista', icon: Building2, permission: ['view_visas', 'visas.view', 'manage_visas'] },
+              { label: 'Formularios para Clientes', path: '/visas', icon: FileCheck, permission: ['view_visas', 'visas.view', 'manage_visas'] },
+            ],
+          },
+        ]),
     {
       title: 'MODULO VIAJES & PAQUETES',
       items: [

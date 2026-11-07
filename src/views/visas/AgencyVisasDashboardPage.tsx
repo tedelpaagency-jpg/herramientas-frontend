@@ -710,13 +710,13 @@ export const AgencyVisasDashboardPage: React.FC = () => {
               <ShieldCheck className="w-6 h-6 text-sky-300" />
             </span>
             <h1 className="text-2xl font-bold tracking-tight">
-              {activeGroup ? `Expedientes: ${activeGroup.name}` : 'Mayorista de Visas & Migración'}
+              {activeGroup ? `Expedientes: ${activeGroup.name}` : 'Expedientes & Solicitudes de Visa (B2B)'}
             </h1>
           </div>
           <p className="text-sky-200 text-sm max-w-2xl">
             {activeGroup 
               ? `Gestión de expedientes asociados directamente a ${activeGroup.name}. Puede agregar nuevos integrantes sin seleccionar el grupo.`
-              : 'Control integral de expedientes migratorios B2B2C. Gestión con mayorista, cliente final y trazabilidad en tiempo real.'}
+              : 'Cree y envíe solicitudes de visa a la marca blanca mayorista para verificación y aprobación. Gestione el avance de etapas, pagos y documentación consular.'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">

@@ -251,19 +251,19 @@ export const VisasPage: React.FC = () => {
           <p className="text-xs text-slate-500 font-medium mt-1">
             {activeGroup 
               ? `Listado de solicitudes individuales asociadas a ${activeGroup.name}. Genera y envía el enlace para que el cliente llene el formulario consular.`
-              : 'Módulo independiente de visas minoristas. No requiere aprobación de mayorista ni control de etapas: solo genera el enlace para que el cliente lo llene.'}
+              : 'Formularios consulares para clientes finales. Para enviar expedientes a revisión, pago y aprobación por la marca blanca, utiliza el módulo de Expedientes B2B.'}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Direct Link to Separate Wholesale Module */}
+          {/* Direct Link to B2B Expedientes Module */}
           <Link
             href="/visas/mayorista"
             className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs rounded-xl border border-indigo-200 dark:border-indigo-800 transition-all"
-            title="Ir al módulo independiente de Operaciones Mayoristas B2B"
+            title="Ir a Expedientes y Trámites B2B con la Marca Blanca"
           >
             <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <span>Módulo Mayorista B2B</span>
+            <span>Expedientes & Trámites B2B</span>
             <ArrowUpRight className="w-3.5 h-3.5 opacity-70" />
           </Link>
 
