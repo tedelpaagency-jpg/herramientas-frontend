@@ -17,6 +17,7 @@ import publicInmobiliariaService, {
   PublicEstateItem,
   PublicEstateCategory,
   getCachedAgencyConfig,
+  getCachedLoaderImage,
 } from '@/services/publicInmobiliariaService';
 import {
   DEFAULT_FALLBACK_AGENCY,
@@ -186,7 +187,7 @@ export default function PublicPortalHomeView({
       <PublicPortalLoader
         isOpen={loading}
         countryName={agency?.country_name || agency?.country}
-        countryImage={agency?.details?.loader_image || agency?.country_image}
+        countryImage={agency?.details?.loader_image || (typeof window !== 'undefined' ? getCachedLoaderImage(domain) : null) || agency?.country_image}
         brandColor={agency?.primary_color}
         textColor={agency?.details?.loader_text_color}
         duration={agency?.details?.loader_duration}

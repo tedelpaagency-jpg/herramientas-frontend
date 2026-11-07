@@ -150,7 +150,7 @@ export const DEFAULT_FALLBACK_AGENCY: PublicAgencyConfig = {
   button_color: '#e2b728',
   show_topbar: false,
   country_name: 'Ecuador',
-  country_image: 'https://images.unsplash.com/photo-1589802829985-817e51171b92?auto=format&fit=crop&w=1200&q=85',
+  country_image: '',
   seo_title: 'Portal Inmobiliario — Venta y Renta de Inmuebles',
   seo_description: 'Explora casas, departamentos, terrenos y oficinas en venta y renta.',
   facebook: '',

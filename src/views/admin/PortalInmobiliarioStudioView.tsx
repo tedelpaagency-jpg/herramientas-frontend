@@ -614,9 +614,15 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
       await adminService.updateAgency(selectedAgencyId, payload);
 
-      // Limpiar caché local para que la vista pública cargue al instante las nuevas configuraciones
+      // Guardar y refrescar caché local para que la vista pública y el loader carguen al instante sin consultas ni parpadeos
       if (typeof window !== 'undefined') {
         try {
+          const currentAgency = agencies.find((a: any) => a.id === selectedAgencyId) || {};
+          const updatedAgencyConfig = {
+            ...currentAgency,
+            ...payload,
+            details: form.details,
+          };
           const doms = [
             effectiveDomain,
             'inmosoft.pro',
@@ -624,10 +630,26 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
             'default',
             (form.domain || '').replace(/^https?:\/\//i, '').split('/')[0].split(':')[0].toLowerCase()
           ].filter(Boolean);
+
           doms.forEach(d => {
-            localStorage.removeItem(`inmo_cfg_${d}`);
-            sessionStorage.removeItem(`inmo_cfg_${d}`);
+            localStorage.setItem(`inmo_cfg_${d}`, JSON.stringify(updatedAgencyConfig));
+            sessionStorage.setItem(`inmo_cfg_${d}`, JSON.stringify(updatedAgencyConfig));
           });
+          localStorage.setItem('inmo_cfg_generic', JSON.stringify(updatedAgencyConfig));
+
+          if (form.details?.loader_image) {
+            localStorage.setItem('inmo_cached_loader_img', form.details.loader_image);
+            doms.forEach(d => {
+              localStorage.setItem(`inmo_cached_loader_img_${d}`, form.details.loader_image);
+            });
+            try {
+              const pre = new Image();
+              pre.src = form.details.loader_image;
+            } catch {}
+          }
+          if (form.primary_color) {
+            localStorage.setItem('inmo_cached_brand_color', form.primary_color);
+          }
         } catch {}
       }
 
@@ -5177,15 +5199,25 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                     </label>
                     <MediaPicker
                       value={form.details?.loader_image || ''}
-                      onChange={(selected) =>
+                      onChange={(selected) => {
+                        const newLoaderImg = selected?.url || '';
                         setForm({
                           ...form,
                           details: {
                             ...(form.details || {}),
-                            loader_image: selected?.url || '',
+                            loader_image: newLoaderImg,
                           },
-                        })
-                      }
+                        });
+                        if (typeof window !== 'undefined' && newLoaderImg) {
+                          try {
+                            localStorage.setItem('inmo_cached_loader_img', newLoaderImg);
+                            const dom = (form.domain || '').replace(/^https?:\/\//i, '').split('/')[0].split(':')[0].toLowerCase();
+                            if (dom) localStorage.setItem(`inmo_cached_loader_img_${dom}`, newLoaderImg);
+                            const pre = new Image();
+                            pre.src = newLoaderImg;
+                          } catch {}
+                        }
+                      }}
                       label="Seleccionar o Subir Imagen para la Tarjeta del Loader"
                       type="image"
                     />

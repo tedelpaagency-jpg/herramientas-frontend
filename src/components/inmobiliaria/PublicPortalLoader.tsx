@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PublicAgencyConfig, getCachedAgencyConfig, getCachedBrandColor } from "@/services/publicInmobiliariaService";
+import {
+  PublicAgencyConfig,
+  getCachedAgencyConfig,
+  getCachedBrandColor,
+  getCachedLoaderImage,
+  setCachedLoaderImage,
+} from "@/services/publicInmobiliariaService";
 
 export interface PublicPortalLoaderProps {
   countryName?: string;
@@ -103,23 +109,27 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
     agency?.province ||
     "Ecuador";
 
-  // Imagen central de la tarjeta modal (configurable desde el panel administrativo)
+  // Resolver imagen de loader inmediatamente desde caché local
+  const cachedImg = typeof window !== 'undefined'
+    ? (getCachedLoaderImage(agency?.domain) || getCachedAgencyConfig(agency?.domain)?.details?.loader_image)
+    : null;
+
+  // Imagen central de la tarjeta modal (priorizando siempre la subida desde el portal administrativo)
   const displayImage =
     countryImage ||
     agency?.details?.loader_image ||
     agency?.loader_image ||
+    cachedImg ||
     agency?.country_image ||
     (agency?.details as any)?.country_image ||
     null;
 
+  // Mantenerla sincronizada en caché y pre-cargada en memoria del navegador
   useEffect(() => {
     if (typeof window !== 'undefined' && displayImage) {
-      try {
-        const pre = new Image();
-        pre.src = displayImage;
-      } catch {}
+      setCachedLoaderImage(displayImage, agency?.domain);
     }
-  }, [displayImage]);
+  }, [displayImage, agency?.domain]);
 
   useEffect(() => {
     if (!activeMessages || activeMessages.length === 0) return;

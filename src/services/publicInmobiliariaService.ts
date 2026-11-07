@@ -240,12 +240,35 @@ export const getCachedBrandColor = (): string | null => {
   return null;
 };
 
-export const getCachedLoaderImage = (): string | null => {
+export const getCachedLoaderImage = (domain?: string): string | null => {
   if (typeof window === 'undefined') return null;
   try {
-    return localStorage.getItem('inmo_cached_loader_img') || null;
+    const effectiveDomain = resolveEffectiveDomain(domain);
+    const domainKey = `inmo_cached_loader_img_${effectiveDomain}`;
+    const specific = localStorage.getItem(domainKey);
+    if (specific) return specific;
+
+    const generic = localStorage.getItem('inmo_cached_loader_img');
+    if (generic) return generic;
+
+    const cfg = getCachedAgencyConfig(domain);
+    const fromCfg = cfg?.details?.loader_image || (cfg as any)?.loader_image || cfg?.country_image;
+    if (fromCfg) return fromCfg;
   } catch {}
   return null;
+};
+
+export const setCachedLoaderImage = (url: string, domain?: string): void => {
+  if (typeof window === 'undefined' || !url) return;
+  try {
+    const effectiveDomain = resolveEffectiveDomain(domain);
+    localStorage.setItem('inmo_cached_loader_img', url);
+    if (effectiveDomain) {
+      localStorage.setItem(`inmo_cached_loader_img_${effectiveDomain}`, url);
+    }
+    const pre = new Image();
+    pre.src = url;
+  } catch {}
 };
 
 export const clearCachedAgencyConfig = (domain?: string): void => {
@@ -271,13 +294,9 @@ export const publicInmobiliariaService = {
         if (res.data.primary_color) {
           localStorage.setItem('inmo_cached_brand_color', res.data.primary_color);
         }
-        const countryImg = res.data.country_image || (res.data.details as any)?.country_image;
-        if (countryImg) {
-          localStorage.setItem('inmo_cached_loader_img', countryImg);
-          try {
-            const preImg = new Image();
-            preImg.src = countryImg;
-          } catch {}
+        const loaderImg = res.data.details?.loader_image || (res.data as any)?.loader_image || res.data.country_image || (res.data.details as any)?.country_image;
+        if (loaderImg) {
+          setCachedLoaderImage(loaderImg, effectiveDomain);
         }
       } catch {}
     }
