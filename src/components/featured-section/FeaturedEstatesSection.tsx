@@ -26,28 +26,16 @@ export const FeaturedEstatesSection: React.FC<FeaturedEstatesSectionProps> = ({
   const secondaryColor = agency?.secondary_color || agency?.details?.secondary_color || '#161a1b';
   const buttonColor = primaryColor;
 
-  // Garantizar exactamente 8 propiedades destacadas
+  // Mostrar hasta 8 propiedades destacadas reales de la agencia
   const displayEstates = useMemo(() => {
     const list = [...(featuredEstates || [])];
-
-    // Si hay menos de 8 destacadas, complementar con el catálogo predeterminado
-    if (list.length < 8) {
-      const fallbackList = DEFAULT_REAL_ESTATE_PROPERTIES.map((item, idx) => ({
-        ...item,
-        id: 70000 + idx,
-        highlight: 1,
-      }));
-
-      for (const fb of fallbackList) {
-        if (list.length >= 8) break;
-        if (!list.some(e => e.id === fb.id || e.title === fb.title)) {
-          list.push(fb);
-        }
-      }
-    }
-
+    list.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
     return list.slice(0, 8);
   }, [featuredEstates]);
+
+  if (displayEstates.length === 0) {
+    return null;
+  }
 
   return (
     <div className="home4-featured-section mt-100 mb-100" id="destacadas">
@@ -65,14 +53,16 @@ export const FeaturedEstatesSection: React.FC<FeaturedEstatesSectionProps> = ({
           </div>
         </div>
 
-        {/* Cuadrícula de 4 columnas y 2 filas (8 propiedades destacadas) con AirbnbPropertyCard */}
+        {/* Cuadrícula de 4 columnas y 2 filas (hasta 8 propiedades destacadas) con AirbnbPropertyCard */}
         <div className="row gy-3 gy-sm-4 gx-2 gx-sm-3">
           {displayEstates.map((estate, index) => {
-            const fallbackImg =
-              DEFAULT_REAL_ESTATE_PROPERTIES[index % DEFAULT_REAL_ESTATE_PROPERTIES.length].image;
-            const estateWithFallback = {
+            const firstImg = estate.images?.[0];
+            const firstImgUrl = typeof firstImg === 'string' ? firstImg : (firstImg?.url || firstImg?.image_path);
+            const rawImg = typeof estate.image === 'string' ? estate.image : firstImgUrl;
+            const fallbackImg = rawImg || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80';
+            const estateWithFallback: PublicEstateItem = {
               ...estate,
-              image: estate.image || fallbackImg,
+              image: fallbackImg,
               highlight: 1,
             };
 

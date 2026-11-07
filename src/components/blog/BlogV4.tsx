@@ -11,9 +11,11 @@ interface BlogV4Props {
 }
 
 const BlogV4: React.FC<BlogV4Props> = ({ recentEstates, agency }) => {
-  const displayEstates = (recentEstates && recentEstates.length > 0)
-    ? recentEstates
-    : DEFAULT_REAL_ESTATE_PROPERTIES;
+  const displayEstates = recentEstates || [];
+
+  if (displayEstates.length === 0) {
+    return null;
+  }
 
   const agencyCurrency = agency?.currency || 'USD';
   const sectionTitle = agency?.details?.recent_title || 'Últimas Propiedades Incorporadas';
@@ -38,10 +40,13 @@ const BlogV4: React.FC<BlogV4Props> = ({ recentEstates, agency }) => {
         {/* Cuadrícula de 4 columnas y 2 filas (8 propiedades) con AirbnbPropertyCard */}
         <div className="row gy-3 gy-sm-4 gx-2 gx-sm-3">
           {displayEstates.slice(0, 8).map((estate, index) => {
-            const fallbackImg = DEFAULT_REAL_ESTATE_PROPERTIES[index % DEFAULT_REAL_ESTATE_PROPERTIES.length].image;
-            const estateWithFallback = {
+            const firstImg = estate.images?.[0];
+            const firstImgUrl = typeof firstImg === 'string' ? firstImg : (firstImg?.url || firstImg?.image_path);
+            const rawImg = typeof estate.image === 'string' ? estate.image : firstImgUrl;
+            const fallbackImg = rawImg || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80';
+            const estateWithFallback: PublicEstateItem = {
               ...estate,
-              image: estate.image || fallbackImg,
+              image: fallbackImg,
             };
 
             return (

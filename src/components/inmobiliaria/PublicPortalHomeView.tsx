@@ -53,13 +53,13 @@ export default function PublicPortalHomeView({
   });
 
   const [recommendedEstates, setRecommendedEstates] = useState<PublicEstateItem[]>(
-    initialRecommendedEstates || DEFAULT_REAL_ESTATE_PROPERTIES
+    initialRecommendedEstates || []
   );
   const [featuredEstates, setFeaturedEstates] = useState<PublicEstateItem[]>(
-    initialFeaturedEstates || DEFAULT_REAL_ESTATE_PROPERTIES.slice(0, 8)
+    initialFeaturedEstates || []
   );
   const [recentEstates, setRecentEstates] = useState<PublicEstateItem[]>(
-    initialRecentEstates || DEFAULT_REAL_ESTATE_PROPERTIES.slice(0, 8)
+    initialRecentEstates || []
   );
   const [categories, setCategories] = useState<PublicEstateCategory[]>(
     initialCategories || DEFAULT_REAL_ESTATE_CATEGORIES
@@ -107,15 +107,15 @@ export default function PublicPortalHomeView({
           setAgency(configRes.value.data);
         }
 
-        if (recRes.status === 'fulfilled' && recRes.value?.data?.length) {
+        if (recRes.status === 'fulfilled' && Array.isArray(recRes.value?.data)) {
           setRecommendedEstates(recRes.value.data);
         }
 
-        if (featRes.status === 'fulfilled' && featRes.value?.data?.length) {
+        if (featRes.status === 'fulfilled' && Array.isArray(featRes.value?.data)) {
           setFeaturedEstates(featRes.value.data);
         }
 
-        if (recentRes.status === 'fulfilled' && recentRes.value?.data?.length) {
+        if (recentRes.status === 'fulfilled' && Array.isArray(recentRes.value?.data)) {
           setRecentEstates(recentRes.value.data);
         }
 

@@ -29,7 +29,7 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({
     ? recommendedEstates
     : (featuredEstates && featuredEstates.length > 0)
     ? featuredEstates
-    : DEFAULT_REAL_ESTATE_PROPERTIES;
+    : [];
 
   const agencyCurrency = agency?.currency || 'USD';
   const sectionTitle = agency?.details?.recommended_title || 'Propiedades Recomendadas';
@@ -43,7 +43,7 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({
   const secondaryColor = agency?.secondary_color || agency?.details?.secondary_color || '#161a1b';
   const buttonColor = primaryColor;
 
-  // Filtrar y asegurar SIEMPRE 8 resultados por cada pestaña
+  // Filtrar hasta 8 resultados reales de la agencia por cada pestaña
   const filteredEstates = useMemo(() => {
     let matches = incomingEstates.filter((e) => {
       if (selectedOperation === 'all') return true;
@@ -63,37 +63,6 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({
 
     // Ordenar estrictamente por ID (de mayor a menor)
     matches.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
-
-    // Si la pestaña tiene menos de 8 resultados, autocompletar hasta 8 usando el catálogo base
-    if (matches.length < 8) {
-      const fallbackPool = DEFAULT_REAL_ESTATE_PROPERTIES.map((def, idx) => {
-        let opStatus = 2;
-        let opName = 'En Venta';
-        if (selectedOperation === 'rent') {
-          opStatus = 1;
-          opName = 'En Renta';
-        } else if (selectedOperation === 'auction') {
-          opStatus = 3;
-          opName = 'Remate Bancario';
-        } else if (idx % 2 === 1) {
-          opStatus = 1;
-          opName = 'En Renta';
-        }
-        return {
-          ...def,
-          id: 80000 + idx + (selectedOperation === 'rent' ? 100 : selectedOperation === 'auction' ? 200 : 0),
-          property_status: opStatus,
-          status_name: opName,
-        };
-      });
-
-      for (const fb of fallbackPool) {
-        if (matches.length >= 8) break;
-        if (!matches.some(m => m.id === fb.id || m.title === fb.title)) {
-          matches.push(fb);
-        }
-      }
-    }
 
     return matches.slice(0, 8);
   }, [incomingEstates, selectedOperation]);
@@ -136,35 +105,46 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({
           </div>
         </div>
 
-        {/* Cuadrícula de 4 columnas y 2 filas (8 propiedades por pestaña) con AirbnbPropertyCard */}
-        <div className="row gy-3 gy-sm-4 gx-2 gx-sm-3">
-          {filteredEstates.map((estate, index) => {
-            const fallbackImg = DEFAULT_REAL_ESTATE_PROPERTIES[index % DEFAULT_REAL_ESTATE_PROPERTIES.length].image;
-            const estateWithFallback = {
-              ...estate,
-              image: estate.image || fallbackImg,
-            };
+        {/* Cuadrícula de 4 columnas y 2 filas (hasta 8 propiedades por pestaña) con AirbnbPropertyCard */}
+        {filteredEstates.length === 0 ? (
+          <div className="text-center py-16 bg-slate-50/60 dark:bg-slate-900/40 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+            <p className="text-sm font-semibold text-slate-500">
+              No hay propiedades registradas en esta sección actualmente.
+            </p>
+          </div>
+        ) : (
+          <div className="row gy-3 gy-sm-4 gx-2 gx-sm-3">
+            {filteredEstates.map((estate, index) => {
+              const firstImg = estate.images?.[0];
+              const firstImgUrl = typeof firstImg === 'string' ? firstImg : (firstImg?.url || firstImg?.image_path);
+              const rawImg = typeof estate.image === 'string' ? estate.image : firstImgUrl;
+              const fallbackImg = rawImg || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80';
+              const estateWithFallback: PublicEstateItem = {
+                ...estate,
+                image: fallbackImg,
+              };
 
-            return (
-              <div
-                key={estate.id || index}
-                className="col-6 col-sm-6 col-lg-3 px-1.5 px-sm-2 mb-3 mb-sm-4 wow animate fadeInDown flex"
-                data-wow-delay={`${(index % 4) * 100 + 100}ms`}
-                data-wow-duration="1200ms"
-              >
-                <div className="w-full h-full flex flex-col">
-                  <AirbnbPropertyCard
-                    estate={estateWithFallback}
-                    currency={agencyCurrency}
-                    primaryColor={primaryColor}
-                    secondaryColor={secondaryColor}
-                    domainParam={agency?.domain}
-                  />
+              return (
+                <div
+                  key={estate.id || index}
+                  className="col-6 col-sm-6 col-lg-3 px-1.5 px-sm-2 mb-3 mb-sm-4 wow animate fadeInDown flex"
+                  data-wow-delay={`${(index % 4) * 100 + 100}ms`}
+                  data-wow-duration="1200ms"
+                >
+                  <div className="w-full h-full flex flex-col">
+                    <AirbnbPropertyCard
+                      estate={estateWithFallback}
+                      currency={agencyCurrency}
+                      primaryColor={primaryColor}
+                      secondaryColor={secondaryColor}
+                      domainParam={agency?.domain}
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="row mt-50">
           <div className="col-12 text-center">
