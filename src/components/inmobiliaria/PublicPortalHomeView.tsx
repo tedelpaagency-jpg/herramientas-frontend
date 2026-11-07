@@ -181,8 +181,7 @@ export default function PublicPortalHomeView({
       <BrandingThemeInjector agency={agency} />
       <PublicPortalLoader
         isOpen={loading}
-        countryName={agency?.country_name || agency?.country}
-        countryImage={agency?.details?.loader_image || (typeof window !== 'undefined' ? getCachedLoaderImage(domain) : null) || agency?.country_image}
+        loaderImage={agency?.details?.loader_image || (typeof window !== 'undefined' ? getCachedLoaderImage(domain) : null) || null}
         brandColor={agency?.primary_color}
         textColor={agency?.details?.loader_text_color}
         bgColor={agency?.details?.loader_bg_color}

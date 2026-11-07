@@ -658,6 +658,11 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
               const pre = new Image();
               pre.src = form.details.loader_image;
             } catch {}
+          } else {
+            localStorage.removeItem('inmo_cached_loader_img');
+            doms.forEach(d => {
+              localStorage.removeItem(`inmo_cached_loader_img_${d}`);
+            });
           }
           if (form.primary_color) {
             localStorage.setItem('inmo_cached_brand_color', form.primary_color);
@@ -6119,8 +6124,8 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         <div onClick={() => setShowLoaderPreview(false)}>
           <PublicPortalLoader
             isOpen={true}
-            countryName={form.country_name || form.country || 'Ecuador'}
-            countryImage={form.details?.loader_image || form.country_image}
+            countryName={form.country_name || form.country || 'Portal Inmobiliario'}
+            loaderImage={form.details?.loader_image || null}
             brandColor={form.primary_color || '#00a884'}
             textColor={form.details?.loader_text_color || '#ffffff'}
             bgColor={form.details?.loader_bg_color || '#0f172a'}

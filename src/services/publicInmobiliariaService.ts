@@ -254,20 +254,31 @@ export const getCachedLoaderImage = (domain?: string): string | null => {
     const effectiveDomain = resolveEffectiveDomain(domain);
     const domainKey = `inmo_cached_loader_img_${effectiveDomain}`;
     const specific = localStorage.getItem(domainKey);
-    if (specific) return specific;
+    if (specific && !specific.includes('unsplash.com')) return specific;
 
     const generic = localStorage.getItem('inmo_cached_loader_img');
-    if (generic) return generic;
+    if (generic && !generic.includes('unsplash.com')) return generic;
 
     const cfg = getCachedAgencyConfig(domain);
-    const fromCfg = cfg?.details?.loader_image || (cfg as any)?.loader_image || cfg?.country_image;
-    if (fromCfg) return fromCfg;
+    const fromCfg = cfg?.details?.loader_image || (cfg as any)?.loader_image;
+    if (fromCfg && !fromCfg.includes('unsplash.com')) return fromCfg;
   } catch {}
   return null;
 };
 
+export const clearCachedLoaderImage = (domain?: string): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    const effectiveDomain = resolveEffectiveDomain(domain);
+    localStorage.removeItem('inmo_cached_loader_img');
+    if (effectiveDomain) {
+      localStorage.removeItem(`inmo_cached_loader_img_${effectiveDomain}`);
+    }
+  } catch {}
+};
+
 export const setCachedLoaderImage = (url: string, domain?: string): void => {
-  if (typeof window === 'undefined' || !url) return;
+  if (typeof window === 'undefined' || !url || url.includes('unsplash.com')) return;
   try {
     const effectiveDomain = resolveEffectiveDomain(domain);
     localStorage.setItem('inmo_cached_loader_img', url);
@@ -350,6 +361,7 @@ export const clearCachedAgencyConfig = (domain?: string): void => {
     const key = `inmo_cfg_${resolveEffectiveDomain(domain)}`;
     localStorage.removeItem(key);
     sessionStorage.removeItem(key);
+    clearCachedLoaderImage(domain);
     clearClientCache(resolveEffectiveDomain(domain));
   } catch {}
 };
@@ -386,9 +398,11 @@ export const publicInmobiliariaService = {
                 if (res.data.config.primary_color) {
                   localStorage.setItem('inmo_cached_brand_color', res.data.config.primary_color);
                 }
-                const loaderImg = res.data.config.details?.loader_image || (res.data.config as any)?.loader_image || res.data.config.country_image || (res.data.config.details as any)?.country_image;
-                if (loaderImg) {
+                const loaderImg = res.data.config.details?.loader_image || (res.data.config as any)?.loader_image;
+                if (loaderImg && !loaderImg.includes('unsplash.com')) {
                   setCachedLoaderImage(loaderImg, effectiveDomain);
+                } else {
+                  clearCachedLoaderImage(effectiveDomain);
                 }
               } catch {}
             }
@@ -445,9 +459,11 @@ export const publicInmobiliariaService = {
               if (res.data.primary_color) {
                 localStorage.setItem('inmo_cached_brand_color', res.data.primary_color);
               }
-              const loaderImg = res.data.details?.loader_image || (res.data as any)?.loader_image || res.data.country_image || (res.data.details as any)?.country_image;
-              if (loaderImg) {
+              const loaderImg = res.data.details?.loader_image || (res.data as any)?.loader_image;
+              if (loaderImg && !loaderImg.includes('unsplash.com')) {
                 setCachedLoaderImage(loaderImg, effectiveDomain);
+              } else {
+                clearCachedLoaderImage(effectiveDomain);
               }
             } catch {}
           }
