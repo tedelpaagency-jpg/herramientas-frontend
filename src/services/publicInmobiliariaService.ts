@@ -124,6 +124,14 @@ export interface PublicEstateCategory {
   image?: string;
 }
 
+export interface PublicPortalHomeData {
+  config: PublicAgencyConfig;
+  recommended: PublicEstateItem[];
+  featured: PublicEstateItem[];
+  recent: PublicEstateItem[];
+  categories: PublicEstateCategory[];
+}
+
 export interface PublicEstateCity {
   city: string;
   province?: string;
@@ -271,76 +279,282 @@ export const setCachedLoaderImage = (url: string, domain?: string): void => {
   } catch {}
 };
 
+interface ClientCacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const memoryCache = new Map<string, ClientCacheEntry<any>>();
+const inFlightRequests = new Map<string, Promise<any>>();
+const CLIENT_CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes TTL
+
+export function getClientCache<T>(key: string): T | null {
+  const mem = memoryCache.get(key);
+  const now = Date.now();
+  if (mem && (now - mem.timestamp) < CLIENT_CACHE_TTL_MS) {
+    return mem.data;
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (raw) {
+        const parsed: ClientCacheEntry<T> = JSON.parse(raw);
+        if (now - parsed.timestamp < CLIENT_CACHE_TTL_MS) {
+          memoryCache.set(key, parsed);
+          return parsed.data;
+        }
+      }
+    } catch {}
+  }
+  return null;
+}
+
+export function setClientCache<T>(key: string, data: T): void {
+  const entry: ClientCacheEntry<T> = { data, timestamp: Date.now() };
+  memoryCache.set(key, entry);
+  if (typeof window !== 'undefined') {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(entry));
+    } catch {}
+  }
+}
+
+export function clearClientCache(pattern?: string): void {
+  if (pattern) {
+    for (const k of Array.from(memoryCache.keys())) {
+      if (k.includes(pattern)) memoryCache.delete(k);
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i);
+          if (k && k.includes(pattern)) keysToRemove.push(k);
+        }
+        keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+      } catch {}
+    }
+  } else {
+    memoryCache.clear();
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.clear();
+      } catch {}
+    }
+  }
+}
+
 export const clearCachedAgencyConfig = (domain?: string): void => {
   if (typeof window === 'undefined') return;
   try {
     const key = `inmo_cfg_${resolveEffectiveDomain(domain)}`;
     localStorage.removeItem(key);
     sessionStorage.removeItem(key);
+    clearClientCache(resolveEffectiveDomain(domain));
   } catch {}
 };
 
 export const publicInmobiliariaService = {
+  getHomeData: async (domain?: string): Promise<{ status: string; data: PublicPortalHomeData }> => {
+    const effectiveDomain = resolveEffectiveDomain(domain);
+    const cacheKey = `inmo_client_home_${effectiveDomain}`;
+
+    const cached = getClientCache<{ status: string; data: PublicPortalHomeData }>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const dedupeKey = `req_home_${effectiveDomain}`;
+    if (inFlightRequests.has(dedupeKey)) {
+      return inFlightRequests.get(dedupeKey);
+    }
+
+    const requestPromise = (async () => {
+      try {
+        const res = await fetchPublicApi<{ status: string; data: PublicPortalHomeData }>(
+          `/v1/public/portal/home-data?domain=${encodeURIComponent(effectiveDomain)}`,
+          effectiveDomain
+        );
+        if (res?.data) {
+          setClientCache(cacheKey, res);
+          if (res.data.config) {
+            setClientCache(`inmo_client_cfg_${effectiveDomain}`, { status: 'success', data: res.data.config });
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.setItem(`inmo_cfg_${effectiveDomain}`, JSON.stringify(res.data.config));
+                localStorage.setItem('inmo_cfg_generic', JSON.stringify(res.data.config));
+                if (res.data.config.primary_color) {
+                  localStorage.setItem('inmo_cached_brand_color', res.data.config.primary_color);
+                }
+                const loaderImg = res.data.config.details?.loader_image || (res.data.config as any)?.loader_image || res.data.config.country_image || (res.data.config.details as any)?.country_image;
+                if (loaderImg) {
+                  setCachedLoaderImage(loaderImg, effectiveDomain);
+                }
+              } catch {}
+            }
+          }
+          if (res.data.recommended) {
+            setClientCache(`inmo_client_rec_${effectiveDomain}_32`, { status: 'success', data: res.data.recommended });
+          }
+          if (res.data.featured) {
+            setClientCache(`inmo_client_feat_${effectiveDomain}_8`, { status: 'success', data: res.data.featured });
+          }
+          if (res.data.recent) {
+            setClientCache(`inmo_client_recent_${effectiveDomain}_8`, { status: 'success', data: res.data.recent });
+          }
+          if (res.data.categories) {
+            setClientCache(`inmo_client_cats_${effectiveDomain}`, { status: 'success', data: res.data.categories });
+          }
+        }
+        return res;
+      } finally {
+        inFlightRequests.delete(dedupeKey);
+      }
+    })();
+
+    inFlightRequests.set(dedupeKey, requestPromise);
+    return requestPromise;
+  },
+
   getConfig: async (domain?: string): Promise<{ status: string; data: PublicAgencyConfig }> => {
     const effectiveDomain = resolveEffectiveDomain(domain);
-    const res = await fetchPublicApi<{ status: string; data: PublicAgencyConfig }>(
-      `/v1/public/inmobiliaria/config?domain=${encodeURIComponent(effectiveDomain)}`,
-      effectiveDomain
-    );
-    if (res?.data && typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(`inmo_cfg_${effectiveDomain}`, JSON.stringify(res.data));
-        localStorage.setItem('inmo_cfg_generic', JSON.stringify(res.data));
-        if (res.data.primary_color) {
-          localStorage.setItem('inmo_cached_brand_color', res.data.primary_color);
-        }
-        const loaderImg = res.data.details?.loader_image || (res.data as any)?.loader_image || res.data.country_image || (res.data.details as any)?.country_image;
-        if (loaderImg) {
-          setCachedLoaderImage(loaderImg, effectiveDomain);
-        }
-      } catch {}
+    const cacheKey = `inmo_client_cfg_${effectiveDomain}`;
+
+    const cached = getClientCache<{ status: string; data: PublicAgencyConfig }>(cacheKey);
+    if (cached) {
+      return cached;
     }
-    return res;
+
+    const dedupeKey = `req_cfg_${effectiveDomain}`;
+    if (inFlightRequests.has(dedupeKey)) {
+      return inFlightRequests.get(dedupeKey);
+    }
+
+    const requestPromise = (async () => {
+      try {
+        const res = await fetchPublicApi<{ status: string; data: PublicAgencyConfig }>(
+          `/v1/public/inmobiliaria/config?domain=${encodeURIComponent(effectiveDomain)}`,
+          effectiveDomain
+        );
+        if (res?.data) {
+          setClientCache(cacheKey, res);
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem(`inmo_cfg_${effectiveDomain}`, JSON.stringify(res.data));
+              localStorage.setItem('inmo_cfg_generic', JSON.stringify(res.data));
+              if (res.data.primary_color) {
+                localStorage.setItem('inmo_cached_brand_color', res.data.primary_color);
+              }
+              const loaderImg = res.data.details?.loader_image || (res.data as any)?.loader_image || res.data.country_image || (res.data.details as any)?.country_image;
+              if (loaderImg) {
+                setCachedLoaderImage(loaderImg, effectiveDomain);
+              }
+            } catch {}
+          }
+        }
+        return res;
+      } finally {
+        inFlightRequests.delete(dedupeKey);
+      }
+    })();
+
+    inFlightRequests.set(dedupeKey, requestPromise);
+    return requestPromise;
   },
 
   getFeaturedEstates: async (domain?: string, limit: number = 8): Promise<{ status: string; data: PublicEstateItem[] }> => {
     const effectiveDomain = resolveEffectiveDomain(domain);
-    return fetchPublicApi<{ status: string; data: PublicEstateItem[] }>(
+    const cacheKey = `inmo_client_feat_${effectiveDomain}_${limit}`;
+
+    const cached = getClientCache<{ status: string; data: PublicEstateItem[] }>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const res = await fetchPublicApi<{ status: string; data: PublicEstateItem[] }>(
       `/v1/public/estates/featured?domain=${encodeURIComponent(effectiveDomain)}&limit=${limit}`,
       effectiveDomain
     );
+    if (res?.data) {
+      setClientCache(cacheKey, res);
+    }
+    return res;
   },
 
   getRecommendedEstates: async (domain?: string, limit: number = 32): Promise<{ status: string; data: PublicEstateItem[] }> => {
     const effectiveDomain = resolveEffectiveDomain(domain);
-    return fetchPublicApi<{ status: string; data: PublicEstateItem[] }>(
+    const cacheKey = `inmo_client_rec_${effectiveDomain}_${limit}`;
+
+    const cached = getClientCache<{ status: string; data: PublicEstateItem[] }>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const res = await fetchPublicApi<{ status: string; data: PublicEstateItem[] }>(
       `/v1/public/estates/recommended?domain=${encodeURIComponent(effectiveDomain)}&limit=${limit}`,
       effectiveDomain
     );
+    if (res?.data) {
+      setClientCache(cacheKey, res);
+    }
+    return res;
   },
 
   getRecentEstates: async (domain?: string, limit: number = 8): Promise<{ status: string; data: PublicEstateItem[] }> => {
     const effectiveDomain = resolveEffectiveDomain(domain);
-    return fetchPublicApi<{ status: string; data: PublicEstateItem[] }>(
+    const cacheKey = `inmo_client_recent_${effectiveDomain}_${limit}`;
+
+    const cached = getClientCache<{ status: string; data: PublicEstateItem[] }>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const res = await fetchPublicApi<{ status: string; data: PublicEstateItem[] }>(
       `/v1/public/estates/recent?domain=${encodeURIComponent(effectiveDomain)}&limit=${limit}`,
       effectiveDomain
     );
+    if (res?.data) {
+      setClientCache(cacheKey, res);
+    }
+    return res;
   },
 
   getCategories: async (domain?: string): Promise<{ status: string; data: PublicEstateCategory[] }> => {
     const effectiveDomain = resolveEffectiveDomain(domain);
-    return fetchPublicApi<{ status: string; data: PublicEstateCategory[] }>(
+    const cacheKey = `inmo_client_cats_${effectiveDomain}`;
+
+    const cached = getClientCache<{ status: string; data: PublicEstateCategory[] }>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const res = await fetchPublicApi<{ status: string; data: PublicEstateCategory[] }>(
       `/v1/public/categories?domain=${encodeURIComponent(effectiveDomain)}`,
       effectiveDomain
     );
+    if (res?.data) {
+      setClientCache(cacheKey, res);
+    }
+    return res;
   },
 
   getCities: async (domain?: string): Promise<{ status: string; data: PublicEstateCity[] }> => {
     const effectiveDomain = resolveEffectiveDomain(domain);
-    return fetchPublicApi<{ status: string; data: PublicEstateCity[] }>(
+    const cacheKey = `inmo_client_cities_${effectiveDomain}`;
+
+    const cached = getClientCache<{ status: string; data: PublicEstateCity[] }>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const res = await fetchPublicApi<{ status: string; data: PublicEstateCity[] }>(
       `/v1/public/cities?domain=${encodeURIComponent(effectiveDomain)}`,
       effectiveDomain
     );
+    if (res?.data) {
+      setClientCache(cacheKey, res);
+    }
+    return res;
   },
 
   getEstates: async (params: PublicEstateFilterParams = {}): Promise<{ status: string; data: PublicPaginatedEstates }> => {

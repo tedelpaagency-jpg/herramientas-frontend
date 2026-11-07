@@ -94,34 +94,29 @@ export default function PublicPortalHomeView({
           domain ||
           (typeof window !== 'undefined' ? window.location.hostname : '');
 
-        const [configRes, recRes, featRes, recentRes, catsRes] = await Promise.allSettled([
-          publicInmobiliariaService.getConfig(hostname),
-          publicInmobiliariaService.getRecommendedEstates(hostname, 32),
-          publicInmobiliariaService.getFeaturedEstates(hostname, 8),
-          publicInmobiliariaService.getRecentEstates(hostname, 8),
-          publicInmobiliariaService.getCategories(hostname),
-        ]);
+        // Use the consolidated home-data endpoint (1 single HTTP request instead of 5 separate calls)
+        const res = await publicInmobiliariaService.getHomeData(hostname);
 
         if (!isMounted) return;
 
-        if (configRes.status === 'fulfilled' && configRes.value?.data) {
-          setAgency(configRes.value.data);
+        if (res?.data?.config) {
+          setAgency(res.data.config);
         }
 
-        if (recRes.status === 'fulfilled' && Array.isArray(recRes.value?.data)) {
-          setRecommendedEstates(recRes.value.data);
+        if (Array.isArray(res?.data?.recommended)) {
+          setRecommendedEstates(res.data.recommended);
         }
 
-        if (featRes.status === 'fulfilled' && Array.isArray(featRes.value?.data)) {
-          setFeaturedEstates(featRes.value.data);
+        if (Array.isArray(res?.data?.featured)) {
+          setFeaturedEstates(res.data.featured);
         }
 
-        if (recentRes.status === 'fulfilled' && Array.isArray(recentRes.value?.data)) {
-          setRecentEstates(recentRes.value.data);
+        if (Array.isArray(res?.data?.recent)) {
+          setRecentEstates(res.data.recent);
         }
 
-        if (catsRes.status === 'fulfilled' && catsRes.value?.data?.length) {
-          const backendCats = catsRes.value.data;
+        if (Array.isArray(res?.data?.categories) && res.data.categories.length > 0) {
+          const backendCats = res.data.categories;
           const combined = [...backendCats];
           for (const def of DEFAULT_REAL_ESTATE_CATEGORIES) {
             if (!combined.some((c: any) => c.name?.toLowerCase() === def.name?.toLowerCase() || c.id === def.id || (c.slug && def.slug && c.slug === def.slug))) {
