@@ -190,6 +190,10 @@ export default function PublicPortalHomeView({
         countryImage={agency?.details?.loader_image || (typeof window !== 'undefined' ? getCachedLoaderImage(domain) : null) || agency?.country_image}
         brandColor={agency?.primary_color}
         textColor={agency?.details?.loader_text_color}
+        bgColor={agency?.details?.loader_bg_color}
+        gradientColor={agency?.details?.loader_gradient_color}
+        showGradients={agency?.details?.loader_gradient_enabled !== false}
+        imageFit={agency?.details?.loader_image_fit || 'contain'}
         duration={agency?.details?.loader_duration}
         agency={agency}
         message="Un momento por favor, estamos buscando las mejores propiedades."

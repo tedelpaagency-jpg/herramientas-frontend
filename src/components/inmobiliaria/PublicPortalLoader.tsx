@@ -15,6 +15,10 @@ export interface PublicPortalLoaderProps {
   agency?: PublicAgencyConfig | any;
   brandColor?: string;
   textColor?: string;
+  bgColor?: string;
+  gradientColor?: string;
+  showGradients?: boolean;
+  imageFit?: 'contain' | 'cover';
   duration?: number;
   logoUrl?: string | null;
   message?: string;
@@ -45,6 +49,10 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
   agency,
   brandColor,
   textColor,
+  bgColor,
+  gradientColor,
+  showGradients,
+  imageFit,
   duration,
   logoUrl,
   message,
@@ -70,6 +78,32 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
     agency?.details?.loader_text_color ||
     agency?.loader_text_color ||
     '#ffffff';
+
+  // Color de fondo del área central (modal)
+  const effectiveBgColor =
+    bgColor ||
+    agency?.details?.loader_bg_color ||
+    'rgba(15, 23, 42, 0.85)';
+
+  // Color del degradado y resplandor
+  const rawGradientColor =
+    gradientColor ||
+    agency?.details?.loader_gradient_color ||
+    effectiveBrandColor;
+  const effectiveGradientColor = (!rawGradientColor || rawGradientColor.toLowerCase() === '#00a884')
+    ? effectiveBrandColor
+    : rawGradientColor;
+
+  // Si los degradados luminosos están activados
+  const effectiveShowGradients =
+    showGradients ??
+    (agency?.details?.loader_gradient_enabled !== false);
+
+  // Modo de ajuste de imagen: 'contain' (proporcionada y centrada) vs 'cover' (cubrir todo el fondo)
+  const effectiveImageFit: 'contain' | 'cover' =
+    imageFit ||
+    agency?.details?.loader_image_fit ||
+    'contain';
 
   // Duración en milisegundos: si el usuario configuró segundos (ej. 3 o 3.5), convertir a ms
   const rawDuration =
@@ -181,106 +215,126 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
       <div
         className="relative z-10 w-[90%] max-w-[500px] h-[500px] sm:h-[500px] rounded-[20px] overflow-hidden flex flex-col transition-all duration-500 select-none backdrop-blur-xl"
         style={{
-          boxShadow: `0 25px 60px -15px rgba(0,0,0,0.9), inset 0 0 0 1.5px ${effectiveBrandColor}, inset 0 0 50px -15px ${effectiveBrandColor}`,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          boxShadow: `0 25px 60px -15px rgba(0,0,0,0.9), inset 0 0 0 1.5px ${effectiveGradientColor}, inset 0 0 50px -15px ${effectiveGradientColor}`,
+          backgroundColor: effectiveBgColor,
         }}
       >
-        {/* Imagen de Fondo Central (Configurable desde el Studio Administrativo) */}
+        {/* Imagen Central (Configurable desde el Studio Administrativo) */}
         {displayImage && (
-          <div className="absolute inset-0 w-full h-full z-0">
+          <div className={`absolute inset-0 w-full h-full z-0 flex items-center justify-center ${effectiveImageFit === 'contain' ? 'p-8' : ''}`}>
             <img
               src={displayImage}
               alt={displayCountry}
-              className="w-full h-full object-cover object-center"
+              className={
+                effectiveImageFit === 'contain'
+                  ? "max-w-[80%] max-h-[220px] object-contain drop-shadow-2xl"
+                  : "w-full h-full object-cover object-center"
+              }
               loading="eager"
               decoding="sync"
               fetchPriority="high"
             />
-            {/* Overlay sutil para garantizar contraste con el texto y spinner */}
-            <div className="absolute inset-0 bg-slate-950/45" />
+            {/* Overlay sutil para garantizar contraste si es cover */}
+            {effectiveImageFit === 'cover' && <div className="absolute inset-0 bg-slate-950/45" />}
           </div>
         )}
 
         {/* --- PIGMENTOS DE COLOR DE MARCA (Flares / Resplandores) --- */}
-        <div
-          className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full mix-blend-screen blur-[65px] opacity-60 pointer-events-none z-0 transition-colors duration-500"
-          style={{ backgroundColor: effectiveBrandColor }}
-        />
-        <div
-          className="absolute top-1/4 -right-24 w-80 h-80 rounded-full mix-blend-screen blur-[75px] opacity-40 pointer-events-none z-0 transition-colors duration-500"
-          style={{ backgroundColor: effectiveBrandColor }}
-        />
-
-        {/* Gradiente superior con el color principal seleccionado */}
-        <div
-          className="absolute top-0 left-0 w-full h-32 pointer-events-none z-10 flex items-start p-6 sm:p-8 transition-colors duration-500"
-          style={{
-            background: `linear-gradient(to bottom, ${hexToRgba(effectiveBrandColor, 0.95)} 0%, ${hexToRgba(effectiveBrandColor, 0.72)} 42%, ${hexToRgba(effectiveBrandColor, 0.2)} 78%, transparent 100%)`,
-          }}
-        >
-          <span
-            className="text-[11px] font-bold tracking-[0.15em] uppercase drop-shadow-md"
-            style={{ color: effectiveTextColor }}
-          >
-            {displayCountry}
-          </span>
-        </div>
-
-        {/* Spinner Central con sombreado de la marca (Glow) */}
-        <div
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
-          style={{ filter: `drop-shadow(0 0 10px ${effectiveBrandColor})` }}
-        >
-          <svg className="w-[56px] h-[56px] animate-spin" viewBox="0 0 50 50">
-            <circle cx="25" cy="25" r="22" fill="none" strokeWidth="2.5" stroke="rgba(255,255,255,0.25)" />
-            <circle
-              cx="25"
-              cy="25"
-              r="22"
-              fill="none"
-              strokeWidth="2.5"
-              stroke={effectiveTextColor}
-              strokeDasharray="35 100"
-              strokeLinecap="round"
+        {effectiveShowGradients && (
+          <>
+            <div
+              className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full mix-blend-screen blur-[65px] opacity-60 pointer-events-none z-0 transition-colors duration-500"
+              style={{ backgroundColor: effectiveGradientColor }}
             />
-          </svg>
-        </div>
+            <div
+              className="absolute top-1/4 -right-24 w-80 h-80 rounded-full mix-blend-screen blur-[75px] opacity-40 pointer-events-none z-0 transition-colors duration-500"
+              style={{ backgroundColor: effectiveGradientColor }}
+            />
 
-        {/* Gradiente Inferior con el color principal seleccionado */}
-        <div
-          className="absolute bottom-0 left-0 w-full pt-28 pb-8 px-6 sm:px-8 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-5 sm:gap-0 z-10 transition-colors duration-500"
-          style={{
-            background: `linear-gradient(to top, ${hexToRgba(effectiveBrandColor, 0.97)} 0%, ${hexToRgba(effectiveBrandColor, 0.86)} 48%, ${hexToRgba(effectiveBrandColor, 0.28)} 82%, transparent 100%)`,
-          }}
-        >
-          {/* Logo Dinámico de la Agencia */}
-          <div className="flex-shrink-0 sm:mb-1">
-            {effectiveLogoUrl ? (
-              <img
-                src={effectiveLogoUrl}
-                alt={agency?.name || "Logo Agencia"}
-                className="h-[34px] w-auto max-w-[140px] object-contain drop-shadow-md"
-              />
-            ) : (
-              <svg width="34" height="34" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 4L4 13.5L20 23L36 13.5L20 4Z" fill={effectiveBrandColor} />
-                <path d="M4 26.5L20 36L36 26.5L36 13.5L20 23L4 13.5L4 26.5Z" fill={effectiveBrandColor} fillOpacity="0.8" />
-                <circle cx="20" cy="20" r="5" fill="#ffffff" />
-                <circle cx="10" cy="15" r="2.5" fill="#ffffff" fillOpacity="0.9" />
-                <circle cx="30" cy="15" r="2.5" fill="#ffffff" fillOpacity="0.9" />
-              </svg>
-            )}
-          </div>
+            {/* Gradiente superior con el color configurado */}
+            <div
+              className="absolute top-0 left-0 w-full h-32 pointer-events-none z-10 flex items-start p-6 sm:p-8 transition-colors duration-500"
+              style={{
+                background: `linear-gradient(to bottom, ${hexToRgba(effectiveGradientColor, 0.95)} 0%, ${hexToRgba(effectiveGradientColor, 0.72)} 42%, ${hexToRgba(effectiveGradientColor, 0.2)} 78%, transparent 100%)`,
+              }}
+            >
+              <span
+                className="text-[11px] font-bold tracking-[0.15em] uppercase drop-shadow-md"
+                style={{ color: effectiveTextColor }}
+              >
+                {displayCountry}
+              </span>
+            </div>
 
-          {/* Texto de información dinámico con el color configurado */}
-          <p
-            key={currentMessage}
-            className="font-medium text-[15px] sm:text-[15px] leading-[1.3] text-center sm:text-right drop-shadow-sm max-w-[250px] animate-fade-in"
-            style={{ color: effectiveTextColor }}
-          >
-            {currentMessage}
-          </p>
-        </div>
+            {/* Gradiente Inferior con el color configurado */}
+            <div
+              className="absolute bottom-0 left-0 w-full pt-28 pb-8 px-6 sm:px-8 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-5 sm:gap-0 z-10 transition-colors duration-500"
+              style={{
+                background: `linear-gradient(to top, ${hexToRgba(effectiveGradientColor, 0.97)} 0%, ${hexToRgba(effectiveGradientColor, 0.86)} 48%, ${hexToRgba(effectiveGradientColor, 0.28)} 82%, transparent 100%)`,
+              }}
+            >
+              {/* Logo Dinámico de la Agencia */}
+              <div className="flex-shrink-0 sm:mb-1">
+                {effectiveLogoUrl ? (
+                  <img
+                    src={effectiveLogoUrl}
+                    alt={agency?.name || "Logo Agencia"}
+                    className="h-[34px] w-auto max-w-[140px] object-contain drop-shadow-md"
+                  />
+                ) : (
+                  <svg width="34" height="34" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 4L4 13.5L20 23L36 13.5L20 4Z" fill={effectiveGradientColor} />
+                    <path d="M4 26.5L20 36L36 26.5L36 13.5L20 23L4 13.5L4 26.5Z" fill={effectiveGradientColor} fillOpacity="0.8" />
+                    <circle cx="20" cy="20" r="5" fill="#ffffff" />
+                    <circle cx="10" cy="15" r="2.5" fill="#ffffff" fillOpacity="0.9" />
+                    <circle cx="30" cy="15" r="2.5" fill="#ffffff" fillOpacity="0.9" />
+                  </svg>
+                )}
+              </div>
+
+              {/* Texto de información dinámico con el color configurado */}
+              <p
+                key={currentMessage}
+                className="font-medium text-[15px] sm:text-[15px] leading-[1.3] text-center sm:text-right drop-shadow-sm max-w-[250px] animate-fade-in"
+                style={{ color: effectiveTextColor }}
+              >
+                {currentMessage}
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* Si los degradados están desactivados, mostrar encabezado y pie limpios */}
+        {!effectiveShowGradients && (
+          <>
+            <div className="absolute top-0 left-0 w-full p-6 sm:p-8 z-10">
+              <span
+                className="text-[11px] font-bold tracking-[0.15em] uppercase drop-shadow-md"
+                style={{ color: effectiveTextColor }}
+              >
+                {displayCountry}
+              </span>
+            </div>
+            <div className="absolute bottom-0 left-0 w-full pb-8 px-6 sm:px-8 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-5 sm:gap-0 z-10">
+              <div className="flex-shrink-0 sm:mb-1">
+                {effectiveLogoUrl ? (
+                  <img
+                    src={effectiveLogoUrl}
+                    alt={agency?.name || "Logo Agencia"}
+                    className="h-[34px] w-auto max-w-[140px] object-contain drop-shadow-md"
+                  />
+                ) : null}
+              </div>
+              <p
+                key={currentMessage}
+                className="font-medium text-[15px] leading-[1.3] text-center sm:text-right drop-shadow-sm max-w-[250px] animate-fade-in"
+                style={{ color: effectiveTextColor }}
+              >
+                {currentMessage}
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

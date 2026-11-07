@@ -300,6 +300,10 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       counter4_num: '99',
       counter4_label: 'Tasa de Satisfacción',
       loader_image: '',
+      loader_image_fit: 'contain',
+      loader_bg_color: '#0f172a',
+      loader_gradient_enabled: true,
+      loader_gradient_color: '#e2b728',
       loader_text_color: '#ffffff',
       loader_duration: 2.5,
       map_pin_bg_color: '#ffffff',
@@ -478,6 +482,10 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         counter4_num: parsedDetails?.counter4_num || '99',
         counter4_label: parsedDetails?.counter4_label || 'Tasa de Satisfacción',
         loader_image: parsedDetails?.loader_image || '',
+        loader_image_fit: parsedDetails?.loader_image_fit || 'contain',
+        loader_bg_color: parsedDetails?.loader_bg_color || '#0f172a',
+        loader_gradient_enabled: parsedDetails?.loader_gradient_enabled !== undefined ? parsedDetails.loader_gradient_enabled : true,
+        loader_gradient_color: parsedDetails?.loader_gradient_color || ag.primary_color || '#e2b728',
         loader_text_color: parsedDetails?.loader_text_color || '#ffffff',
         loader_duration: parsedDetails?.loader_duration !== undefined ? Number(parsedDetails.loader_duration) : 2.5,
         map_pin_bg_color: parsedDetails?.map_pin_bg_color || '#ffffff',
@@ -609,6 +617,10 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
           whatsapp: form.whatsapp || form.details?.whatsapp || '',
           footer_about_text: form.details?.footer_about_text || '',
           loader_image: form.details?.loader_image || '',
+          loader_image_fit: form.details?.loader_image_fit || 'contain',
+          loader_bg_color: form.details?.loader_bg_color || '#0f172a',
+          loader_gradient_enabled: form.details?.loader_gradient_enabled !== false,
+          loader_gradient_color: form.details?.loader_gradient_color || form.primary_color || '#e2b728',
         },
       };
 
@@ -5193,9 +5205,9 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                   </div>
 
                   {/* Imagen de Fondo Central del Loader (Tarjeta Principal) */}
-                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
-                      Imagen Central del Loader (Tarjeta Principal):
+                      Imagen o Logo Central del Loader (Área Central):
                     </label>
                     <MediaPicker
                       value={form.details?.loader_image || ''}
@@ -5221,9 +5233,183 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
                       label="Seleccionar o Subir Imagen para la Tarjeta del Loader"
                       type="image"
                     />
+
+                    {/* Modo de ajuste y tamaño de la imagen */}
+                    {form.details?.loader_image && (
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1.5">
+                          Ajuste y Tamaño de la Imagen Central:
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setForm({
+                                ...form,
+                                details: {
+                                  ...(form.details || {}),
+                                  loader_image_fit: 'contain',
+                                },
+                              })
+                            }
+                            className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-start gap-2.5 cursor-pointer ${
+                              (form.details?.loader_image_fit || 'contain') === 'contain'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-300 shadow-xs'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                            }`}
+                          >
+                            <span className="w-2.5 h-2.5 rounded-full mt-1 shrink-0 bg-emerald-500" />
+                            <div>
+                              <div className="font-black">Centrada y Proporcionada (Recomendado)</div>
+                              <div className="text-[10px] font-normal opacity-80 mt-0.5">
+                                Ideal para logos: se muestra en el centro con tamaño limpio sin deformarse ni cubrir toda la tarjeta.
+                              </div>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setForm({
+                                ...form,
+                                details: {
+                                  ...(form.details || {}),
+                                  loader_image_fit: 'cover',
+                                },
+                              })
+                            }
+                            className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-start gap-2.5 cursor-pointer ${
+                              form.details?.loader_image_fit === 'cover'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-300 shadow-xs'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                            }`}
+                          >
+                            <span className="w-2.5 h-2.5 rounded-full mt-1 shrink-0 bg-emerald-500" />
+                            <div>
+                              <div className="font-black">Fondo Completo (Cover)</div>
+                              <div className="text-[10px] font-normal opacity-80 mt-0.5">
+                                Cubre todo el fondo del área central. Ideal para fotografías panorámicas.
+                              </div>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <span className="text-[10px] text-slate-400 block">
-                      * Esta imagen solo se proyectará en la sección principal central del loader. El fondo exterior de la pantalla mantendrá únicamente el efecto backdrop difuminado.
+                      * El fondo exterior de la pantalla mantendrá únicamente el efecto backdrop semi-transparente difuminado.
                     </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Color de Fondo del Área Central */}
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                        Color de Fondo del Área Central (Modal):
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={form.details?.loader_bg_color || '#0f172a'}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              details: {
+                                ...(form.details || {}),
+                                loader_bg_color: e.target.value,
+                              },
+                            })
+                          }
+                          className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={form.details?.loader_bg_color || '#0f172a'}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              details: {
+                                ...(form.details || {}),
+                                loader_bg_color: e.target.value,
+                              },
+                            })
+                          }
+                          placeholder="#0f172a"
+                          className="flex-grow px-3 py-2 text-xs font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400 block">
+                        Personaliza el color de la tarjeta central del loader (oscuro, claro o a juego con tu marca).
+                      </span>
+                    </div>
+
+                    {/* Color y Control del Degradado */}
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                          Degradado Luminoso de la Marca:
+                        </label>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.details?.loader_gradient_enabled !== false}
+                            onChange={(e) =>
+                              setForm({
+                                ...form,
+                                details: {
+                                  ...(form.details || {}),
+                                  loader_gradient_enabled: e.target.checked,
+                                },
+                              })
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="w-8 h-4 bg-slate-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                      </div>
+
+                      {form.details?.loader_gradient_enabled !== false && (
+                        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1.5">
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase">
+                            Color del Degradado y Resplandor:
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={form.details?.loader_gradient_color || form.primary_color || '#e2b728'}
+                              onChange={(e) =>
+                                setForm({
+                                  ...form,
+                                  details: {
+                                    ...(form.details || {}),
+                                    loader_gradient_color: e.target.value,
+                                  },
+                                })
+                              }
+                              className="w-8 h-8 rounded-lg cursor-pointer border border-slate-300 dark:border-slate-700 p-0.5 bg-transparent"
+                            />
+                            <input
+                              type="text"
+                              value={form.details?.loader_gradient_color || form.primary_color || '#e2b728'}
+                              onChange={(e) =>
+                                setForm({
+                                  ...form,
+                                  details: {
+                                    ...(form.details || {}),
+                                    loader_gradient_color: e.target.value,
+                                  },
+                                })
+                              }
+                              placeholder="#e2b728"
+                              className="flex-grow px-2.5 py-1.5 text-xs font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <span className="text-[10px] text-slate-400 block">
+                        Aplica degradados difuminados en las esquinas y bordes del área central.
+                      </span>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -5937,6 +6123,10 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
             countryImage={form.details?.loader_image || form.country_image}
             brandColor={form.primary_color || '#00a884'}
             textColor={form.details?.loader_text_color || '#ffffff'}
+            bgColor={form.details?.loader_bg_color || '#0f172a'}
+            gradientColor={form.details?.loader_gradient_color || form.primary_color || '#e2b728'}
+            showGradients={form.details?.loader_gradient_enabled !== false}
+            imageFit={form.details?.loader_image_fit || 'contain'}
             duration={
               (Number(form.details?.loader_duration) || 2.5) > 20
                 ? Number(form.details?.loader_duration)
