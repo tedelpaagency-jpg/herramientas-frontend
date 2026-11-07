@@ -61,6 +61,9 @@ const TravelPackageV4: React.FC<TravelPackageV4Props> = ({
       return true;
     });
 
+    // Ordenar estrictamente por ID (de mayor a menor)
+    matches.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+
     // Si la pestaña tiene menos de 8 resultados, autocompletar hasta 8 usando el catálogo base
     if (matches.length < 8) {
       const fallbackPool = DEFAULT_REAL_ESTATE_PROPERTIES.map((def, idx) => {
