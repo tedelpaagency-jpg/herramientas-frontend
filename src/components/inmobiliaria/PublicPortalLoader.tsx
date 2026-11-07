@@ -169,6 +169,11 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
       `}} />
 
+      {/* Pre-cargar la imagen del loader a máxima prioridad en el navegador */}
+      {displayImage && (
+        <link rel="preload" as="image" href={displayImage} fetchPriority="high" />
+      )}
+
       {/* Backdrop semi-transparente con desenfoque suave */}
       <div className="absolute inset-0 z-0 pointer-events-none bg-black/20" />
 

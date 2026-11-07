@@ -6,7 +6,11 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
 import DashboardPage from '@/views/DashboardPage';
 import { useAuth } from '@/context/AuthContext';
-import publicInmobiliariaService, { PublicAgencyConfig } from '@/services/publicInmobiliariaService';
+import publicInmobiliariaService, {
+  PublicAgencyConfig,
+  getCachedAgencyConfig,
+  getCachedLoaderImage,
+} from '@/services/publicInmobiliariaService';
 import PublicInmobiliariaHomeView from '@/views/inmobiliaria/PublicInmobiliariaHomeView';
 import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
 
@@ -14,9 +18,31 @@ export default function HomeClientView() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [portalStatus, setPortalStatus] = useState<'checking' | 'enabled' | 'disabled'>('checking');
-  const [portalConfig, setPortalConfig] = useState<PublicAgencyConfig | null>(null);
-  const [resolvedDomain, setResolvedDomain] = useState<string | undefined>(undefined);
+  const [portalConfig, setPortalConfig] = useState<PublicAgencyConfig | null>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = getCachedAgencyConfig();
+      if (cached && cached.frontend_enabled) return cached;
+    }
+    return null;
+  });
+
+  const [portalStatus, setPortalStatus] = useState<'checking' | 'enabled' | 'disabled'>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = getCachedAgencyConfig();
+      if (cached && cached.frontend_enabled && !cached.redirect_to_login) {
+        return 'enabled';
+      }
+    }
+    return 'checking';
+  });
+
+  const [resolvedDomain, setResolvedDomain] = useState<string | undefined>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = getCachedAgencyConfig();
+      if (cached?.domain) return cached.domain;
+    }
+    return undefined;
+  });
 
   const isHunter =
     user?.role === 'hunter' ||
@@ -129,9 +155,17 @@ export default function HomeClientView() {
   }, [portalStatus, isHunter, router]);
 
   if (portalStatus === 'checking') {
+    const cachedLoaderImg = typeof window !== 'undefined' ? getCachedLoaderImage() : undefined;
+    const cachedAgency = typeof window !== 'undefined' ? getCachedAgencyConfig() : undefined;
     return (
       <div className="min-h-screen relative bg-slate-950 flex items-center justify-center">
-        <PublicPortalLoader isOpen={true} countryName="ECUADOR" />
+        <PublicPortalLoader
+          isOpen={true}
+          countryName={cachedAgency?.country_name || "ECUADOR"}
+          countryImage={cachedLoaderImg || cachedAgency?.details?.loader_image || undefined}
+          brandColor={cachedAgency?.primary_color}
+          agency={cachedAgency}
+        />
       </div>
     );
   }
