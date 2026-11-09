@@ -6,7 +6,6 @@ import {
   getCachedAgencyConfig,
   getCachedBrandColor,
   getCachedLoaderImage,
-  setCachedLoaderImage,
 } from "@/services/publicInmobiliariaService";
 import { IMMOBILLIS_LOGO_URL } from "./immobillisLoaderLogo";
 
@@ -28,81 +27,21 @@ export interface PublicPortalLoaderProps {
   isOpen?: boolean;
 }
 
-const hexToRgba = (hex: string, alpha: number): string => {
-  if (!hex || hex.toLowerCase() === '#00a884') return `rgba(226, 183, 40, ${alpha})`;
-  let clean = hex.replace('#', '');
-  if (clean.toLowerCase() === '00a884') clean = 'e2b728';
-  let r = 0, g = 0, b = 0;
-  if (clean.length === 3) {
-    r = parseInt(clean[0] + clean[0], 16);
-    g = parseInt(clean[1] + clean[1], 16);
-    b = parseInt(clean[2] + clean[2], 16);
-  } else if (clean.length >= 6) {
-    r = parseInt(clean.substring(0, 2), 16);
-    g = parseInt(clean.substring(2, 4), 16);
-    b = parseInt(clean.substring(4, 6), 16);
-  }
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
-
 export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
-  countryName,
-  countryImage,
-  loaderImage,
   agency,
   brandColor,
-  textColor,
-  bgColor,
-  gradientColor,
-  showGradients,
-  imageFit,
   duration,
   logoUrl,
+  loaderImage,
   message,
-  messages,
   isOpen = true,
 }) => {
-  const defaultMessages = [
-    message || "Un momento por favor, estamos buscando las mejores propiedades.",
-    "Analizando el mercado y filtrando opciones para ti...",
-    "Preparando el catálogo de tu próximo hogar...",
-  ];
-
-  const activeMessages = (messages && messages.length > 0) ? messages : defaultMessages;
-  const [currentMessage, setCurrentMessage] = useState<string>('');
-
-  // Resolver color de la agencia evitando destellos verdes (#00a884)
+  // Brand color resolution (avoid default unstyled teal #00a884)
   const cachedBrand = typeof window !== 'undefined' ? (getCachedBrandColor() || getCachedAgencyConfig()?.primary_color) : null;
   const rawBrand = brandColor || agency?.primary_color || cachedBrand;
   const effectiveBrandColor = (!rawBrand || rawBrand.toLowerCase() === '#00a884') ? '#e2b728' : rawBrand;
 
-  const effectiveTextColor =
-    textColor ||
-    agency?.details?.loader_text_color ||
-    agency?.loader_text_color ||
-    '#ffffff';
-
-  // Color de fondo del área central (modal)
-  const effectiveBgColor =
-    bgColor ||
-    agency?.details?.loader_bg_color ||
-    '#0f172a';
-
-  // Color del degradado y acento
-  const rawGradientColor =
-    gradientColor ||
-    agency?.details?.loader_gradient_color ||
-    effectiveBrandColor;
-  const effectiveGradientColor = (!rawGradientColor || rawGradientColor.toLowerCase() === '#00a884')
-    ? effectiveBrandColor
-    : rawGradientColor;
-
-  // Si los degradados luminosos sutiles están activados
-  const effectiveShowGradients =
-    showGradients ??
-    (agency?.details?.loader_gradient_enabled !== false);
-
-  // Duración en milisegundos: si el usuario configuró segundos (ej. 3 o 3.5), convertir a ms
+  // Duration in ms
   const rawDuration =
     duration ??
     agency?.details?.loader_duration ??
@@ -112,79 +51,72 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
   const effectiveDuration = parsedDur <= 20 ? parsedDur * 1000 : parsedDur;
 
   const [minTimeElapsed, setMinTimeElapsed] = useState<boolean>(false);
+  const [imgFailed, setImgFailed] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(25);
 
   useEffect(() => {
     if (!isOpen) {
+      setProgress(100);
       setMinTimeElapsed(true);
       return;
     }
     setMinTimeElapsed(false);
-    const timer = setTimeout(() => {
+    setImgFailed(false);
+    setProgress(20);
+
+    const step1 = setTimeout(() => setProgress(48), 250);
+    const step2 = setTimeout(() => setProgress(72), Math.min(1000, effectiveDuration * 0.45));
+    const step3 = setTimeout(() => setProgress(90), Math.min(1800, effectiveDuration * 0.8));
+
+    const doneTimer = setTimeout(() => {
+      setProgress(100);
       setMinTimeElapsed(true);
     }, effectiveDuration);
-    return () => clearTimeout(timer);
+
+    return () => {
+      clearTimeout(step1);
+      clearTimeout(step2);
+      clearTimeout(step3);
+      clearTimeout(doneTimer);
+    };
   }, [isOpen, effectiveDuration]);
 
-  const effectiveLogoUrl =
+  // Determine potential logo / image candidate
+  const cachedImg = typeof window !== 'undefined' ? getCachedLoaderImage(agency?.domain) : null;
+  const candidate =
     logoUrl ||
+    loaderImage ||
+    agency?.details?.loader_image ||
+    agency?.loader_image ||
+    cachedImg ||
     agency?.logo_icon ||
     agency?.logo ||
     agency?.favicon ||
     agency?.logo_2 ||
     null;
 
-  const displayTitle =
-    agency?.commercial_name ||
-    agency?.name ||
-    countryName ||
-    "Portal Inmobiliario";
-
-  // Resolver imagen personalizada de loader ÚNICAMENTE si fue configurada por el usuario (NUNCA fotos turísticas ni país)
-  const cachedImg = typeof window !== 'undefined'
-    ? getCachedLoaderImage(agency?.domain)
+  // Filter out any unsplash generic photos
+  const validCandidate = (candidate && typeof candidate === 'string' && !candidate.includes('unsplash.com'))
+    ? candidate
     : null;
 
-  const rawCandidate =
-    loaderImage ||
-    agency?.details?.loader_image ||
-    agency?.loader_image ||
-    cachedImg ||
-    null;
+  // Fallback to official Immobillis logo if on Immobillis domain or agency 394
+  const isImmobillis =
+    agency?.id === 394 ||
+    (typeof window !== 'undefined' && window.location.hostname.includes('immobillis')) ||
+    (agency?.domain && agency.domain.includes('immobillis'));
 
-  // Filtrar estrictamente cualquier residuo de unsplash o fotos de países genéricas
-  const displayImage = (rawCandidate && typeof rawCandidate === 'string' && !rawCandidate.includes('unsplash.com'))
-    ? rawCandidate
-    : null;
-
-  // Mantenerla sincronizada en caché y pre-cargada si es válida
-  useEffect(() => {
-    if (typeof window !== 'undefined' && displayImage) {
-      setCachedLoaderImage(displayImage, agency?.domain);
-    }
-  }, [displayImage, agency?.domain]);
-
-  useEffect(() => {
-    if (!activeMessages || activeMessages.length === 0) return;
-
-    const getRandomMessage = () =>
-      activeMessages[Math.floor(Math.random() * activeMessages.length)];
-
-    setCurrentMessage(getRandomMessage());
-
-    if (activeMessages.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentMessage(getRandomMessage());
-      }, 3500);
-      return () => clearInterval(interval);
-    }
-  }, [activeMessages]);
+  const rawLogo = validCandidate || (isImmobillis ? IMMOBILLIS_LOGO_URL : null);
+  const logoToDisplay = !imgFailed ? rawLogo : null;
 
   const shouldRender = isOpen || !minTimeElapsed;
   if (!shouldRender) return null;
 
+  const displayMessage = message || "Un momento por favor, estamos buscando las mejores propiedades.";
+
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center font-sans overflow-hidden select-none transition-opacity duration-500 animate-in fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center font-sans overflow-hidden select-none transition-opacity duration-300 animate-in fade-in"
       role="status"
       aria-live="polite"
       aria-label="Cargando propiedades"
@@ -192,122 +124,59 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         backgroundColor: 'rgba(255, 255, 255, 0.40)',
         backdropFilter: 'blur(20px) saturate(180%)',
         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        '--brand-color': effectiveBrandColor,
-      } as React.CSSProperties}
+      }}
     >
       <style dangerouslySetInnerHTML={{
         __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
-        .font-sans { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes shimmerSlow {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(250%); }
+        }
+        .animate-shimmer-slow {
+          animation: shimmerSlow 2s infinite ease-in-out;
+        }
       `}} />
 
-      {/* Pre-cargar la imagen si existe */}
-      {displayImage && (
-        <link rel="preload" as="image" href={displayImage} fetchPriority="high" />
-      )}
-
-      {/* Tarjeta Central Sólida Estilo Apple */}
+      {/* Tarjeta Central Sólida Blanca */}
       <div
-        className="relative z-10 w-[90%] max-w-[440px] min-h-[350px] rounded-[28px] bg-[#ffffff] flex flex-col justify-between p-7 sm:p-9 transition-all duration-500 border border-slate-100 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.04)]"
+        className="relative z-10 w-[90%] max-w-[340px] rounded-[24px] bg-[#ffffff] flex flex-col items-center justify-center p-7 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-slate-100/90 animate-in fade-in zoom-in-95 duration-300"
         style={{
-          borderRadius: '28px',
+          borderRadius: '24px',
         }}
       >
-        {/* Encabezado: Nombre de la agencia / Portal y status dot */}
-        <div className="flex items-center justify-between w-full z-10 relative">
-          <span
-            className="text-[12px] font-bold tracking-[0.16em] uppercase text-[#0f172a] opacity-80 truncate pr-3"
+        {/* Logotipo de la agencia / Immobillis (Solo si existe y es válido) */}
+        {logoToDisplay && (
+          <div className="w-full flex items-center justify-center mb-6">
+            <img
+              src={logoToDisplay}
+              alt={agency?.name || "Logo"}
+              className="max-w-[190px] max-h-[85px] w-auto h-auto object-contain drop-shadow-sm select-none"
+              loading="eager"
+              decoding="sync"
+              fetchPriority="high"
+              onError={() => setImgFailed(true)}
+            />
+          </div>
+        )}
+
+        {/* Barra de progreso */}
+        <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden relative shadow-inner">
+          <div
+            className="h-full rounded-full transition-all duration-300 relative overflow-hidden"
+            style={{
+              width: `${progress}%`,
+              background: `linear-gradient(90deg, #d97706 0%, ${effectiveBrandColor} 50%, #fbbf24 100%)`,
+              boxShadow: `0 0 8px ${effectiveBrandColor}60`,
+            }}
           >
-            {displayTitle}
-          </span>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span
-              className="w-2.5 h-2.5 rounded-full animate-ping"
-              style={{ backgroundColor: effectiveBrandColor }}
-            />
-            <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: effectiveBrandColor }}
-            />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer-slow" />
           </div>
         </div>
 
-        {/* Área Central: Logotipo de Immobillis / Agencia */}
-        <div className="flex-1 flex flex-col items-center justify-center py-6 px-2 z-10 text-center my-auto">
-          {displayImage ? (
-            <div className="relative max-w-full flex items-center justify-center animate-fade-in">
-              <img
-                src={displayImage}
-                alt={agency?.name || "Loader"}
-                className="max-w-[85%] max-h-[180px] object-contain drop-shadow-md"
-                loading="eager"
-                decoding="sync"
-                fetchPriority="high"
-              />
-            </div>
-          ) : (effectiveLogoUrl || IMMOBILLIS_LOGO_URL) ? (
-            <div className="relative flex flex-col items-center justify-center p-4 animate-fade-in">
-              <img
-                src={effectiveLogoUrl || IMMOBILLIS_LOGO_URL}
-                alt={agency?.name || "Immobillis"}
-                className="max-w-[240px] max-h-[90px] object-contain drop-shadow-md relative z-10"
-                loading="eager"
-                decoding="sync"
-                fetchPriority="high"
-              />
-            </div>
-          ) : (
-            <div className="relative flex items-center justify-center p-4">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
-                style={{ backgroundColor: hexToRgba(effectiveBrandColor, 0.15) }}
-              >
-                <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
-                  <path d="M20 4L4 13.5L20 23L36 13.5L20 4Z" fill={effectiveBrandColor} />
-                  <path d="M4 26.5L20 36L36 26.5L36 13.5L20 23L4 13.5L4 26.5Z" fill={effectiveBrandColor} fillOpacity="0.8" />
-                  <circle cx="20" cy="20" r="5" fill="#ffffff" />
-                </svg>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Pie: Barra de progreso dorada y tipografía en gris oscuro pizarra (#0f172a, font-weight: 700) */}
-        <div className="w-full flex flex-col items-center gap-3.5 z-10 relative pt-2">
-          {/* Línea indicadora de progreso dorada */}
-          <div className="w-40 h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-            <div
-              className="h-full rounded-full animate-pulse"
-              style={{
-                backgroundColor: effectiveBrandColor,
-                boxShadow: `0 0 8px ${effectiveBrandColor}`,
-                width: '75%',
-              }}
-            />
-          </div>
-
-          {/* Mensaje informativo */}
-          <p
-            key={currentMessage}
-            className="font-bold text-[13.5px] leading-relaxed text-center text-[#0f172a] max-w-[340px] animate-fade-in"
-            style={{ fontWeight: 700 }}
-          >
-            {currentMessage}
-          </p>
-
-          {/* Si hay una imagen personalizada arriba, mostrar el logo pequeño abajo */}
-          {displayImage && (effectiveLogoUrl || IMMOBILLIS_LOGO_URL) && (
-            <div className="mt-1 opacity-80 hover:opacity-100 transition-opacity">
-              <img
-                src={effectiveLogoUrl || IMMOBILLIS_LOGO_URL}
-                alt={agency?.name || "Logo"}
-                className="h-[24px] w-auto max-w-[120px] object-contain"
-              />
-            </div>
-          )}
-        </div>
+        {/* Mensaje informativo */}
+        <p className="mt-3.5 text-[12px] sm:text-[12.5px] font-bold text-slate-800 leading-snug text-center max-w-[270px] tracking-tight">
+          {displayMessage}
+        </p>
       </div>
     </div>
   );
