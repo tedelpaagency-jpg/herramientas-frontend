@@ -759,32 +759,6 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           -webkit-overflow-scrolling: touch;
         }
 
-        /* Buscador en modo cristal translúcido mientras el loader está activo (estilo Apple) */
-        .inmo-main-booking-card,
-        .inmo-card-tabs-bar,
-        .inmo-card-form-grid,
-        .inmo-field-trigger {
-          transition: background-color 0.5s ease, box-shadow 0.5s ease, border-color 0.5s ease;
-        }
-        html.inmo-loader-active .inmo-main-booking-card {
-          background: rgba(255, 255, 255, 0.16) !important;
-          border: 1px solid rgba(255, 255, 255, 0.55) !important;
-          box-shadow: 0 8px 32px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
-        }
-        html.inmo-loader-active .inmo-card-tabs-bar,
-        html.inmo-loader-active .inmo-card-form-grid {
-          background: transparent !important;
-          border-color: rgba(255, 255, 255, 0.35) !important;
-        }
-        html.inmo-loader-active .inmo-field-trigger {
-          background: rgba(255, 255, 255, 0.28) !important;
-          border-color: rgba(255, 255, 255, 0.55) !important;
-        }
-        html.inmo-loader-active .inmo-main-booking-card .inmo-field-label,
-        html.inmo-loader-active .inmo-main-booking-card .inmo-field-trigger span {
-          opacity: 0.55;
-        }
-
         .inmo-card-tabs-bar::-webkit-scrollbar {
           display: none;
         }

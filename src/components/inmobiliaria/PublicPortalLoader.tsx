@@ -142,20 +142,6 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
   const logoToDisplay = !imgFailed ? rawLogo : IMMOBILLIS_LOGO_URL;
 
   const shouldRender = isOpen || !isFullyClosed;
-
-  // Marca el documento mientras el loader está activo para que el buscador (HeroV4) se vuelva cristal translúcido
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    if (shouldRender) {
-      document.documentElement.classList.add('inmo-loader-active');
-    } else {
-      document.documentElement.classList.remove('inmo-loader-active');
-    }
-    return () => {
-      document.documentElement.classList.remove('inmo-loader-active');
-    };
-  }, [shouldRender]);
-
   if (!shouldRender) return null;
 
   const displayMessage = message || "Un momento por favor, estamos buscando las mejores propiedades.";
