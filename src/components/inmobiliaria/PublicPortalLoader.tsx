@@ -138,18 +138,20 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         }
       `}} />
 
-      {/* Contenedor Central Limpio y Transparente (Sin cuadro blanco ni texto) */}
-      <div className="relative z-10 flex flex-col items-center justify-center p-4">
-        {/* Logotipo Grande de Immobillis / Agencia */}
+      {/* Tarjeta Central Blanca Sólida Estilo Apple / Immobillis */}
+      <div
+        className="relative z-10 w-[90%] max-w-[360px] rounded-[26px] sm:rounded-[28px] bg-white flex flex-col items-center justify-center px-7 py-7 sm:px-8 sm:py-8 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.14),0_2px_10px_rgba(0,0,0,0.04)] border border-slate-100/90"
+        style={{
+          borderRadius: '28px',
+        }}
+      >
+        {/* Logotipo de Immobillis / Agencia */}
         {logoToDisplay && (
-          <div className="flex items-center justify-center">
+          <div className="w-full flex items-center justify-center mb-4 sm:mb-5">
             <img
               src={logoToDisplay}
               alt={agency?.name || "Logo"}
-              className="w-auto h-[180px] sm:h-[220px] md:h-[260px] max-w-[340px] sm:max-w-[420px] md:max-w-[480px] object-contain select-none pointer-events-none drop-shadow-md"
-              style={{
-                mixBlendMode: 'multiply',
-              }}
+              className="w-auto h-[110px] sm:h-[120px] max-w-[220px] object-contain select-none pointer-events-none drop-shadow-none"
               loading="eager"
               decoding="sync"
               fetchPriority="high"
@@ -165,18 +167,23 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         )}
 
         {/* Barra de progreso dorada */}
-        <div className="w-56 sm:w-64 h-1.5 sm:h-2 bg-black/10 rounded-full overflow-hidden relative shadow-inner mt-4 sm:mt-6">
+        <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden relative shadow-inner">
           <div
             className="h-full rounded-full transition-all duration-300 relative overflow-hidden"
             style={{
               width: `${progress}%`,
               background: `linear-gradient(90deg, #d97706 0%, ${effectiveBrandColor} 50%, #fbbf24 100%)`,
-              boxShadow: `0 0 10px ${effectiveBrandColor}80`,
+              boxShadow: `0 0 8px ${effectiveBrandColor}50`,
             }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer-bar" />
           </div>
         </div>
+
+        {/* Mensaje informativo idéntico al diseño */}
+        <p className="mt-3.5 text-[12px] sm:text-[12.5px] font-bold text-slate-800 leading-snug text-center max-w-[250px] tracking-tight">
+          {displayMessage}
+        </p>
       </div>
     </div>
   );

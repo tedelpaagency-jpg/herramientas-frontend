@@ -32,8 +32,12 @@ export default function HomeClientView() {
       if (cached && cached.frontend_enabled && !cached.redirect_to_login) {
         return 'enabled';
       }
+      const hostname = window.location.hostname.toLowerCase();
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('inmosoft') || hostname.includes('immobillis')) {
+        return 'enabled';
+      }
     }
-    return 'checking';
+    return 'enabled';
   });
 
   const [resolvedDomain, setResolvedDomain] = useState<string | undefined>(() => {
