@@ -202,29 +202,38 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         <div className="absolute inset-0 bg-slate-900/40" />
       </div>
 
-      {/* 2. Pantalla de Cristal Líquido Puro (Liquid Crystal Glass) */}
+      {/* 2. Pantalla de Cristal Líquido Puro (Ultra Liquid Glass con refracción óptica) */}
       <div
         className="absolute inset-0 z-[1]"
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.60)',
-          backdropFilter: 'blur(35px) saturate(175%)',
-          WebkitBackdropFilter: 'blur(35px) saturate(175%)',
+          backgroundColor: 'rgba(255, 255, 255, 0.42)',
+          backdropFilter: 'blur(45px) saturate(220%) brightness(1.04)',
+          WebkitBackdropFilter: 'blur(45px) saturate(220%) brightness(1.04)',
+          boxShadow: 'inset 0 0 120px rgba(255, 255, 255, 0.45)',
         }}
       />
 
-      {/* 3. Orbes de luz viva atmosférica (Atmospheric Aurora) en movimiento sutil */}
+      {/* 3. Reflejo especular diagonal de cristal líquido (Liquid Glass Sheen) */}
       <div
-        className="absolute -top-32 -left-32 w-[520px] h-[520px] rounded-full pointer-events-none z-[2] animate-aurora-1"
+        className="absolute inset-0 z-[1] pointer-events-none"
         style={{
-          background: `radial-gradient(circle, ${effectiveBrandColor}45 0%, ${effectiveBrandColor}15 45%, transparent 70%)`,
-          filter: 'blur(50px)',
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.12) 35%, rgba(255, 255, 255, 0) 65%, rgba(255, 255, 255, 0.08) 100%)',
+        }}
+      />
+
+      {/* 4. Orbes de luz viva atmosférica (Atmospheric Aurora) en movimiento sutil */}
+      <div
+        className="absolute -top-28 -left-28 w-[580px] h-[580px] rounded-full pointer-events-none z-[2] animate-aurora-1"
+        style={{
+          background: `radial-gradient(circle, ${effectiveBrandColor}55 0%, ${effectiveBrandColor}18 45%, transparent 70%)`,
+          filter: 'blur(55px)',
         }}
       />
       <div
-        className="absolute -bottom-40 -right-32 w-[580px] h-[580px] rounded-full pointer-events-none z-[2] animate-aurora-2"
+        className="absolute -bottom-36 -right-28 w-[640px] h-[640px] rounded-full pointer-events-none z-[2] animate-aurora-2"
         style={{
-          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, rgba(99, 102, 241, 0.12) 40%, transparent 70%)',
-          filter: 'blur(60px)',
+          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.32) 0%, rgba(99, 102, 241, 0.16) 42%, transparent 70%)',
+          filter: 'blur(65px)',
         }}
       />
 
