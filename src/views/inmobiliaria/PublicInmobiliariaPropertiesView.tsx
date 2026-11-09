@@ -1809,23 +1809,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
               </div>
 
               {loading ? (
-                /* Shimmer Skeletons compactos */
-                <div
-                  className={
-                    viewMode === 'list'
-                      ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-2.5 sm:gap-4'
-                      : 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2 sm:gap-3'
-                  }
-                >
-                  {[1, 2, 3, 4, 5, 6].map((n) => (
-                    <div key={n} className="p-2 rounded-2xl border border-slate-100 space-y-2">
-                      <div className="aspect-[4/3] rounded-xl bg-slate-100 animate-pulse" />
-                      <div className="h-3.5 bg-slate-100 rounded w-3/4 animate-pulse" />
-                      <div className="h-3 bg-slate-100 rounded w-1/2 animate-pulse" />
-                      <div className="h-4 bg-slate-100 rounded w-1/3 animate-pulse" />
-                    </div>
-                  ))}
-                </div>
+                /* Sin skeleton: el PublicPortalLoader cubre la pantalla mientras carga */
+                <div className="min-h-[60vh]" />
               ) : estates.length > 0 ? (
                 /* Listado de propiedades */
                 <div

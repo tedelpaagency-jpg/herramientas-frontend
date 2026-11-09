@@ -77,10 +77,6 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
     const doneTimer = setTimeout(() => {
       setMinTimeElapsed(true);
-      setIsFadingOut(true);
-      setTimeout(() => {
-        setIsFullyClosed(true);
-      }, 550);
     }, effectiveDuration);
 
     return () => {
@@ -91,6 +87,20 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
       clearTimeout(doneTimer);
     };
   }, [effectiveDuration]);
+
+  // El loader solo se desvanece cuando terminó el tiempo mínimo Y la carga real ya finalizó (isOpen=false).
+  // Mientras isOpen siga en true, se mantiene visible cubriendo la página.
+  useEffect(() => {
+    if (isOpen) {
+      setIsFadingOut(false);
+      setIsFullyClosed(false);
+      return;
+    }
+    if (!minTimeElapsed) return;
+    setIsFadingOut(true);
+    const closeTimer = setTimeout(() => setIsFullyClosed(true), 550);
+    return () => clearTimeout(closeTimer);
+  }, [isOpen, minTimeElapsed]);
 
   // Determine potential logo / image candidate
   const cachedImg = typeof window !== 'undefined' ? getCachedLoaderImage(agency?.domain) : null;
@@ -131,7 +141,7 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
   const logoToDisplay = !imgFailed ? rawLogo : IMMOBILLIS_LOGO_URL;
 
-  const shouldRender = !isFullyClosed && (isOpen || !minTimeElapsed);
+  const shouldRender = isOpen || !isFullyClosed;
   if (!shouldRender) return null;
 
   const displayMessage = message || "Un momento por favor, estamos buscando las mejores propiedades.";
