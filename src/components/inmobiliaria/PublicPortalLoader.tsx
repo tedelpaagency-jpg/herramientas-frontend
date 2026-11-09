@@ -55,6 +55,8 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
   const effectiveDuration = parsedDur <= 20 ? parsedDur * 1000 : parsedDur;
 
   const [minTimeElapsed, setMinTimeElapsed] = useState<boolean>(false);
+  const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
+  const [isFullyClosed, setIsFullyClosed] = useState<boolean>(false);
   const [imgFailed, setImgFailed] = useState<boolean>(false);
   const [useRemoteFallback, setUseRemoteFallback] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(15);
@@ -64,6 +66,8 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
     if (!isOpen && minTimeElapsed) return;
 
     setMinTimeElapsed(false);
+    setIsFadingOut(false);
+    setIsFullyClosed(false);
     setProgress(15);
 
     const step1 = setTimeout(() => setProgress(45), Math.max(120, effectiveDuration * 0.20));
@@ -73,6 +77,10 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
     const doneTimer = setTimeout(() => {
       setMinTimeElapsed(true);
+      setIsFadingOut(true);
+      setTimeout(() => {
+        setIsFullyClosed(true);
+      }, 550);
     }, effectiveDuration);
 
     return () => {
@@ -123,7 +131,7 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
   const logoToDisplay = !imgFailed ? rawLogo : IMMOBILLIS_LOGO_URL;
 
-  const shouldRender = isOpen || !minTimeElapsed;
+  const shouldRender = !isFullyClosed && (isOpen || !minTimeElapsed);
   if (!shouldRender) return null;
 
   const displayMessage = message || "Un momento por favor, estamos buscando las mejores propiedades.";
@@ -135,9 +143,13 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
       aria-live="polite"
       aria-label="Cargando propiedades"
       style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.40)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        backgroundColor: 'rgba(255, 255, 255, 0.76)',
+        backdropFilter: 'blur(75px) saturate(190%)',
+        WebkitBackdropFilter: 'blur(75px) saturate(190%)',
+        opacity: isFadingOut ? 0 : 1,
+        transform: isFadingOut ? 'scale(1.02)' : 'scale(1)',
+        pointerEvents: isFadingOut ? 'none' : 'auto',
+        transition: 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s ease-out',
       }}
     >
       <style dangerouslySetInnerHTML={{
@@ -149,13 +161,51 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         .animate-shimmer-bar {
           animation: shimmerBar 1.8s infinite ease-in-out;
         }
+        @keyframes auroraFloat1 {
+          0%, 100% { transform: translate(0px, 0px) scale(1); }
+          50% { transform: translate(50px, 35px) scale(1.10); }
+        }
+        @keyframes auroraFloat2 {
+          0%, 100% { transform: translate(0px, 0px) scale(1); }
+          50% { transform: translate(-45px, -30px) scale(1.08); }
+        }
+        .animate-aurora-1 {
+          animation: auroraFloat1 9s ease-in-out infinite;
+        }
+        .animate-aurora-2 {
+          animation: auroraFloat2 11s ease-in-out infinite;
+        }
       `}} />
 
-      {/* Tarjeta Central Blanca Sólida Estilo Apple / Immobillis */}
+      {/* Orbes de luz viva atmosférica (Atmospheric Aurora) en movimiento sutil */}
       <div
-        className="relative z-10 w-[90%] max-w-[340px] rounded-[28px] bg-white flex flex-col items-center justify-center px-6 pt-7 pb-6 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_2px_10px_rgba(0,0,0,0.04)] border border-slate-100"
+        className="absolute -top-32 -left-32 w-[520px] h-[520px] rounded-full pointer-events-none animate-aurora-1"
+        style={{
+          background: `radial-gradient(circle, ${effectiveBrandColor}40 0%, ${effectiveBrandColor}12 45%, transparent 70%)`,
+          filter: 'blur(60px)',
+        }}
+      />
+      <div
+        className="absolute -bottom-40 -right-32 w-[580px] h-[580px] rounded-full pointer-events-none animate-aurora-2"
+        style={{
+          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.20) 0%, rgba(99, 102, 241, 0.10) 40%, transparent 70%)',
+          filter: 'blur(70px)',
+        }}
+      />
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[450px] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 80%)',
+          filter: 'blur(50px)',
+        }}
+      />
+
+      {/* Tarjeta Central Blanca Sólida Estilo Apple con Sombra Obsidian Ambient */}
+      <div
+        className="relative z-10 w-[90%] max-w-[340px] rounded-[28px] bg-white flex flex-col items-center justify-center px-6 pt-7 pb-6 border border-white/90"
         style={{
           borderRadius: '28px',
+          boxShadow: '0 32px 75px -12px rgba(15, 23, 42, 0.20), 0 10px 28px -6px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.95)',
         }}
       >
         {/* Logotipo de Immobillis (Grande, nítido y transparente como la imagen de referencia) */}
