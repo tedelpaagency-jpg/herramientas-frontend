@@ -216,21 +216,22 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         }}
       />
 
-      {/* 4. Tarjeta Central Blanca Sólida Estilo Apple con Sombra Obsidian Ambient */}
+      {/* 4. Tarjeta central limpia estilo Apple: logo + barra dorada, espaciado equilibrado */}
       <div
-        className="relative z-10 w-[90%] max-w-[340px] rounded-[28px] bg-white flex flex-col items-center justify-center px-6 pt-7 pb-6 border border-white/90"
+        className="relative z-10 w-[88%] max-w-[330px] bg-white flex flex-col items-center justify-center px-8 py-9"
         style={{
-          borderRadius: '28px',
-          boxShadow: '0 32px 75px -12px rgba(15, 23, 42, 0.20), 0 10px 28px -6px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.95)',
+          borderRadius: '30px',
+          border: '1px solid rgba(255, 255, 255, 0.95)',
+          boxShadow: '0 30px 70px -18px rgba(15, 23, 42, 0.22), 0 6px 20px -8px rgba(15, 23, 42, 0.08)',
         }}
       >
-        {/* Logotipo de Immobillis (Grande, nítido y transparente como la imagen de referencia) */}
+        {/* Logotipo de Immobillis centrado y nítido */}
         {logoToDisplay && (
-          <div className="w-full flex items-center justify-center mb-3.5">
+          <div className="w-full flex items-center justify-center mb-7">
             <img
               src={logoToDisplay}
               alt={agency?.name || "Logo"}
-              className="w-auto h-[145px] sm:h-[155px] max-w-[250px] sm:max-w-[270px] object-contain select-none pointer-events-none drop-shadow-none"
+              className="w-auto h-[140px] sm:h-[150px] max-w-[240px] sm:max-w-[250px] object-contain select-none pointer-events-none drop-shadow-none"
               loading="eager"
               decoding="sync"
               fetchPriority="high"
@@ -245,14 +246,14 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
           </div>
         )}
 
-        {/* Barra de progreso dorada */}
-        <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden relative shadow-inner mb-1.5">
+        {/* Barra de progreso dorada fina y elegante */}
+        <div className="w-44 h-[5px] bg-slate-100 rounded-full overflow-hidden relative">
           <div
-            className="h-full rounded-full transition-all duration-300 relative overflow-hidden"
+            className="h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden"
             style={{
               width: `${progress}%`,
-              background: `linear-gradient(90deg, #d97706 0%, ${effectiveBrandColor} 50%, #fbbf24 100%)`,
-              boxShadow: `0 0 8px ${effectiveBrandColor}50`,
+              background: `linear-gradient(90deg, #d97706 0%, ${effectiveBrandColor} 55%, #fbbf24 100%)`,
+              boxShadow: `0 0 10px ${effectiveBrandColor}55`,
             }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer-bar" />
