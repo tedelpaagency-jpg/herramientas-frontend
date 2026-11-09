@@ -136,6 +136,11 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
   const displayMessage = message || "Un momento por favor, estamos buscando las mejores propiedades.";
 
+  // Imagen o video de fondo limpio (para que el cristal líquido difumine el fondo arquitectónico y NUNCA los botones o cajas de búsqueda)
+  const bannerImage = agency?.banner_image || agency?.details?.banner_image;
+  const isVideo = bannerImage && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(bannerImage);
+  const fallbackHomeBg = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1600&q=80';
+
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center font-sans overflow-hidden select-none"
@@ -143,9 +148,6 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
       aria-live="polite"
       aria-label="Cargando propiedades"
       style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.76)',
-        backdropFilter: 'blur(75px) saturate(190%)',
-        WebkitBackdropFilter: 'blur(75px) saturate(190%)',
         opacity: isFadingOut ? 0 : 1,
         transform: isFadingOut ? 'scale(1.02)' : 'scale(1)',
         pointerEvents: isFadingOut ? 'none' : 'auto',
@@ -177,30 +179,56 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         }
       `}} />
 
-      {/* Orbes de luz viva atmosférica (Atmospheric Aurora) en movimiento sutil */}
+      {/* 1. Fondo Escénico Arquitectónico Inmaculado (Cubre al 100% la página para eliminar cualquier franja, botón o buscador) */}
+      <div className="absolute inset-0 z-0 overflow-hidden bg-slate-900">
+        {isVideo ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            src={bannerImage}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div
+            className="w-full h-full bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${bannerImage || fallbackHomeBg})`,
+            }}
+          />
+        )}
+        {/* Contraste cinematográfico sutil */}
+        <div className="absolute inset-0 bg-slate-900/40" />
+      </div>
+
+      {/* 2. Pantalla de Cristal Líquido Puro (Liquid Crystal Glass) */}
       <div
-        className="absolute -top-32 -left-32 w-[520px] h-[520px] rounded-full pointer-events-none animate-aurora-1"
+        className="absolute inset-0 z-[1]"
         style={{
-          background: `radial-gradient(circle, ${effectiveBrandColor}40 0%, ${effectiveBrandColor}12 45%, transparent 70%)`,
-          filter: 'blur(60px)',
-        }}
-      />
-      <div
-        className="absolute -bottom-40 -right-32 w-[580px] h-[580px] rounded-full pointer-events-none animate-aurora-2"
-        style={{
-          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.20) 0%, rgba(99, 102, 241, 0.10) 40%, transparent 70%)',
-          filter: 'blur(70px)',
-        }}
-      />
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[450px] rounded-full pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 80%)',
-          filter: 'blur(50px)',
+          backgroundColor: 'rgba(255, 255, 255, 0.60)',
+          backdropFilter: 'blur(35px) saturate(175%)',
+          WebkitBackdropFilter: 'blur(35px) saturate(175%)',
         }}
       />
 
-      {/* Tarjeta Central Blanca Sólida Estilo Apple con Sombra Obsidian Ambient */}
+      {/* 3. Orbes de luz viva atmosférica (Atmospheric Aurora) en movimiento sutil */}
+      <div
+        className="absolute -top-32 -left-32 w-[520px] h-[520px] rounded-full pointer-events-none z-[2] animate-aurora-1"
+        style={{
+          background: `radial-gradient(circle, ${effectiveBrandColor}45 0%, ${effectiveBrandColor}15 45%, transparent 70%)`,
+          filter: 'blur(50px)',
+        }}
+      />
+      <div
+        className="absolute -bottom-40 -right-32 w-[580px] h-[580px] rounded-full pointer-events-none z-[2] animate-aurora-2"
+        style={{
+          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, rgba(99, 102, 241, 0.12) 40%, transparent 70%)',
+          filter: 'blur(60px)',
+        }}
+      />
+
+      {/* 4. Tarjeta Central Blanca Sólida Estilo Apple con Sombra Obsidian Ambient */}
       <div
         className="relative z-10 w-[90%] max-w-[340px] rounded-[28px] bg-white flex flex-col items-center justify-center px-6 pt-7 pb-6 border border-white/90"
         style={{
