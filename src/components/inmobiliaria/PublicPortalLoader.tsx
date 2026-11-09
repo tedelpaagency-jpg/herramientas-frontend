@@ -246,7 +246,7 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         )}
 
         {/* Barra de progreso dorada */}
-        <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden relative shadow-inner mb-3">
+        <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden relative shadow-inner mb-1.5">
           <div
             className="h-full rounded-full transition-all duration-300 relative overflow-hidden"
             style={{
@@ -259,10 +259,8 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
           </div>
         </div>
 
-        {/* Mensaje informativo idéntico al diseño */}
-        <p className="text-[12px] sm:text-[12.5px] font-bold text-[#1e293b] leading-snug text-center max-w-[245px] tracking-tight">
-          {displayMessage}
-        </p>
+        {/* Mensaje solo para lectores de pantalla (sin texto visible en el diseño) */}
+        <span className="sr-only">{displayMessage}</span>
       </div>
     </div>
   );
