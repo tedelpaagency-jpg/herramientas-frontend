@@ -5,6 +5,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { getDomainMetadata } from '@/utils/seoHelper';
+import PortalNavigationLoader from '@/components/inmobiliaria/PortalNavigationLoader';
 import '@/index.css';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -106,6 +107,7 @@ export default function RootLayout({
       <body suppressHydrationWarning className="bg-background text-on-background min-h-screen antialiased transition-colors duration-200">
         <ThemeProvider>
           <AuthProvider>
+            <PortalNavigationLoader />
             {children}
             <Toaster position="top-right" />
           </AuthProvider>

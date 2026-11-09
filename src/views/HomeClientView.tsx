@@ -158,7 +158,17 @@ export default function HomeClientView() {
     const cachedLoaderImg = typeof window !== 'undefined' ? getCachedLoaderImage() : undefined;
     const cachedAgency = typeof window !== 'undefined' ? getCachedAgencyConfig() : undefined;
     return (
-      <div className="min-h-screen relative bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen relative bg-slate-50 flex items-center justify-center">
+        {cachedAgency && cachedAgency.frontend_enabled && !cachedAgency.redirect_to_login ? (
+          <div className="absolute inset-0 pointer-events-none opacity-80 overflow-hidden" aria-hidden="true">
+            <Suspense fallback={null}>
+              <PublicInmobiliariaHomeView
+                initialConfig={cachedAgency}
+                domainOverride={resolvedDomain || cachedAgency.domain}
+              />
+            </Suspense>
+          </div>
+        ) : null}
         <PublicPortalLoader
           isOpen={true}
           countryName={cachedAgency?.country_name || "ECUADOR"}

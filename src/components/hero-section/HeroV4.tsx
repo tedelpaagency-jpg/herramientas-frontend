@@ -499,6 +499,7 @@ type BookingTab = 'sale' | 'rent';
 const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   // Tabs: 'sale' (En Venta) | 'rent' (En Renta)
   const [activeTab, setActiveTab] = useState<BookingTab>('sale');
+  const [isTabTransitioning, setIsTabTransitioning] = useState(false);
 
   // Form field states
   const [search, setSearch] = useState('');
@@ -560,9 +561,10 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
   const domain = agency?.domain || '';
 
-  // Handle Tab Switch (Solo En Venta y En Renta, sin skeleton ni demoras)
+  // Handle Tab Switch (Solo En Venta y En Renta, con micro-loader brandeado de 450ms)
   const handleTabClick = (tab: BookingTab) => {
     if (tab === activeTab) return;
+    setIsTabTransitioning(true);
     setActiveTab(tab);
     if (tab === 'sale') {
       setPropertyStatus('2'); // Venta
@@ -571,6 +573,9 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
       setPropertyStatus('1'); // Renta / Alquiler
       setPropertyType('');
     }
+    setTimeout(() => {
+      setIsTabTransitioning(false);
+    }, 450);
   };
 
   const operationOptions = [
@@ -761,10 +766,18 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
         @media (max-width: 640px) {
           .inmo-card-form-grid {
-            grid-template-columns: 1fr;
+            display: flex !important;
+            flex-direction: column !important;
             padding: 20px 16px 24px 16px;
             gap: 14px;
           }
+          /* Reordenamiento móvil: 1. Operación -> 2. Propiedad -> 3. Ubicación -> 4. Precio -> 5. Buscar */
+          .inmo-order-operacion { order: 1 !important; }
+          .inmo-order-propiedad { order: 2 !important; }
+          .inmo-order-ubicacion { order: 3 !important; }
+          .inmo-order-precio    { order: 4 !important; }
+          .inmo-order-boton     { order: 5 !important; }
+
           .inmo-card-tabs-bar {
             padding: 12px 14px 0 14px;
             gap: 16px;
@@ -925,13 +938,28 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             </div>
           )}
 
-          {/* Form Body sin skeleton ni overlays que parpadeen */}
-          <form action="/properties" method="GET" className="inmo-card-form-grid">
+          {/* Form Body con micro-loader brandeado y reordenamiento móvil */}
+          <form action="/properties" method="GET" className="inmo-card-form-grid relative">
             {domain && <input type="hidden" name="domain" value={domain} />}
+
+            {/* Micro-Loader brandeado al cambiar pestañas de operación */}
+            {isTabTransitioning && (
+              <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-xs flex items-center justify-center rounded-[24px] transition-all duration-300 animate-in fade-in">
+                <div className="flex flex-col items-center gap-2">
+                  <div
+                    className="w-7 h-7 rounded-full border-3 border-t-transparent animate-spin"
+                    style={{ borderColor: primaryColor, borderTopColor: 'transparent' }}
+                  />
+                  <span className="text-[11px] font-bold text-slate-600 tracking-wider uppercase">
+                    Actualizando catálogo...
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* 1. Ubicación (Select2-style Search with 2s Debounce matching Screenshot) */}
             {showLocation && (
-              <div style={{ position: 'relative', zIndex: 40, overflow: 'visible' }}>
+              <div className="inmo-order-ubicacion" style={{ position: 'relative', zIndex: 40, overflow: 'visible' }}>
                 <label className="inmo-field-label">Ubicación</label>
                 <LocationCitySelect
                   value={search}
@@ -944,7 +972,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
             {/* 2. Operación (Professional Popover Select) */}
             {showOperation && (
-              <div style={{ position: 'relative', zIndex: 30, overflow: 'visible' }}>
+              <div className="inmo-order-operacion" style={{ position: 'relative', zIndex: 30, overflow: 'visible' }}>
                 <ProfessionalBookingSelect
                   label="Operación"
                   name="property_status"
@@ -959,7 +987,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
             {/* 3. Propiedad (Professional Popover Select) */}
             {showPropertyType && (
-              <div style={{ position: 'relative', zIndex: 20, overflow: 'visible' }}>
+              <div className="inmo-order-propiedad" style={{ position: 'relative', zIndex: 20, overflow: 'visible' }}>
                 <ProfessionalBookingSelect
                   label="Propiedad"
                   name="property_type"
@@ -974,7 +1002,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
             {/* 4. Precio (Professional Popover Select con alineación a la derecha para no cortarse) */}
             {showPrice && (
-              <div style={{ position: 'relative', zIndex: 10, overflow: 'visible' }}>
+              <div className="inmo-order-precio" style={{ position: 'relative', zIndex: 10, overflow: 'visible' }}>
                 <ProfessionalBookingSelect
                   label="Precio"
                   name="price_max"
@@ -989,7 +1017,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             )}
 
             {/* 5. Botón Buscar */}
-            <div style={{ zIndex: 5 }}>
+            <div className="inmo-order-boton" style={{ zIndex: 5 }}>
               <button
                 type="submit"
                 className="inmo-btn-search w-full sm:w-auto"

@@ -8,6 +8,7 @@ import {
   getCachedLoaderImage,
   setCachedLoaderImage,
 } from "@/services/publicInmobiliariaService";
+import { IMMOBILLIS_LOGO_URL } from "./immobillisLoaderLogo";
 
 export interface PublicPortalLoaderProps {
   countryName?: string;
@@ -183,23 +184,23 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[99999] bg-[#070b14]/95 backdrop-blur-2xl flex items-center justify-center font-sans overflow-hidden select-none transition-opacity duration-500 animate-in fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center font-sans overflow-hidden select-none transition-opacity duration-500 animate-in fade-in"
       role="status"
       aria-live="polite"
       aria-label="Cargando propiedades"
       style={{
+        backgroundColor: 'rgba(255, 255, 255, 0.40)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
         '--brand-color': effectiveBrandColor,
-        '--loader-text-color': effectiveTextColor,
       } as React.CSSProperties}
     >
       <style dangerouslySetInnerHTML={{
         __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        .font-sans { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+        .font-sans { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes pulseGlow { 0%, 100% { opacity: 0.15; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.05); } }
-        .animate-pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
       `}} />
 
       {/* Pre-cargar la imagen si existe */}
@@ -207,66 +208,51 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         <link rel="preload" as="image" href={displayImage} fetchPriority="high" />
       )}
 
-      {/* Contenedor Principal (Modal) - Limpio, sin imágenes de fondo que contaminen */}
+      {/* Tarjeta Central Sólida Estilo Apple */}
       <div
-        className="relative z-10 w-[90%] max-w-[460px] min-h-[380px] rounded-[24px] overflow-hidden flex flex-col justify-between p-7 sm:p-9 transition-all duration-500 border shadow-2xl"
+        className="relative z-10 w-[90%] max-w-[440px] min-h-[350px] rounded-[28px] bg-[#ffffff] flex flex-col justify-between p-7 sm:p-9 transition-all duration-500 border border-slate-100 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.04)]"
         style={{
-          backgroundColor: effectiveBgColor,
-          borderColor: hexToRgba(effectiveGradientColor, 0.3),
-          boxShadow: `0 25px 60px -15px rgba(0,0,0,0.85), 0 0 40px -10px ${hexToRgba(effectiveGradientColor, 0.2)}`,
+          borderRadius: '28px',
         }}
       >
-        {/* Resplandor sutil de fondo (solo si está activado y muy difuminado, sin manchas sólidas) */}
-        {effectiveShowGradients && (
-          <div
-            className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-[90px] pointer-events-none z-0 animate-pulse-glow"
-            style={{ backgroundColor: effectiveGradientColor }}
-          />
-        )}
-
         {/* Encabezado: Nombre de la agencia / Portal y status dot */}
         <div className="flex items-center justify-between w-full z-10 relative">
           <span
-            className="text-[11px] font-bold tracking-[0.16em] uppercase drop-shadow-sm opacity-80 truncate pr-3"
-            style={{ color: effectiveTextColor }}
+            className="text-[12px] font-bold tracking-[0.16em] uppercase text-[#0f172a] opacity-80 truncate pr-3"
           >
             {displayTitle}
           </span>
           <div className="flex items-center gap-1.5 shrink-0">
             <span
-              className="w-2 h-2 rounded-full animate-ping"
+              className="w-2.5 h-2.5 rounded-full animate-ping"
               style={{ backgroundColor: effectiveBrandColor }}
             />
             <span
-              className="w-2 h-2 rounded-full"
+              className="w-2.5 h-2.5 rounded-full"
               style={{ backgroundColor: effectiveBrandColor }}
             />
           </div>
         </div>
 
-        {/* Área Central: Imagen personalizada del loader O Logo de la agencia */}
+        {/* Área Central: Logotipo de Immobillis / Agencia */}
         <div className="flex-1 flex flex-col items-center justify-center py-6 px-2 z-10 text-center my-auto">
           {displayImage ? (
             <div className="relative max-w-full flex items-center justify-center animate-fade-in">
               <img
                 src={displayImage}
                 alt={agency?.name || "Loader"}
-                className="max-w-[85%] max-h-[190px] object-contain drop-shadow-2xl"
+                className="max-w-[85%] max-h-[180px] object-contain drop-shadow-md"
                 loading="eager"
                 decoding="sync"
                 fetchPriority="high"
               />
             </div>
-          ) : effectiveLogoUrl ? (
+          ) : (effectiveLogoUrl || IMMOBILLIS_LOGO_URL) ? (
             <div className="relative flex flex-col items-center justify-center p-4 animate-fade-in">
-              <div
-                className="absolute w-32 h-32 rounded-full blur-2xl opacity-20 pointer-events-none transition-colors duration-500"
-                style={{ backgroundColor: effectiveBrandColor }}
-              />
               <img
-                src={effectiveLogoUrl}
-                alt={agency?.name || "Logo"}
-                className="max-w-[240px] max-h-[85px] object-contain drop-shadow-2xl relative z-10"
+                src={effectiveLogoUrl || IMMOBILLIS_LOGO_URL}
+                alt={agency?.name || "Immobillis"}
+                className="max-w-[240px] max-h-[90px] object-contain drop-shadow-md relative z-10"
                 loading="eager"
                 decoding="sync"
                 fetchPriority="high"
@@ -288,16 +274,16 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
           )}
         </div>
 
-        {/* Pie: Barra de carga y mensaje dinámico */}
+        {/* Pie: Barra de progreso dorada y tipografía en gris oscuro pizarra (#0f172a, font-weight: 700) */}
         <div className="w-full flex flex-col items-center gap-3.5 z-10 relative pt-2">
-          {/* Línea indicadora de progreso elegante */}
-          <div className="w-36 h-1 bg-white/10 rounded-full overflow-hidden">
+          {/* Línea indicadora de progreso dorada */}
+          <div className="w-40 h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
             <div
               className="h-full rounded-full animate-pulse"
               style={{
                 backgroundColor: effectiveBrandColor,
                 boxShadow: `0 0 8px ${effectiveBrandColor}`,
-                width: '70%',
+                width: '75%',
               }}
             />
           </div>
@@ -305,19 +291,19 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
           {/* Mensaje informativo */}
           <p
             key={currentMessage}
-            className="font-medium text-[13.5px] leading-relaxed text-center drop-shadow-sm max-w-[340px] animate-fade-in"
-            style={{ color: effectiveTextColor }}
+            className="font-bold text-[13.5px] leading-relaxed text-center text-[#0f172a] max-w-[340px] animate-fade-in"
+            style={{ fontWeight: 700 }}
           >
             {currentMessage}
           </p>
 
           {/* Si hay una imagen personalizada arriba, mostrar el logo pequeño abajo */}
-          {displayImage && effectiveLogoUrl && (
-            <div className="mt-1 opacity-75 hover:opacity-100 transition-opacity">
+          {displayImage && (effectiveLogoUrl || IMMOBILLIS_LOGO_URL) && (
+            <div className="mt-1 opacity-80 hover:opacity-100 transition-opacity">
               <img
-                src={effectiveLogoUrl}
+                src={effectiveLogoUrl || IMMOBILLIS_LOGO_URL}
                 alt={agency?.name || "Logo"}
-                className="h-[26px] w-auto max-w-[120px] object-contain"
+                className="h-[24px] w-auto max-w-[120px] object-contain"
               />
             </div>
           )}
