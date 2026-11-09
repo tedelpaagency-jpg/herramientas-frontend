@@ -140,18 +140,18 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
       {/* Tarjeta Central Blanca Sólida Estilo Apple / Immobillis */}
       <div
-        className="relative z-10 w-[90%] max-w-[360px] rounded-[26px] sm:rounded-[28px] bg-white flex flex-col items-center justify-center px-7 py-7 sm:px-8 sm:py-8 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.14),0_2px_10px_rgba(0,0,0,0.04)] border border-slate-100/90"
+        className="relative z-10 w-[92%] max-w-[400px] rounded-[30px] bg-white flex flex-col items-center justify-center px-8 py-8 sm:px-10 sm:py-9 shadow-[0_25px_60px_-12px_rgba(0,0,0,0.18),0_4px_16px_rgba(0,0,0,0.04)] border border-slate-100"
         style={{
-          borderRadius: '28px',
+          borderRadius: '30px',
         }}
       >
-        {/* Logotipo de Immobillis / Agencia */}
+        {/* Logotipo de Immobillis / Agencia (Mucho más grande) */}
         {logoToDisplay && (
-          <div className="w-full flex items-center justify-center mb-4 sm:mb-5">
+          <div className="w-full flex items-center justify-center mb-5 sm:mb-6">
             <img
               src={logoToDisplay}
               alt={agency?.name || "Logo"}
-              className="w-auto h-[110px] sm:h-[120px] max-w-[220px] object-contain select-none pointer-events-none drop-shadow-none"
+              className="w-auto h-[175px] sm:h-[195px] max-w-[290px] sm:max-w-[320px] object-contain select-none pointer-events-none drop-shadow-sm"
               loading="eager"
               decoding="sync"
               fetchPriority="high"
@@ -167,13 +167,13 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         )}
 
         {/* Barra de progreso dorada */}
-        <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden relative shadow-inner">
+        <div className="w-52 sm:w-56 h-1.5 bg-slate-100 rounded-full overflow-hidden relative shadow-inner">
           <div
             className="h-full rounded-full transition-all duration-300 relative overflow-hidden"
             style={{
               width: `${progress}%`,
               background: `linear-gradient(90deg, #d97706 0%, ${effectiveBrandColor} 50%, #fbbf24 100%)`,
-              boxShadow: `0 0 8px ${effectiveBrandColor}50`,
+              boxShadow: `0 0 10px ${effectiveBrandColor}60`,
             }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer-bar" />
@@ -181,7 +181,7 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         </div>
 
         {/* Mensaje informativo idéntico al diseño */}
-        <p className="mt-3.5 text-[12px] sm:text-[12.5px] font-bold text-slate-800 leading-snug text-center max-w-[250px] tracking-tight">
+        <p className="mt-4 text-[12.5px] sm:text-[13px] font-bold text-slate-800 leading-snug text-center max-w-[270px] tracking-tight">
           {displayMessage}
         </p>
       </div>
