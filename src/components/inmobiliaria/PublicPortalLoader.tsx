@@ -142,14 +142,23 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
   const logoToDisplay = !imgFailed ? rawLogo : IMMOBILLIS_LOGO_URL;
 
   const shouldRender = isOpen || !isFullyClosed;
+
+  // Marca el documento mientras el loader está activo para que el buscador (HeroV4) se vuelva cristal translúcido
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (shouldRender) {
+      document.documentElement.classList.add('inmo-loader-active');
+    } else {
+      document.documentElement.classList.remove('inmo-loader-active');
+    }
+    return () => {
+      document.documentElement.classList.remove('inmo-loader-active');
+    };
+  }, [shouldRender]);
+
   if (!shouldRender) return null;
 
   const displayMessage = message || "Un momento por favor, estamos buscando las mejores propiedades.";
-
-  // Imagen o video de fondo limpio (para que el cristal líquido difumine el fondo arquitectónico y NUNCA los botones o cajas de búsqueda)
-  const bannerImage = agency?.banner_image || agency?.details?.banner_image;
-  const isVideo = bannerImage && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(bannerImage);
-  const fallbackHomeBg = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1600&q=80';
 
   return (
     <div
@@ -189,61 +198,21 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
         }
       `}} />
 
-      {/* 1. Fondo Escénico Arquitectónico Inmaculado (Cubre al 100% la página para eliminar cualquier franja, botón o buscador) */}
-      <div className="absolute inset-0 z-0 overflow-hidden bg-slate-900">
-        {isVideo ? (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            src={bannerImage}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div
-            className="w-full h-full bg-cover bg-center"
-            style={{
-              backgroundImage: `url(${bannerImage || fallbackHomeBg})`,
-            }}
-          />
-        )}
-        {/* Contraste cinematográfico sutil */}
-        <div className="absolute inset-0 bg-slate-900/40" />
-      </div>
-
-      {/* 2. Pantalla de Cristal Líquido Puro (Ultra Liquid Glass con refracción óptica) */}
+      {/* 1. Cristal líquido translúcido: deja ver la aplicación real detrás, suavizada (estilo Apple) */}
       <div
         className="absolute inset-0 z-[1]"
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.42)',
-          backdropFilter: 'blur(45px) saturate(220%) brightness(1.04)',
-          WebkitBackdropFilter: 'blur(45px) saturate(220%) brightness(1.04)',
-          boxShadow: 'inset 0 0 120px rgba(255, 255, 255, 0.45)',
+          backgroundColor: 'rgba(255, 255, 255, 0.22)',
+          backdropFilter: 'blur(26px) saturate(185%) brightness(1.05)',
+          WebkitBackdropFilter: 'blur(26px) saturate(185%) brightness(1.05)',
         }}
       />
 
-      {/* 3. Reflejo especular diagonal de cristal líquido (Liquid Glass Sheen) */}
+      {/* 2. Reflejo especular sutil de cristal líquido */}
       <div
         className="absolute inset-0 z-[1] pointer-events-none"
         style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.12) 35%, rgba(255, 255, 255, 0) 65%, rgba(255, 255, 255, 0.08) 100%)',
-        }}
-      />
-
-      {/* 4. Orbes de luz viva atmosférica (Atmospheric Aurora) en movimiento sutil */}
-      <div
-        className="absolute -top-28 -left-28 w-[580px] h-[580px] rounded-full pointer-events-none z-[2] animate-aurora-1"
-        style={{
-          background: `radial-gradient(circle, ${effectiveBrandColor}55 0%, ${effectiveBrandColor}18 45%, transparent 70%)`,
-          filter: 'blur(55px)',
-        }}
-      />
-      <div
-        className="absolute -bottom-36 -right-28 w-[640px] h-[640px] rounded-full pointer-events-none z-[2] animate-aurora-2"
-        style={{
-          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.32) 0%, rgba(99, 102, 241, 0.16) 42%, transparent 70%)',
-          filter: 'blur(65px)',
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0) 70%)',
         }}
       />
 
