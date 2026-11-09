@@ -188,9 +188,9 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
       <div
         className="absolute inset-0 z-[1]"
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.22)',
-          backdropFilter: 'blur(26px) saturate(185%) brightness(1.05)',
-          WebkitBackdropFilter: 'blur(26px) saturate(185%) brightness(1.05)',
+          backgroundColor: 'rgba(255, 255, 255, 0.30)',
+          backdropFilter: 'blur(48px) saturate(160%) contrast(0.86) brightness(1.04)',
+          WebkitBackdropFilter: 'blur(48px) saturate(160%) contrast(0.86) brightness(1.04)',
         }}
       />
 
