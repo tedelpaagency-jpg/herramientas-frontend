@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Copy, PenTool, FileText, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { X, Download, Copy, PenTool, FileText, CheckCircle2, Clock, XCircle, FileSignature } from 'lucide-react';
 import { LexvaultDocument, LexvaultTemplate } from '../types';
 import WordDocumentPaper from './WordDocumentPaper';
+import CreatorSignatureModal from './CreatorSignatureModal';
 import Portal from './Portal';
 
 interface LexvaultDetailModalProps {
@@ -26,6 +27,7 @@ export const LexvaultDetailModal: React.FC<LexvaultDetailModalProps> = ({
   onCopySignLink,
   onOpenSignModal,
 }) => {
+  const [isCreatorSigModalOpen, setIsCreatorSigModalOpen] = useState(false);
   if (!isOpen || (!document && !template)) return null;
 
   const title = document ? document.title : template ? template.title : 'Detalle de Documento';
@@ -99,6 +101,18 @@ export const LexvaultDetailModal: React.FC<LexvaultDetailModalProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              {document && (
+                <button
+                  type="button"
+                  onClick={() => setIsCreatorSigModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs shadow-xs transition-all flex items-center gap-1.5"
+                  title="Visualizar la firma digital del creador de este contrato"
+                >
+                  <FileSignature className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="hidden sm:inline">Firma Creador</span>
+                </button>
+              )}
+
               {document && onDownloadPdf && (
                 <button
                   type="button"
@@ -157,11 +171,25 @@ export const LexvaultDetailModal: React.FC<LexvaultDetailModalProps> = ({
                 (document as any)?.signature_url ||
                 undefined
               }
+              creatorSignatureUrl={
+                document?.user?.signature_url ||
+                document?.user?.signature ||
+                undefined
+              }
+              creatorName={document?.user?.name}
             />
           </div>
         </motion.div>
       </div>
     </AnimatePresence>
+
+    <CreatorSignatureModal
+      isOpen={isCreatorSigModalOpen}
+      onClose={() => setIsCreatorSigModalOpen(false)}
+      creator={document?.user}
+      contractTitle={document?.title}
+      contractNumber={document?.document_number}
+    />
     </Portal>
   );
 };

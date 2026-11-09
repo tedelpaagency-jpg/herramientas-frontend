@@ -6,7 +6,7 @@ import userService from '../services/userService';
 import adminService from '../services/adminService';
 import roleService from '../services/roleService';
 import { useAuth } from '../context/AuthContext';
-import { X, UserPlus, Save, Loader2, ShieldCheck, Building } from 'lucide-react';
+import { X, UserPlus, Save, Loader2, ShieldCheck, Building, FileSignature, UploadCloud, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { AgencySearchSelect } from './AgencySearchSelect';
 import Portal from './Portal';
 
@@ -39,9 +39,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
     phone: '',
     status: 1,
     photo_file: null as File | null,
+    signature_file: null as File | null,
+    remove_signature: false,
   });
 
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
+  const [signatureError, setSignatureError] = useState<string | null>(null);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [dynamicRoles, setDynamicRoles] = useState<Role[]>([]);
   const [isLoadingAgencies, setIsLoadingAgencies] = useState(false);
@@ -77,8 +81,11 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           phone: userToEdit.phone || '',
           status: userToEdit.status ?? 1,
           photo_file: null,
+          signature_file: null,
+          remove_signature: false,
         });
         setPhotoPreview(userToEdit.photo || null);
+        setSignaturePreview(userToEdit.signature_url || userToEdit.signature || null);
       } else {
         setFormData({
           name: '',
@@ -89,12 +96,40 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           phone: '',
           status: 1,
           photo_file: null,
+          signature_file: null,
+          remove_signature: false,
         });
         setPhotoPreview(null);
+        setSignaturePreview(null);
       }
+      setSignatureError(null);
       setError(null);
     }
   }, [isOpen, userToEdit, currentUser, isSuperAdmin, isGerenteComercial]);
+
+  const handleSignatureSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSignatureError(null);
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!validTypes.includes(file.type.toLowerCase())) {
+        setSignatureError('Formato inválido. Solo se admiten imágenes JPG, JPEG o PNG.');
+        return;
+      }
+      if (file.size > 4 * 1024 * 1024) {
+        setSignatureError('El archivo es demasiado grande. El tamaño máximo permitido es 4 MB.');
+        return;
+      }
+      setFormData(prev => ({ ...prev, signature_file: file, remove_signature: false }));
+      setSignaturePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveSignature = () => {
+    setFormData(prev => ({ ...prev, signature_file: null, remove_signature: true }));
+    setSignaturePreview(null);
+    setSignatureError(null);
+  };
 
   if (!isOpen) return null;
 
@@ -291,6 +326,93 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               )}
             </div>
           )}
+
+          {/* Firma Digitalizada del Usuario */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <div className="flex items-center gap-2">
+                <FileSignature className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Firma Digitalizada del Usuario
+                </label>
+              </div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                JPG, JPEG o PNG (máx. 4 MB)
+              </span>
+            </div>
+
+            {signatureError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{signatureError}</span>
+              </div>
+            )}
+
+            {signaturePreview ? (
+              <div className="flex flex-col sm:flex-row items-center gap-3 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-xl">
+                <div className="w-full sm:w-48 h-20 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center p-2 overflow-hidden shrink-0">
+                  <img
+                    src={signaturePreview}
+                    alt="Vista previa de firma"
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+                <div className="flex-1 space-y-1.5 text-center sm:text-left w-full">
+                  <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center sm:justify-start gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Firma digital registrada</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Se asociará automáticamente a los contratos creados por este usuario.
+                  </p>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
+                    <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors border border-blue-200 dark:border-blue-800">
+                      <UploadCloud className="w-3.5 h-3.5" />
+                      <span>Reemplazar</span>
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/jpg"
+                        onChange={handleSignatureSelect}
+                        className="hidden"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRemoveSignature}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-lg transition-colors border border-rose-200 dark:border-rose-800"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Eliminar</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-center hover:border-blue-500 transition-colors bg-white dark:bg-slate-900">
+                <input
+                  type="file"
+                  id="user-signature-upload"
+                  accept="image/png, image/jpeg, image/jpg"
+                  onChange={handleSignatureSelect}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="user-signature-upload"
+                  className="cursor-pointer flex flex-col items-center justify-center gap-1.5"
+                >
+                  <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <UploadCloud className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                    Haga clic para adjuntar la firma del usuario
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Archivos admitidos: PNG, JPG o JPEG (máx. 4 MB)
+                  </span>
+                </label>
+              </div>
+            )}
+          </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Estado</label>

@@ -58,6 +58,8 @@ export interface WordDocumentPaperProps {
   watermarkText?: string;
   backgroundImageUrl?: string;
   signatureUrl?: string;
+  creatorSignatureUrl?: string;
+  creatorName?: string;
   showToolbar?: boolean;
   editablePages?: boolean;
   isContract?: boolean;
@@ -79,6 +81,8 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
   watermarkText,
   backgroundImageUrl,
   signatureUrl,
+  creatorSignatureUrl,
+  creatorName,
   showToolbar = true,
   editablePages = true,
   isContract = false,
@@ -465,8 +469,22 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
       }
     }
 
+    if (creatorSignatureUrl) {
+      const normalizedCreatorSig = normalizeFileUrl(creatorSignatureUrl);
+      const creatorSigHtml = `
+        <div class="creator-signature-stamp text-center my-2 p-2 inline-block">
+          <img src="${normalizedCreatorSig}" alt="Firma Autorizada Creador" class="max-w-[200px] max-h-[80px] object-contain mx-auto" />
+          <div class="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-widest mt-1">Firma Autorizada${creatorName ? `: ${creatorName}` : ''}</div>
+        </div>
+      `;
+      const creatorSigRegex = /(?:\{\{|\[)(?:FIRMA_USUARIO|FIRMA_CREADOR|FIRMA_AUTORIZADA|FIRMA_REPRESENTANTE)(?:\}\}|\])/gi;
+      if (creatorSigRegex.test(clean)) {
+        clean = clean.replace(creatorSigRegex, creatorSigHtml);
+      }
+    }
+
     return clean;
-  }, [localHtml, signatureUrl]);
+  }, [localHtml, signatureUrl, creatorSignatureUrl, creatorName]);
 
   // Split content into individual pages based on page break markers
   const pages = useMemo(() => {

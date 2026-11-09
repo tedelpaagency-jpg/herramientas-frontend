@@ -21,12 +21,14 @@ import {
   Layers,
   FileCheck,
   Info,
+  FileSignature,
 } from 'lucide-react';
 import { LexvaultDocument, LexvaultTemplate } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import WordDocumentPaper, { WordDocumentPaperRef } from '../components/WordDocumentPaper';
 import toast from 'react-hot-toast';
 import LetterheadGuideModal, { downloadLetterheadGuideTemplate } from '../components/LetterheadGuideModal';
+import CreatorSignatureModal from '../components/CreatorSignatureModal';
 import Portal from '../components/Portal';
 
 interface LexvaultDocumentDetailViewProps {
@@ -49,6 +51,7 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
   const [isUploadingBg, setIsUploadingBg] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+  const [isCreatorSigModalOpen, setIsCreatorSigModalOpen] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -278,6 +281,19 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
                 <Save className="w-4 h-4" />
               )}
               <span>{isSaving ? 'Guardando...' : 'Guardar Cambios'}</span>
+            </button>
+          )}
+
+          {/* Shortcut to View Creator Signature */}
+          {type === 'contract' && (
+            <button
+              type="button"
+              onClick={() => setIsCreatorSigModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold text-xs transition-all flex items-center gap-2 shadow-2xs"
+              title="Visualizar la firma digital del usuario que creó este contrato"
+            >
+              <FileSignature className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span>Firma del Creador</span>
             </button>
           )}
 
@@ -520,6 +536,12 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
           (document as any)?.signature_path ||
           undefined
         }
+        creatorSignatureUrl={
+          document?.user?.signature_url ||
+          document?.user?.signature ||
+          undefined
+        }
+        creatorName={document?.user?.name}
         onSave={async (updatedHtml, savedFieldValues, savedTokens) => {
           setIsSaving(true);
           const toastId = toast.loading('Guardando documento en el servidor...');
@@ -558,6 +580,14 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
             setIsSaving(false);
           }
         }}
+      />
+
+      <CreatorSignatureModal
+        isOpen={isCreatorSigModalOpen}
+        onClose={() => setIsCreatorSigModalOpen(false)}
+        creator={document?.user}
+        contractTitle={document?.title}
+        contractNumber={document?.document_number}
       />
     </div>
   );

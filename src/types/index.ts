@@ -195,6 +195,8 @@ export interface User {
   };
   phone?: string;
   photo?: string | null;
+  signature?: string | null;
+  signature_url?: string | null;
   status?: number;
   deleted_at?: string | null;
   created_at?: string;
@@ -628,6 +630,7 @@ export interface LexvaultDocument {
   agency_id?: number;
   white_label_id?: number;
   user_id?: number;
+  user?: User | null;
   agency?: any;
   whiteLabel?: any;
   template_id?: number;

@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, PenTool, Upload, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { X, PenTool, Upload, CheckCircle2, XCircle, RefreshCw, FileSignature } from 'lucide-react';
 import { LexvaultDocument } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import toast from 'react-hot-toast';
 
 import WordDocumentPaper from './WordDocumentPaper';
+import CreatorSignatureModal from './CreatorSignatureModal';
 import Portal from './Portal';
 
 interface LexvaultSignModalProps {
@@ -29,6 +30,19 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
   const [declineReason, setDeclineReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fullDoc, setFullDoc] = useState<LexvaultDocument | null>(document);
+  const [isCreatorSigModalOpen, setIsCreatorSigModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && document?.id) {
+      setFullDoc(document);
+      lexvaultService.getDocument(document.id)
+        .then((doc) => {
+          if (doc) setFullDoc(doc);
+        })
+        .catch(() => {});
+    }
+  }, [isOpen, document?.id]);
 
   if (!isOpen || !document) return null;
 
@@ -168,13 +182,29 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
               </div>
               <div>
                 <h3 className="font-extrabold text-sm text-white">Firma Digital de Contrato: {document.title}</h3>
-                <p className="text-[11px] text-slate-400 font-mono">Ref: {document.document_number || `#${document.id}`}</p>
+                <p className="text-[11px] text-slate-400 font-mono">
+                  Ref: {document.document_number || `#${document.id}`}
+                  {(fullDoc?.user?.name || document.user?.name) ? ` • Creado por: ${fullDoc?.user?.name || document.user?.name}` : ''}
+                </p>
               </div>
             </div>
 
-            <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCreatorSigModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm shadow-blue-600/20"
+                title="Visualizar la firma digital del creador de este contrato"
+              >
+                <FileSignature className="w-4 h-4" />
+                <span className="hidden sm:inline">Firma del Creador</span>
+                <span className="sm:hidden">Firma</span>
+              </button>
+
+              <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
@@ -308,6 +338,14 @@ export const LexvaultSignModal: React.FC<LexvaultSignModalProps> = ({
         </motion.div>
       </div>
     </AnimatePresence>
+
+    <CreatorSignatureModal
+      isOpen={isCreatorSigModalOpen}
+      onClose={() => setIsCreatorSigModalOpen(false)}
+      creator={fullDoc?.user || document.user}
+      contractTitle={document.title}
+      contractNumber={document.document_number}
+    />
     </Portal>
   );
 };

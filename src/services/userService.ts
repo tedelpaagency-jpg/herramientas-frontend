@@ -49,11 +49,15 @@ export const userService = {
   },
 
   createUser: async (data: any) => {
-    if (data.photo_file) {
+    if (data.photo_file || data.signature_file || data.remove_signature) {
       const formData = new FormData();
       Object.keys(data).forEach((key) => {
         if (data[key] !== undefined && data[key] !== null) {
-          formData.append(key, data[key]);
+          if (typeof data[key] === 'boolean') {
+            formData.append(key, data[key] ? '1' : '0');
+          } else {
+            formData.append(key, data[key]);
+          }
         }
       });
       const res = await apiClient.post('/v1/users', formData, {
@@ -66,11 +70,15 @@ export const userService = {
   },
 
   updateUser: async (id: number, data: any) => {
-    if (data.photo_file) {
+    if (data.photo_file || data.signature_file || data.remove_signature) {
       const formData = new FormData();
       Object.keys(data).forEach((key) => {
         if (data[key] !== undefined && data[key] !== null) {
-          formData.append(key, data[key]);
+          if (typeof data[key] === 'boolean') {
+            formData.append(key, data[key] ? '1' : '0');
+          } else {
+            formData.append(key, data[key]);
+          }
         }
       });
       const res = await apiClient.post(`/v1/users/${id}/update`, formData, {

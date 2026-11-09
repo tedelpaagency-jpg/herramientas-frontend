@@ -20,7 +20,8 @@ import {
   Layers,
   Eye,
   Building2,
-  FileCheck
+  FileCheck,
+  FileSignature,
 } from 'lucide-react';
 import { LexvaultTemplate, LexvaultDocument } from '../types';
 import lexvaultService from '../services/lexvaultService';
@@ -29,6 +30,7 @@ import { LexvaultTemplateModal } from '@/components/LexvaultTemplateModal';
 import { LexvaultGenerateModal } from '@/components/LexvaultGenerateModal';
 import { LexvaultSignModal } from '@/components/LexvaultSignModal';
 import { LetterheadGuideModal } from '@/components/LetterheadGuideModal';
+import { CreatorSignatureModal } from '@/components/CreatorSignatureModal';
 import toast from 'react-hot-toast';
 
 export const LexvaultPage: React.FC = () => {
@@ -47,6 +49,8 @@ export const LexvaultPage: React.FC = () => {
 
   const [isSignModalOpen, setIsSignModalOpen] = useState(false);
   const [selectedDocForSign, setSelectedDocForSign] = useState<LexvaultDocument | null>(null);
+  const [isCreatorSigModalOpen, setIsCreatorSigModalOpen] = useState(false);
+  const [selectedDocForCreatorSig, setSelectedDocForCreatorSig] = useState<LexvaultDocument | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -333,10 +337,15 @@ export const LexvaultPage: React.FC = () => {
                           >
                             {doc.title}
                           </Link>
-                          <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
                             <span className="text-[10px] text-slate-400 uppercase font-semibold">
                               {doc.template?.category || 'Contrato Legal'}
                             </span>
+                            {doc.user?.name && (
+                              <span className="text-[10px] text-slate-500 font-medium">
+                                • Creado por: <strong className="text-slate-700 dark:text-slate-300">{doc.user.name}</strong>
+                              </span>
+                            )}
                             {doc.whiteLabel?.name && (
                               <span className="text-[9px] px-1.5 py-0.2 rounded-sm bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-bold">
                                 {doc.whiteLabel.name}
@@ -413,6 +422,18 @@ export const LexvaultPage: React.FC = () => {
                               title="Gestionar Firma Digital"
                             >
                               <PenTool className="w-4 h-4" />
+                            </button>
+
+                            {/* View Creator Signature Shortcut */}
+                            <button
+                              onClick={() => {
+                                setSelectedDocForCreatorSig(doc);
+                                setIsCreatorSigModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 transition-colors"
+                              title={`Visualizar firma del creador (${doc.user?.name || 'Usuario'})`}
+                            >
+                              <FileSignature className="w-4 h-4" />
                             </button>
 
                             {/* Delete Button */}
@@ -568,6 +589,18 @@ export const LexvaultPage: React.FC = () => {
       <LetterheadGuideModal
         isOpen={isGuideModalOpen}
         onClose={() => setIsGuideModalOpen(false)}
+      />
+
+      {/* Modal para visualizar firma del creador */}
+      <CreatorSignatureModal
+        isOpen={isCreatorSigModalOpen}
+        onClose={() => {
+          setIsCreatorSigModalOpen(false);
+          setSelectedDocForCreatorSig(null);
+        }}
+        creator={selectedDocForCreatorSig?.user}
+        contractTitle={selectedDocForCreatorSig?.title}
+        contractNumber={selectedDocForCreatorSig?.document_number}
       />
     </div>
   );

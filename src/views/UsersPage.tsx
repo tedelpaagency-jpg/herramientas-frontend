@@ -27,6 +27,7 @@ import {
   UserCheck,
   Mail,
   Send,
+  FileSignature,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -535,6 +536,12 @@ export const UsersPage: React.FC = () => {
                           <div>
                             <p className="font-bold text-slate-900 dark:text-slate-100 text-xs flex items-center gap-1.5 whitespace-nowrap">
                               {u.name}
+                              {(u.signature || u.signature_url) && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800" title="Usuario con firma digital registrada">
+                                  <FileSignature className="w-2.5 h-2.5" />
+                                  <span>Firma</span>
+                                </span>
+                              )}
                               {isDeleted && <span className="px-1.5 py-0.5 text-[9px] font-extrabold bg-rose-100 text-rose-700 rounded-xs">Eliminado</span>}
                             </p>
                             <p className="text-[11px] text-slate-500 font-medium whitespace-nowrap">{u.email}</p>
