@@ -1098,16 +1098,33 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
             {/* Micro-Loader brandeado al cambiar pestañas de operación */}
             {isTabTransitioning && (
-              <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-xs flex items-center justify-center rounded-[24px] transition-all duration-300 animate-in fade-in">
-                <div className="flex flex-col items-center gap-2">
-                  <div
-                    className="w-7 h-7 rounded-full border-3 border-t-transparent animate-spin"
-                    style={{ borderColor: primaryColor, borderTopColor: 'transparent' }}
-                  />
-                  <span className="text-[11px] font-bold text-slate-600 tracking-wider uppercase">
-                    Actualizando catálogo...
-                  </span>
-                </div>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 999,
+                  backgroundColor: 'rgba(255, 255, 255, 0.94)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: showTabs ? '0 0 26px 26px' : '26px',
+                  transition: 'all 0.25s ease',
+                }}
+              >
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '50%',
+                    border: `4px solid ${primaryColor}25`,
+                    borderTopColor: primaryColor,
+                    borderRightColor: primaryColor,
+                    animation: 'inmoSpin 0.65s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+                    filter: `drop-shadow(0 2px 8px ${primaryColor}45)`,
+                  }}
+                />
               </div>
             )}
 
