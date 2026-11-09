@@ -213,6 +213,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
       {/* Dropdown Menu (Exact match to uploaded image) */}
       {isOpen && (
         <div
+          className="inmo-booking-popover"
           style={{
             position: 'absolute',
             top: 'calc(100% + 4px)',
@@ -224,7 +225,9 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
             boxShadow: '0 20px 45px -4px rgba(0, 0, 0, 0.22)',
             zIndex: 99999,
             padding: '10px 10px 8px 10px',
-            minWidth: '290px',
+            width: '100%',
+            minWidth: '100%',
+            boxSizing: 'border-box',
           }}
         >
           {/* Inner Search Box */}
@@ -427,14 +430,14 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
 
       {isOpen && (
         <div
+          className="inmo-booking-popover"
           style={{
             position: 'absolute',
             top: 'calc(100% + 4px)',
             left: alignRight ? 'auto' : 0,
             right: alignRight ? 0 : 'auto',
             minWidth: '100%',
-            width: 'max-content',
-            maxWidth: '300px',
+            width: '100%',
             backgroundColor: '#ffffff',
             border: '1px solid #cbd5e1',
             borderRadius: '14px',
@@ -443,6 +446,7 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
             padding: '8px',
             maxHeight: '280px',
             overflowY: 'auto',
+            boxSizing: 'border-box',
           }}
         >
           {options.map((opt) => {
@@ -761,27 +765,84 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         @media (max-width: 991px) {
           .inmo-card-form-grid {
             grid-template-columns: 1fr 1fr;
+            align-items: stretch !important;
+          }
+          .inmo-order-operacion,
+          .inmo-order-propiedad,
+          .inmo-order-ubicacion,
+          .inmo-order-precio,
+          .inmo-order-boton {
+            width: 100% !important;
+          }
+          .inmo-order-boton {
+            grid-column: 1 / -1;
+          }
+          .inmo-btn-search {
+            width: 100% !important;
           }
         }
 
-        @media (max-width: 640px) {
-          .inmo-card-form-grid {
-            display: flex !important;
-            flex-direction: column !important;
-            padding: 20px 16px 24px 16px;
-            gap: 14px;
+        @media (max-width: 768px) {
+          .inmo-hero-canvas {
+            min-height: auto !important;
+            padding: 32px 12px 24px 12px !important;
           }
-          /* Reordenamiento móvil: 1. Operación -> 2. Propiedad -> 3. Ubicación -> 4. Precio -> 5. Buscar */
-          .inmo-order-operacion { order: 1 !important; }
-          .inmo-order-propiedad { order: 2 !important; }
-          .inmo-order-ubicacion { order: 3 !important; }
-          .inmo-order-precio    { order: 4 !important; }
-          .inmo-order-boton     { order: 5 !important; }
+
+          .inmo-main-booking-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            border-radius: 20px !important;
+          }
 
           .inmo-card-tabs-bar {
             padding: 12px 14px 0 14px;
             gap: 16px;
             justify-content: flex-start;
+            border-radius: 20px 20px 0 0 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
+          .inmo-card-form-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            justify-content: flex-start !important;
+            width: 100% !important;
+            padding: 20px 16px 24px 16px;
+            gap: 16px;
+            border-radius: ${showTabs ? '0 0 20px 20px' : '20px'} !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Reordenamiento móvil: 1. Operación -> 2. Propiedad -> 3. Ubicación -> 4. Precio -> 5. Buscar */
+          .inmo-order-operacion { order: 1 !important; width: 100% !important; max-width: 100% !important; }
+          .inmo-order-propiedad { order: 2 !important; width: 100% !important; max-width: 100% !important; }
+          .inmo-order-ubicacion { order: 3 !important; width: 100% !important; max-width: 100% !important; }
+          .inmo-order-precio    { order: 4 !important; width: 100% !important; max-width: 100% !important; }
+          .inmo-order-boton     { order: 5 !important; width: 100% !important; max-width: 100% !important; }
+
+          .inmo-order-operacion > div,
+          .inmo-order-propiedad > div,
+          .inmo-order-ubicacion > div,
+          .inmo-order-precio > div,
+          .inmo-order-boton > div {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          .inmo-btn-search {
+            width: 100% !important;
+            max-width: 100% !important;
+            justify-content: center !important;
+          }
+
+          .inmo-booking-popover {
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
           }
         }
 
@@ -812,6 +873,13 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           box-shadow: 0 6px 20px ${buttonColor}40;
           transition: all 0.2s ease;
           white-space: nowrap;
+          width: 100%;
+        }
+
+        @media (min-width: 992px) {
+          .inmo-btn-search {
+            width: auto;
+          }
         }
 
         .inmo-btn-search:hover {
@@ -959,7 +1027,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
             {/* 1. Ubicación (Select2-style Search with 2s Debounce matching Screenshot) */}
             {showLocation && (
-              <div className="inmo-order-ubicacion" style={{ position: 'relative', zIndex: 40, overflow: 'visible' }}>
+              <div className="inmo-order-ubicacion" style={{ position: 'relative', width: '100%', zIndex: 40, overflow: 'visible' }}>
                 <label className="inmo-field-label">Ubicación</label>
                 <LocationCitySelect
                   value={search}
@@ -972,7 +1040,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
             {/* 2. Operación (Professional Popover Select) */}
             {showOperation && (
-              <div className="inmo-order-operacion" style={{ position: 'relative', zIndex: 30, overflow: 'visible' }}>
+              <div className="inmo-order-operacion" style={{ position: 'relative', width: '100%', zIndex: 30, overflow: 'visible' }}>
                 <ProfessionalBookingSelect
                   label="Operación"
                   name="property_status"
@@ -987,7 +1055,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
             {/* 3. Propiedad (Professional Popover Select) */}
             {showPropertyType && (
-              <div className="inmo-order-propiedad" style={{ position: 'relative', zIndex: 20, overflow: 'visible' }}>
+              <div className="inmo-order-propiedad" style={{ position: 'relative', width: '100%', zIndex: 20, overflow: 'visible' }}>
                 <ProfessionalBookingSelect
                   label="Propiedad"
                   name="property_type"
@@ -1002,7 +1070,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
             {/* 4. Precio (Professional Popover Select con alineación a la derecha para no cortarse) */}
             {showPrice && (
-              <div className="inmo-order-precio" style={{ position: 'relative', zIndex: 10, overflow: 'visible' }}>
+              <div className="inmo-order-precio" style={{ position: 'relative', width: '100%', zIndex: 10, overflow: 'visible' }}>
                 <ProfessionalBookingSelect
                   label="Precio"
                   name="price_max"
@@ -1017,10 +1085,10 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             )}
 
             {/* 5. Botón Buscar */}
-            <div className="inmo-order-boton" style={{ zIndex: 5 }}>
+            <div className="inmo-order-boton" style={{ zIndex: 5, width: '100%' }}>
               <button
                 type="submit"
-                className="inmo-btn-search w-full sm:w-auto"
+                className="inmo-btn-search"
                 style={{ backgroundColor: primaryColor }}
               >
                 <Search className="w-5 h-5 stroke-[2.5]" />
