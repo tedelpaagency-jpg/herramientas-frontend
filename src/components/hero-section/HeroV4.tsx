@@ -69,10 +69,31 @@ interface LocationCitySelectProps {
   onChange: (val: string) => void;
   domain?: string;
   accentColor?: string;
+  isOpen?: boolean;
+  onToggle?: (open: boolean) => void;
 }
 
-const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange, domain, accentColor = '#e2b728' }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
+  value,
+  onChange,
+  domain,
+  accentColor = '#e2b728',
+  isOpen: controlledIsOpen,
+  onToggle,
+}) => {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isControlled = typeof controlledIsOpen === 'boolean';
+  const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
+
+  const setOpen = (val: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof val === 'function' ? val(isOpen) : val;
+    if (isControlled && onToggle) {
+      onToggle(nextVal);
+    } else {
+      setInternalIsOpen(nextVal);
+    }
+  };
+
   const [searchInput, setSearchInput] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isDebouncing, setIsDebouncing] = useState(false);
@@ -105,16 +126,20 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
     };
   }, [domain]);
 
-  // Click outside to close
+  // Click & Touch outside to close
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
+        setOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+    };
+  }, [isOpen, isControlled, onToggle]);
 
   // Focus input when opened
   useEffect(() => {
@@ -164,19 +189,19 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
 
   const handleSelectCity = (city: { name: string; province: string }) => {
     onChange(city.name);
-    setIsOpen(false);
+    setOpen(false);
   };
 
   const displayText = value ? value : '¿En donde estas buscando?';
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+    <div ref={containerRef} style={{ position: 'relative', width: '100%', zIndex: isOpen ? 99999 : undefined }}>
       {/* Field Control Box (Trigger) */}
       <div
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => setOpen((prev) => !prev)}
         style={{
           height: '52px',
-          border: '1px solid #e2e8f0',
+          border: `1.5px solid ${isOpen ? accentColor : '#e2e8f0'}`,
           borderRadius: isOpen ? '14px 14px 0 0' : '14px',
           padding: '0 16px',
           backgroundColor: '#ffffff',
@@ -186,6 +211,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
           cursor: 'pointer',
           userSelect: 'none',
           transition: 'all 0.15s ease',
+          boxShadow: isOpen ? `0 0 0 3px ${accentColor}18` : 'none',
         }}
       >
         <span
@@ -220,9 +246,9 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
             left: 0,
             right: 0,
             backgroundColor: '#ffffff',
-            border: '1px solid #cbd5e1',
-            borderRadius: '14px',
-            boxShadow: '0 20px 45px -4px rgba(0, 0, 0, 0.22)',
+            border: '1.5px solid #cbd5e1',
+            borderRadius: '16px',
+            boxShadow: '0 20px 45px -4px rgba(0, 0, 0, 0.28), 0 4px 16px rgba(0,0,0,0.08)',
             zIndex: 99999,
             padding: '10px 10px 8px 10px',
             width: '100%',
@@ -298,7 +324,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({ value, onChange
                       alignItems: 'center',
                       gap: '10px',
                       padding: '9px 12px',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       cursor: 'pointer',
                       backgroundColor: isSelected ? accentColor : '#ffffff',
                       color: isSelected ? '#ffffff' : '#0f172a',
@@ -360,6 +386,8 @@ interface ProfessionalBookingSelectProps {
   hasCaret?: boolean;
   accentColor?: string;
   alignRight?: boolean;
+  isOpen?: boolean;
+  onToggle?: (open: boolean) => void;
 }
 
 const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
@@ -371,30 +399,48 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
   hasCaret = true,
   accentColor = '#e2b728',
   alignRight = false,
+  isOpen: controlledIsOpen,
+  onToggle,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isControlled = typeof controlledIsOpen === 'boolean';
+  const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
+
+  const setOpen = (val: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof val === 'function' ? val(isOpen) : val;
+    if (isControlled && onToggle) {
+      onToggle(nextVal);
+    } else {
+      setInternalIsOpen(nextVal);
+    }
+  };
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   const selectedOpt = options.find((o) => o.value === value) || options[0];
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
+        setOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+    };
+  }, [isOpen, isControlled, onToggle]);
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%', zIndex: isOpen ? 100 : 1 }}>
+    <div ref={containerRef} style={{ position: 'relative', width: '100%', zIndex: isOpen ? 99999 : undefined }}>
       <label className="inmo-field-label">{label}</label>
       <div
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => setOpen((prev) => !prev)}
         style={{
           height: '52px',
-          border: `1px solid ${isOpen ? accentColor : '#e2e8f0'}`,
+          border: `1.5px solid ${isOpen ? accentColor : '#e2e8f0'}`,
           borderRadius: '14px',
           padding: '0 16px',
           backgroundColor: '#ffffff',
@@ -404,6 +450,7 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
           cursor: 'pointer',
           userSelect: 'none',
           transition: 'all 0.15s ease',
+          boxShadow: isOpen ? `0 0 0 3px ${accentColor}18` : 'none',
         }}
       >
         <span
@@ -439,9 +486,9 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
             minWidth: '100%',
             width: '100%',
             backgroundColor: '#ffffff',
-            border: '1px solid #cbd5e1',
-            borderRadius: '14px',
-            boxShadow: '0 20px 45px -4px rgba(0, 0, 0, 0.22)',
+            border: '1.5px solid #cbd5e1',
+            borderRadius: '16px',
+            boxShadow: '0 20px 45px -4px rgba(0, 0, 0, 0.28), 0 4px 16px rgba(0,0,0,0.08)',
             zIndex: 99999,
             padding: '8px',
             maxHeight: '280px',
@@ -456,7 +503,7 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
                 key={opt.value}
                 onClick={() => {
                   onChange(opt.value);
-                  setIsOpen(false);
+                  setOpen(false);
                 }}
                 style={{
                   display: 'flex',
@@ -494,6 +541,8 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
   );
 };
 
+
+
 interface HeroV4Props {
   agency?: any;
 }
@@ -504,6 +553,9 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   // Tabs: 'sale' (En Venta) | 'rent' (En Renta)
   const [activeTab, setActiveTab] = useState<BookingTab>('sale');
   const [isTabTransitioning, setIsTabTransitioning] = useState(false);
+
+  // Active open dropdown tracker (Ubicación, Operación, Propiedad, Precio)
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   // Form field states
   const [search, setSearch] = useState('');
@@ -568,6 +620,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
   // Handle Tab Switch (Solo En Venta y En Renta, con micro-loader brandeado de 450ms)
   const handleTabClick = (tab: BookingTab) => {
     if (tab === activeTab) return;
+    setActiveDropdown(null);
     setIsTabTransitioning(true);
     setActiveTab(tab);
     if (tab === 'sale') {
@@ -762,6 +815,13 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           overflow: visible !important;
         }
 
+        /* Stacking Context Hierarchy (Desktop) */
+        .inmo-order-ubicacion { position: relative; z-index: 50; }
+        .inmo-order-operacion { position: relative; z-index: 40; }
+        .inmo-order-propiedad { position: relative; z-index: 30; }
+        .inmo-order-precio    { position: relative; z-index: 20; }
+        .inmo-order-boton     { position: relative; z-index: 10; }
+
         @media (max-width: 991px) {
           .inmo-card-form-grid {
             grid-template-columns: 1fr 1fr;
@@ -785,21 +845,21 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
         @media (max-width: 768px) {
           .inmo-hero-canvas {
             min-height: auto !important;
-            padding: 32px 12px 24px 12px !important;
+            padding: 32px 14px 24px 14px !important;
           }
 
           .inmo-main-booking-card {
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 auto !important;
-            border-radius: 20px !important;
+            border-radius: 22px !important;
           }
 
           .inmo-card-tabs-bar {
-            padding: 12px 14px 0 14px;
-            gap: 16px;
+            padding: 14px 16px 0 16px;
+            gap: 24px;
             justify-content: flex-start;
-            border-radius: 20px 20px 0 0 !important;
+            border-radius: 22px 22px 0 0 !important;
             width: 100% !important;
             box-sizing: border-box !important;
           }
@@ -812,16 +872,22 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             width: 100% !important;
             padding: 20px 16px 24px 16px;
             gap: 16px;
-            border-radius: ${showTabs ? '0 0 20px 20px' : '20px'} !important;
+            border-radius: ${showTabs ? '0 0 22px 22px' : '22px'} !important;
             box-sizing: border-box !important;
           }
 
-          /* Reordenamiento móvil: 1. Operación -> 2. Propiedad -> 3. Ubicación -> 4. Precio -> 5. Buscar */
-          .inmo-order-operacion { order: 1 !important; width: 100% !important; max-width: 100% !important; }
-          .inmo-order-propiedad { order: 2 !important; width: 100% !important; max-width: 100% !important; }
-          .inmo-order-ubicacion { order: 3 !important; width: 100% !important; max-width: 100% !important; }
-          .inmo-order-precio    { order: 4 !important; width: 100% !important; max-width: 100% !important; }
-          .inmo-order-boton     { order: 5 !important; width: 100% !important; max-width: 100% !important; }
+          /* Reordenamiento móvil con Stacking Context garantizado: 
+             1. Operación (z-index: 50)
+             2. Propiedad (z-index: 40)
+             3. Ubicación (z-index: 30)
+             4. Precio    (z-index: 20)
+             5. Buscar    (z-index: 10)
+          */
+          .inmo-order-operacion { order: 1 !important; z-index: 50 !important; width: 100% !important; max-width: 100% !important; position: relative !important; }
+          .inmo-order-propiedad { order: 2 !important; z-index: 40 !important; width: 100% !important; max-width: 100% !important; position: relative !important; }
+          .inmo-order-ubicacion { order: 3 !important; z-index: 30 !important; width: 100% !important; max-width: 100% !important; position: relative !important; }
+          .inmo-order-precio    { order: 4 !important; z-index: 20 !important; width: 100% !important; max-width: 100% !important; position: relative !important; }
+          .inmo-order-boton     { order: 5 !important; z-index: 10 !important; width: 100% !important; max-width: 100% !important; position: relative !important; }
 
           .inmo-order-operacion > div,
           .inmo-order-propiedad > div,
@@ -843,6 +909,28 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             right: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+          }
+        }
+
+        /* Elevación absoluta garantizada cuando un selector se encuentra desplegado */
+        .inmo-field-active-open {
+          z-index: 99999 !important;
+          position: relative !important;
+        }
+
+        /* Popover animation */
+        .inmo-booking-popover {
+          animation: inmoDropdownSlide 0.16s ease-out;
+        }
+
+        @keyframes inmoDropdownSlide {
+          from {
+            opacity: 0;
+            transform: translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
 
@@ -1027,20 +1115,38 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
 
             {/* 1. Ubicación (Select2-style Search with 2s Debounce matching Screenshot) */}
             {showLocation && (
-              <div className="inmo-order-ubicacion" style={{ position: 'relative', width: '100%', zIndex: 40, overflow: 'visible' }}>
+              <div
+                className={`inmo-order-ubicacion ${activeDropdown === 'ubicacion' ? 'inmo-field-active-open' : ''}`}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  zIndex: activeDropdown === 'ubicacion' ? 99999 : undefined,
+                  overflow: 'visible',
+                }}
+              >
                 <label className="inmo-field-label">Ubicación</label>
                 <LocationCitySelect
                   value={search}
                   onChange={(val) => setSearch(val)}
                   domain={domain}
                   accentColor={primaryColor}
+                  isOpen={activeDropdown === 'ubicacion'}
+                  onToggle={(open) => setActiveDropdown(open ? 'ubicacion' : null)}
                 />
               </div>
             )}
 
             {/* 2. Operación (Professional Popover Select) */}
             {showOperation && (
-              <div className="inmo-order-operacion" style={{ position: 'relative', width: '100%', zIndex: 30, overflow: 'visible' }}>
+              <div
+                className={`inmo-order-operacion ${activeDropdown === 'operacion' ? 'inmo-field-active-open' : ''}`}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  zIndex: activeDropdown === 'operacion' ? 99999 : undefined,
+                  overflow: 'visible',
+                }}
+              >
                 <ProfessionalBookingSelect
                   label="Operación"
                   name="property_status"
@@ -1049,13 +1155,23 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   options={operationOptions}
                   hasCaret={false}
                   accentColor={primaryColor}
+                  isOpen={activeDropdown === 'operacion'}
+                  onToggle={(open) => setActiveDropdown(open ? 'operacion' : null)}
                 />
               </div>
             )}
 
             {/* 3. Propiedad (Professional Popover Select) */}
             {showPropertyType && (
-              <div className="inmo-order-propiedad" style={{ position: 'relative', width: '100%', zIndex: 20, overflow: 'visible' }}>
+              <div
+                className={`inmo-order-propiedad ${activeDropdown === 'propiedad' ? 'inmo-field-active-open' : ''}`}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  zIndex: activeDropdown === 'propiedad' ? 99999 : undefined,
+                  overflow: 'visible',
+                }}
+              >
                 <ProfessionalBookingSelect
                   label="Propiedad"
                   name="property_type"
@@ -1064,13 +1180,23 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   options={propertyTypeOptions}
                   hasCaret={true}
                   accentColor={primaryColor}
+                  isOpen={activeDropdown === 'propiedad'}
+                  onToggle={(open) => setActiveDropdown(open ? 'propiedad' : null)}
                 />
               </div>
             )}
 
             {/* 4. Precio (Professional Popover Select con alineación a la derecha para no cortarse) */}
             {showPrice && (
-              <div className="inmo-order-precio" style={{ position: 'relative', width: '100%', zIndex: 10, overflow: 'visible' }}>
+              <div
+                className={`inmo-order-precio ${activeDropdown === 'precio' ? 'inmo-field-active-open' : ''}`}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  zIndex: activeDropdown === 'precio' ? 99999 : undefined,
+                  overflow: 'visible',
+                }}
+              >
                 <ProfessionalBookingSelect
                   label="Precio"
                   name="price_max"
@@ -1080,12 +1206,14 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
                   hasCaret={false}
                   accentColor={primaryColor}
                   alignRight={true}
+                  isOpen={activeDropdown === 'precio'}
+                  onToggle={(open) => setActiveDropdown(open ? 'precio' : null)}
                 />
               </div>
             )}
 
             {/* 5. Botón Buscar */}
-            <div className="inmo-order-boton" style={{ zIndex: 5, width: '100%' }}>
+            <div className="inmo-order-boton" style={{ position: 'relative', width: '100%' }}>
               <button
                 type="submit"
                 className="inmo-btn-search"
