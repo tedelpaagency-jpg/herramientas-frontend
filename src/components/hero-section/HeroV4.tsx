@@ -201,17 +201,16 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
         onClick={() => setOpen((prev) => !prev)}
         style={{
           height: '52px',
-          border: `1.5px solid ${isOpen ? accentColor : '#e2e8f0'}`,
+          border: '1px solid #e2e8f0',
           borderRadius: isOpen ? '14px 14px 0 0' : '14px',
           padding: '0 16px',
-          backgroundColor: isOpen ? '#ffffff' : '#f8fafc',
+          backgroundColor: '#ffffff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           cursor: 'pointer',
           userSelect: 'none',
-          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          boxShadow: isOpen ? `0 0 0 3px ${accentColor}18` : 'none',
+          transition: 'all 0.15s ease',
         }}
       >
         <span
@@ -440,17 +439,16 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
         onClick={() => setOpen((prev) => !prev)}
         style={{
           height: '52px',
-          border: `1.5px solid ${isOpen ? accentColor : '#e2e8f0'}`,
+          border: `1px solid ${isOpen ? accentColor : '#e2e8f0'}`,
           borderRadius: '14px',
           padding: '0 16px',
-          backgroundColor: isOpen ? '#ffffff' : '#f8fafc',
+          backgroundColor: '#ffffff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           cursor: 'pointer',
           userSelect: 'none',
-          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          boxShadow: isOpen ? `0 0 0 3px ${accentColor}18` : 'none',
+          transition: 'all 0.15s ease',
         }}
       >
         <span
@@ -730,32 +728,30 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
           }
         }
 
-        /* White Booking Card (Centrado en la parte inferior, optimizado con diseño de lujo) */
+        /* White Booking Card (Centrado en la parte inferior, aumentado con mayor presencia) */
         .inmo-main-booking-card {
           position: relative;
-          background: rgba(255, 255, 255, 0.96);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border-radius: 28px;
-          box-shadow: 0 25px 65px -15px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.85);
+          background: #ffffff;
+          border-radius: 26px;
+          box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.32);
           width: 100%;
           max-width: 1050px;
           margin: auto auto 0 auto;
           flex-shrink: 0;
           overflow: visible !important;
+          border: 1px solid rgba(255, 255, 255, 0.9);
           z-index: 20;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         /* Top Tabs Row */
         .inmo-card-tabs-bar {
           display: flex;
           align-items: center;
-          border-bottom: 1px solid rgba(226, 232, 240, 0.85);
-          padding: 16px 32px 0 32px;
-          background: transparent;
+          border-bottom: 1px solid #e2e8f0;
+          padding: 18px 32px 0 32px;
+          background: #ffffff;
           gap: 32px;
-          border-radius: 28px 28px 0 0;
+          border-radius: 26px 26px 0 0;
           overflow-x: auto;
           scrollbar-width: none;
           -webkit-overflow-scrolling: touch;
