@@ -3,7 +3,9 @@
  * Utilizado por PublicPortalLoader y componentes de carga en el portal inmobiliario.
  */
 
-export const IMMOBILLIS_LOGO_URL =
+export const IMMOBILLIS_LOGO_URL = '/immobillis-logo.png';
+
+export const IMMOBILLIS_REMOTE_LOGO_URL =
   'https://santun.tedelpa.com/uploads/media/white-label-10/agencies/agency-394/images/med_6aee78e54c501_LogotipoInmobiliarioAmarilloyGris.png';
 
 export const IMMOBILLIS_FALLBACK_LOGO_URL =

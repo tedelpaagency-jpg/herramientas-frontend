@@ -7,7 +7,7 @@ import {
   getCachedBrandColor,
   getCachedLoaderImage,
 } from "@/services/publicInmobiliariaService";
-import { IMMOBILLIS_LOGO_URL } from "./immobillisLoaderLogo";
+import { IMMOBILLIS_LOGO_URL, IMMOBILLIS_REMOTE_LOGO_URL } from "./immobillisLoaderLogo";
 
 export interface PublicPortalLoaderProps {
   countryName?: string;
@@ -52,6 +52,7 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
   const [minTimeElapsed, setMinTimeElapsed] = useState<boolean>(false);
   const [imgFailed, setImgFailed] = useState<boolean>(false);
+  const [useRemoteFallback, setUseRemoteFallback] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(25);
 
   useEffect(() => {
@@ -61,12 +62,11 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
       return;
     }
     setMinTimeElapsed(false);
-    setImgFailed(false);
-    setProgress(20);
+    setProgress(25);
 
-    const step1 = setTimeout(() => setProgress(48), 250);
-    const step2 = setTimeout(() => setProgress(72), Math.min(1000, effectiveDuration * 0.45));
-    const step3 = setTimeout(() => setProgress(90), Math.min(1800, effectiveDuration * 0.8));
+    const step1 = setTimeout(() => setProgress(50), 200);
+    const step2 = setTimeout(() => setProgress(75), Math.min(900, effectiveDuration * 0.45));
+    const step3 = setTimeout(() => setProgress(92), Math.min(1700, effectiveDuration * 0.8));
 
     const doneTimer = setTimeout(() => {
       setProgress(100);
@@ -100,13 +100,14 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
     ? candidate
     : null;
 
-  // Fallback to official Immobillis logo if on Immobillis domain or agency 394
+  // Check if Immobillis
   const isImmobillis =
     agency?.id === 394 ||
     (typeof window !== 'undefined' && window.location.hostname.includes('immobillis')) ||
     (agency?.domain && agency.domain.includes('immobillis'));
 
-  const rawLogo = validCandidate || (isImmobillis ? IMMOBILLIS_LOGO_URL : null);
+  const defaultImmobillisLogo = useRemoteFallback ? IMMOBILLIS_REMOTE_LOGO_URL : IMMOBILLIS_LOGO_URL;
+  const rawLogo = validCandidate || (isImmobillis ? defaultImmobillisLogo : null);
   const logoToDisplay = !imgFailed ? rawLogo : null;
 
   const shouldRender = isOpen || !minTimeElapsed;
@@ -116,7 +117,7 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center font-sans overflow-hidden select-none transition-opacity duration-300 animate-in fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center font-sans overflow-hidden select-none"
       role="status"
       aria-live="polite"
       aria-label="Cargando propiedades"
@@ -128,53 +129,59 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
     >
       <style dangerouslySetInnerHTML={{
         __html: `
-        @keyframes shimmerSlow {
+        @keyframes shimmerBar {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(250%); }
         }
-        .animate-shimmer-slow {
-          animation: shimmerSlow 2s infinite ease-in-out;
+        .animate-shimmer-bar {
+          animation: shimmerBar 1.8s infinite ease-in-out;
         }
       `}} />
 
-      {/* Tarjeta Central Sólida Blanca */}
+      {/* Tarjeta Central Sólida Blanca (Apple Clean Style) */}
       <div
-        className="relative z-10 w-[90%] max-w-[340px] rounded-[24px] bg-[#ffffff] flex flex-col items-center justify-center p-7 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-slate-100/90 animate-in fade-in zoom-in-95 duration-300"
+        className="relative z-10 w-[90%] max-w-[370px] rounded-[28px] bg-[#ffffff] flex flex-col items-center justify-center p-8 sm:p-9 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.12),0_4px_16px_rgba(0,0,0,0.03)] border border-slate-100/90"
         style={{
-          borderRadius: '24px',
+          borderRadius: '28px',
         }}
       >
-        {/* Logotipo de la agencia / Immobillis (Solo si existe y es válido) */}
+        {/* Logotipo Grande de Immobillis / Agencia (Sin animaciones para evitar efectos indeseados) */}
         {logoToDisplay && (
-          <div className="w-full flex items-center justify-center mb-6">
+          <div className="w-full flex items-center justify-center mb-7">
             <img
               src={logoToDisplay}
               alt={agency?.name || "Logo"}
-              className="max-w-[190px] max-h-[85px] w-auto h-auto object-contain drop-shadow-sm select-none"
+              className="w-auto h-[120px] max-w-[230px] object-contain select-none pointer-events-none drop-shadow-none"
               loading="eager"
               decoding="sync"
               fetchPriority="high"
-              onError={() => setImgFailed(true)}
+              onError={() => {
+                if (!useRemoteFallback && logoToDisplay === IMMOBILLIS_LOGO_URL) {
+                  setUseRemoteFallback(true);
+                } else {
+                  setImgFailed(true);
+                }
+              }}
             />
           </div>
         )}
 
-        {/* Barra de progreso */}
+        {/* Barra de progreso dorada */}
         <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden relative shadow-inner">
           <div
             className="h-full rounded-full transition-all duration-300 relative overflow-hidden"
             style={{
               width: `${progress}%`,
               background: `linear-gradient(90deg, #d97706 0%, ${effectiveBrandColor} 50%, #fbbf24 100%)`,
-              boxShadow: `0 0 8px ${effectiveBrandColor}60`,
+              boxShadow: `0 0 8px ${effectiveBrandColor}50`,
             }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer-slow" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer-bar" />
           </div>
         </div>
 
-        {/* Mensaje informativo */}
-        <p className="mt-3.5 text-[12px] sm:text-[12.5px] font-bold text-slate-800 leading-snug text-center max-w-[270px] tracking-tight">
+        {/* Mensaje informativo idéntico al diseño */}
+        <p className="mt-3.5 text-[12px] sm:text-[12.5px] font-bold text-slate-800 leading-snug text-center max-w-[260px] tracking-tight">
           {displayMessage}
         </p>
       </div>
