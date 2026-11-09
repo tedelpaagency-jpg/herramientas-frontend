@@ -330,6 +330,19 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
     loadAgencies();
   }, []);
 
+  // Auto-cerrar previsualización del loader al culminar su tiempo exacto configurado
+  useEffect(() => {
+    if (showLoaderPreview) {
+      const dur = (Number(form.details?.loader_duration) || 2.5) > 20
+        ? Number(form.details?.loader_duration)
+        : (Number(form.details?.loader_duration) || 2.5) * 1000;
+      const t = setTimeout(() => {
+        setShowLoaderPreview(false);
+      }, dur + 300);
+      return () => clearTimeout(t);
+    }
+  }, [showLoaderPreview, form.details?.loader_duration]);
+
   const loadAgencies = async () => {
     setLoading(true);
     try {
@@ -621,7 +634,9 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
           loader_bg_color: form.details?.loader_bg_color || '#0f172a',
           loader_gradient_enabled: form.details?.loader_gradient_enabled !== false,
           loader_gradient_color: form.details?.loader_gradient_color || form.primary_color || '#e2b728',
+          loader_duration: form.details?.loader_duration !== undefined ? Number(form.details.loader_duration) : 2.5,
         },
+        loader_duration: form.details?.loader_duration !== undefined ? Number(form.details.loader_duration) : 2.5,
       };
 
       await adminService.updateAgency(selectedAgencyId, payload);
@@ -633,7 +648,11 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
           const updatedAgencyConfig = {
             ...currentAgency,
             ...payload,
-            details: form.details,
+            details: {
+              ...(form.details || {}),
+              loader_duration: form.details?.loader_duration !== undefined ? Number(form.details.loader_duration) : 2.5,
+            },
+            loader_duration: form.details?.loader_duration !== undefined ? Number(form.details.loader_duration) : 2.5,
           };
           const doms = [
             effectiveDomain,

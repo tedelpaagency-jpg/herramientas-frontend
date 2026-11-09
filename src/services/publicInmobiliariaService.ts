@@ -42,6 +42,7 @@ export interface PublicAgencyConfig {
   redirect_to_login?: boolean;
   portal_url?: string;
   show_topbar?: boolean;
+  loader_duration?: number;
   filter_settings?: {
     booking?: {
       tabs?: boolean;

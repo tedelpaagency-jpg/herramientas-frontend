@@ -188,7 +188,7 @@ export default function PublicPortalHomeView({
         gradientColor={agency?.details?.loader_gradient_color}
         showGradients={agency?.details?.loader_gradient_enabled !== false}
         imageFit={agency?.details?.loader_image_fit || 'contain'}
-        duration={agency?.details?.loader_duration}
+        duration={agency?.details?.loader_duration ?? agency?.loader_duration}
         agency={agency}
         message="Un momento por favor, estamos buscando las mejores propiedades."
       />

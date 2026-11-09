@@ -46,30 +46,32 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
     duration ??
     agency?.details?.loader_duration ??
     agency?.loader_duration ??
-    2500;
+    (typeof window !== 'undefined' ? (
+      (getCachedAgencyConfig(agency?.domain)?.details as any)?.loader_duration ??
+      (getCachedAgencyConfig(agency?.domain) as any)?.loader_duration
+    ) : null) ??
+    2.5;
   const parsedDur = Number(rawDuration) || 2.5;
   const effectiveDuration = parsedDur <= 20 ? parsedDur * 1000 : parsedDur;
 
   const [minTimeElapsed, setMinTimeElapsed] = useState<boolean>(false);
   const [imgFailed, setImgFailed] = useState<boolean>(false);
   const [useRemoteFallback, setUseRemoteFallback] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(25);
+  const [progress, setProgress] = useState<number>(15);
 
   useEffect(() => {
-    if (!isOpen) {
-      setProgress(100);
-      setMinTimeElapsed(true);
-      return;
-    }
-    setMinTimeElapsed(false);
-    setProgress(25);
+    // Si isOpen es explícitamente false desde el inicio y ya pasó el tiempo mínimo, no hacer nada
+    if (!isOpen && minTimeElapsed) return;
 
-    const step1 = setTimeout(() => setProgress(50), 200);
-    const step2 = setTimeout(() => setProgress(75), Math.min(900, effectiveDuration * 0.45));
-    const step3 = setTimeout(() => setProgress(92), Math.min(1700, effectiveDuration * 0.8));
+    setMinTimeElapsed(false);
+    setProgress(15);
+
+    const step1 = setTimeout(() => setProgress(45), Math.max(120, effectiveDuration * 0.20));
+    const step2 = setTimeout(() => setProgress(72), Math.max(250, effectiveDuration * 0.50));
+    const step3 = setTimeout(() => setProgress(90), Math.max(400, effectiveDuration * 0.80));
+    const step4 = setTimeout(() => setProgress(100), Math.max(500, effectiveDuration * 0.95));
 
     const doneTimer = setTimeout(() => {
-      setProgress(100);
       setMinTimeElapsed(true);
     }, effectiveDuration);
 
@@ -77,9 +79,10 @@ export const PublicPortalLoader: React.FC<PublicPortalLoaderProps> = ({
       clearTimeout(step1);
       clearTimeout(step2);
       clearTimeout(step3);
+      clearTimeout(step4);
       clearTimeout(doneTimer);
     };
-  }, [isOpen, effectiveDuration]);
+  }, [effectiveDuration]);
 
   // Determine potential logo / image candidate
   const cachedImg = typeof window !== 'undefined' ? getCachedLoaderImage(agency?.domain) : null;

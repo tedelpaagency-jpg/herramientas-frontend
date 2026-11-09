@@ -168,6 +168,7 @@ export default function HomeClientView() {
           countryName={cachedAgency?.country_name || "ECUADOR"}
           countryImage={cachedLoaderImg || cachedAgency?.details?.loader_image || undefined}
           brandColor={cachedAgency?.primary_color}
+          duration={cachedAgency?.details?.loader_duration ?? (cachedAgency as any)?.loader_duration}
           agency={cachedAgency}
         />
       </div>
