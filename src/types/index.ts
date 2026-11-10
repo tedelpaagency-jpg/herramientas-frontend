@@ -223,6 +223,9 @@ export interface Estate {
   slug?: string;
   description: string;
   type: 'house' | 'apartment' | 'land' | 'commercial' | 'office' | string;
+  property_type?: number | string;
+  property_type_name?: string;
+  estate_type?: { id: number; name: string };
   price: number;
   currency: string;
   address?: string;

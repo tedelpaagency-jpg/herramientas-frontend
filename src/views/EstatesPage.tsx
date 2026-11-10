@@ -98,6 +98,8 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   const isAgencyAdmin = Boolean(
     isWhiteLabelOrSuperAdmin ||
     dashboardType === 'agency_admin' ||
+    Number(user?.id) === 1 ||
+    (user as any)?.user_type === 'admin' ||
     ['agency_admin', 'admin', 'gerente', 'gerente_comercial'].includes(user?.role || '') ||
     user?.roles?.some((r: any) => ['agency_admin', 'admin', 'gerente', 'gerente_comercial', 'super_admin', 'white_label_admin'].includes(r.name))
   );
@@ -130,14 +132,20 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   const [agentFilter, setAgentFilter] = useState('');
   const [agencyFilter, setAgencyFilter] = useState<string>('');
   const [viewMode, setViewMode] = useState<'table' | 'grid' | 'map' | 'reports'>(
-    viewParam === 'map' ? 'map' : viewParam === 'reports' ? 'reports' : 'table'
+    viewParam === 'map' ? 'map' : (viewParam === 'reports' && isAgencyAdmin) ? 'reports' : 'table'
   );
 
   useEffect(() => {
-    if (viewParam === 'map' || viewParam === 'reports' || viewParam === 'table' || viewParam === 'grid') {
+    if (!isAgencyAdmin && viewMode === 'reports') {
+      setViewMode('table');
+    }
+  }, [isAgencyAdmin, viewMode]);
+
+  useEffect(() => {
+    if (viewParam === 'map' || (viewParam === 'reports' && isAgencyAdmin) || viewParam === 'table' || viewParam === 'grid') {
       setViewMode(viewParam);
     }
-  }, [viewParam]);
+  }, [viewParam, isAgencyAdmin]);
   
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(12);
@@ -741,16 +749,18 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
             <MapPin className="w-4 h-4" />
             <span className="hidden sm:inline">Mapa</span>
           </button>
-          <button
-            onClick={() => setViewMode('reports')}
-            className={`p-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              viewMode === 'reports' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-            title="Vista Reportes y Contadores"
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span className="hidden sm:inline">Reportes</span>
-          </button>
+          {isAgencyAdmin && (
+            <button
+              onClick={() => setViewMode('reports')}
+              className={`p-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                viewMode === 'reports' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+              title="Vista Reportes y Contadores"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Reportes</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -870,7 +880,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                 </h4>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="text-[11px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 px-2 py-0.5 rounded uppercase">
-                                    {getEstateCategoryName((estate as any).property_type || estate.type)}
+                                    {(estate as any).property_type_name || (estate as any).estate_type?.name || getEstateCategoryName((estate as any).property_type ?? estate.type)}
                                   </span>
                                   <span className="text-xs text-slate-400">
                                     {estate.bedrooms ? `${estate.bedrooms} dorm.` : ''} {estate.area_sqm || estate.size ? `• ${estate.area_sqm || estate.size} m²` : ''}
@@ -1136,7 +1146,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
 
                         <div className="absolute top-3 left-3 flex items-center gap-2">
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-900/80 text-white backdrop-blur-md">
-                            {getEstateCategoryName((estate as any).property_type || estate.type)}
+                            {(estate as any).property_type_name || (estate as any).estate_type?.name || getEstateCategoryName((estate as any).property_type ?? estate.type)}
                           </span>
                         </div>
 

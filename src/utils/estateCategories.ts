@@ -30,7 +30,11 @@ export const ESTATE_CATEGORIES_CATALOG: EstateCategory[] = [
   { id: 22, name: 'Terreno', icon: 'mountain' },
 ];
 
-export const getEstateCategoryName = (propertyType: any): string => {
+export const getEstateCategoryName = (propertyType: any, directName?: string | null): string => {
+  if (directName && typeof directName === 'string' && directName.trim() !== '') {
+    return directName;
+  }
+
   if (propertyType === null || propertyType === undefined || propertyType === '') {
     return 'Inmueble';
   }
