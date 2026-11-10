@@ -425,6 +425,9 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
       } else if (src.includes('/signatures/')) {
         const filename = src.substring(src.lastIndexOf('/') + 1);
         normalized = `${apiBase}/api/v1/public/storage/signatures/${filename}`;
+      } else if (src.includes('/firmas/usuarios/') || src.includes('/firmas/')) {
+        const filename = src.substring(src.lastIndexOf('/') + 1);
+        normalized = `${apiBase}/api/v1/public/storage/firmas/usuarios/${filename}`;
       } else if (src.startsWith('/')) {
         normalized = `${apiBase}${src}`;
       } else if (src.includes('/storage/')) {
@@ -477,7 +480,7 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
           <div class="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-widest mt-1">Firma Autorizada${creatorName ? `: ${creatorName}` : ''}</div>
         </div>
       `;
-      const creatorSigRegex = /(?:\{\{|\[)(?:FIRMA_USUARIO|FIRMA_CREADOR|FIRMA_AUTORIZADA|FIRMA_REPRESENTANTE)(?:\}\}|\])/gi;
+      const creatorSigRegex = /(?:\{\{\s*|\[\[\s*|\[\s*|\{\s*)(?:FIRMA_USUARIO|FIRMA_CREADOR|FIRMA_AUTORIZADA|FIRMA_REPRESENTANTE|FIRMA_AGENTE|USER_SIGNATURE|CREATOR_SIGNATURE)(?:\s*\}\}|\s*\]\]|\s*\]|\s*\})/gi;
       if (creatorSigRegex.test(clean)) {
         clean = clean.replace(creatorSigRegex, creatorSigHtml);
       }

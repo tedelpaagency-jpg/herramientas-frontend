@@ -11,11 +11,13 @@ import {
   Download, 
   AlertCircle,
   FileText,
-  Lock
+  Lock,
+  FileSignature
 } from 'lucide-react';
 import { LexvaultDocument } from '../types';
 import lexvaultService from '../services/lexvaultService';
 import WordDocumentPaper from '../components/WordDocumentPaper';
+import CreatorSignatureModal from '../components/CreatorSignatureModal';
 import toast from 'react-hot-toast';
 import { normalizeFileUrl } from '../services/apiClient';
 
@@ -42,6 +44,7 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
   const [p12Password, setP12Password] = useState<string>('');
   const [declineReason, setDeclineReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreatorSigModalOpen, setIsCreatorSigModalOpen] = useState(false);
 
   // Dynamic token substitution for public contract viewer
   const bodyHtml = useMemo(() => {
@@ -68,6 +71,25 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
       if (clientDoc) {
         rawHtml = rawHtml.replace(/\{\{CLIENTE_CEDULA\}\}/gi, clientDoc).replace(/\[CLIENTE_CEDULA\]/gi, clientDoc);
       }
+    }
+
+    // Firma del usuario / creador autorizada
+    const creatorSig =
+      document?.user?.signature_url ||
+      document?.user?.signature ||
+      (document as any)?.creator_signature_url;
+
+    if (creatorSig) {
+      const normalizedSig = normalizeFileUrl(creatorSig);
+      const creatorName = document?.user?.name || (document as any)?.creator?.name || '';
+      const creatorSigHtml = `
+        <div class="creator-signature-stamp text-center my-2 p-2 inline-block">
+          <img src="${normalizedSig}" alt="Firma Autorizada Creador" class="max-w-[200px] max-h-[80px] object-contain mx-auto" />
+          <div class="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-widest mt-1">Firma Autorizada${creatorName ? `: ${creatorName}` : ''}</div>
+        </div>
+      `;
+      const creatorSigRegex = /(?:\{\{\s*|\[\[\s*|\[\s*|\{\s*)(?:FIRMA_USUARIO|FIRMA_CREADOR|FIRMA_AUTORIZADA|FIRMA_REPRESENTANTE|FIRMA_AGENTE|USER_SIGNATURE|CREATOR_SIGNATURE)(?:\s*\}\}|\s*\]\]|\s*\]|\s*\})/gi;
+      rawHtml = rawHtml.replace(creatorSigRegex, creatorSigHtml);
     }
 
     return rawHtml;
@@ -481,12 +503,25 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
               Revise cuidadosamente los términos descritos en la hoja tamaño Carta antes de emitir su firma o rechazo.
             </p>
           </div>
-          {document.client?.name && (
-            <div className="bg-slate-800 px-4 py-2 rounded-2xl border border-slate-700 shrink-0 text-right">
-              <p className="text-[10px] uppercase font-bold text-slate-400">Cliente Destinatario</p>
-              <p className="text-xs font-extrabold text-blue-400">{document.client.name}</p>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {(document?.user?.signature || document?.user?.signature_url || (document as any)?.creator_signature_url) && (
+              <button
+                type="button"
+                onClick={() => setIsCreatorSigModalOpen(true)}
+                className="px-3.5 py-2 rounded-2xl border border-blue-500/30 bg-blue-950/40 hover:bg-blue-900/60 text-blue-300 font-bold text-xs transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+                title="Visualizar la firma digital del usuario que emitió este contrato"
+              >
+                <FileSignature className="w-4 h-4 text-blue-400" />
+                <span>Firma del Creador</span>
+              </button>
+            )}
+            {document.client?.name && (
+              <div className="bg-slate-800 px-4 py-2 rounded-2xl border border-slate-700 text-right">
+                <p className="text-[10px] uppercase font-bold text-slate-400">Cliente Destinatario</p>
+                <p className="text-xs font-extrabold text-blue-400">{document.client.name}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Word Document Letter Paper Component (Strictly Read-Only for Public Viewer) */}
@@ -497,6 +532,7 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
           watermarkText={watermarkText}
           backgroundImageUrl={contractBg}
           editablePages={false}
+          isContract={true}
           signatureUrl={
             document.pdf_path ||
             document.pdf_url ||
@@ -505,6 +541,19 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
             (document as any)?.signature_url ||
             undefined
           }
+          creatorSignatureUrl={
+            document?.user?.signature_url ||
+            document?.user?.signature ||
+            (document as any)?.creator_signature_url ||
+            (document as any)?.creator?.signature_url ||
+            (document as any)?.creator?.signature ||
+            undefined
+          }
+          creatorName={document?.user?.name || (document as any)?.creator?.name}
+          tokens={
+            document?.tokens_json || (document?.field_values_json ? Object.keys(document.field_values_json) : [])
+          }
+          fieldValues={document?.field_values_json || {}}
         />
 
         {/* Client Action Box: Sign / Decline / Status Banner */}
@@ -861,6 +910,15 @@ export const PublicContractSignPage: React.FC<PublicContractSignPageProps> = ({ 
           </div>
         </div>
       )}
+
+      {/* Modal para visualizar firma del creador */}
+      <CreatorSignatureModal
+        isOpen={isCreatorSigModalOpen}
+        onClose={() => setIsCreatorSigModalOpen(false)}
+        creator={document?.user}
+        contractTitle={document?.title}
+        contractNumber={document?.document_number}
+      />
     </div>
   );
 };
