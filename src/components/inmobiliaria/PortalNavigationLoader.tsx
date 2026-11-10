@@ -10,8 +10,32 @@ function PortalNavigationListener() {
   const searchParams = useSearchParams();
   const [isNavigating, setIsNavigating] = useState(false);
 
+  // El loader inmobiliario SOLO debe operar en el frontend inmobiliario público, nunca en módulos internos/administrativos
+  const isAppRoute =
+    pathname.startsWith('/estates') ||
+    pathname.startsWith('/my-estates') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/crm') ||
+    pathname.startsWith('/tasks') ||
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/roles') ||
+    pathname.startsWith('/agencies') ||
+    pathname.startsWith('/white-label') ||
+    pathname.startsWith('/visas') ||
+    pathname.startsWith('/products') ||
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/hunter') ||
+    pathname.startsWith('/activities') ||
+    pathname.startsWith('/courses') ||
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/calendar') ||
+    pathname.startsWith('/lexvault');
+
   // Escuchar clics en enlaces para anticipar la transición de ruta
   useEffect(() => {
+    if (isAppRoute) return;
+
     const handleAnchorClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest('a');
       if (!target) return;
@@ -32,7 +56,32 @@ function PortalNavigationListener() {
         return;
       }
 
-      // Si es una ruta interna del portal inmobiliario
+      // Si el destino es una ruta administrativa o interna, ignorar
+      if (
+        href.startsWith('/estates') ||
+        href.startsWith('/my-estates') ||
+        href.startsWith('/admin') ||
+        href.startsWith('/crm') ||
+        href.startsWith('/tasks') ||
+        href.startsWith('/profile') ||
+        href.startsWith('/roles') ||
+        href.startsWith('/agencies') ||
+        href.startsWith('/white-label') ||
+        href.startsWith('/visas') ||
+        href.startsWith('/products') ||
+        href.startsWith('/settings') ||
+        href.startsWith('/hunter') ||
+        href.startsWith('/activities') ||
+        href.startsWith('/courses') ||
+        href.startsWith('/dashboard') ||
+        href.startsWith('/login') ||
+        href.startsWith('/calendar') ||
+        href.startsWith('/lexvault')
+      ) {
+        return;
+      }
+
+      // Si es una ruta interna del portal inmobiliario público
       const isPortalRoute =
         href === '/' ||
         href.startsWith('/properties') ||
@@ -48,7 +97,7 @@ function PortalNavigationListener() {
 
     document.addEventListener('click', handleAnchorClick, { capture: true });
     return () => document.removeEventListener('click', handleAnchorClick, { capture: true });
-  }, [pathname]);
+  }, [pathname, isAppRoute]);
 
   // Al finalizar la transición de ruta (pathname o searchParams cambian), desvanecer el loader
   useEffect(() => {
