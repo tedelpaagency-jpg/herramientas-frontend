@@ -627,7 +627,7 @@ export const EstateFormPage: React.FC = () => {
               <textarea
                 rows={2}
                 className={inputCls + ' mt-2'}
-                placeholder="Ej: -0.250000,-78.562500 o https://goo.gl/maps/..."
+                placeholder="Ej: -0.250000,-78.562500, Q3JG+QVH, La Libertad o enlace de Google Maps"
                 value={form.location}
                 onChange={e => handleChange('location', e.target.value)}
               />

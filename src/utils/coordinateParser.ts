@@ -121,12 +121,27 @@ export function parseCoordinatePair(raw: any): [number, number] | null {
     if (isValidLatLng(lat, lng)) return [lat, lng];
   }
 
-  // 3. Comma or space separated decimal: "-0.828167, -79.481889"
-  const decMatch = str.match(/^(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)$/);
+  // 3. Comma or space separated decimal: "-0.828167, -79.481889" or "-1. 023557, -79. 461471"
+  const normalizedStr = str
+    .replace(/([+-]?\d+)\.\s+(\d+)/g, '$1.$2')
+    .replace(/([+-])\s+(\d+)/g, '$1$2');
+
+  const decMatch = normalizedStr.match(/^(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)$/);
   if (decMatch) {
     const lat = parseFloat(decMatch[1]);
     const lng = parseFloat(decMatch[2]);
     if (isValidLatLng(lat, lng)) return [lat, lng];
+  }
+
+  // 4. Google Plus Code / Open Location Code (e.g. "Q3JG+QVH, La Libertad" or "669XQ3JG+QVH")
+  const plusCodeMatch = str.match(/([23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{2,7})/i);
+  if (plusCodeMatch) {
+    const code = plusCodeMatch[1].toUpperCase();
+    const localityPart = str.replace(plusCodeMatch[0], '').replace(/^[\s,]+|[\s,]+$/g, '').trim();
+    const plusCoords = decodePlusCode(code, localityPart);
+    if (plusCoords && isValidLatLng(plusCoords[0], plusCoords[1])) {
+      return plusCoords;
+    }
   }
 
   return null;
@@ -184,6 +199,8 @@ export const ECUADOR_CITY_COORDINATES: Record<string, [number, number]> = {
   manta: [-0.967664, -80.708910],
   portoviejo: [-1.054580, -80.454453],
   salinas: [-2.214486, -80.951515],
+  'la libertad': [-2.220678, -80.908746],
+  libertad: [-2.220678, -80.908746],
   ambato: [-1.249080, -78.616753],
   'santo domingo': [-0.253050, -79.175362],
   machala: [-3.258111, -79.955406],
@@ -308,4 +325,155 @@ export function getCityCoordinates(cityName?: string | null): [number, number] |
 
   return null;
 }
+
+// Google Plus Code / Open Location Code Decoder
+const PLUS_CODE_ALPHABET = '23456789CFGHJMPQRVWX';
+const PLUS_CODE_DECODE_MAP: Record<string, number> = {};
+for (let i = 0; i < PLUS_CODE_ALPHABET.length; i++) {
+  PLUS_CODE_DECODE_MAP[PLUS_CODE_ALPHABET[i]] = i;
+}
+
+/**
+ * Decodes a full 8+ digit Google Plus Code (e.g. "669XQ3JG+QVH" or "669XQ3JG+QV")
+ */
+export function decodeFullPlusCode(code: string): [number, number] | null {
+  const cleanCode = code.replace(/\+/g, '').toUpperCase().replace(/0+$/, '');
+  if (cleanCode.length < 2) return null;
+
+  let latVal = 0;
+  let lngVal = 0;
+
+  const pairLength = Math.min(cleanCode.length, 10);
+  let latResolution = 20;
+  let lngResolution = 20;
+
+  for (let i = 0; i < pairLength; i += 2) {
+    const latDigit = PLUS_CODE_DECODE_MAP[cleanCode[i]];
+    const lngDigit = PLUS_CODE_DECODE_MAP[cleanCode[i + 1]];
+    if (latDigit === undefined || lngDigit === undefined) return null;
+
+    latVal += latDigit * latResolution;
+    lngVal += lngDigit * lngResolution;
+
+    if (i < 8) {
+      latResolution /= 20;
+      lngResolution /= 20;
+    }
+  }
+
+  let south = latVal - 90;
+  let west = lngVal - 180;
+  let latSize = latResolution;
+  let lngSize = lngResolution;
+
+  if (cleanCode.length > 10) {
+    let gridLatSize = latSize;
+    let gridLngSize = lngSize;
+    for (let i = 10; i < Math.min(cleanCode.length, 15); i++) {
+      const digit = PLUS_CODE_DECODE_MAP[cleanCode[i]];
+      if (digit === undefined) return null;
+      const row = Math.floor(digit / 4);
+      const col = digit % 4;
+      gridLatSize /= 5;
+      gridLngSize /= 4;
+      south += row * gridLatSize;
+      west += col * gridLngSize;
+      latSize = gridLatSize;
+      lngSize = gridLngSize;
+    }
+  }
+
+  const centerLat = Number((south + latSize / 2).toFixed(6));
+  const centerLng = Number((west + lngSize / 2).toFixed(6));
+
+  return [centerLat, centerLng];
+}
+
+/**
+ * Recovers a short Plus Code (e.g. "Q3JG+QVH") relative to reference lat/lng
+ */
+export function recoverNearestPlusCode(
+  shortCode: string,
+  refLat: number,
+  refLng: number
+): [number, number] | null {
+  const cleanShort = shortCode.toUpperCase();
+  const plusIdx = cleanShort.indexOf('+');
+  if (plusIdx === -1) return null;
+
+  const prefixLen = 8 - plusIdx;
+  if (prefixLen <= 0 || prefixLen % 2 !== 0) return null;
+
+  const resolution = Math.pow(20, 2 - prefixLen / 2);
+  const refLatNormalized = refLat + 90;
+  const refLngNormalized = refLng + 180;
+
+  const latBase = Math.floor(refLatNormalized / resolution) * resolution;
+  const lngBase = Math.floor(refLngNormalized / resolution) * resolution;
+
+  let bestCoords: [number, number] | null = null;
+  let minDistance = Infinity;
+
+  for (let dLat = -1; dLat <= 1; dLat++) {
+    for (let dLng = -1; dLng <= 1; dLng++) {
+      const candLat = latBase + dLat * resolution;
+      const candLng = lngBase + dLng * resolution;
+
+      if (candLat < 0 || candLat >= 180 || candLng < 0 || candLng >= 360) continue;
+
+      let prefix = '';
+      let curRes = 20;
+      let curLat = candLat;
+      let curLng = candLng;
+      for (let p = 0; p < prefixLen; p += 2) {
+        const latD = Math.floor(curLat / curRes);
+        const lngD = Math.floor(curLng / curRes);
+        prefix += PLUS_CODE_ALPHABET[latD] + PLUS_CODE_ALPHABET[lngD];
+        curLat -= latD * curRes;
+        curLng -= lngD * curRes;
+        curRes /= 20;
+      }
+
+      const fullCode = prefix + cleanShort;
+      const decoded = decodeFullPlusCode(fullCode);
+      if (decoded) {
+        const dist = Math.hypot(decoded[0] - refLat, decoded[1] - refLng);
+        if (dist < minDistance) {
+          minDistance = dist;
+          bestCoords = decoded;
+        }
+      }
+    }
+  }
+
+  return bestCoords;
+}
+
+/**
+ * Universal Plus Code decoder: handles full codes or short codes with locality
+ */
+export function decodePlusCode(code: string, locality?: string | null): [number, number] | null {
+  const cleanCode = code.trim().toUpperCase();
+  const plusIdx = cleanCode.indexOf('+');
+  if (plusIdx === -1) return null;
+
+  // 1. Full 8+ char prefix before +
+  if (plusIdx >= 8) {
+    return decodeFullPlusCode(cleanCode);
+  }
+
+  // 2. Short code (e.g. 4 or 6 chars before +): resolve reference locality
+  let refCoords: [number, number] | null = null;
+  if (locality) {
+    refCoords = getCityCoordinates(locality);
+  }
+
+  // Default fallback reference: Guayaquil [-2.189412, -79.889069]
+  if (!refCoords) {
+    refCoords = [-2.189412, -79.889069];
+  }
+
+  return recoverNearestPlusCode(cleanCode, refCoords[0], refCoords[1]);
+}
+
 
