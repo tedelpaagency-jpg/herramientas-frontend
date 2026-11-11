@@ -1,5 +1,6 @@
 "use client";
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Tag,
   KeyRound,
@@ -9,6 +10,9 @@ import {
   Check,
   Trees,
   Building2,
+  MapPin,
+  X,
+  Loader2,
 } from 'lucide-react';
 import publicInmobiliariaService, { PublicEstateCity } from '@/services/publicInmobiliariaService';
 
@@ -98,19 +102,31 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isDebouncing, setIsDebouncing] = useState(false);
   const [citiesList, setCitiesList] = useState(INITIAL_CITIES);
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Detect client mount & responsive viewport for mobile drawer
+  useEffect(() => {
+    setIsMounted(true);
+    const checkMobile = () => {
+      setIsMobile(typeof window !== 'undefined' && window.innerWidth < 992);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Load cities from backend if available
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     publicInmobiliariaService
       .getCities(domain)
       .then((res) => {
-        if (isMounted && res?.data && res.data.length > 0) {
+        if (mounted && res?.data && res.data.length > 0) {
           const formatted = res.data.map((c: any, idx: number) => ({
             id: c.id || idx + 10,
             name: c.name || c.city || 'Ciudad',
@@ -122,37 +138,46 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
       })
       .catch(() => {});
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, [domain]);
 
-  // Click & Touch outside to close
+  // Click outside to close (Desktop only; on mobile the backdrop handles close)
   useEffect(() => {
-    const handleOutside = (e: MouseEvent | TouchEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    if (!isOpen) return;
+
+    const handleOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      // Do not close if clicking inside portal modal
+      if (target.closest && target.closest('[data-inmo-portal="true"]')) {
+        return;
+      }
+      if (containerRef.current && !containerRef.current.contains(target)) {
         setOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleOutside);
-    document.addEventListener('touchstart', handleOutside, { passive: true });
     return () => {
       document.removeEventListener('mousedown', handleOutside);
-      document.removeEventListener('touchstart', handleOutside);
     };
   }, [isOpen, isControlled, onToggle]);
 
-  // Focus input when opened
+  // Auto-focus search input only on desktop to prevent mobile virtual keyboard jump
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 50);
+      if (!isMobile) {
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 60);
+      }
     } else {
       setSearchInput('');
       setDebouncedQuery('');
       setIsDebouncing(false);
     }
-  }, [isOpen]);
+  }, [isOpen, isMobile]);
 
   // Handle typing with 2-second debounce
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -187,12 +212,46 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
     return cityMatch || provMatch;
   });
 
+  // Find selected city object to display formatted name with province
+  const selectedCityObj = useMemo(() => {
+    if (!value) return null;
+    const valLower = value.trim().toLowerCase();
+    return (
+      citiesList.find(
+        (c) =>
+          c.name.toLowerCase() === valLower ||
+          c.province.toLowerCase() === valLower ||
+          `${c.name} (${c.province})`.toLowerCase() === valLower
+      ) || null
+    );
+  }, [value, citiesList]);
+
   const handleSelectCity = (city: { name: string; province: string }) => {
     onChange(city.name);
+    setSearchInput('');
+    setDebouncedQuery('');
     setOpen(false);
   };
 
-  const displayText = value ? value : '¿En donde estas buscando?';
+  const handleClearCity = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange('');
+    setSearchInput('');
+    setDebouncedQuery('');
+  };
+
+  const isCityActive = (cityName: string) => {
+    if (!value) return false;
+    const valLower = value.trim().toLowerCase();
+    const cLower = cityName.trim().toLowerCase();
+    return valLower === cLower || (selectedCityObj && selectedCityObj.name.toLowerCase() === cLower);
+  };
+
+  const displayText = selectedCityObj
+    ? `${selectedCityObj.name} (${selectedCityObj.province})`
+    : value
+    ? value
+    : '¿En dónde estás buscando?';
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', zIndex: isOpen ? 99999 : undefined }}>
@@ -202,9 +261,9 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
         onClick={() => setOpen((prev) => !prev)}
         style={{
           height: '52px',
-          border: '1px solid #e2e8f0',
-          borderRadius: isOpen ? '14px 14px 0 0' : '14px',
-          padding: '0 16px',
+          border: `1.5px solid ${isOpen ? accentColor : value ? '#cbd5e1' : '#e2e8f0'}`,
+          borderRadius: '14px',
+          padding: '0 14px',
           backgroundColor: '#ffffff',
           display: 'flex',
           alignItems: 'center',
@@ -212,32 +271,52 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
           cursor: 'pointer',
           userSelect: 'none',
           transition: 'all 0.15s ease',
+          boxShadow: isOpen ? `0 0 0 3px ${accentColor}18` : 'none',
         }}
       >
-        <span
-          style={{
-            fontSize: '16.5px',
-            fontWeight: value ? 600 : 400,
-            color: value ? '#0f172a' : '#94a3b8',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {displayText}
-        </span>
-        {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-slate-500 shrink-0 ml-1.5" />
-        ) : (
-          <ChevronDown className="w-5 h-5 text-slate-400 shrink-0 ml-1.5" />
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0, flex: 1, overflow: 'hidden' }}>
+          <MapPin
+            className="w-5 h-5 shrink-0"
+            style={{ color: value ? accentColor : '#94a3b8' }}
+          />
+          <span
+            style={{
+              fontSize: '15.5px',
+              fontWeight: value ? 700 : 500,
+              color: value ? '#0f172a' : '#94a3b8',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {displayText}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+          {value && (
+            <button
+              type="button"
+              onClick={handleClearCity}
+              className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              title="Borrar ciudad seleccionada"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          {isOpen ? (
+            <ChevronUp className="w-5 h-5 text-slate-500 shrink-0" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />
+          )}
+        </div>
       </div>
 
       <input type="hidden" name="search" value={value} />
       <input type="hidden" name="city" value={value} />
 
-      {/* Dropdown Menu (Exact match to uploaded image) */}
-      {isOpen && (
+      {/* Desktop Dropdown Popover (Exact match to booking design) */}
+      {isOpen && !isMobile && (
         <div
           className="inmo-booking-popover"
           style={{
@@ -257,7 +336,7 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
           }}
         >
           {/* Inner Search Box */}
-          <div style={{ marginBottom: '10px' }}>
+          <div style={{ marginBottom: '8px', position: 'relative' }}>
             <input
               ref={searchInputRef}
               type="text"
@@ -269,13 +348,18 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
                 height: '40px',
                 border: '1.5px solid #94a3b8',
                 borderRadius: '8px',
-                padding: '0 12px',
+                padding: '0 32px 0 12px',
                 fontSize: '15px',
                 color: '#0f172a',
                 outline: 'none',
                 boxSizing: 'border-box',
               }}
             />
+            {isDebouncing ? (
+              <Loader2 className="w-4 h-4 animate-spin text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            ) : (
+              <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            )}
           </div>
 
           {/* 2-Second Debounce Indicator */}
@@ -307,60 +391,108 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
             </div>
           )}
 
+          {/* Todas las ubicaciones (opción para restablecer) */}
+          <div
+            onClick={() => {
+              onChange('');
+              setSearchInput('');
+              setDebouncedQuery('');
+              setOpen(false);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '9px 12px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              backgroundColor: !value ? `${accentColor}18` : '#f8fafc',
+              color: !value ? '#0f172a' : '#475569',
+              fontWeight: !value ? 700 : 500,
+              fontSize: '14px',
+              marginBottom: '6px',
+              border: `1px solid ${!value ? accentColor + '40' : '#e2e8f0'}`,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <MapPin className="w-4 h-4" style={{ color: !value ? accentColor : '#94a3b8' }} />
+              <span>Todas las ubicaciones</span>
+            </div>
+            {!value && <Check className="w-4 h-4 shrink-0" style={{ color: accentColor }} />}
+          </div>
+
           {/* Results List */}
           <div style={{ maxHeight: '230px', overflowY: 'auto' }}>
             {filteredCities.length > 0 ? (
-              filteredCities.map((city, idx) => {
-                const isSelected = highlightedIndex === idx;
+              filteredCities.map((city) => {
+                const isSelected = isCityActive(city.name);
                 const formattedName = `${city.name.toUpperCase()} (${city.province.toUpperCase()})`;
 
                 return (
                   <div
                     key={city.id}
-                    onMouseEnter={() => setHighlightedIndex(idx)}
                     onClick={() => handleSelectCity(city)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
+                      justifyContent: 'space-between',
                       padding: '9px 12px',
                       borderRadius: '8px',
                       cursor: 'pointer',
-                      backgroundColor: isSelected ? accentColor : '#ffffff',
-                      color: isSelected ? '#ffffff' : '#0f172a',
+                      backgroundColor: isSelected ? `${accentColor}20` : '#ffffff',
+                      color: isSelected ? '#0f172a' : '#1e293b',
+                      border: isSelected ? `1.5px solid ${accentColor}` : '1.5px solid transparent',
                       transition: 'background-color 0.1s ease',
                       marginBottom: '3px',
                     }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = '#f1f5f9';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = '#ffffff';
+                      }
+                    }}
                   >
-                    {/* Thumbnail Image */}
-                    <img
-                      src={city.image}
-                      alt={city.name}
-                      style={{
-                        width: '28px',
-                        height: '22px',
-                        objectFit: 'cover',
-                        borderRadius: '4px',
-                        flexShrink: 0,
-                        border: '1px solid rgba(0,0,0,0.1)',
-                      }}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                    {/* City & Province Label */}
-                    <span
-                      style={{
-                        fontSize: '14.5px',
-                        fontWeight: 700,
-                        letterSpacing: '0.02em',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {formattedName}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                      {/* Thumbnail Image */}
+                      <img
+                        src={city.image}
+                        alt={city.name}
+                        style={{
+                          width: '30px',
+                          height: '24px',
+                          objectFit: 'cover',
+                          borderRadius: '4px',
+                          flexShrink: 0,
+                          border: '1px solid rgba(0,0,0,0.1)',
+                        }}
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                      {/* City & Province Label */}
+                      <span
+                        style={{
+                          fontSize: '14px',
+                          fontWeight: isSelected ? 800 : 600,
+                          letterSpacing: '0.01em',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {formattedName}
+                      </span>
+                    </div>
+
+                    {/* Selected Checkmark */}
+                    {isSelected && (
+                      <Check className="w-4 h-4 shrink-0 ml-2" style={{ color: accentColor }} />
+                    )}
                   </div>
                 );
               })
@@ -371,6 +503,135 @@ const LocationCitySelect: React.FC<LocationCitySelectProps> = ({
             )}
           </div>
         </div>
+      )}
+
+      {/* Mobile Touch Drawer / Bottom-Sheet (via Portal into document.body) */}
+      {isMounted && isOpen && isMobile && createPortal(
+        <div
+          data-inmo-portal="true"
+          className="fixed inset-0 z-[99999999] bg-black/70 backdrop-blur-xs flex items-end justify-center p-0 sm:p-4 touch-manipulation animate-in fade-in-0 duration-150"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            data-inmo-portal="true"
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[85vh] p-4 pb-8 sm:pb-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom-6 duration-200"
+          >
+            {/* Drawer Handle */}
+            <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-3 shrink-0" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" style={{ color: accentColor }} />
+                <h3 className="text-base font-extrabold text-slate-900">Ubicación / Ciudad</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Buscador móvil (fontSize >= 16px para evitar auto-zoom en iOS Safari) */}
+            <div className="relative mb-2 shrink-0">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={handleInputChange}
+                placeholder="Buscar ciudad o provincia..."
+                style={{ fontSize: '16px' }}
+                className="w-full h-11 pl-3.5 pr-10 rounded-xl border border-slate-300 font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-800"
+              />
+              {isDebouncing ? (
+                <Loader2 className="w-4 h-4 animate-spin text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              ) : (
+                <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              )}
+            </div>
+
+            {/* Debounce status en móvil */}
+            {isDebouncing && (
+              <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-500 bg-slate-50 rounded-lg mb-2 shrink-0">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: accentColor }} />
+                <span>Buscando en 2 segundos...</span>
+              </div>
+            )}
+
+            {/* Todas las ubicaciones (opción de reset) */}
+            <button
+              type="button"
+              onClick={() => {
+                onChange('');
+                setSearchInput('');
+                setDebouncedQuery('');
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3.5 py-3 rounded-xl text-sm font-bold flex items-center justify-between mb-2 shrink-0 border transition-colors ${
+                !value
+                  ? 'border-transparent text-slate-900'
+                  : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+              style={!value ? { backgroundColor: `${accentColor}20` } : {}}
+            >
+              <div className="flex items-center gap-2.5">
+                <MapPin className="w-4 h-4" style={{ color: !value ? accentColor : '#94a3b8' }} />
+                <span>Todas las ubicaciones</span>
+              </div>
+              {!value && <Check className="w-4 h-4 shrink-0" style={{ color: accentColor }} />}
+            </button>
+
+            {/* Lista scrollable de ciudades táctil */}
+            <div className="overflow-y-auto space-y-1.5 pr-1 flex-1 max-h-[50vh]">
+              {filteredCities.length > 0 ? (
+                filteredCities.map((city) => {
+                  const isSelected = isCityActive(city.name);
+
+                  return (
+                    <div
+                      key={`mob-city-${city.id}-${city.name}`}
+                      onClick={() => handleSelectCity(city)}
+                      style={isSelected ? { backgroundColor: `${accentColor}20` } : {}}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer active:scale-[0.99] transition-all border ${
+                        isSelected
+                          ? 'border-transparent font-extrabold text-slate-900'
+                          : 'border-transparent text-slate-800 hover:bg-slate-100 active:bg-slate-100'
+                      }`}
+                    >
+                      <img
+                        src={city.image}
+                        alt={city.name}
+                        className="w-11 h-11 rounded-lg object-cover shrink-0 shadow-2xs border border-slate-200/80"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="text-sm font-bold text-slate-900 uppercase tracking-wide truncate">
+                          {city.name}
+                        </span>
+                        <span className="text-xs text-slate-500 font-medium truncate">
+                          {city.province}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <Check className="w-5 h-5 shrink-0" style={{ color: accentColor }} />
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="py-6 text-center text-sm text-slate-400 font-medium">
+                  No se encontraron ciudades
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -420,16 +681,23 @@ const ProfessionalBookingSelect: React.FC<ProfessionalBookingSelectProps> = ({
   const selectedOpt = options.find((o) => o.value === value) || options[0];
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleOutside = (e: MouseEvent | TouchEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest && target.closest('[data-inmo-portal="true"]')) {
+        return;
+      }
+      if (containerRef.current && !containerRef.current.contains(target)) {
         setOpen(false);
       }
     };
     document.addEventListener('mousedown', handleOutside);
-    document.addEventListener('touchstart', handleOutside, { passive: true });
+    document.addEventListener('touchend', handleOutside);
     return () => {
       document.removeEventListener('mousedown', handleOutside);
-      document.removeEventListener('touchstart', handleOutside);
+      document.removeEventListener('touchend', handleOutside);
     };
   }, [isOpen, isControlled, onToggle]);
 
