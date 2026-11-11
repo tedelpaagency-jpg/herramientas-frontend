@@ -241,33 +241,18 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
       meta.content = seoDesc;
     }
 
-    // 7. Sync logos, menu background, dark theme and navigation mode in localStorage
+    // 7. Sync logos, menu background and navigation mode in localStorage
     if (typeof window !== 'undefined') {
       const mainLogo = whiteLabel?.logo || agency?.logo || hostWhiteLabel?.logo;
       const darkLogo = whiteLabel?.logo_2 || agency?.logo_2 || hostWhiteLabel?.logo_2;
       const iconLogo = whiteLabel?.logo_icon || agency?.logo_icon || hostWhiteLabel?.logo_icon;
-      const targetDarkTheme = whiteLabel?.dark_theme || agency?.dark_theme || hostWhiteLabel?.dark_theme;
       const targetNavMode = whiteLabel?.navigation_mode || agency?.navigation_mode || hostWhiteLabel?.navigation_mode;
 
       if (mainLogo) localStorage.setItem('santun_sidebar_logo', mainLogo);
       if (darkLogo) localStorage.setItem('santun_sidebar_logo_dark', darkLogo);
       if (iconLogo) localStorage.setItem('santun_sidebar_logo_icon', iconLogo);
       if (menuBackground) localStorage.setItem('santun_menu_background', menuBackground);
-      if (targetDarkTheme) {
-        localStorage.setItem('santun_dark_theme', targetDarkTheme);
-        if (!localStorage.getItem('santun_theme')) {
-          localStorage.setItem('santun_theme', targetDarkTheme);
-        }
-      }
-
-      const activeTheme = localStorage.getItem('santun_theme') || targetDarkTheme;
-      if (activeTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-        document.body.classList.add('dark');
-      } else if (activeTheme === 'light') {
-        document.documentElement.classList.remove('dark');
-        document.body.classList.remove('dark');
-      }
+      localStorage.removeItem('santun_dark_theme');
 
       if (targetNavMode) {
         const isCompact = targetNavMode === 'compact';
@@ -280,7 +265,7 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
         localStorage.setItem('santun_white_label', JSON.stringify(targetWl));
       }
 
-      const currentSignature = `${primaryColor}|${secondaryColor}|${buttonColor}|${menuBackground}|${fontFamily}|${pixelRadius}|${targetDarkTheme}|${targetNavMode}|${targetWl?.id}`;
+      const currentSignature = `${primaryColor}|${secondaryColor}|${buttonColor}|${menuBackground}|${fontFamily}|${pixelRadius}|${targetNavMode}|${targetWl?.id}`;
       if (lastSignatureRef.current !== currentSignature) {
         lastSignatureRef.current = currentSignature;
         window.dispatchEvent(new Event('branding-updated'));

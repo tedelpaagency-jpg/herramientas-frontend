@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import whiteLabelService from '../../services/whiteLabelService';
 import adminService from '../../services/adminService';
 import { 
@@ -82,10 +83,12 @@ export default function BrandingCustomizationPage({
   }>({});
   const [showSecretKeys, setShowSecretKeys] = useState<{ test: boolean; live: boolean }>({ test: false, live: false });
 
+  const { isDark } = useTheme();
+  const mockNavTheme = isDark ? 'dark' : 'light';
+
   // Preview interactive state controls
   const [previewMode, setPreviewMode] = useState<'dashboard' | 'login'>('dashboard');
   const [mockTheme, setMockTheme] = useState<'light' | 'dark'>('dark');
-  const [mockNavTheme, setMockNavTheme] = useState<'light' | 'dark'>('dark');
   const [mockCollapsed, setMockCollapsed] = useState<boolean>(false);
 
   // Branding Form State
@@ -112,7 +115,6 @@ export default function BrandingCustomizationPage({
     secondary_color: '#161a1b',
     button_color: '#00a884',
     menu_background: '#161a1b',
-    dark_theme: 'dark',
     navigation_mode: 'normal',
     font_family: 'Inter, sans-serif',
     border_radius: 'rounded-xl',
@@ -233,7 +235,6 @@ export default function BrandingCustomizationPage({
 
   const populateForm = (entity: any, type: 'white_label' | 'agency') => {
     const navMode = entity.navigation_mode || (typeof window !== 'undefined' && localStorage.getItem('santun_sidebar_collapsed') === 'true' ? 'compact' : 'normal');
-    const darkThemeVal = entity.dark_theme || 'dark';
 
     setForm({
       name: entity.name || '',
@@ -258,7 +259,6 @@ export default function BrandingCustomizationPage({
       secondary_color: entity.secondary_color || '#161a1b',
       button_color: entity.button_color || entity.primary_color || '#00a884',
       menu_background: entity.menu_background || '#161a1b',
-      dark_theme: darkThemeVal,
       navigation_mode: navMode,
       font_family: entity.font_family || 'Inter, sans-serif',
       border_radius: entity.border_radius || 'rounded-xl',
@@ -294,7 +294,6 @@ export default function BrandingCustomizationPage({
     });
 
     setMockCollapsed(navMode === 'compact');
-    setMockNavTheme(darkThemeVal === 'dark' ? 'dark' : 'light');
   };
 
   useEffect(() => {
@@ -466,6 +465,7 @@ export default function BrandingCustomizationPage({
       stripe_secret_key: activeSecretKey,
       stripe_webhook_secret: activeWebhookSecret,
     };
+    delete (payload as any).dark_theme;
 
     try {
       let updated: any;
@@ -496,7 +496,7 @@ export default function BrandingCustomizationPage({
             if (freshWl.logo_2) localStorage.setItem('santun_sidebar_logo_dark', freshWl.logo_2);
             if (freshWl.logo_icon) localStorage.setItem('santun_sidebar_logo_icon', freshWl.logo_icon);
             if (freshWl.menu_background) localStorage.setItem('santun_menu_background', freshWl.menu_background);
-            if (freshWl.dark_theme) localStorage.setItem('santun_dark_theme', freshWl.dark_theme);
+            localStorage.removeItem('santun_dark_theme');
             if (freshWl.card_color) localStorage.setItem('santun_card_color', freshWl.card_color);
             if (freshWl.card_logo) localStorage.setItem('santun_card_logo', freshWl.card_logo);
             if (freshWl.primary_color || form.primary_color) localStorage.setItem('santun_primary_color', freshWl.primary_color || form.primary_color);
@@ -519,7 +519,7 @@ export default function BrandingCustomizationPage({
             if (freshAg.logo_2) localStorage.setItem('santun_sidebar_logo_dark', freshAg.logo_2);
             if (freshAg.logo_icon) localStorage.setItem('santun_sidebar_logo_icon', freshAg.logo_icon);
             if (freshAg.menu_background) localStorage.setItem('santun_menu_background', freshAg.menu_background);
-            if (freshAg.dark_theme) localStorage.setItem('santun_dark_theme', freshAg.dark_theme);
+            localStorage.removeItem('santun_dark_theme');
             if (freshAg.card_color) localStorage.setItem('santun_card_color', freshAg.card_color);
             if (freshAg.card_logo) localStorage.setItem('santun_card_logo', freshAg.card_logo);
             if (freshAg.primary_color || form.primary_color) localStorage.setItem('santun_primary_color', freshAg.primary_color || form.primary_color);
@@ -947,50 +947,12 @@ export default function BrandingCustomizationPage({
                   </div>
                 </div>
 
-                <hr className="border-slate-100" />
+                <hr className="border-slate-100 dark:border-slate-800" />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Selector Tema Oscuro / Claro para Navegación */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                      Tema de Navegación (Modo Claro vs Oscuro):
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setForm((prev: any) => ({ ...prev, dark_theme: 'light' }));
-                          setMockNavTheme('light');
-                        }}
-                        className={`p-2.5 border text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                          form.dark_theme === 'light'
-                            ? 'border-[#00a884] bg-emerald-50 text-[#00a884] shadow-xs'
-                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        <Sun className="w-4 h-4 text-amber-500" /> Modo Claro
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setForm((prev: any) => ({ ...prev, dark_theme: 'dark' }));
-                          setMockNavTheme('dark');
-                        }}
-                        className={`p-2.5 border text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                          form.dark_theme === 'dark'
-                            ? 'border-[#00a884] bg-slate-900 text-white shadow-xs'
-                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        <Moon className="w-4 h-4 text-indigo-400" /> Modo Oscuro
-                      </button>
-                    </div>
-                  </div>
-
+                <div className="max-w-md">
                   {/* Selector Modo Normal vs Compacto */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
                       Modo de Menú Lateral (Navegación):
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -1004,10 +966,11 @@ export default function BrandingCustomizationPage({
                             window.dispatchEvent(new Event('sidebar-state-changed'));
                           }
                         }}
+                        style={form.navigation_mode !== 'compact' ? { borderColor: form.primary_color, backgroundColor: `${form.primary_color}15`, color: form.primary_color } : undefined}
                         className={`p-2.5 border text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                           form.navigation_mode !== 'compact'
-                            ? 'border-[#00a884] bg-emerald-50 text-[#00a884] shadow-xs'
-                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            ? 'shadow-xs'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                         }`}
                       >
                         <Maximize2 className="w-4 h-4" /> Normal
@@ -1023,10 +986,11 @@ export default function BrandingCustomizationPage({
                             window.dispatchEvent(new Event('sidebar-state-changed'));
                           }
                         }}
+                        style={form.navigation_mode === 'compact' ? { borderColor: form.primary_color, backgroundColor: `${form.primary_color}15`, color: form.primary_color } : undefined}
                         className={`p-2.5 border text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                           form.navigation_mode === 'compact'
-                            ? 'border-[#00a884] bg-emerald-50 text-[#00a884] shadow-xs'
-                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            ? 'shadow-xs'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                         }`}
                       >
                         <Minimize2 className="w-4 h-4" /> Compacto
@@ -1810,26 +1774,6 @@ export default function BrandingCustomizationPage({
 
               {/* Mode & Collapse Controls */}
               <div className="flex items-center gap-2">
-                
-                {/* Dark vs Light Navigation Mockup Toggle */}
-                {previewMode === 'dashboard' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nextNavTheme = mockNavTheme === 'light' ? 'dark' : 'light';
-                      setMockNavTheme(nextNavTheme);
-                      setForm((prev: any) => ({ ...prev, dark_theme: nextNavTheme }));
-                    }}
-                    className={`p-1.5 rounded-lg border text-xs font-bold transition-all flex items-center gap-1 ${
-                      mockNavTheme === 'dark' ? 'bg-slate-900 text-white border-slate-700' : 'bg-slate-100 text-slate-700 border-slate-300'
-                    }`}
-                    title="Alternar entre modo claro y modo oscuro específicamente para la navegación"
-                  >
-                    {mockNavTheme === 'light' ? <Sun className="w-3.5 h-3.5 text-amber-500" /> : <Moon className="w-3.5 h-3.5 text-indigo-400" />}
-                    <span className="text-[10px] uppercase">Nav {mockNavTheme}</span>
-                  </button>
-                )}
-
                 {/* Expanded vs Collapsed Sidebar Toggle */}
                 {previewMode === 'dashboard' && (
                   <button

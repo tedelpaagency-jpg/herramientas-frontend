@@ -62,7 +62,7 @@ export default function RootLayout({
                     document.documentElement.classList.remove('dark');
                     return;
                   }
-                  var saved = localStorage.getItem('santun_theme') || localStorage.getItem('santun_dark_theme');
+                  var saved = localStorage.getItem('santun_theme');
                   var isDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
                   if (isDark) {
                     document.documentElement.classList.add('dark');

@@ -99,13 +99,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // Initial sync with DOM and localStorage after hydration completes
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(BRANDING_THEME_KEY);
+    }
     const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-    const brandingDefault = localStorage.getItem(BRANDING_THEME_KEY) as Theme | null;
     let initialTheme: Theme = 'light';
     if (saved === 'dark' || saved === 'light') {
       initialTheme = saved;
-    } else if (brandingDefault === 'dark' || brandingDefault === 'light') {
-      initialTheme = brandingDefault;
     } else if (document.documentElement.classList.contains('dark')) {
       initialTheme = 'dark';
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
