@@ -31,10 +31,17 @@ import { LexvaultGenerateModal } from '@/components/LexvaultGenerateModal';
 import { LexvaultSignModal } from '@/components/LexvaultSignModal';
 import { LetterheadGuideModal } from '@/components/LetterheadGuideModal';
 import { CreatorSignatureModal } from '@/components/CreatorSignatureModal';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export const LexvaultPage: React.FC = () => {
   const router = useRouter();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' ||
+    user?.role === 'super_admin' ||
+    user?.role === 'white_label_admin' ||
+    user?.roles?.some((r: any) => ['admin', 'super_admin', 'white_label_admin', 'agency_admin', 'gerente'].includes(r.name));
+
   const [activeTab, setActiveTab] = useState<'documents' | 'templates'>('documents');
   const [templates, setTemplates] = useState<LexvaultTemplate[]>([]);
   const [documents, setDocuments] = useState<LexvaultDocument[]>([]);
@@ -181,13 +188,15 @@ export const LexvaultPage: React.FC = () => {
             <span className="hidden sm:inline">Plantilla Guía Carta</span>
           </button>
 
-          <button
-            onClick={() => setIsTemplateModalOpen(true)}
-            className="bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 px-4 py-2.5 rounded-xl font-bold text-sm shadow-2xs transition-all flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4 text-blue-600" />
-            <span>Nueva Plantilla</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setIsTemplateModalOpen(true)}
+              className="bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 px-4 py-2.5 rounded-xl font-bold text-sm shadow-2xs transition-all flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4 text-blue-600" />
+              <span>Nueva Plantilla</span>
+            </button>
+          )}
 
           <button
             onClick={() => handleOpenGenerateDoc()}
@@ -519,14 +528,16 @@ export const LexvaultPage: React.FC = () => {
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5">
-                            {/* Edit Directly in Full Document View */}
-                            <Link
-                              href={`/lexvault/templates/${tmpl.id}`}
-                              className="p-1.5 rounded-lg text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 transition-colors inline-block"
-                              title="Editar plantilla en vista completa de documento"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </Link>
+                            {/* Editar Plantilla - Exclusivo Administradores */}
+                            {isAdmin && (
+                              <Link
+                                href={`/lexvault/templates/${tmpl.id}`}
+                                className="p-1.5 rounded-lg text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 transition-colors inline-block"
+                                title="Editar plantilla en vista completa de documento"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </Link>
+                            )}
 
                             <button
                               onClick={() => handleOpenGenerateDoc(tmpl)}
@@ -537,13 +548,16 @@ export const LexvaultPage: React.FC = () => {
                               <span>Emitir</span>
                             </button>
 
-                            <button
-                              onClick={() => handleDeleteTemplate(tmpl.id)}
-                              className="p-1.5 rounded-lg text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 transition-colors"
-                              title="Eliminar plantilla"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            {/* Eliminar Plantilla - Exclusivo Administradores */}
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleDeleteTemplate(tmpl.id)}
+                                className="p-1.5 rounded-lg text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 transition-colors"
+                                title="Eliminar plantilla"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

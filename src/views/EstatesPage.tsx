@@ -412,11 +412,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   };
 
   const handleCopyLink = (estate: Estate) => {
-    setActiveMenuId(null);
-    const slug = (estate as any).slug || estate.id;
-    const publicUrl = `${window.location.origin}/properties/${slug}`;
-    navigator.clipboard.writeText(publicUrl);
-    toast.success('¡Enlace público copiado al portapapeles!');
+    handleCopyWhatsApp(estate);
   };
 
   // WhatsApp Action Handler
@@ -990,13 +986,13 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                           {/* Acciones: Solo Copiar Link, PDF, Canvas + Dropdown (⋮) para el resto */}
                           <td className="py-3.5 px-4 text-center relative">
                             <div className="flex items-center justify-center gap-1.5">
-                              {/* 1. Copiar Link Direct Icon */}
+                              {/* 1. Copiar Plantilla WhatsApp Direct Icon */}
                               <button
                                 onClick={() => handleCopyLink(estate)}
-                                className="p-2 rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 transition-all active:scale-95 shadow-2xs cursor-pointer"
-                                title="Copiar enlace público de la propiedad"
+                                className="p-2 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 transition-all active:scale-95 shadow-2xs cursor-pointer"
+                                title="Copiar plantilla para WhatsApp con foto y detalles"
                               >
-                                <LinkIcon className="w-4 h-4" />
+                                <Copy className="w-4 h-4" />
                               </button>
 
                               {/* 2. PDF Direct Icon */}
@@ -1263,13 +1259,13 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                       <span className="text-slate-400 font-mono">ID: #{estate.id}</span>
                       
                       <div className="flex items-center gap-1.5 relative">
-                        {/* 1. Copiar Link Direct Icon */}
+                        {/* 1. Copiar Plantilla WhatsApp Direct Icon */}
                         <button
                           onClick={() => handleCopyLink(estate)}
-                          className="p-1.5 rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
-                          title="Copiar enlace público"
+                          className="p-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 transition-colors cursor-pointer"
+                          title="Copiar plantilla para WhatsApp con foto y detalles"
                         >
-                          <LinkIcon className="w-4 h-4" />
+                          <Copy className="w-4 h-4" />
                         </button>
 
                         {/* 2. PDF Direct Icon */}

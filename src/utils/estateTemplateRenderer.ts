@@ -14,6 +14,7 @@ export interface TemplateDataPayload {
   property_image_4?: string;
   agent_name?: string;
   agent_phone?: string;
+  agent_photo?: string;
   property_price?: string;
   amenities?: string;
   plain_amenities?: string;
@@ -116,6 +117,20 @@ export function buildEstatePayload(
   const agentName = estate?.user?.name || effectiveAgency?.commercial_name || effectiveAgency?.name || 'Asesor Inmobiliario';
   const agentPhone = estate?.user?.phone || estate?.contact_phone || effectiveAgency?.phone || effectiveAgency?.whatsapp || '+593 99 999 9999';
 
+  // Foto del Asesor / Agente
+  let agentPhoto = estate?.user?.photo || estate?.user?.avatar || estate?.user?.avatar_url || estate?.user?.image || estate?.user?.profile_photo_url || '';
+  if (agentPhoto && !agentPhoto.startsWith('http://') && !agentPhoto.startsWith('https://') && !agentPhoto.startsWith('data:')) {
+    if (agentPhoto.startsWith('/')) {
+      agentPhoto = `https://santun.tedelpa.com${agentPhoto}`;
+    } else {
+      agentPhoto = `https://santun.tedelpa.com/uploads/${agentPhoto}`;
+    }
+  }
+  if (!agentPhoto) {
+    const initials = (agentName || 'AI').split(' ').filter(Boolean).map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+    agentPhoto = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" rx="100" fill="%232563eb"/><text x="50%" y="54%" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="70" fill="%23ffffff" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(initials)}</text></svg>`;
+  }
+
   // Precio Formateado
   const rawPrice = estate?.price || estate?.valoration || 0;
   const formattedPrice = typeof rawPrice === 'number' 
@@ -189,6 +204,7 @@ export function buildEstatePayload(
     property_image_4: img4,
     agent_name: agentName,
     agent_phone: agentPhone,
+    agent_photo: agentPhoto,
     property_price: formattedPrice,
     amenities: amenityPills.join(' '),
     plain_amenities: plainAmenities,
@@ -258,6 +274,14 @@ export function substituteTemplateShortcuts(rawHtml: string, payload: TemplateDa
     .replace(/\{\{\s*agent_name\s*\}\}/gi, payload.agent_name || '')
     .replace(/\{\{\s*nombre_apellido\s*\}\}/gi, payload.agent_name || '')
     .replace(/\{\{\s*name\s*\}\}/gi, payload.agent_name || '')
+    // Foto del asesor / usuario
+    .replace(/\{\{\s*agent_photo\s*\}\}/gi, payload.agent_photo || '')
+    .replace(/\{\{\s*agent_avatar\s*\}\}/gi, payload.agent_photo || '')
+    .replace(/\{\{\s*foto_agente\s*\}\}/gi, payload.agent_photo || '')
+    .replace(/\{\{\s*foto_usuario\s*\}\}/gi, payload.agent_photo || '')
+    .replace(/\{\{\s*user_photo\s*\}\}/gi, payload.agent_photo || '')
+    .replace(/\{\{\s*user_avatar\s*\}\}/gi, payload.agent_photo || '')
+    .replace(/\{\{\s*avatar\s*\}\}/gi, payload.agent_photo || '')
     // Teléfono
     .replace(/\{\{\s*agent_phone\s*\}\}/gi, payload.agent_phone || '')
     .replace(/\{\{\s*phone\s*\}\}/gi, payload.agent_phone || '')

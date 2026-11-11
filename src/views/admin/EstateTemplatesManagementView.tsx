@@ -45,6 +45,7 @@ const SAMPLE_ESTATE_PAYLOAD: TemplateDataPayload = {
   property_image_4: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
   agent_name: 'Carlos Mendoza',
   agent_phone: '+593 99 876 5432',
+  agent_photo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80',
   property_price: '$285,000 USD',
   plain_amenities: '3 Hab • 2 Baños • 220 m²',
   amenities: `
@@ -67,6 +68,7 @@ const SHORTCUTS_LIST = [
   { key: '{{property_image_3}}', label: 'Foto #3', desc: 'Tercera foto del carrusel' },
   { key: '{{agent_name}}', label: 'Nombre y Apellido', desc: 'Nombre del asesor o agente' },
   { key: '{{agent_phone}}', label: 'Número de Teléfono', desc: 'Teléfono o WhatsApp de contacto' },
+  { key: '{{agent_photo}}', label: 'Foto del Asesor', desc: 'Foto de perfil o avatar del usuario / asesor' },
   { key: '{{property_price}}', label: 'Precio de la Propiedad', desc: 'Precio formateado (ej. $285,000 USD)' },
   { key: '{{amenities}}', label: 'Amenidades', desc: 'Hab, baños, estac. y m²' },
   { key: '{{property_title}}', label: 'Título del Inmueble', desc: 'Título principal de la propiedad' },

@@ -660,7 +660,8 @@ export const publicInmobiliariaService = {
       headers,
     });
     if (!res.ok) {
-      throw new Error('Error al generar el PDF de la propiedad');
+      const errJson = await res.json().catch(() => null);
+      throw new Error(errJson?.message || 'Error al generar el PDF de la propiedad');
     }
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);

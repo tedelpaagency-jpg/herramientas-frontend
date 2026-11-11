@@ -30,6 +30,7 @@ import toast from 'react-hot-toast';
 import LetterheadGuideModal, { downloadLetterheadGuideTemplate } from '../components/LetterheadGuideModal';
 import CreatorSignatureModal from '../components/CreatorSignatureModal';
 import Portal from '../components/Portal';
+import { useAuth } from '../context/AuthContext';
 
 interface LexvaultDocumentDetailViewProps {
   id: string;
@@ -193,7 +194,13 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
       : 'PENDIENTE DE FIRMA'
     : 'MODO EDICIÓN - PLANTILLA';
 
-  const canEdit = type === 'template' ? true : (!isSigned && !isDeclined);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' ||
+    user?.role === 'super_admin' ||
+    user?.role === 'white_label_admin' ||
+    user?.roles?.some((r: any) => ['admin', 'super_admin', 'white_label_admin', 'agency_admin', 'gerente'].includes(r.name));
+
+  const canEdit = type === 'template' ? Boolean(isAdmin) : (!isSigned && !isDeclined);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
@@ -219,9 +226,16 @@ export const LexvaultDocumentDetailView: React.FC<LexvaultDocumentDetailViewProp
                 title="Haz clic para editar el nombre de este documento o plantilla"
               />
               {type === 'template' ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0">
-                  Plantilla Base
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    Plantilla Base
+                  </span>
+                  {!isAdmin && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                      Solo Lectura
+                    </span>
+                  )}
+                </div>
               ) : (
                 <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">

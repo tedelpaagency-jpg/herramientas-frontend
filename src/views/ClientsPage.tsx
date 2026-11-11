@@ -369,18 +369,20 @@ export const ClientsPage: React.FC = () => {
           </select>
         </div>
 
-        {/* Searchable Advisor Selector */}
-        <div className="w-full md:w-auto">
-          <AdvisorSearchSelect
-            users={users}
-            selectedUserId={selectedAssignedUserId}
-            onChange={setSelectedAssignedUserId}
-            selectedAgencyId={selectedAgencyId}
-            agencies={agencies}
-            placeholder="Todos los Asesores"
-            className="w-full md:w-64"
-          />
-        </div>
+        {/* Searchable Advisor Selector - Solo Administradores */}
+        {isAdmin && (
+          <div className="w-full md:w-auto">
+            <AdvisorSearchSelect
+              users={users}
+              selectedUserId={selectedAssignedUserId}
+              onChange={setSelectedAssignedUserId}
+              selectedAgencyId={selectedAgencyId}
+              agencies={agencies}
+              placeholder="Todos los Asesores"
+              className="w-full md:w-64"
+            />
+          </div>
+        )}
 
         {/* Reset Active Filters Button */}
         {(selectedAgencyId || selectedWorkspaceId || selectedAssignedUserId || search) && (
@@ -426,7 +428,7 @@ export const ClientsPage: React.FC = () => {
                   <th className="px-6 py-4">Cliente</th>
                   <th className="px-6 py-4">Agencia</th>
                   <th className="px-6 py-4">Workspace</th>
-                  <th className="px-6 py-4">Asesor Asignado</th>
+                  {isAdmin && <th className="px-6 py-4">Asesor Asignado</th>}
                   <th className="px-6 py-4">Contacto</th>
                   <th className="px-6 py-4">Campos Personalizados</th>
                   <th className="px-6 py-4 text-right">Acciones</th>
@@ -495,25 +497,27 @@ export const ClientsPage: React.FC = () => {
                         </span>
                       </td>
 
-                      {/* Asesor Asignado */}
-                      <td className="px-6 py-4">
-                        {assignedUser ? (
-                          <div className="flex flex-col gap-1 items-start">
-                            <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-extrabold text-[11px] border border-emerald-200 dark:border-emerald-800 inline-flex items-center gap-1">
-                              <UserCheck className="w-3 h-3 text-emerald-500 shrink-0" />
-                              {assignedUser.name}
-                            </span>
-                            {advisorAgencyName && advisorAgencyName !== agencyName && (
-                              <span className="text-[10px] text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1 px-1">
-                                <Building2 className="w-2.5 h-2.5" />
-                                {advisorAgencyName}
+                      {/* Asesor Asignado - Solo Administradores */}
+                      {isAdmin && (
+                        <td className="px-6 py-4">
+                          {assignedUser ? (
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-extrabold text-[11px] border border-emerald-200 dark:border-emerald-800 inline-flex items-center gap-1">
+                                <UserCheck className="w-3 h-3 text-emerald-500 shrink-0" />
+                                {assignedUser.name}
                               </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs font-bold text-slate-400">Sin Asignar</span>
-                        )}
-                      </td>
+                              {advisorAgencyName && advisorAgencyName !== agencyName && (
+                                <span className="text-[10px] text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1 px-1">
+                                  <Building2 className="w-2.5 h-2.5" />
+                                  {advisorAgencyName}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs font-bold text-slate-400">Sin Asignar</span>
+                          )}
+                        </td>
+                      )}
 
                       <td className="px-6 py-4 space-y-1">
                         {c.email && (
@@ -732,26 +736,28 @@ export const ClientsPage: React.FC = () => {
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">
-                    Asesor / Usuario Responsable
-                  </label>
-                  <UserSearchSelect
-                    users={users}
-                    agencies={agencies}
-                    value={formData.assigned_user_id}
-                    onChange={(uid) => {
-                      const selectedU = users.find((u) => String(u.id) === String(uid));
-                      setFormData((prev) => ({
-                        ...prev,
-                        assigned_user_id: uid ? String(uid) : '',
-                        agency_id: (!prev.agency_id && selectedU?.agency_id) ? String(selectedU.agency_id) : prev.agency_id,
-                      }));
-                    }}
-                    placeholder="-- Sin Asignar (General) --"
-                    className="w-full"
-                  />
-                </div>
+                {isAdmin && (
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">
+                      Asesor / Usuario Responsable
+                    </label>
+                    <UserSearchSelect
+                      users={users}
+                      agencies={agencies}
+                      value={formData.assigned_user_id}
+                      onChange={(uid) => {
+                        const selectedU = users.find((u) => String(u.id) === String(uid));
+                        setFormData((prev) => ({
+                          ...prev,
+                          assigned_user_id: uid ? String(uid) : '',
+                          agency_id: (!prev.agency_id && selectedU?.agency_id) ? String(selectedU.agency_id) : prev.agency_id,
+                        }));
+                      }}
+                      placeholder="-- Sin Asignar (General) --"
+                      className="w-full"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">Workspace</label>
