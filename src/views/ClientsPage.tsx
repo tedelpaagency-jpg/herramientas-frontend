@@ -10,7 +10,6 @@ import { workspaceMetaService } from '../services/workspaceMetaService';
 import { agencyCustomFieldService, AgencyCustomField } from '../services/agencyCustomFieldService';
 import { AgencyCustomFieldsModal } from '../components/AgencyCustomFieldsModal';
 import { AdvisorSearchSelect } from '../components/AdvisorSearchSelect';
-import { AgencySearchSelect } from '../components/AgencySearchSelect';
 import { UserSearchSelect } from '../components/UserSearchSelect';
 import { Users, Plus, Search, Mail, Phone, Edit3, Trash2, Info, Filter, Layers, UserCheck, ChevronLeft, ChevronRight, Sliders, Calendar, CheckSquare, Building2, X } from 'lucide-react';
 import { TableSkeleton } from '@/components/Skeleton';
@@ -37,7 +36,6 @@ export const ClientsPage: React.FC = () => {
   const [agencyCustomFields, setAgencyCustomFields] = useState<AgencyCustomField[]>([]);
   const [isCustomFieldsModalOpen, setIsCustomFieldsModalOpen] = useState<boolean>(false);
 
-  const [selectedAgencyId, setSelectedAgencyId] = useState<string>('');
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
   const [selectedAssignedUserId, setSelectedAssignedUserId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -82,20 +80,16 @@ export const ClientsPage: React.FC = () => {
     fetchWorkspaces();
     fetchAgencyCustomFields();
     fetchAgencies();
+    fetchUsers();
   }, []);
 
   useEffect(() => {
-    setSelectedAssignedUserId('');
-    fetchUsers(selectedAgencyId);
-  }, [selectedAgencyId]);
-
-  useEffect(() => {
     setPage(1);
-  }, [search, selectedAgencyId, selectedWorkspaceId, selectedAssignedUserId]);
+  }, [search, selectedWorkspaceId, selectedAssignedUserId]);
 
   useEffect(() => {
     fetchClients();
-  }, [page, perPage, search, selectedAgencyId, selectedWorkspaceId, selectedAssignedUserId]);
+  }, [page, perPage, search, selectedWorkspaceId, selectedAssignedUserId]);
 
   const fetchAgencies = async () => {
     try {
@@ -124,13 +118,11 @@ export const ClientsPage: React.FC = () => {
     }
   };
 
-  const fetchUsers = async (agencyId?: string) => {
+  const fetchUsers = async () => {
     try {
-      const targetAgencyId = agencyId !== undefined ? agencyId : selectedAgencyId;
       const res = await userService.getUsers({ 
         all: true, 
         per_page: 500,
-        agency_id: targetAgencyId ? Number(targetAgencyId) : undefined,
       });
       const userList = Array.isArray(res) 
         ? res 
@@ -149,7 +141,6 @@ export const ClientsPage: React.FC = () => {
         per_page: perPage,
       };
       if (search) params.search = search;
-      if (selectedAgencyId) params.agency_id = selectedAgencyId;
       if (selectedWorkspaceId) params.workspace_id = selectedWorkspaceId;
       if (selectedAssignedUserId) params.assigned_user_id = selectedAssignedUserId;
 
@@ -187,7 +178,7 @@ export const ClientsPage: React.FC = () => {
       city: '',
       country: 'Ecuador',
       classification: '',
-      agency_id: selectedAgencyId || (user?.agency_id ? String(user.agency_id) : ''),
+      agency_id: user?.agency_id ? String(user.agency_id) : '',
       workspace_id: selectedWorkspaceId || '',
       assigned_user_id: selectedAssignedUserId || '',
     });
@@ -205,7 +196,7 @@ export const ClientsPage: React.FC = () => {
       city: client.city || '',
       country: client.country || 'Ecuador',
       classification: client.classification || '',
-      agency_id: client.agency_id ? String(client.agency_id) : (selectedAgencyId || ''),
+      agency_id: client.agency_id ? String(client.agency_id) : (user?.agency_id ? String(user.agency_id) : ''),
       workspace_id: client.workspace_id ? String(client.workspace_id) : '',
       assigned_user_id: (client as any).assigned_to ? String((client as any).assigned_to) : (client.assigned_user_id ? String(client.assigned_user_id) : ''),
     });
@@ -338,20 +329,6 @@ export const ClientsPage: React.FC = () => {
           )}
         </div>
 
-        {/* Agency Selector */}
-        {(agencies.length > 0 || isSuperAdmin || isWhiteLabelAdmin) && (
-          <div className="w-full md:w-60">
-            <AgencySearchSelect
-              agencies={agencies}
-              value={selectedAgencyId}
-              onChange={(val) => setSelectedAgencyId(String(val))}
-              allowAll
-              allLabel="🏢 Todas las Agencias"
-              size="md"
-            />
-          </div>
-        )}
-
         {/* Workspace Selector */}
         <div className="flex items-center gap-2 w-full md:w-auto">
           <Layers className="w-4 h-4 text-blue-600 shrink-0" />
@@ -376,7 +353,6 @@ export const ClientsPage: React.FC = () => {
               users={users}
               selectedUserId={selectedAssignedUserId}
               onChange={setSelectedAssignedUserId}
-              selectedAgencyId={selectedAgencyId}
               agencies={agencies}
               placeholder="Todos los Asesores"
               className="w-full md:w-64"
@@ -385,11 +361,10 @@ export const ClientsPage: React.FC = () => {
         )}
 
         {/* Reset Active Filters Button */}
-        {(selectedAgencyId || selectedWorkspaceId || selectedAssignedUserId || search) && (
+        {(selectedWorkspaceId || selectedAssignedUserId || search) && (
           <button
             type="button"
             onClick={() => {
-              setSelectedAgencyId('');
               setSelectedWorkspaceId('');
               setSelectedAssignedUserId('');
               setSearch('');
@@ -414,7 +389,7 @@ export const ClientsPage: React.FC = () => {
             No se encontraron clientes
           </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            {selectedAgencyId || selectedWorkspaceId || selectedAssignedUserId
+            {selectedWorkspaceId || selectedAssignedUserId
               ? 'No hay clientes registrados con los filtros seleccionados.' 
               : 'Registra un nuevo cliente haciendo clic en "Agregar Cliente".'}
           </p>
@@ -426,7 +401,7 @@ export const ClientsPage: React.FC = () => {
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
                   <th className="px-6 py-4">Cliente</th>
-                  <th className="px-6 py-4">Agencia</th>
+                  <th className="px-6 py-4">Marca Blanca</th>
                   <th className="px-6 py-4">Workspace</th>
                   {isAdmin && <th className="px-6 py-4">Asesor Asignado</th>}
                   <th className="px-6 py-4">Contacto</th>
@@ -441,15 +416,14 @@ export const ClientsPage: React.FC = () => {
                   const cFields = (c as any).custom_fields || {};
                   const hasCustomData = Object.keys(cFields).length > 0;
 
-                  // Resolve client's agency name
-                  const agencyName = c.agency?.name 
-                    || (assignedUser as any)?.agency?.name 
-                    || agencies.find((a) => a.id === c.agency_id)?.name
-                    || '';
-
-                  // Resolve advisor's agency name if different
-                  const advisorAgencyName = (assignedUser as any)?.agency?.name
-                    || agencies.find((a) => a.id === (assignedUser as any)?.agency_id)?.name
+                  // Resolve client's white label name
+                  const whiteLabelName = (c.agency as any)?.white_label?.name
+                    || (c.agency as any)?.whiteLabel?.name
+                    || (assignedUser as any)?.agency?.white_label?.name
+                    || (assignedUser as any)?.agency?.whiteLabel?.name
+                    || (c as any)?.white_label?.name
+                    || (user as any)?.white_label?.name
+                    || (user as any)?.agency?.white_label?.name
                     || '';
 
                   return (
@@ -472,20 +446,15 @@ export const ClientsPage: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* Agencia */}
+                      {/* Marca Blanca */}
                       <td className="px-6 py-4">
-                        {agencyName ? (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedAgencyId(String(c.agency_id || c.agency?.id || ''))}
-                            title="Filtrar por esta agencia"
-                            className="px-2.5 py-1 rounded-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-extrabold text-[11px] border border-purple-200 dark:border-purple-800 inline-flex items-center gap-1.5 transition-colors cursor-pointer group/agency text-left"
-                          >
-                            <Building2 className="w-3 h-3 text-purple-500 shrink-0 group-hover/agency:scale-110 transition-transform" />
-                            <span className="truncate max-w-[140px]">{agencyName}</span>
-                          </button>
+                        {whiteLabelName ? (
+                          <span className="px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-extrabold text-[11px] border border-purple-200 dark:border-purple-800 inline-flex items-center gap-1.5">
+                            <Building2 className="w-3 h-3 text-purple-500 shrink-0" />
+                            <span className="truncate max-w-[160px]">{whiteLabelName}</span>
+                          </span>
                         ) : (
-                          <span className="text-xs font-semibold text-slate-400">Sin Agencia</span>
+                          <span className="text-xs font-semibold text-slate-400">Sin Marca Blanca</span>
                         )}
                       </td>
 
@@ -506,12 +475,6 @@ export const ClientsPage: React.FC = () => {
                                 <UserCheck className="w-3 h-3 text-emerald-500 shrink-0" />
                                 {assignedUser.name}
                               </span>
-                              {advisorAgencyName && advisorAgencyName !== agencyName && (
-                                <span className="text-[10px] text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1 px-1">
-                                  <Building2 className="w-2.5 h-2.5" />
-                                  {advisorAgencyName}
-                                </span>
-                              )}
                             </div>
                           ) : (
                             <span className="text-xs font-bold text-slate-400">Sin Asignar</span>
@@ -720,21 +683,6 @@ export const ClientsPage: React.FC = () => {
                     />
                   </div>
                 </div>
-
-                {agencies.length > 0 && (
-                  <div>
-                    <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">
-                      Agencia Asignada
-                    </label>
-                    <AgencySearchSelect
-                      agencies={agencies}
-                      value={formData.agency_id}
-                      onChange={(val) => setFormData({ ...formData, agency_id: String(val) })}
-                      placeholder="-- Sin Agencia Específica --"
-                      className="w-full"
-                    />
-                  </div>
-                )}
 
                 {isAdmin && (
                   <div>
