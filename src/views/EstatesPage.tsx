@@ -117,6 +117,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
     } else {
       setScopeTab('all_agency');
     }
+    setPage(1);
   }, [pathname, scopeParam, isMyEstatesUrl]);
 
   const [estates, setEstates] = useState<Estate[]>([]);

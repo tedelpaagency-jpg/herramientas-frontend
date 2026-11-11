@@ -37,6 +37,10 @@ const AMENITIES = [
   { key: 'electric_door', label: 'Portón eléctrico' },
   { key: 'electric_fiance', label: 'Cerco eléctrico' },
   { key: 'meeting_room', label: 'Sala de reuniones' },
+  { key: 'offices', label: 'Oficinas' },
+  { key: 'maneuvering', label: 'Patio de maniobras' },
+  { key: 'hospital_cerca', label: 'Hospital / Clínica cerca' },
+  { key: 'escuela_cerca', label: 'Escuela / Colegio cerca' },
 ];
 
 const MapPicker = dynamic(() => import('../components/MapPicker'), { ssr: false });
@@ -108,7 +112,8 @@ export const EstateFormPage: React.FC = () => {
     fence: false, garden: false, swimming_Pool: false, terraza: false,
     furnishing: false, garage: false, parking: false, heating: false,
     intercom: false, BBQ: false, electric_door: false, electric_fiance: false,
-    meeting_room: false,
+    meeting_room: false, offices: false, maneuvering: false, hospital_cerca: false,
+    escuela_cerca: false,
   });
 
   useEffect(() => {
@@ -205,14 +210,23 @@ export const EstateFormPage: React.FC = () => {
           parking: Boolean(e.parking), heating: Boolean(e.heating),
           intercom: Boolean(e.intercom), BBQ: Boolean(e.BBQ),
           electric_door: Boolean(e.electric_door), electric_fiance: Boolean(e.electric_fiance),
-          meeting_room: Boolean(e.meeting_room),
+          meeting_room: Boolean(e.meeting_room), offices: Boolean(e.offices),
+          maneuvering: Boolean(e.maneuvering), hospital_cerca: Boolean(e.hospital_cerca),
+          escuela_cerca: Boolean(e.escuela_cerca),
         });
 
+        const imgs: string[] = [];
         if (e.images) {
-          const imgs: string[] = Array.isArray(e.images)
+          const raw = Array.isArray(e.images)
             ? e.images.map((i: any) => typeof i === 'string' ? i : i.image_path)
-            : JSON.parse(e.images);
+            : (typeof e.images === 'string' ? JSON.parse(e.images) : []);
+          imgs.push(...raw);
+        }
+        if (e.image && !imgs.includes(e.image)) {
+          imgs.unshift(e.image);
+        }
 
+        if (imgs.length > 0) {
           setUploadedImages(imgs.map((filename: string) => ({
             filename,
             url: filename.startsWith('http') ? filename : `https://santun.tedelpa.com/public/${filename}`,
@@ -274,10 +288,12 @@ export const EstateFormPage: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
+      const imageFilenames = uploadedImages.map(img => img.filename);
       const payload: any = {
         ...form,
         highlight: form.highlight ? 1 : 0,
-        images: uploadedImages.map(img => img.filename),
+        images: imageFilenames,
+        image: imageFilenames.length > 0 ? imageFilenames[0] : null,
         ...AMENITIES.reduce((acc, a) => {
           acc[a.key] = (form as any)[a.key] ? 1 : 0;
           return acc;
@@ -288,17 +304,20 @@ export const EstateFormPage: React.FC = () => {
         delete payload.user_id;
         delete payload.user_type;
         await estateService.updateEstate(Number(id), payload);
-        if (uploadedImages.length > 0) {
-          await estateService.updateImages(Number(id), uploadedImages.map(img => img.filename));
+        if (imageFilenames.length > 0) {
+          await estateService.updateImages(Number(id), imageFilenames);
         }
+        toast.success('Propiedad actualizada exitosamente');
       } else {
         await estateService.createEstate(payload);
+        toast.success('Propiedad creada exitosamente');
       }
 
       router.push('/estates');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving estate:', err);
-      alert('Error al guardar la propiedad. Revise los datos e intente de nuevo.');
+      const msg = err?.response?.data?.message || 'Error al guardar la propiedad. Revise los datos e intente de nuevo.';
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
