@@ -8,11 +8,16 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
 
   useEffect(() => {
     const cachedPrimary = typeof window !== 'undefined' ? localStorage.getItem('santun_primary_color') : null;
+    const cachedButton = typeof window !== 'undefined' ? localStorage.getItem('santun_button_color') : null;
     if (!whiteLabel && !agency && !user) {
       if (cachedPrimary) {
         document.documentElement.style.setProperty('--brand-primary', cachedPrimary);
         document.documentElement.style.setProperty('--color-primary', cachedPrimary);
         document.documentElement.style.setProperty('--primary-color', cachedPrimary);
+      }
+      if (cachedButton) {
+        document.documentElement.style.setProperty('--brand-button', cachedButton);
+        document.documentElement.style.setProperty('--color-button', cachedButton);
       }
       return;
     }
@@ -26,7 +31,7 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
     let effectiveTitle: string = 'Plataforma SaaS';
     let primaryColor = agency?.primary_color || cachedPrimary || hostWhiteLabel?.primary_color || whiteLabel?.primary_color || '#00a884';
     let secondaryColor = agency?.secondary_color || hostWhiteLabel?.secondary_color || whiteLabel?.secondary_color || '#161a1b';
-    let buttonColor = agency?.button_color || hostWhiteLabel?.button_color || whiteLabel?.button_color || '#00a884';
+    let buttonColor = agency?.button_color || cachedButton || agency?.primary_color || hostWhiteLabel?.button_color || whiteLabel?.button_color || '#00a884';
     let menuBackground = agency?.menu_background || hostWhiteLabel?.menu_background || whiteLabel?.menu_background || '#161a1b';
     let fontFamily = agency?.font_family || hostWhiteLabel?.font_family || whiteLabel?.font_family || 'Inter, sans-serif';
     let customCss = agency?.custom_css || hostWhiteLabel?.custom_css || whiteLabel?.custom_css || '';
@@ -57,7 +62,7 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
 
       primaryColor = agency?.primary_color || cachedPrimary || hostWhiteLabel?.primary_color || primaryColor;
       secondaryColor = agency?.secondary_color || hostWhiteLabel?.secondary_color || secondaryColor;
-      buttonColor = agency?.button_color || agency?.primary_color || hostWhiteLabel?.button_color || buttonColor;
+      buttonColor = agency?.button_color || cachedButton || agency?.primary_color || hostWhiteLabel?.button_color || buttonColor;
       menuBackground = agency?.menu_background || hostWhiteLabel?.menu_background || menuBackground;
       fontFamily = agency?.font_family || hostWhiteLabel?.font_family || fontFamily;
       customCss = agency?.custom_css || hostWhiteLabel?.custom_css || customCss;
@@ -90,6 +95,9 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
     if (buttonColor) {
       root.style.setProperty('--brand-button', buttonColor);
       root.style.setProperty('--color-button', buttonColor);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('santun_button_color', buttonColor);
+      }
     }
     if (menuBackground) root.style.setProperty('--brand-menu-bg', menuBackground);
     if (pixelRadius) {
@@ -104,17 +112,18 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
       colorsStyleTag.id = 'tenant-branding-colors';
       document.head.appendChild(colorsStyleTag);
     }
+    const effectiveBtnColor = buttonColor || primaryColor || '#00a884';
     colorsStyleTag.textContent = `
       :root {
         --color-primary: ${primaryColor} !important;
         --brand-primary: ${primaryColor} !important;
         --primary-color: ${primaryColor} !important;
-        --color-button: ${buttonColor} !important;
-        --brand-button: ${buttonColor} !important;
+        --color-button: ${effectiveBtnColor} !important;
+        --brand-button: ${effectiveBtnColor} !important;
         --border-radius: ${pixelRadius} !important;
       }
       .bg-primary {
-        background-color: ${primaryColor} !important;
+        background-color: ${effectiveBtnColor} !important;
       }
       .text-primary {
         color: ${primaryColor} !important;
@@ -127,6 +136,32 @@ export const useBranding = (whiteLabel?: WhiteLabel | null, agency?: any | null,
       }
       .focus-visible\\:ring-primary:focus-visible {
         --tw-ring-color: ${primaryColor} !important;
+      }
+      .bg-\\[\\#00a884\\] {
+        background-color: ${effectiveBtnColor} !important;
+      }
+      .hover\\:bg-\\[\\#009272\\]:hover,
+      .hover\\:bg-\\[\\#00a884\\]:hover {
+        background-color: ${effectiveBtnColor} !important;
+        filter: brightness(0.92) !important;
+      }
+      .text-\\[\\#00a884\\] {
+        color: ${primaryColor} !important;
+      }
+      .border-\\[\\#00a884\\] {
+        border-color: ${primaryColor} !important;
+      }
+      .ring-\\[\\#00a884\\] {
+        --tw-ring-color: ${primaryColor} !important;
+      }
+      .focus\\:ring-\\[\\#00a884\\]:focus,
+      .focus\\:border-\\[\\#00a884\\]:focus {
+        --tw-ring-color: ${primaryColor} !important;
+        border-color: ${primaryColor} !important;
+      }
+      .btn-primary {
+        background-color: ${effectiveBtnColor} !important;
+        border-color: ${effectiveBtnColor} !important;
       }
     `;
     

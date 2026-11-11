@@ -297,6 +297,20 @@ export default function BrandingCustomizationPage({
     setMockNavTheme(darkThemeVal === 'dark' ? 'dark' : 'light');
   };
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (form.primary_color) {
+        document.documentElement.style.setProperty('--color-primary', form.primary_color);
+        document.documentElement.style.setProperty('--brand-primary', form.primary_color);
+      }
+      if (form.button_color || form.primary_color) {
+        const btnCol = form.button_color || form.primary_color;
+        document.documentElement.style.setProperty('--color-button', btnCol);
+        document.documentElement.style.setProperty('--brand-button', btnCol);
+      }
+    }
+  }, [form.primary_color, form.button_color]);
+
   const handleEntityChange = (id: number, type: 'white_label' | 'agency') => {
     setSelectedId(id);
     setTargetType(type);
@@ -336,6 +350,12 @@ export default function BrandingCustomizationPage({
       button_color: palette.button,
       menu_background: palette.menuBg,
     }));
+    if (typeof window !== 'undefined') {
+      document.documentElement.style.setProperty('--color-primary', palette.primary);
+      document.documentElement.style.setProperty('--brand-primary', palette.primary);
+      document.documentElement.style.setProperty('--color-button', palette.button || palette.primary);
+      document.documentElement.style.setProperty('--brand-button', palette.button || palette.primary);
+    }
   };
 
   const handleTestStripeConnection = async (modeToTest?: 'test' | 'live') => {
@@ -572,7 +592,8 @@ export default function BrandingCustomizationPage({
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-5 py-2.5 bg-[#00a884] hover:bg-[#009272] text-white text-xs font-bold rounded-xl shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center gap-2"
+            style={{ backgroundColor: form.button_color || form.primary_color }}
+            className="px-5 py-2.5 hover:brightness-110 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
           >
             {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Guardando...' : 'Guardar y Aplicar Marca'}
@@ -686,9 +707,10 @@ export default function BrandingCustomizationPage({
         <button
           type="button"
           onClick={() => setActiveTab('colors')}
+          style={activeTab === 'colors' ? { backgroundColor: form.button_color || form.primary_color } : undefined}
           className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'colors'
-              ? 'bg-[#00a884] text-white shadow-sm'
+              ? 'text-white shadow-sm'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
           }`}
         >
@@ -697,9 +719,10 @@ export default function BrandingCustomizationPage({
         <button
           type="button"
           onClick={() => setActiveTab('logos')}
+          style={activeTab === 'logos' ? { backgroundColor: form.button_color || form.primary_color } : undefined}
           className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'logos'
-              ? 'bg-[#00a884] text-white shadow-sm'
+              ? 'text-white shadow-sm'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
           }`}
         >
@@ -708,9 +731,10 @@ export default function BrandingCustomizationPage({
         <button
           type="button"
           onClick={() => setActiveTab('typography')}
+          style={activeTab === 'typography' ? { backgroundColor: form.button_color || form.primary_color } : undefined}
           className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'typography'
-              ? 'bg-[#00a884] text-white shadow-sm'
+              ? 'text-white shadow-sm'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
           }`}
         >
@@ -719,9 +743,10 @@ export default function BrandingCustomizationPage({
         <button
           type="button"
           onClick={() => setActiveTab('info')}
+          style={activeTab === 'info' ? { backgroundColor: form.button_color || form.primary_color } : undefined}
           className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'info'
-              ? 'bg-[#00a884] text-white shadow-sm'
+              ? 'text-white shadow-sm'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
           }`}
         >
@@ -729,18 +754,20 @@ export default function BrandingCustomizationPage({
         </button>
         <a
           href="/portal-inmobiliario"
-          className="px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800"
+          style={{ borderColor: `${form.primary_color}40`, color: form.primary_color, backgroundColor: `${form.primary_color}15` }}
+          className="px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer hover:brightness-95 border"
           title="Abrir el estudio independiente del Portal Inmobiliario Web"
         >
-          <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Portal Inmobiliario Web
+          <Sparkles className="w-4 h-4" style={{ color: form.primary_color }} /> Portal Inmobiliario Web
           <ExternalLink className="w-3.5 h-3.5 opacity-70" />
         </a>
         <button
           type="button"
           onClick={() => setActiveTab('stripe')}
+          style={activeTab === 'stripe' ? { backgroundColor: form.button_color || form.primary_color } : undefined}
           className={`px-4 py-2.5 text-xs font-bold flex items-center gap-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'stripe'
-              ? 'bg-[#00a884] text-white shadow-sm'
+              ? 'text-white shadow-sm'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
           }`}
         >
@@ -1759,7 +1786,8 @@ export default function BrandingCustomizationPage({
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-2.5 bg-[#00a884] hover:bg-[#009272] text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-2 transition-all"
+                style={{ backgroundColor: form.button_color || form.primary_color }}
+                className="px-6 py-2.5 hover:brightness-110 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer"
               >
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? 'Guardando...' : 'Guardar y Aplicar Marca'}

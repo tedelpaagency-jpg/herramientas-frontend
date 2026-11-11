@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       (currentPlan as any)?.permissions ||
       []
     ).map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim());
-    const hasCustomBranding = activePlanPermissions.includes('custom_agency_branding');
+    const hasCustomBranding = activePlanPermissions.includes('custom_agency_branding') || Boolean(activeAgency?.logo || activeAgency?.primary_color);
     const hostWhiteLabel = activeWl || (activeAgency as any)?.white_label;
 
     brandLogo = (hasCustomBranding && activeAgency?.logo) ? activeAgency.logo : (hostWhiteLabel?.logo || null);
