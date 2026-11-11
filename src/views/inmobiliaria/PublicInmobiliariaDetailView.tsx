@@ -167,14 +167,47 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   const primaryColor = fallbackAgency.primary_color || '#00a884';
   const isRent = Number(estate?.property_status) === 1;
 
+  // Advisor Resolution: Priority to assigned user/agent on estate
+  const rawAdvisor = estate?.user || (estate as any)?.agent;
+  const isGenericAdmin = !rawAdvisor?.name || ['admin', 'administrador', 'superadmin', 'root'].includes(String(rawAdvisor.name).trim().toLowerCase());
+  const hasAdvisor = Boolean(rawAdvisor?.name) && !isGenericAdmin;
+  const advisorName = hasAdvisor
+    ? String(rawAdvisor.name).trim()
+    : (fallbackAgency.name || fallbackAgency.commercial_name || 'Agencia Inmobiliaria');
+  const advisorPhoto = hasAdvisor
+    ? (rawAdvisor.photo || rawAdvisor.avatar || rawAdvisor.avatarUrl)
+    : (fallbackAgency.logo || fallbackAgency.details?.loader_image);
+  const advisorPhone = (hasAdvisor && rawAdvisor.phone)
+    ? String(rawAdvisor.phone).trim()
+    : (estate?.agency?.phone || fallbackAgency.phone || estate?.agency?.whatsapp || fallbackAgency.whatsapp || '+593 0984113967');
+  const advisorEmail = (hasAdvisor && rawAdvisor.email)
+    ? String(rawAdvisor.email).trim()
+    : (estate?.agency?.email || fallbackAgency.email || '');
+
+  const phoneDisplay = advisorPhone;
+  const cleanPhone = phoneDisplay.replace(/[^0-9]/g, '') || '593984113967';
+
+  const whatsappNumber = (
+    (hasAdvisor && rawAdvisor.phone) ||
+    estate?.agency?.whatsapp ||
+    fallbackAgency.whatsapp ||
+    estate?.agency?.phone ||
+    fallbackAgency.phone ||
+    ''
+  ).replace(/[^0-9]/g, '');
+
   // Initialize pre-filled contact message matching Plusvalia / Inmobiliaria standard
   useEffect(() => {
     if (estate && !contactMessage) {
       const agencyDisplayName = fallbackAgency.name || fallbackAgency.commercial_name || 'el portal inmobiliario';
       const op = isRent ? 'alquiler' : 'venta';
-      setContactMessage(`¡Hola! Quiero que se comuniquen conmigo por este inmueble en ${op} que vi en ${agencyDisplayName}.`);
+      if (hasAdvisor) {
+        setContactMessage(`¡Hola ${advisorName}! Quiero información sobre este inmueble en ${op} que vi en ${agencyDisplayName}.`);
+      } else {
+        setContactMessage(`¡Hola! Quiero que se comuniquen conmigo por este inmueble en ${op} que vi en ${agencyDisplayName}.`);
+      }
     }
-  }, [estate, isRent, fallbackAgency.name, contactMessage]);
+  }, [estate, isRent, fallbackAgency.name, contactMessage, hasAdvisor, advisorName]);
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,21 +238,13 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
         domainParam || undefined
       );
       setContactSuccess(true);
-      toast.success('¡Consulta enviada con éxito! Un asesor se comunicará contigo.');
+      toast.success('¡Consulta enviada con éxito! El asesor se comunicará contigo.');
     } catch (err: any) {
       toast.error(err.message || 'Error al enviar la consulta. Intenta nuevamente.');
     } finally {
       setSubmittingContact(false);
     }
   };
-
-  const whatsappNumber = (
-    estate?.agency?.whatsapp ||
-    fallbackAgency.whatsapp ||
-    estate?.agency?.phone ||
-    fallbackAgency.phone ||
-    ''
-  ).replace(/[^0-9]/g, '');
 
   const handleWhatsAppClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -229,8 +254,9 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
       return;
     }
     const cleanNum = whatsappNumber.replace(/[^0-9]/g, '');
+    const greeting = hasAdvisor ? `¡Hola ${advisorName}!` : '¡Hola!';
     const textMsg = encodeURIComponent(
-      contactMessage.trim() || `¡Hola! Me interesa la propiedad "${estate?.title}" (Ref: #${estate?.id}).`
+      contactMessage.trim() || `${greeting} Me interesa la propiedad "${estate?.title}" (Ref: #${estate?.id}).`
     );
     const waUrl = `https://api.whatsapp.com/send?phone=${cleanNum}&text=${textMsg}`;
     if (typeof window !== 'undefined') {
@@ -435,15 +461,6 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
     { key: 'disabled_access', label: 'Acceso Inclusivo' },
     { key: 'cameras', label: 'Cámaras de Vigilancia' },
   ].filter((a) => Boolean(estate[a.key]));
-
-  const phoneDisplay = (
-    estate?.agency?.phone ||
-    fallbackAgency.phone ||
-    estate?.agency?.whatsapp ||
-    fallbackAgency.whatsapp ||
-    '+593 0984113967'
-  );
-  const cleanPhone = phoneDisplay.replace(/[^0-9]/g, '') || '593984113967';
 
   const mobileSpecs = [
     typeLabel,
@@ -866,6 +883,75 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
 
             {/* MAPA INTERACTIVO Y CARD DE UBICACIÓN */}
             <PublicPropertyMapView estate={estate} primaryColor={primaryColor} />
+
+            {/* Tarjeta del Asesor Asignado a la Propiedad */}
+            {hasAdvisor && (
+              <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 border-2 border-slate-200 shrink-0 shadow-sm flex items-center justify-center">
+                      {advisorPhoto ? (
+                        <img
+                          src={advisorPhoto}
+                          alt={advisorName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                            const fallback = (e.target as HTMLElement).parentElement?.querySelector('.advisor-main-fallback');
+                            if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="advisor-main-fallback w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center font-black text-base"
+                        style={{ display: advisorPhoto ? 'none' : 'flex' }}
+                      >
+                        {(advisorName || 'AS').substring(0, 2).toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10.5px] font-black uppercase tracking-wider text-orange-600 bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-200/60">
+                          Asesor de la Propiedad
+                        </span>
+                        <span className="text-xs text-emerald-600 font-bold flex items-center gap-0.5">
+                          <ShieldCheck className="w-3.5 h-3.5" /> Verificado
+                        </span>
+                      </div>
+                      <h4 className="text-base sm:text-lg font-black text-slate-900 leading-snug truncate" title={advisorName}>
+                        {advisorName}
+                      </h4>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">
+                        {fallbackAgency.name || fallbackAgency.commercial_name || 'Agencia Inmobiliaria'}
+                        {advisorEmail && <span className="text-slate-400 font-normal"> · {advisorEmail}</span>}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 shrink-0 self-stretch sm:self-auto">
+                    {whatsappNumber && (
+                      <button
+                        type="button"
+                        onClick={handleWhatsAppClick}
+                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold text-xs shadow-md shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer border-none"
+                      >
+                        <MessageCircle className="w-4 h-4 fill-white" />
+                        <span>WhatsApp</span>
+                      </button>
+                    )}
+                    {phoneDisplay && (
+                      <a
+                        href={`tel:${cleanPhone}`}
+                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs shadow-xs active:scale-95 transition-all no-underline"
+                      >
+                        <Phone className="w-4 h-4 text-slate-700" />
+                        <span>Llamar</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Tarjeta de Contacto Lateral Sticky */}
@@ -925,30 +1011,47 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
                 </h3>
               </div>
 
-              {/* Ficha del Anunciante estilo Plusvalía */}
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                {fallbackAgency.logo ? (
-                  <img
-                    src={fallbackAgency.logo}
-                    alt={fallbackAgency.name}
-                    className="w-12 h-12 rounded-xl object-contain bg-white p-1 border border-slate-200 shrink-0 shadow-2xs"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-black text-sm shrink-0">
-                    {(fallbackAgency.name || 'IN').substring(0, 2).toUpperCase()}
+              {/* Ficha del Anunciante / Asesor estilo Plusvalía */}
+              <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100/70 transition-colors">
+                <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-white border border-slate-200 shrink-0 shadow-2xs flex items-center justify-center">
+                  {advisorPhoto ? (
+                    <img
+                      src={advisorPhoto}
+                      alt={advisorName}
+                      className={`w-full h-full ${hasAdvisor ? 'object-cover' : 'object-contain p-1'}`}
+                      onError={(e) => {
+                        const target = e.target as HTMLElement;
+                        target.style.display = 'none';
+                        const fallback = target.parentElement?.querySelector('.advisor-sidebar-fallback');
+                        if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="advisor-sidebar-fallback w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center font-black text-sm"
+                    style={{ display: advisorPhoto ? 'none' : 'flex' }}
+                  >
+                    {(advisorName || 'AS').substring(0, 2).toUpperCase()}
                   </div>
-                )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">Inmobiliaria</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200/40">
+                      {hasAdvisor ? 'Asesor Asignado' : 'Inmobiliaria'}
+                    </span>
                     <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
                       <ShieldCheck className="w-3 h-3" /> Verificado
                     </span>
                   </div>
-                  <h4 className="text-xs font-black text-slate-900 truncate">
-                    {fallbackAgency.name || fallbackAgency.commercial_name || 'Agencia Inmobiliaria'}
+                  <h4 className="text-xs font-black text-slate-900 truncate" title={advisorName}>
+                    {advisorName}
                   </h4>
-                  <p className="text-[11px] text-slate-500 font-medium truncate m-0">
+                  {hasAdvisor && (
+                    <p className="text-[11px] text-slate-500 font-semibold truncate m-0 leading-tight">
+                      {fallbackAgency.name || fallbackAgency.commercial_name || 'Immobillis'}
+                    </p>
+                  )}
+                  <p className="text-[11px] text-slate-500 font-medium truncate m-0 mt-0.5">
                     {phoneDisplay}
                   </p>
                 </div>
