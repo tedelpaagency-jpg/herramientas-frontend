@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { poppins, roboto, courgette } from '@/fonts/font';
 import ClientRoot from '@/components/ClientRoot';
+import PortalNavigationLoader from '@/components/inmobiliaria/PortalNavigationLoader';
 
 // GoFly Travel Agency 03 Stylesheets (matches the home page view exactly)
 import '../../../public/assets/css/bootstrap.min.css';
@@ -28,6 +29,7 @@ export default function PropertiesLayout({
 }) {
   return (
     <div className={`travel-agency-03-root ${poppins.variable} ${roboto.variable} ${courgette.variable}`}>
+      <PortalNavigationLoader />
       <ClientRoot>{children}</ClientRoot>
     </div>
   );

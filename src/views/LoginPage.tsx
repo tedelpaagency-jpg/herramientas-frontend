@@ -134,7 +134,7 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
@@ -341,84 +341,6 @@ export const LoginPage: React.FC = () => {
       return `${baseTransition} z-10 scale-[0.5] translate-x-0 -translate-y-10 opacity-0 pointer-events-none`;
     }
   };
-
-  // Pantalla de carga con el favicon de la Marca Blanca según el dominio
-  if (isLoadingConfig) {
-    const rawFavicon = activeWl?.favicon || activeWl?.logo_icon || activeWl?.logo || null;
-    const faviconUrl = rawFavicon ? normalizeFileUrl(rawFavicon) : null;
-    const effectiveBrandName = activeWl?.name || brandName;
-    const accentColor = primaryBrandColor || '#2563eb';
-
-    return (
-      <div className="min-h-screen bg-[#FDFDFE] dark:bg-[#121413] flex flex-col items-center justify-center font-sans text-slate-900 dark:text-slate-100 relative overflow-hidden transition-colors">
-        {/* Luces difuminadas ambientales con la paleta de la Marca Blanca */}
-        <div 
-          className="absolute top-1/3 -left-20 w-80 h-80 rounded-full blur-3xl pointer-events-none opacity-20 animate-pulse"
-          style={{ backgroundColor: accentColor }}
-        />
-        <div 
-          className="absolute bottom-1/3 -right-20 w-80 h-80 rounded-full blur-3xl pointer-events-none opacity-15 animate-pulse"
-          style={{ backgroundColor: accentColor }}
-        />
-
-        <div className="flex flex-col items-center gap-5 z-10 max-w-xs text-center px-4 animate-in fade-in zoom-in-95 duration-300">
-          <div className="relative flex items-center justify-center">
-            {/* Contenedor central con Favicon de la Marca Blanca */}
-            <div 
-              className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center p-3 shadow-xl transition-all duration-300"
-              style={{
-                boxShadow: `0 12px 30px -8px ${accentColor}35`,
-              }}
-            >
-              {faviconUrl ? (
-                <img
-                  src={faviconUrl}
-                  alt={effectiveBrandName}
-                  className="w-10 h-10 object-contain animate-pulse select-none"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLElement).style.display = 'none';
-                    const fallback = document.getElementById('login-loading-fallback-icon');
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div 
-                id="login-loading-fallback-icon" 
-                style={{ display: faviconUrl ? 'none' : 'flex' }}
-                className="items-center justify-center"
-              >
-                <Building2 
-                  className="w-7 h-7 animate-pulse" 
-                  style={{ color: accentColor }} 
-                />
-              </div>
-            </div>
-
-            {/* Spinner perimetral con el color personalizado de la Marca Blanca */}
-            <div 
-              className="absolute -inset-2 rounded-3xl border-2 animate-spin border-t-transparent"
-              style={{ 
-                borderColor: `${accentColor}30`, 
-                borderTopColor: accentColor 
-              }}
-            />
-          </div>
-
-          <div className="flex flex-col items-center gap-1.5">
-            <span 
-              className="text-[11px] font-extrabold tracking-widest uppercase transition-colors"
-              style={{ color: accentColor }}
-            >
-              {effectiveBrandName}
-            </span>
-            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-              Sincronizando portal de acceso...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#FDFDFE] dark:bg-[#121413] flex flex-col font-sans text-slate-900 dark:text-slate-100 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden transition-colors animate-in fade-in duration-500">

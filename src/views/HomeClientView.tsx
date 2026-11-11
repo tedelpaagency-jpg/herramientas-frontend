@@ -28,16 +28,21 @@ export default function HomeClientView() {
 
   const [portalStatus, setPortalStatus] = useState<'checking' | 'enabled' | 'disabled'>(() => {
     if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname.toLowerCase();
+      // Si es un host administrativo o portal CRM (ej: portal.yes360.academy o santun.tedelpa.com), desactivar portal inmobiliario de inmediato
+      if (hostname.startsWith('portal.') || hostname.includes('tedelpa.com') || hostname.includes('yes360.academy')) {
+        return 'disabled';
+      }
+
       const cached = getCachedAgencyConfig();
       if (cached && cached.frontend_enabled && !cached.redirect_to_login) {
         return 'enabled';
       }
-      const hostname = window.location.hostname.toLowerCase();
       if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('inmosoft') || hostname.includes('immobillis')) {
         return 'enabled';
       }
     }
-    return 'enabled';
+    return 'disabled';
   });
 
   const [resolvedDomain, setResolvedDomain] = useState<string | undefined>(() => {
