@@ -7,7 +7,7 @@ import { VisaProcessTypesPage } from '@/views/visas/VisaProcessTypesPage';
 
 export default function VisaProcessTypesRoute() {
   return (
-    <ProtectedRoute permission={['view_visas', 'visas.view']}>
+    <ProtectedRoute permission={['view_visas', 'visas.view', 'visas.processes.manage', 'manage_visas']}>
       <Layout>
         <VisaProcessTypesPage />
       </Layout>

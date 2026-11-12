@@ -392,15 +392,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       basePerms = [...(user as any).effective_permissions];
     } else {
       // Fallback only if effective_permissions was not provided
+      const wl = (user as any)?.white_label || (user as any)?.white_labels?.[0] || currentWhiteLabel;
+      const wlSub = wl?.current_subscription || wl?.currentSubscription;
+      const wlPlan = wlSub?.status === 'active' ? wlSub?.plan : (wl?.plan || null);
+
       const agency = (user as any)?.agency || (user as any)?.agency_data || currentAgency;
       const sub = agency?.current_subscription || agency?.currentSubscription;
-      const plan = sub?.status === 'active' ? sub?.plan : null;
+      const plan = sub?.status === 'active' ? sub?.plan : (agency?.plan || wlPlan || null);
       const planPerms = Array.isArray(plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
         ? (plan?.plan_permissions || plan?.planPermissions || plan?.permissions)
         : [];
       const extractedPlanPerms = planPerms.map((p: any) => (typeof p === 'string' ? p : p?.permission || p?.name || '').toLowerCase().trim()).filter(Boolean);
 
-      if (dashboardType === 'agency_admin') {
+      if (dashboardType === 'agency_admin' || dashboardType === 'white_label_admin') {
         basePerms = extractedPlanPerms;
       } else {
         const directPerms = (user?.permissions || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '').toLowerCase().trim());
@@ -427,6 +431,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     if (basePerms.some((p) => p === 'custom_agency_branding' || p.startsWith('branding.'))) {
       macroExpanded.push('custom_agency_branding', 'branding.view', 'branding.manage');
+    }
+    if (basePerms.some((p) => p.startsWith('visas') || p === 'view_visas' || p === 'manage_visas')) {
+      macroExpanded.push(
+        'view_visas',
+        'manage_visas',
+        'visas.view',
+        'visas.create',
+        'visas.edit',
+        'visas.delete',
+        'visas.processes.manage',
+        'visas.stages.manage',
+        'visas.settings.manage',
+        'visas.forms.view',
+        'visas.forms.edit',
+        'visas.documents.view',
+        'visas.documents.download',
+        'visas.timeline.view',
+        'visas.requests.manage',
+        'visas.groups.manage'
+      );
     }
     if (basePerms.some((p) => p.startsWith('campaigns') || p.startsWith('marketing') || p === 'email_marketing' || p === 'view_email_marketing')) {
       macroExpanded.push(

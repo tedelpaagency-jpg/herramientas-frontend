@@ -25,7 +25,7 @@ export default function MayoristaVisasRoute() {
     user?.roles?.some((r: any) => ['super_admin', 'white_label_admin', 'mayorista_supervisor', 'mayorista_operador'].includes(r.name));
 
   return (
-    <ProtectedRoute permission={['view_visas', 'visas.view']}>
+    <ProtectedRoute permission={['view_visas', 'visas.view', 'manage_visas']}>
       <Layout>
         {isMayorista && !hasGroupIdParam ? <MayoristaVisasDashboardPage /> : <AgencyVisasDashboardPage />}
       </Layout>

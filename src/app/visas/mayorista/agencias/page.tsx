@@ -7,7 +7,7 @@ import { MayoristaAgenciesPage } from '@/views/visas/MayoristaAgenciesPage';
 
 export default function MayoristaAgenciesRoute() {
   return (
-    <ProtectedRoute permission={['view_visas', 'visas.view']}>
+    <ProtectedRoute permission={['view_visas', 'visas.view', 'manage_visas']}>
       <Layout>
         <MayoristaAgenciesPage />
       </Layout>
