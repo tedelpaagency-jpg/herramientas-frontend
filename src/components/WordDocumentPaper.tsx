@@ -449,25 +449,27 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
     });
 
     const hasEmbeddedSignature =
-      /<img[^>]+(?:alt=["']Firma Digital["']|src=["'][^"']*(?:signatures|base64|data:)[^"']*["'])/i.test(clean) ||
-      /p12-signature-badge/i.test(clean) ||
-      /signature-stamp/i.test(clean);
+      clean.includes('alt="Firma Digital"') ||
+      clean.includes("alt='Firma Digital'") ||
+      clean.includes('Firma Digital') ||
+      clean.includes('/signatures/') ||
+      clean.includes('p12-signature-badge') ||
+      clean.includes('signature-stamp') ||
+      /<img[^>]+(?:signatures|firmas|base64|data:)/i.test(clean);
 
     if (!hasEmbeddedSignature && signatureUrl) {
       const isPdfOrCert = /\.(pdf|p12|pfx)(\?.*)?$/i.test(signatureUrl);
       if (!isPdfOrCert) {
         const normalizedSig = normalizeFileUrl(signatureUrl);
         const sigHtml = `
-          <div class="signature-stamp text-center my-4 p-2 border border-slate-300 rounded-lg bg-white/50 backdrop-blur-xs inline-block">
-            <img src="${normalizedSig}" alt="Firma Digital" class="max-w-[220px] max-h-[85px] object-contain mx-auto" />
-            <div class="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest mt-1">Firma Digital Registrada</div>
+          <div class="signature-stamp text-center my-2 p-1 inline-block">
+            <img src="${normalizedSig}" alt="Firma Digital" class="max-w-[200px] max-h-[70px] object-contain mx-auto" />
+            <div class="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-widest mt-1">Firma Digital Registrada</div>
           </div>
         `;
         const sigRegex = /(?:\{\{|\[)(?:FIRMA|FIRMA_CLIENTE)(?:\}\}|\])/gi;
         if (sigRegex.test(clean)) {
           clean = clean.replace(sigRegex, sigHtml);
-        } else {
-          clean += `<br/><br/>${sigHtml}`;
         }
       }
     }
