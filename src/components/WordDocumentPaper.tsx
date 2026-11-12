@@ -1278,7 +1278,7 @@ export const WordDocumentPaper = forwardRef<WordDocumentPaperRef, WordDocumentPa
                   suppressContentEditableWarning={true}
                   onKeyDown={(e) => handleKeyDown(e, actualPageIndex)}
                   onBlur={(e) => handlePageBlur(actualPageIndex, e.currentTarget as HTMLDivElement)}
-                  className={`relative z-10 word-document-body pt-4 outline-none flex-1 min-h-[800px] max-h-[880px] overflow-y-auto custom-scrollbar ${
+                  className={`relative z-10 word-document-body pt-4 pb-14 outline-none flex-1 min-h-[800px] max-h-[850px] overflow-y-auto custom-scrollbar ${
                     editablePages ? 'cursor-text select-text' : 'cursor-default select-text'
                   }`}
                   dangerouslySetInnerHTML={{ __html: pageHtml }}

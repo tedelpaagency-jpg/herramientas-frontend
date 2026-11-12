@@ -468,6 +468,30 @@ html.dark, .dark {
   font-weight: 700;
 }
 
+.word-document-body .signatures-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  border: none !important;
+  margin-top: 1.5em !important;
+  margin-bottom: 0.5em !important;
+  table-layout: fixed !important;
+}
+
+.word-document-body .signatures-table td {
+  border: none !important;
+  vertical-align: bottom !important;
+  text-align: center !important;
+  padding: 0 12px !important;
+}
+
+.word-document-body .signatures-table img {
+  max-width: 180px !important;
+  max-height: 70px !important;
+  display: inline-block !important;
+  margin: 0 auto !important;
+  object-fit: contain !important;
+}
+
 .word-document-body table {
   width: 100%;
   border-collapse: collapse;
