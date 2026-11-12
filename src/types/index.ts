@@ -176,6 +176,8 @@ export interface User {
   role?: string;
   points?: number;
   avatarUrl?: string;
+  avatar_url?: string | null;
+  avatar?: string | null;
   agency_id?: number;
   agency?: Agency;
   white_label_id?: number;

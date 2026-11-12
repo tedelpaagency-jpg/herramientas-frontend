@@ -79,6 +79,11 @@ export interface EstatesPageProps {
   initialScope?: 'all_agency' | 'my_estates';
 }
 
+const getAdvisorPhoto = (estateUser?: any): string | null => {
+  if (!estateUser) return null;
+  return estateUser.photo || estateUser.avatar_url || estateUser.avatarUrl || estateUser.avatar || null;
+};
+
 export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -918,13 +923,25 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                           {/* Asesor / Agente Comercial */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center flex-shrink-0 overflow-hidden border border-blue-200 dark:border-blue-800 shadow-2xs">
-                                {estate.user?.avatarUrl ? (
-                                  <img src={estate.user.avatarUrl} alt={estate.user.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  <span>{estate.user?.name ? estate.user.name.charAt(0).toUpperCase() : 'A'}</span>
-                                )}
-                              </div>
+                              {(() => {
+                                const advisorPhoto = getAdvisorPhoto(estate.user);
+                                return (
+                                  <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center flex-shrink-0 overflow-hidden border border-blue-200 dark:border-blue-800 shadow-2xs">
+                                    {advisorPhoto ? (
+                                      <img
+                                        src={advisorPhoto}
+                                        alt={estate.user?.name || 'Asesor'}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          (e.currentTarget as HTMLElement).style.display = 'none';
+                                        }}
+                                      />
+                                    ) : (
+                                      <span>{estate.user?.name ? estate.user.name.charAt(0).toUpperCase() : 'A'}</span>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                               <div className="flex flex-col min-w-0">
                                 <span className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[130px]" title={estate.user?.name || 'Asesor Inmobiliario'}>
                                   {estate.user?.name || 'Asesor Inmobiliario'}
@@ -1262,13 +1279,25 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
 
                         {/* Asesor / Agente Comercial Info */}
                         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                          <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden border border-blue-200 dark:border-blue-800/60 shadow-2xs">
-                            {estate.user?.avatarUrl ? (
-                              <img src={estate.user.avatarUrl} alt={estate.user.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <span>{estate.user?.name ? estate.user.name.charAt(0).toUpperCase() : 'A'}</span>
-                            )}
-                          </div>
+                          {(() => {
+                            const advisorPhoto = getAdvisorPhoto(estate.user);
+                            return (
+                              <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[10px] flex items-center justify-center flex-shrink-0 overflow-hidden border border-blue-200 dark:border-blue-800/60 shadow-2xs">
+                                {advisorPhoto ? (
+                                  <img
+                                    src={advisorPhoto}
+                                    alt={estate.user?.name || 'Asesor'}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLElement).style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <span>{estate.user?.name ? estate.user.name.charAt(0).toUpperCase() : 'A'}</span>
+                                )}
+                              </div>
+                            );
+                          })()}
                           <div className="flex items-center gap-1.5 truncate">
                             <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate" title={estate.user?.name || 'Asesor Inmobiliario'}>
                               {estate.user?.name || 'Asesor Inmobiliario'}
