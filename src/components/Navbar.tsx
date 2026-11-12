@@ -260,16 +260,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2 sm:gap-3 ml-0.5 sm:ml-2 lg:ml-4 relative">
           <div className="text-right hidden sm:block">
             <p className="font-label-md font-bold text-slate-800 dark:text-slate-100 truncate max-w-[140px]">{user?.name || 'Usuario SANTUN'}</p>
-            <Link 
-              href="/roles" 
-              prefetch={false}
-              onClick={(e) => handleNavClick('/roles', e)}
-              title="Ver mis roles y permisos"
-              className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-primary transition-colors inline-flex items-center gap-1 max-w-[140px] truncate"
+            <span 
+              className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 inline-flex items-center gap-1 max-w-[140px] truncate"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
               <span className="truncate">{user?.role || user?.email || 'Specialist'}</span>
-            </Link>
+            </span>
           </div>
           <button 
             onClick={() => setShowUserMenu(!showUserMenu)}
@@ -305,19 +301,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <div className="p-3 border-b border-slate-200 dark:border-slate-800 sm:hidden">
                     <p className="font-bold text-slate-800 dark:text-slate-100">{user?.name || 'Usuario SANTUN'}</p>
-                    <Link href="/roles" prefetch={false} onClick={(e) => handleNavClick('/roles', e)} className="text-xs text-primary font-semibold flex items-center gap-1 mt-0.5">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1 mt-0.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      <span>{user?.role || user?.email || 'Specialist'}</span>
-                    </Link>
+                      <span className="truncate">{user?.role || user?.email || 'Specialist'}</span>
+                    </div>
                   </div>
                   <div className="py-2">
                     <Link href="/profile" prefetch={false} onClick={(e) => handleNavClick('/profile', e)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
                       <span className="material-symbols-outlined text-[20px]">person</span>
                       Mi Perfil
-                    </Link>
-                    <Link href="/roles" prefetch={false} onClick={(e) => handleNavClick('/roles', e)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
-                      <span className="material-symbols-outlined text-[20px]">shield_person</span>
-                      Mis Roles & Permisos
                     </Link>
                     {configHref && (
                       <Link href={configHref} prefetch={false} onClick={(e) => handleNavClick(configHref, e)} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 transition-colors">
