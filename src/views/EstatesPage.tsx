@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -156,6 +156,31 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
     per_page: 12,
     last_page: 1
   });
+
+  // Referencias para auto-scroll suave hacia arriba al cambiar de página
+  const estatesTopRef = useRef<HTMLDivElement | null>(null);
+  const isFirstPageRenderRef = useRef<boolean>(true);
+
+  const scrollToTopOfEstates = useCallback(() => {
+    if (estatesTopRef.current) {
+      estatesTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const mainEl = document.querySelector('main');
+      if (mainEl) {
+        mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isFirstPageRenderRef.current) {
+      isFirstPageRenderRef.current = false;
+      return;
+    }
+    scrollToTopOfEstates();
+  }, [page, scrollToTopOfEstates]);
 
   // Action Menu & Modal States
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
@@ -761,6 +786,9 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
         </div>
       </div>
 
+      {/* Target de scroll automático al paginar */}
+      <div ref={estatesTopRef} className="scroll-mt-6" />
+
       {/* Main Content Area */}
       {viewMode === 'reports' ? (
         <EstateReportsView 
@@ -816,7 +844,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div key={`estates-admin-page-${page}`} className="space-y-6 animate-fade-in transition-all duration-300">
           {viewMode === 'table' ? (
             /* Table View Mode */
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-800 overflow-hidden">
@@ -1403,7 +1431,10 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                 <div className="flex items-center gap-1.5">
                   <button
                     disabled={page <= 1}
-                    onClick={() => setPage(p => Math.max(p - 1, 1))}
+                    onClick={() => {
+                      setPage(p => Math.max(p - 1, 1));
+                      scrollToTopOfEstates();
+                    }}
                     className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -1417,7 +1448,10 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                       ) : (
                         <button
                           key={`page-${p}`}
-                          onClick={() => setPage(Number(p))}
+                          onClick={() => {
+                            setPage(Number(p));
+                            scrollToTopOfEstates();
+                          }}
                           className={`min-w-[32px] h-8 px-2 rounded-lg text-xs font-bold transition-colors ${
                             pagination.current_page === p
                               ? 'bg-blue-600 text-white shadow-xs'
@@ -1432,7 +1466,10 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
 
                   <button
                     disabled={page >= pagination.last_page}
-                    onClick={() => setPage(p => Math.min(p + 1, pagination.last_page))}
+                    onClick={() => {
+                      setPage(p => Math.min(p + 1, pagination.last_page));
+                      scrollToTopOfEstates();
+                    }}
                     className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
                   >
                     <span className="hidden sm:inline">Siguiente</span>

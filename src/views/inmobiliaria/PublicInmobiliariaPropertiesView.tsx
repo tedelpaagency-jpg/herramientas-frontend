@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -203,6 +203,46 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     (searchParams?.get('sort') as any) || 'recent'
   );
   const [currentPage, setCurrentPage] = useState<number>(Number(searchParams?.get('page')) || 1);
+
+  // Referencias para auto-scroll suave hacia arriba al cambiar de página
+  const catalogScrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const propertiesHeaderTopRef = useRef<HTMLDivElement | null>(null);
+  const isFirstPageLoadRef = useRef<boolean>(true);
+
+  const scrollToTopOfProperties = useCallback(() => {
+    // 1. Scroll suave del contenedor interno con overflow-y-auto (catálogo)
+    if (catalogScrollContainerRef.current) {
+      catalogScrollContainerRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }
+
+    // 2. Scroll suave hacia el encabezado del catálogo de propiedades
+    if (propertiesHeaderTopRef.current) {
+      propertiesHeaderTopRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+
+    // 3. Scroll suave de la ventana principal (en mobile o layouts de scroll global)
+    if (typeof window !== 'undefined') {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }
+  }, []);
+
+  // Efecto que dispara el auto-scroll al cambiar de página
+  useEffect(() => {
+    if (isFirstPageLoadRef.current) {
+      isFirstPageLoadRef.current = false;
+      return;
+    }
+    scrollToTopOfProperties();
+  }, [currentPage, scrollToTopOfProperties]);
 
   // Split view interactions: selected card/pin & hovered card
   const [selectedEstate, setSelectedEstate] = useState<PublicEstateItem | null>(null);
@@ -1787,17 +1827,18 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           
           {/* Contenedor Izquierdo: Catálogo de propiedades */}
           <div
+            ref={catalogScrollContainerRef}
             className={`${
               viewMode === 'map'
                 ? 'hidden'
                 : viewMode === 'list'
-                ? 'w-full h-full overflow-y-auto px-4 sm:px-8 pt-4 pb-44 sm:pb-20 flex flex-col justify-between bg-white overscroll-contain'
-                : `w-full lg:w-[58%] xl:w-[56%] 2xl:w-[54%] h-full overflow-y-auto px-3.5 sm:px-4 pt-3 pb-44 sm:pb-16 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs overscroll-contain ${
+                ? 'w-full h-full overflow-y-auto px-4 sm:px-8 pt-4 pb-44 sm:pb-20 flex flex-col justify-between bg-white overscroll-contain scroll-smooth'
+                : `w-full lg:w-[58%] xl:w-[56%] 2xl:w-[54%] h-full overflow-y-auto px-3.5 sm:px-4 pt-3 pb-44 sm:pb-16 flex flex-col justify-between bg-white border-r border-slate-200/90 shadow-2xs overscroll-contain scroll-smooth ${
                     mobileView === 'map' ? 'hidden lg:flex' : 'flex'
                   }`
             }`}
           >
-            <div className="space-y-3">
+            <div ref={propertiesHeaderTopRef} className="space-y-3">
               {/* Encabezado del contenedor de tarjetas */}
               <div className="flex items-center justify-between px-1 pt-0.5 pb-2 border-b border-slate-100">
                 <span className="text-xs font-black text-slate-800">
@@ -1812,13 +1853,14 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                 /* Sin skeleton: el PublicPortalLoader cubre la pantalla mientras carga */
                 <div className="min-h-[60vh]" />
               ) : estates.length > 0 ? (
-                /* Listado de propiedades */
+                /* Listado de propiedades con animación suave de entrada al paginar */
                 <div
-                  className={
+                  key={`estates-grid-page-${currentPage}`}
+                  className={`animate-fade-in transition-all duration-300 ${
                     viewMode === 'list'
                       ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-2.5 sm:gap-4'
                       : 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2 sm:gap-3'
-                  }
+                  }`}
                 >
                   {estates.map((estate) => (
                     <AirbnbPropertyCard
@@ -1871,6 +1913,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   onClick={() => {
                     const prev = Math.max(1, currentPage - 1);
                     setCurrentPage(prev);
+                    scrollToTopOfProperties();
                     const params = new URLSearchParams(searchParams?.toString() || '');
                     params.set('page', String(prev));
                     router.push(`/properties?${params.toString()}`);
@@ -1890,6 +1933,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
                   onClick={() => {
                     const next = Math.min(pagination.lastPage, currentPage + 1);
                     setCurrentPage(next);
+                    scrollToTopOfProperties();
                     const params = new URLSearchParams(searchParams?.toString() || '');
                     params.set('page', String(next));
                     router.push(`/properties?${params.toString()}`);
