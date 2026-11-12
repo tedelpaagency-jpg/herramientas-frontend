@@ -317,6 +317,21 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
       } else {
         const cityName = (estate as any).city || estate.neighborhood || '';
         const parroquiaName = (estate as any).parroquia || '';
+        
+        // Determinar si hay usuario logueado en localStorage para fallback client-side
+        let loggedUserContact: string | null = null;
+        if (typeof window !== 'undefined') {
+          try {
+            const savedUserStr = localStorage.getItem('santun_user');
+            if (savedUserStr) {
+              const u = JSON.parse(savedUserStr);
+              if (u?.name || u?.phone) {
+                loggedUserContact = `📞 *Contacto:* ${u.name || 'Asesor'}${u.phone ? ` - ${u.phone}` : ''}`;
+              }
+            }
+          } catch {}
+        }
+
         const lines = [
           `🏠 *${estate.title}*`,
           mainImg ? `📸 *Foto:* ${mainImg}` : null,
@@ -328,6 +343,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
           estate.bathrooms ? `🛁 *Baños:* ${estate.bathrooms}` : null,
           estate.size ? `📐 *Superficie:* ${estate.size} m²` : null,
           estate.garage ? `🚗 *Parqueadero:* Sí` : null,
+          loggedUserContact,
           `🔗 *Ver propiedad:*\n${pageUrl}`,
         ].filter(Boolean);
         textToCopy = lines.join('\n');

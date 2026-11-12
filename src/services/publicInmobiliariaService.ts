@@ -636,6 +636,10 @@ export const publicInmobiliariaService = {
     if (effectiveDomain) {
       headers['X-Domain'] = effectiveDomain;
     }
+    const token = typeof window !== 'undefined' ? localStorage.getItem('santun_auth_token') : null;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const res = await fetch(`${apiBase}/v1/public/estates/${encodeURIComponent(slugOrId)}/whatsapp?domain=${encodeURIComponent(effectiveDomain)}`, {
       headers,
     });
