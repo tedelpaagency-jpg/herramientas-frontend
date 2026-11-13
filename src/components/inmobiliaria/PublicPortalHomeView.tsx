@@ -175,6 +175,9 @@ export default function PublicPortalHomeView({
         backgroundColor: '#ffffff',
         color: '#161a1b',
         minHeight: '100vh',
+        width: '100%',
+        maxWidth: '100vw',
+        overflowX: 'hidden',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}
     >

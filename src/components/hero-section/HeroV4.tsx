@@ -1121,6 +1121,7 @@ const HeroV4: React.FC<HeroV4Props> = ({ agency }) => {
             max-width: 100% !important;
             margin: 0 auto !important;
             border-radius: 22px !important;
+            box-sizing: border-box !important;
           }
 
           .inmo-card-tabs-bar {

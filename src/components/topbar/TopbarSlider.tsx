@@ -66,7 +66,7 @@ const TopbarSlider: React.FC<TopbarSliderProps> = ({ agency }) => {
   const text3 = details?.topbar_text3 || 'Nuevos Desarrollos y Casas en Venta con Financiamiento Bancario Directo';
 
   return (
-    <div className="top-offer-text-slider-section">
+    <div className="top-offer-text-slider-section" style={{ width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
       <div className="container">
         <div className="row justify-content-center">
           <div className="col-lg-8">

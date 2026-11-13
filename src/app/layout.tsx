@@ -1,11 +1,17 @@
 import React from 'react';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { getDomainMetadata } from '@/utils/seoHelper';
 import '@/index.css';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = headers();
@@ -75,6 +81,7 @@ export default function RootLayout({
           }}
         />
         {/* PWA Manifest & App Links */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#FFFFFF" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

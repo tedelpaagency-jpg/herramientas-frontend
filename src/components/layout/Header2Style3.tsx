@@ -220,33 +220,34 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
       : null);
 
   return (
-    <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`} style={{ position: 'relative', zIndex: 1090 }} suppressHydrationWarning>
-      <div className="container-fluid d-flex flex-nowrap align-items-center justify-content-between px-3 px-sm-4 px-xl-5" suppressHydrationWarning>
+    <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`} style={{ position: 'relative', zIndex: 1090, width: '100%', maxWidth: '100vw' }} suppressHydrationWarning>
+      <div className="container-fluid d-flex flex-nowrap align-items-center justify-content-between px-3 px-sm-4 px-xl-5" style={{ width: '100%', maxWidth: '100%' }} suppressHydrationWarning>
         {/* 1. Lado Izquierdo: Logotipo */}
-        <div className="header-logo-area d-flex align-items-center shrink-0" style={{ flex: '0 0 auto' }} suppressHydrationWarning>
-          <Link href="/" className="header-logo" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', minHeight: '62px', textDecoration: 'none' }}>
+        <div className="header-logo-area d-flex align-items-center" style={{ flex: '0 1 auto', minWidth: 0, overflow: 'hidden' }} suppressHydrationWarning>
+          <Link href="/" className="header-logo" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', minHeight: '62px', maxWidth: '100%', textDecoration: 'none' }}>
             {logoUrl ? (
               <img
                 src={logoUrl}
                 alt={agencyName || 'Logo Inmobiliaria'}
                 loading="eager"
                 decoding="sync"
-                style={{ maxHeight: '64px', maxWidth: '280px', width: 'auto', height: 'auto', objectFit: 'contain', transition: 'all 0.2s ease-in-out' }}
+                className="max-h-[46px] sm:max-h-[64px] max-w-[170px] sm:max-w-[280px]"
+                style={{ width: 'auto', height: 'auto', objectFit: 'contain', transition: 'all 0.2s ease-in-out' }}
               />
             ) : agencyName ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
                 <div
                   style={{
-                    width: '46px',
-                    height: '46px',
-                    borderRadius: '14px',
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '12px',
                     backgroundColor: primaryColor,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#ffffff',
                     fontWeight: 900,
-                    fontSize: '22px',
+                    fontSize: '18px',
                     boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
                     flexShrink: 0,
                   }}
@@ -255,11 +256,15 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                 </div>
                 <span
                   style={{
-                    fontSize: '23px',
+                    fontSize: '18px',
                     fontWeight: 900,
                     color: '#0f172a',
                     lineHeight: 1.15,
                     letterSpacing: '-0.02em',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '140px',
                   }}
                 >
                   {agencyName}
@@ -711,7 +716,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
           <button
             type="button"
             onClick={toggleSidebar}
-            className="d-xl-none d-inline-flex align-items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer border"
+            className="d-xl-none d-inline-flex align-items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer border shrink-0"
             style={{
               backgroundColor: '#ffffff',
               borderColor: '#cbd5e1',

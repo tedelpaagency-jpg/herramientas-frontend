@@ -65,6 +65,9 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
@@ -549,6 +552,9 @@ body.dark:has(.travel-agency-03-root) {
   --color-surface: #ffffff !important;
   --color-text-primary: #1f2937 !important;
   --color-text-secondary: #475569 !important;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .travel-agency-03-root p,
