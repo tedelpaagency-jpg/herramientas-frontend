@@ -333,8 +333,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'LexVault (Contratos)', path: '/lexvault', icon: FileText, permission: ['view_lexvault', 'manage_lexvault', 'lexvault.view', 'lexvault', 'view_contracts', 'contracts.view'] },
         { label: 'Hunter Stores', path: '/hunter', icon: Store, permission: ['view_hunter', 'hunter.view', 'hunter'] },
         { label: 'Landings', path: '/landings', icon: Globe, permission: ['landings.view', 'view_landings', 'landings', 'landings.create', 'landings.edit', 'landings.delete', 'manage_landings'] },
-        { label: 'Marketing & Campañas', path: '/marketing', icon: Zap, permission: ['email_marketing', 'view_email_marketing', 'campaigns.view', 'marketing.view', 'marketing'] },
-        { label: 'Marketing B2B (Creativos)', path: '/marketing-b2b', icon: Sparkles, permission: ['marketing_b2b', 'marketing_b2b.view', 'marketing_b2b.manage', 'marketing_b2b.generate', 'marketing', 'marketing.view', 'email_marketing', 'view_email_marketing', 'campaigns.view'] },
+        { label: 'Marketing & Campañas', path: '/marketing', icon: Zap, permission: ['marketing.view', 'marketing', 'campaigns.view', 'email_marketing', 'view_email_marketing'] },
+        { label: 'Marketing B2B (Creativos)', path: '/marketing-b2b', icon: Sparkles, permission: ['marketing_b2b', 'marketing_b2b.view', 'marketing_b2b.manage', 'marketing_b2b.generate'] },
         { label: 'Automatizaciones', path: '/automations', icon: Wrench, permission: ['automations', 'view_automations', 'automations.view'] },
       ],
     },
@@ -541,6 +541,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <div className="px-3 py-2.5 mt-auto space-y-1 border-t border-slate-200/60 dark:border-slate-800/60">
           {(() => {
+            const hasRolesPerm = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['roles.view', 'roles.manage', 'manage_roles', 'roles', 'permission_groups.view']);
+            if (!hasRolesPerm) return null;
             const isRolesActive = pathname === '/roles' || pathname === '/admin/roles';
             const activeColor = brandPrimaryColor || (typeof window !== 'undefined' ? localStorage.getItem('santun_primary_color') : null);
             return (

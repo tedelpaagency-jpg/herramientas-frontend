@@ -96,15 +96,45 @@ export const RolesPage: React.FC = () => {
   const [deletingRole, setDeletingRole] = useState<Role | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  const DEFAULT_SYSTEM_ROLES: Role[] = useMemo(() => [
-    { id: 1, name: 'super_admin', display_name: 'Super Administrador', is_system: true, description: 'Acceso total y configuración global de la plataforma' },
-    { id: 2, name: 'white_label_admin', display_name: 'Administrador de Marca Blanca', is_system: true, description: 'Administración de red de agencias afiliadas y personalización' },
-    { id: 3, name: 'admin', display_name: 'Administrador de Agencia', is_system: true, description: 'Gestión integral de equipo, clientes y operaciones de agencia' },
-    { id: 4, name: 'gerente', display_name: 'Gerente de Operaciones', is_system: true, description: 'Supervisión de operaciones y autorización de expedientes' },
-    { id: 5, name: 'gerente_comercial', display_name: 'Gerente Comercial', is_system: true, description: 'Supervisión de ventas, leads y cierres comerciales' },
-    { id: 6, name: 'closer', display_name: 'Closer Comercial (CRM)', is_system: true, description: 'Atención directa de prospectos, clientes asignados y cierres' },
-    { id: 7, name: 'user', display_name: 'Asesor / Agente', is_system: true, description: 'Operación diaria, catálogo y atención al cliente' },
+  const isAgencyLevel = !isSuperAdmin && !isWhiteLabelAdmin;
+
+  const excludedRolesForAgency = useMemo(() => [
+    'super_admin',
+    'white_label_admin',
+    'admin_white_label',
+    'agency_admin',
+    'admin_agency',
+    'admin',
+    'agencia_admin',
   ], []);
+
+  const DEFAULT_SYSTEM_ROLES: Role[] = useMemo(() => {
+    if (isSuperAdmin) {
+      return [
+        { id: 1, name: 'super_admin', display_name: 'Super Administrador', is_system: true, description: 'Acceso total y configuración global de la plataforma' },
+        { id: 2, name: 'white_label_admin', display_name: 'Administrador de Marca Blanca', is_system: true, description: 'Administración de red de agencias afiliadas y personalización' },
+        { id: 3, name: 'admin', display_name: 'Administrador de Agencia', is_system: true, description: 'Gestión integral de equipo, clientes y operaciones de agencia' },
+        { id: 4, name: 'gerente', display_name: 'Gerente de Operaciones', is_system: true, description: 'Supervisión de operaciones y autorización de expedientes' },
+        { id: 5, name: 'gerente_comercial', display_name: 'Gerente Comercial', is_system: true, description: 'Supervisión de ventas, leads y cierres comerciales' },
+        { id: 6, name: 'closer', display_name: 'Closer Comercial (CRM)', is_system: true, description: 'Atención directa de prospectos, clientes asignados y cierres' },
+        { id: 7, name: 'user', display_name: 'Asesor / Agente', is_system: true, description: 'Operación diaria, catálogo y atención al cliente' },
+      ];
+    }
+    if (isWhiteLabelAdmin) {
+      return [
+        { id: 2, name: 'white_label_admin', display_name: 'Administrador de Marca Blanca', is_system: true, description: 'Administración de red de agencias afiliadas y personalización' },
+        { id: 3, name: 'admin', display_name: 'Administrador de Agencia', is_system: true, description: 'Gestión integral de equipo, clientes y operaciones de agencia' },
+        { id: 4, name: 'gerente', display_name: 'Gerente de Operaciones', is_system: true, description: 'Supervisión de operaciones y autorización de expedientes' },
+        { id: 5, name: 'gerente_comercial', display_name: 'Gerente Comercial', is_system: true, description: 'Supervisión de ventas, leads y cierres comerciales' },
+        { id: 6, name: 'closer', display_name: 'Closer Comercial (CRM)', is_system: true, description: 'Atención directa de prospectos, clientes asignados y cierres' },
+        { id: 7, name: 'user', display_name: 'Asesor / Agente', is_system: true, description: 'Operación diaria, catálogo y atención al cliente' },
+      ];
+    }
+    // Para agencias: solo roles operativos de su equipo y custom roles creados en la agencia
+    return [
+      { id: 7, name: 'user', display_name: 'Asesor / Agente', is_system: true, description: 'Operación diaria, catálogo y atención al cliente' },
+    ];
+  }, [isSuperAdmin, isWhiteLabelAdmin]);
 
   // Load roles & available permissions
   const loadRolesData = async () => {
@@ -115,8 +145,13 @@ export const RolesPage: React.FC = () => {
         roleService.getAvailablePermissions().catch(() => []),
       ]);
 
-      const seenNames = new Set((rolesData || []).map((r: Role) => r.name));
-      const mergedRoles = [...(rolesData || [])];
+      let rawRoles = rolesData || [];
+      if (isAgencyLevel) {
+        rawRoles = rawRoles.filter((r: Role) => !excludedRolesForAgency.includes((r.name || '').toLowerCase()));
+      }
+
+      const seenNames = new Set(rawRoles.map((r: Role) => r.name));
+      const mergedRoles = [...rawRoles];
       DEFAULT_SYSTEM_ROLES.forEach((defRole) => {
         if (!seenNames.has(defRole.name)) {
           mergedRoles.push(defRole);
@@ -135,7 +170,7 @@ export const RolesPage: React.FC = () => {
 
   useEffect(() => {
     loadRolesData();
-  }, []);
+  }, [isAgencyLevel]);
 
   // User effective permissions resolution
   const userEffectivePerms = useMemo(() => {
@@ -364,6 +399,9 @@ export const RolesPage: React.FC = () => {
     const seen = new Set<string>();
 
     roles.forEach((r) => {
+      if (isAgencyLevel && excludedRolesForAgency.includes(r.name)) {
+        return;
+      }
       seen.add(r.name);
       list.push({
         name: r.name,
@@ -372,15 +410,19 @@ export const RolesPage: React.FC = () => {
       });
     });
 
-    const defaults = [
-      { name: 'user', display_name: 'User / Agente', is_system: true },
-      { name: 'admin', display_name: 'Administrador de Agencia', is_system: true },
-      { name: 'closer', display_name: 'Closer Comercial (CRM)', is_system: true },
-      { name: 'gerente', display_name: 'Gerente de Operaciones', is_system: true },
-      { name: 'gerente_comercial', display_name: 'Gerente Comercial', is_system: true },
-      { name: 'white_label_admin', display_name: 'Administrador Marca Blanca', is_system: true },
-      { name: 'super_admin', display_name: 'Super Administrador', is_system: true },
-    ];
+    const defaults = isAgencyLevel
+      ? [
+          { name: 'user', display_name: 'User / Agente', is_system: true },
+        ]
+      : [
+          { name: 'user', display_name: 'User / Agente', is_system: true },
+          { name: 'admin', display_name: 'Administrador de Agencia', is_system: true },
+          { name: 'closer', display_name: 'Closer Comercial (CRM)', is_system: true },
+          { name: 'gerente', display_name: 'Gerente de Operaciones', is_system: true },
+          { name: 'gerente_comercial', display_name: 'Gerente Comercial', is_system: true },
+          ...(isSuperAdmin ? [{ name: 'super_admin', display_name: 'Super Administrador', is_system: true }] : []),
+          ...(isSuperAdmin || isWhiteLabelAdmin ? [{ name: 'white_label_admin', display_name: 'Administrador Marca Blanca', is_system: true }] : []),
+        ];
 
     defaults.forEach((d) => {
       if (!seen.has(d.name)) {
@@ -389,7 +431,7 @@ export const RolesPage: React.FC = () => {
     });
 
     return list;
-  }, [roles]);
+  }, [roles, isAgencyLevel, isSuperAdmin, isWhiteLabelAdmin, excludedRolesForAgency]);
 
   const fetchTeamUsers = async () => {
     setLoadingTeamUsers(true);
