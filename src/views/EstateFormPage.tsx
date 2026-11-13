@@ -77,6 +77,8 @@ export const EstateFormPage: React.FC = () => {
   const [dragOver, setDragOver] = useState(false);
   const [locationsData, setLocationsData] = useState<LocationsHierarchyData | null>(null);
   const [loadingLocations, setLoadingLocations] = useState(false);
+  const [propertyTypes, setPropertyTypes] = useState<{ id: number; name: string }[]>([]);
+  const [loadingPropertyTypes, setLoadingPropertyTypes] = useState(true);
 
   const [form, setForm] = useState({
     title: '',
@@ -153,6 +155,27 @@ export const EstateFormPage: React.FC = () => {
     fetchLocations();
   }, [user?.agency?.country, user?.agency?.pais_id, isEditing]);
 
+  // Tipos de propiedad desde la BD (tabla estate_type)
+  useEffect(() => {
+    const fetchPropertyTypes = async () => {
+      try {
+        setLoadingPropertyTypes(true);
+        const types = await estateService.getCategoriesCatalog();
+        setPropertyTypes(
+          (Array.isArray(types) ? types : [])
+            .map((t: any) => ({ id: Number(t.id), name: String(t.name) }))
+            .filter((t) => t.id > 0 && t.name)
+        );
+      } catch (err) {
+        console.error('Error loading property types:', err);
+        toast.error('No se pudieron cargar los tipos de propiedad');
+      } finally {
+        setLoadingPropertyTypes(false);
+      }
+    };
+    fetchPropertyTypes();
+  }, []);
+
   useEffect(() => {
     if (!isEditing) return;
     const fetchEstate = async () => {
@@ -187,7 +210,7 @@ export const EstateFormPage: React.FC = () => {
           unit_price: e.unit_price || '',
           before_price_label: e.before_price_label || '',
           after_price_label: e.after_price_label || '',
-          property_type: e.property_type || '',
+          property_type: e.property_type ? String(e.property_type) : '',
           property_status: e.property_status || '2',
           status: e.status || '1',
           highlight: Boolean(e.highlight),
@@ -688,13 +711,14 @@ export const EstateFormPage: React.FC = () => {
                   <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <label className={labelCls}>Tipo de Propiedad <span className="text-rose-500">*</span></label>
-                      <select className={inputCls} value={form.property_type} onChange={e => handleChange('property_type', e.target.value)} required>
-                        <option value="">Seleccionar</option>
-                        <option value="1">Casa</option>
-                        <option value="2">Departamento</option>
-                        <option value="3">Terreno / Lote</option>
-                        <option value="4">Comercial</option>
-                        <option value="5">Oficina</option>
+                      <select className={inputCls} value={form.property_type} onChange={e => handleChange('property_type', e.target.value)} required disabled={loadingPropertyTypes}>
+                        <option value="">{loadingPropertyTypes ? 'Cargando tipos...' : 'Seleccionar'}</option>
+                        {propertyTypes.map(t => (
+                          <option key={t.id} value={String(t.id)}>{t.name}</option>
+                        ))}
+                        {form.property_type && !loadingPropertyTypes && !propertyTypes.some(t => String(t.id) === String(form.property_type)) && (
+                          <option value={form.property_type}>{`Tipo #${form.property_type} (no encontrado)`}</option>
+                        )}
                       </select>
                     </div>
                     <div>

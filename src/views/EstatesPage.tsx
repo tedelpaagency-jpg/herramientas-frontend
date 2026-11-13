@@ -910,7 +910,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                 </h4>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="text-[11px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 px-2 py-0.5 rounded uppercase">
-                                    {(estate as any).property_type_name || (estate as any).estate_type?.name || getEstateCategoryName((estate as any).property_type ?? estate.type)}
+                                    {(estate as any).property_type_name || (estate as any).estate_type?.name || categoriesList.find(c => Number(c.id) === Number((estate as any).property_type))?.name || getEstateCategoryName((estate as any).property_type ?? estate.type)}
                                   </span>
                                   <span className="text-xs text-slate-400">
                                     {estate.bedrooms ? `${estate.bedrooms} dorm.` : ''} {estate.area_sqm || estate.size ? `• ${estate.area_sqm || estate.size} m²` : ''}
@@ -1188,7 +1188,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
 
                         <div className="absolute top-3 left-3 flex items-center gap-2">
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-900/80 text-white backdrop-blur-md">
-                            {(estate as any).property_type_name || (estate as any).estate_type?.name || getEstateCategoryName((estate as any).property_type ?? estate.type)}
+                            {(estate as any).property_type_name || (estate as any).estate_type?.name || categoriesList.find(c => Number(c.id) === Number((estate as any).property_type))?.name || getEstateCategoryName((estate as any).property_type ?? estate.type)}
                           </span>
                         </div>
 
