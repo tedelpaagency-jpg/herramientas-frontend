@@ -399,7 +399,7 @@ export const PublicInmobiliariaHeader: React.FC<{
               <img
                 src={logoUrl}
                 alt={agency.name}
-                className="h-11 w-auto max-w-[190px] object-contain"
+                className="h-10 sm:h-11 w-auto max-w-[220px] object-contain"
               />
             ) : (
               <div className="flex items-center gap-2.5">

@@ -223,16 +223,45 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
     <header className={`header-area style-2 travel-agency3 ${state.scrollY > 20 ? "sticky" : ""}`} style={{ position: 'relative', zIndex: 1090, width: '100%', maxWidth: '100vw' }} suppressHydrationWarning>
       <div className="container-fluid d-flex flex-nowrap align-items-center justify-content-between px-3 px-sm-4 px-xl-5" style={{ width: '100%', maxWidth: '100%' }} suppressHydrationWarning>
         {/* 1. Lado Izquierdo: Logotipo */}
-        <div className="header-logo-area d-flex align-items-center" style={{ flex: '0 1 auto', minWidth: 0, overflow: 'hidden' }} suppressHydrationWarning>
-          <Link href="/" className="header-logo" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', minHeight: '62px', maxWidth: '100%', textDecoration: 'none' }}>
+        <div
+          className="header-logo-area d-flex align-items-center"
+          style={{
+            flex: '0 1 auto',
+            minWidth: 0,
+            maxWidth: 'calc(100% - 110px)',
+            overflow: 'visible',
+          }}
+          suppressHydrationWarning
+        >
+          <Link
+            href="/"
+            className="header-logo"
+            suppressHydrationWarning
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              minHeight: '52px',
+              width: 'auto',
+              maxWidth: '100%',
+              textDecoration: 'none',
+              overflow: 'visible',
+            }}
+          >
             {logoUrl ? (
               <img
                 src={logoUrl}
                 alt={agencyName || 'Logo Inmobiliaria'}
                 loading="eager"
                 decoding="sync"
-                className="max-h-[46px] sm:max-h-[64px] max-w-[170px] sm:max-w-[280px]"
-                style={{ width: 'auto', height: 'auto', objectFit: 'contain', transition: 'all 0.2s ease-in-out' }}
+                className="max-h-[40px] xs:max-h-[46px] sm:max-h-[60px] xl:max-h-[64px] max-w-[195px] xs:max-w-[230px] sm:max-w-[280px]"
+                style={{
+                  width: 'auto',
+                  height: 'auto',
+                  maxWidth: '100%',
+                  objectFit: 'contain',
+                  display: 'block',
+                  transition: 'all 0.2s ease-in-out',
+                }}
               />
             ) : agencyName ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
@@ -256,7 +285,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                 </div>
                 <span
                   style={{
-                    fontSize: '18px',
+                    fontSize: '17px',
                     fontWeight: 900,
                     color: '#0f172a',
                     lineHeight: 1.15,
@@ -264,7 +293,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: '140px',
+                    maxWidth: '180px',
                   }}
                 >
                   {agencyName}
@@ -303,7 +332,7 @@ const Header2Style3: React.FC<Header2Style3Props> = ({ agency }) => {
                     alt={agencyName || 'Logo Inmobiliaria'}
                     loading="eager"
                     decoding="sync"
-                    style={{ maxHeight: '46px', maxWidth: '190px', width: 'auto', height: 'auto', objectFit: 'contain' }}
+                    style={{ maxHeight: '44px', maxWidth: '220px', width: 'auto', height: 'auto', objectFit: 'contain' }}
                   />
                 ) : agencyName ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

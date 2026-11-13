@@ -4352,16 +4352,19 @@ header.style-2.sticky {
   }
 }
 header.style-2 .header-logo {
-  width: 120px;
+  width: auto;
+  max-width: 280px;
 }
 @media (max-width: 1399px) {
   header.style-2 .header-logo {
-    width: 110px;
+    width: auto;
+    max-width: 260px;
   }
 }
 @media (min-width: 992px) and (max-width: 1199px) {
   header.style-2 .header-logo {
-    width: 105px;
+    width: auto;
+    max-width: 240px;
   }
 }
 header.style-2 .logo-and-menu-area {

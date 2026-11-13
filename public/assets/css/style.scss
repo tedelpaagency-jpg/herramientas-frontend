@@ -5077,14 +5077,17 @@ header.style-2 {
   }
 
   .header-logo {
-    width: 120px;
+    width: auto;
+    max-width: 280px;
 
     @include xxl-down-device() {
-      width: 110px;
+      width: auto;
+      max-width: 260px;
     }
 
     @include lg-device() {
-      width: 105px;
+      width: auto;
+      max-width: 240px;
     }
   }
 
