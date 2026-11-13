@@ -420,12 +420,13 @@ export async function getLandingMetadata(
       const data = json?.data;
       if (data && (data.title || data.name)) {
         const landingTitle = data.title || data.name;
-        const brand = data.agency_name || data.white_label_name;
+        // Marca dueña de la landing (marca blanca o agencia que la creó), resuelta en backend
+        const brand = data.brand_name || data.agency_name || data.white_label_name;
         const fullTitle = brand ? `${landingTitle} | ${brand}` : landingTitle;
         const description =
           data.builder_schema?.meta_description ||
           `${landingTitle}. Regístrate o conoce más información en línea.`;
-        const rawImg = data.builder_schema?.hero_image || data.agency_logo;
+        const rawImg = data.builder_schema?.hero_image || data.brand_logo || data.agency_logo;
         const imageUrl = toAbsoluteMediaUrl(rawImg, host);
         // Favicon de la marca blanca o agencia que creó la landing (resuelto en backend)
         const faviconUrl = toAbsoluteMediaUrl(data.favicon || data.agency_logo, host);
