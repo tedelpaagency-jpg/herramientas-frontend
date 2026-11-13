@@ -53,31 +53,31 @@ export const RejectAppointmentModal: React.FC<RejectAppointmentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-slate-100 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
         <div className="p-6 pb-4">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2 text-rose-600">
+            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
               <AlertCircle className="w-5 h-5" />
-              <h3 className="text-lg font-bold text-slate-900">Rechazar Cita</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Rechazar Cita</h3>
             </div>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-sm text-slate-500 mt-2">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
             Indique la razón por la cual no es posible atender la cita con{' '}
-            <span className="font-semibold text-slate-700">{appointment.user?.name}</span> para el{' '}
-            <span className="font-semibold text-slate-700">{appointment.appointment_date}</span>.
+            <span className="font-semibold text-slate-700 dark:text-slate-200">{appointment.user?.name}</span> para el{' '}
+            <span className="font-semibold text-slate-700 dark:text-slate-200">{appointment.appointment_date}</span>.
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-2">
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
               Motivo del Rechazo
             </label>
             <textarea
@@ -85,22 +85,22 @@ export const RejectAppointmentModal: React.FC<RejectAppointmentModalProps> = ({
               onChange={(e) => setReason(e.target.value)}
               rows={4}
               placeholder="Ejemplo: Conflicto de horario imprevisto, favor seleccionar otra fecha..."
-              className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 resize-none"
+              className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 resize-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
               required
             />
 
             {error && (
-              <div className="mt-2 text-xs text-rose-600 font-medium">
+              <div className="mt-2 text-xs text-rose-600 dark:text-rose-400 font-medium">
                 {error}
               </div>
             )}
           </div>
 
-          <div className="p-4 px-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+          <div className="p-4 px-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-600 hover:text-slate-800 text-sm font-semibold rounded-xl"
+              className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-sm font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               Cancelar
             </button>

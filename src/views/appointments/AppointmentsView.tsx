@@ -286,8 +286,8 @@ export default function AppointmentsView() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Citas</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Citas</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Gestión y programación de consultas para {dateToYMD(currentDate)}.
           </p>
         </div>
@@ -297,10 +297,10 @@ export default function AppointmentsView() {
           {!isRegularUser && (
             <button
               onClick={() => setShowScheduleModal(true)}
-              className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl shadow-xs flex items-center gap-2 transition-all"
+              className="px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 font-semibold text-sm rounded-xl shadow-xs flex items-center gap-2 transition-all"
               title="Configurar horarios laborables"
             >
-              <Settings className="w-4 h-4 text-slate-500" />
+              <Settings className="w-4 h-4 text-slate-500 dark:text-slate-400" />
               <span className="hidden sm:inline">Mis Horarios</span>
             </button>
           )}
@@ -308,7 +308,7 @@ export default function AppointmentsView() {
           {/* + Nueva Cita Primary Button */}
           <button
             onClick={() => setShowNewModal(true)}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold text-sm rounded-xl shadow-sm flex items-center gap-2 transition-all"
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold text-sm rounded-xl shadow-sm flex items-center gap-2 transition-all shadow-blue-600/20"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>Nueva Cita</span>
@@ -321,25 +321,25 @@ export default function AppointmentsView() {
         {/* Left Section (Calendar & KPI Cards) */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-6">
           {/* Calendar Card Container */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs">
             {/* Calendar Header with View Switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               {/* Month Navigator */}
               <div className="flex items-center gap-3">
-                <span className="text-base sm:text-lg font-bold text-slate-900">
+                <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                   {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </span>
-                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white">
+                <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
                   <button
                     onClick={handlePrev}
-                    className="p-1.5 hover:bg-slate-100 text-slate-600 transition-colors border-r border-slate-200"
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors border-r border-slate-200 dark:border-slate-700"
                     title="Anterior"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
                     onClick={handleNext}
-                    className="p-1.5 hover:bg-slate-100 text-slate-600 transition-colors"
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
                     title="Siguiente"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -348,13 +348,13 @@ export default function AppointmentsView() {
               </div>
 
               {/* View Switcher Pills: Mes | Semana | Dia */}
-              <div className="inline-flex bg-slate-100/80 p-1 rounded-xl self-start sm:self-auto">
+              <div className="inline-flex bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl self-start sm:self-auto border border-transparent dark:border-slate-700/60">
                 <button
                   onClick={() => setViewMode('mes')}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     viewMode === 'mes'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
                   Mes
@@ -363,8 +363,8 @@ export default function AppointmentsView() {
                   onClick={() => setViewMode('semana')}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     viewMode === 'semana'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
                   Semana
@@ -373,8 +373,8 @@ export default function AppointmentsView() {
                   onClick={() => setViewMode('dia')}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     viewMode === 'dia'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
                   Dia
@@ -384,8 +384,8 @@ export default function AppointmentsView() {
 
             {/* SEMANA VIEW (Images 1 and 5) */}
             {viewMode === 'semana' && (
-              <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/20">
-                <div className="grid grid-cols-7 border-b border-slate-200 bg-white">
+              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/20 dark:bg-slate-950/40">
+                <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                   {weekDays.map((d, idx) => {
                     const isSelected = dateToYMD(d) === dateToYMD(currentDate);
                     const dayLabel = `${WEEKDAY_NAMES[d.getDay()]} ${d.getDate()}`;
@@ -393,8 +393,8 @@ export default function AppointmentsView() {
                       <div
                         key={idx}
                         onClick={() => setCurrentDate(d)}
-                        className={`py-3 text-center text-xs font-bold cursor-pointer transition-colors border-r last:border-r-0 border-slate-200 ${
-                          isSelected ? 'text-blue-600 bg-blue-50/30' : 'text-slate-600 hover:bg-slate-50'
+                        className={`py-3 text-center text-xs font-bold cursor-pointer transition-colors border-r last:border-r-0 border-slate-200 dark:border-slate-800 ${
+                          isSelected ? 'text-blue-600 dark:text-blue-400 bg-blue-50/30 dark:bg-blue-950/40' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                         }`}
                       >
                         {dayLabel}
@@ -403,7 +403,7 @@ export default function AppointmentsView() {
                   })}
                 </div>
 
-                <div className="grid grid-cols-7 min-h-[220px] bg-white divide-x divide-slate-200">
+                <div className="grid grid-cols-7 min-h-[220px] bg-white dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-800">
                   {weekDays.map((d, idx) => {
                     const ymd = dateToYMD(d);
                     const isSelected = ymd === dateToYMD(currentDate);
@@ -414,7 +414,7 @@ export default function AppointmentsView() {
                         key={idx}
                         onClick={() => setCurrentDate(d)}
                         className={`p-2 transition-all flex flex-col gap-1 cursor-pointer min-h-[200px] ${
-                          isSelected ? 'ring-2 ring-blue-600 ring-inset bg-blue-50/10' : 'hover:bg-slate-50/40'
+                          isSelected ? 'ring-2 ring-blue-600 ring-inset bg-blue-50/10 dark:bg-blue-950/20' : 'hover:bg-slate-50/40 dark:hover:bg-slate-800/30'
                         }`}
                       >
                         {dayAppointments.map(appt => (
@@ -445,8 +445,8 @@ export default function AppointmentsView() {
 
             {/* MES VIEW */}
             {viewMode === 'mes' && (
-              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/60 text-center py-2 text-xs font-bold text-slate-500">
+              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+                <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/60 text-center py-2 text-xs font-bold text-slate-500 dark:text-slate-400">
                   <span>DOM</span>
                   <span>LUN</span>
                   <span>MAR</span>
@@ -455,7 +455,7 @@ export default function AppointmentsView() {
                   <span>VIE</span>
                   <span>SÁB</span>
                 </div>
-                <div className="grid grid-cols-7 divide-x divide-y divide-slate-100">
+                <div className="grid grid-cols-7 divide-x divide-y divide-slate-100 dark:divide-slate-800">
                   {(() => {
                     const y = currentDate.getFullYear();
                     const m = currentDate.getMonth();
@@ -464,7 +464,7 @@ export default function AppointmentsView() {
                     const cells: React.ReactNode[] = [];
 
                     for (let i = 0; i < firstDay; i++) {
-                      cells.push(<div key={`pad-${i}`} className="min-h-[70px] bg-slate-50/30" />);
+                      cells.push(<div key={`pad-${i}`} className="min-h-[70px] bg-slate-50/30 dark:bg-slate-950/30" />);
                     }
 
                     for (let day = 1; day <= totalDays; day++) {
@@ -478,10 +478,10 @@ export default function AppointmentsView() {
                           key={`day-${day}`}
                           onClick={() => setCurrentDate(dayDate)}
                           className={`min-h-[70px] p-1.5 cursor-pointer transition-colors flex flex-col justify-between ${
-                            isSelected ? 'bg-blue-50/40 ring-1 ring-blue-600 inset-0' : 'hover:bg-slate-50'
+                            isSelected ? 'bg-blue-50/40 dark:bg-blue-950/40 ring-1 ring-blue-600 inset-0' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                           }`}
                         >
-                          <span className={`text-xs font-semibold ${isSelected ? 'text-blue-600 font-bold' : 'text-slate-700'}`}>
+                          <span className={`text-xs font-semibold ${isSelected ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                             {day}
                           </span>
                           <div className="space-y-1">
@@ -496,7 +496,7 @@ export default function AppointmentsView() {
                               </div>
                             ))}
                             {dayAppts.length > 2 && (
-                              <span className="text-[9px] text-slate-400 block font-bold">
+                              <span className="text-[9px] text-slate-400 dark:text-slate-500 block font-bold">
                                 +{dayAppts.length - 2} más
                               </span>
                             )}
@@ -513,22 +513,22 @@ export default function AppointmentsView() {
 
             {/* DIA VIEW */}
             {viewMode === 'dia' && (
-              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white p-4">
-                <div className="font-bold text-slate-800 text-sm mb-3">
+              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 p-4">
+                <div className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3">
                   Citas programadas para {dateToYMD(currentDate)}
                 </div>
                 {appointments.filter(a => a.appointment_date === dateToYMD(currentDate)).length === 0 ? (
-                  <div className="py-12 text-center text-slate-400 text-sm">
+                  <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
                     No hay citas programadas para este día.
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {appointments.filter(a => a.appointment_date === dateToYMD(currentDate)).map(a => (
-                      <div key={a.id} className="p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+                      <div key={a.id} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/40 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Clock className="w-4 h-4 text-slate-400" />
-                          <span className="font-bold text-sm text-slate-800">{formatTime(a.start_time)} - {formatTime(a.end_time)}</span>
-                          <span className="text-sm text-slate-600">con {a.admin?.name || a.user?.name}</span>
+                          <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                          <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{formatTime(a.start_time)} - {formatTime(a.end_time)}</span>
+                          <span className="text-sm text-slate-600 dark:text-slate-400">con {a.admin?.name || a.user?.name}</span>
                         </div>
                         {renderStatusBadge(a.status)}
                       </div>
@@ -542,26 +542,26 @@ export default function AppointmentsView() {
           {/* 3 Metric Cards (Images 1 and 5) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Card 1: EFICIENCIA */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     EFICIENCIA
                   </div>
-                  <div className="text-3xl font-extrabold text-slate-900 mt-2">
+                  <div className="text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
                     {kpis.efficiency}%
                   </div>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
                 </div>
               </div>
 
               {/* Dark Green Progress Bar */}
               <div className="mt-4">
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-emerald-700 rounded-full transition-all duration-500"
+                    className="h-full bg-emerald-700 dark:bg-emerald-500 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, Math.max(10, kpis.efficiency))}%` }}
                   />
                 </div>
@@ -569,43 +569,43 @@ export default function AppointmentsView() {
             </div>
 
             {/* Card 2: CITAS HOY */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     CITAS HOY
                   </div>
-                  <div className="text-3xl font-extrabold text-slate-900 mt-2">
+                  <div className="text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
                     {kpis.today_count}
                   </div>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                   <CalendarIcon className="w-5 h-5" />
                 </div>
               </div>
 
-              <div className="text-xs text-slate-400 mt-4">
+              <div className="text-xs text-slate-400 dark:text-slate-500 mt-4">
                 Para {kpis.current_date}
               </div>
             </div>
 
             {/* Card 3: PENDIENTES */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     PENDIENTES
                   </div>
-                  <div className="text-3xl font-extrabold text-amber-500 mt-2">
+                  <div className="text-3xl font-extrabold text-amber-500 dark:text-amber-400 mt-2">
                     {kpis.pending_count}
                   </div>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-500 dark:text-amber-400 flex items-center justify-center">
                   <Clock className="w-5 h-5" />
                 </div>
               </div>
 
-              <div className="text-xs text-slate-400 mt-4">
+              <div className="text-xs text-slate-400 dark:text-slate-500 mt-4">
                 Requieren confirmación ({MONTH_NAMES[currentDate.getMonth()]})
               </div>
             </div>
@@ -614,17 +614,19 @@ export default function AppointmentsView() {
 
         {/* Right Section: Próximas Citas Panel */}
         <div className="lg:col-span-5 xl:col-span-4">
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col">
             {/* Panel Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 text-base">Próximas Citas</h3>
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">Próximas Citas</h3>
               
               <div className="flex items-center gap-1.5 relative">
                 {/* Filter Icon Button */}
                 <button
                   onClick={() => setShowFilterDropdown(!showFilterDropdown)}
                   className={`p-2 rounded-xl transition-colors ${
-                    statusFilter !== 'all' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                    statusFilter !== 'all'
+                      ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'
+                      : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                   title="Filtrar por estado"
                 >
@@ -633,43 +635,43 @@ export default function AppointmentsView() {
 
                 {/* Filter Dropdown Popover */}
                 {showFilterDropdown && (
-                  <div className="absolute right-0 top-10 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 top-10 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
                     <button
                       onClick={() => { setStatusFilter('all'); setShowFilterDropdown(false); }}
-                      className={`w-full text-left px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 ${
-                        statusFilter === 'all' ? 'text-blue-600' : 'text-slate-700'
+                      className={`w-full text-left px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/80 ${
+                        statusFilter === 'all' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       Todas las citas
                     </button>
                     <button
                       onClick={() => { setStatusFilter('pending'); setShowFilterDropdown(false); }}
-                      className={`w-full text-left px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 ${
-                        statusFilter === 'pending' ? 'text-blue-600' : 'text-slate-700'
+                      className={`w-full text-left px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/80 ${
+                        statusFilter === 'pending' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       Pendientes
                     </button>
                     <button
                       onClick={() => { setStatusFilter('confirmed'); setShowFilterDropdown(false); }}
-                      className={`w-full text-left px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 ${
-                        statusFilter === 'confirmed' ? 'text-blue-600' : 'text-slate-700'
+                      className={`w-full text-left px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/80 ${
+                        statusFilter === 'confirmed' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       Confirmadas
                     </button>
                     <button
                       onClick={() => { setStatusFilter('rescheduled'); setShowFilterDropdown(false); }}
-                      className={`w-full text-left px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 ${
-                        statusFilter === 'rescheduled' ? 'text-blue-600' : 'text-slate-700'
+                      className={`w-full text-left px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/80 ${
+                        statusFilter === 'rescheduled' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       Reprogramadas
                     </button>
                     <button
                       onClick={() => { setStatusFilter('rejected'); setShowFilterDropdown(false); }}
-                      className={`w-full text-left px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 ${
-                        statusFilter === 'rejected' ? 'text-blue-600' : 'text-slate-700'
+                      className={`w-full text-left px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/80 ${
+                        statusFilter === 'rejected' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       Rechazadas
@@ -680,7 +682,7 @@ export default function AppointmentsView() {
                 {/* Export Icon Button */}
                 <button
                   onClick={handleExport}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="p-2 rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                   title="Exportar a CSV"
                 >
                   <Download className="w-4 h-4" />
@@ -691,24 +693,24 @@ export default function AppointmentsView() {
             {/* List or Empty State */}
             <div className="p-5 flex-1 min-h-[360px]">
               {loading ? (
-                <div className="py-24 flex flex-col items-center justify-center text-slate-400">
+                <div className="py-24 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
                   <span className="text-xs">Cargando citas...</span>
                 </div>
               ) : appointments.length === 0 ? (
                 /* Empty State (Pixel-matched with Image 1) */
                 <div className="py-16 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
+                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-4">
                     <CalendarIcon className="w-7 h-7" />
                   </div>
-                  <h4 className="font-bold text-slate-900 text-base">No hay citas</h4>
-                  <p className="text-xs text-slate-400 mt-1 max-w-[220px]">
+                  <h4 className="font-bold text-slate-900 dark:text-white text-base">No hay citas</h4>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-[220px]">
                     No tienes citas agendadas para este filtro.
                   </p>
                 </div>
               ) : (
                 /* Populated Appointments List (Pixel-matched with Image 5) */
-                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
                   {appointments.map((appt) => {
                     const initials = appt.admin?.name
                       ? appt.admin.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
@@ -717,7 +719,7 @@ export default function AppointmentsView() {
                     return (
                       <div
                         key={appt.id}
-                        className="p-4 rounded-xl border border-slate-200/90 hover:border-slate-300 transition-all bg-white relative group"
+                        className="p-4 rounded-xl border border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all bg-white dark:bg-slate-800/50 relative group"
                       >
                         {/* Card Header */}
                         <div className="flex items-start justify-between gap-2">
@@ -732,10 +734,10 @@ export default function AppointmentsView() {
                             </div>
 
                             <div>
-                              <div className="font-bold text-sm text-slate-900 leading-tight">
+                              <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
                                 {appt.admin?.name || 'Administrador'}
                               </div>
-                              <div className="text-xs text-slate-400 mt-0.5">
+                              <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                                 {appt.admin?.id || '12312'} • {appt.admin?.role || 'General'}
                               </div>
                             </div>
@@ -747,17 +749,17 @@ export default function AppointmentsView() {
 
                         {/* Modality & Reason Preview */}
                         {appt.notes && (
-                          <div className="text-xs text-slate-600 mt-2 bg-slate-50 p-2 rounded-lg line-clamp-2">
-                            <span className="font-semibold text-slate-700">Motivo: </span>
+                          <div className="text-xs text-slate-600 dark:text-slate-300 mt-2 bg-slate-50 dark:bg-slate-800/80 border border-transparent dark:border-slate-700/50 p-2 rounded-lg line-clamp-2">
+                            <span className="font-semibold text-slate-700 dark:text-slate-200">Motivo: </span>
                             {appt.notes}
                           </div>
                         )}
 
                         {/* Card Bottom: Time + Action Buttons */}
-                        <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
                           {/* Time with Clock Icon */}
-                          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-                            <Clock className="w-4 h-4 text-slate-400" />
+                          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                             <span>{formatTime(appt.start_time)}</span>
                           </div>
 
@@ -766,7 +768,7 @@ export default function AppointmentsView() {
                             {/* Reschedule Button (Pencil) */}
                             <button
                               onClick={() => setReschedulingAppt(appt)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                               title="Reprogramar cita"
                             >
                               <Edit className="w-4 h-4" />
@@ -775,7 +777,7 @@ export default function AppointmentsView() {
                             {/* Contact / WhatsApp Button (Phone) */}
                             <button
                               onClick={() => handleContact(appt)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors"
                               title="Contactar por WhatsApp / Teléfono"
                             >
                               <Phone className="w-4 h-4" />
@@ -787,7 +789,7 @@ export default function AppointmentsView() {
                                 e.stopPropagation();
                                 setActiveMenuId(activeMenuId === appt.id ? null : appt.id);
                               }}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                               title="Más opciones"
                             >
                               <MoreHorizontal className="w-4 h-4" />
@@ -795,11 +797,11 @@ export default function AppointmentsView() {
 
                             {/* Dropdown Menu */}
                             {activeMenuId === appt.id && (
-                              <div className="absolute right-0 bottom-8 w-44 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
+                              <div className="absolute right-0 bottom-8 w-44 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
                                 {appt.status !== 'confirmed' && (
                                   <button
                                     onClick={() => handleApprove(appt)}
-                                    className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 flex items-center gap-2"
+                                    className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 flex items-center gap-2"
                                   >
                                     <Check className="w-3.5 h-3.5" />
                                     <span>Aprobar Cita</span>
@@ -812,7 +814,7 @@ export default function AppointmentsView() {
                                       setActiveMenuId(null);
                                       setRejectingAppt(appt);
                                     }}
-                                    className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2"
+                                    className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 flex items-center gap-2"
                                   >
                                     <X className="w-3.5 h-3.5" />
                                     <span>Rechazar Cita</span>
@@ -824,7 +826,7 @@ export default function AppointmentsView() {
                                     setActiveMenuId(null);
                                     setReschedulingAppt(appt);
                                   }}
-                                  className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                  className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
                                 >
                                   <CalendarIcon className="w-3.5 h-3.5" />
                                   <span>Reprogramar</span>
@@ -832,7 +834,7 @@ export default function AppointmentsView() {
 
                                 <button
                                   onClick={() => handleSendReminder(appt)}
-                                  className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 flex items-center gap-2"
+                                  className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 flex items-center gap-2"
                                 >
                                   <Send className="w-3.5 h-3.5" />
                                   <span>Enviar Recordatorio</span>
@@ -849,10 +851,10 @@ export default function AppointmentsView() {
             </div>
 
             {/* Bottom Footer Link */}
-            <div className="border-t border-slate-100 p-3 text-center bg-slate-50/50">
+            <div className="border-t border-slate-100 dark:border-slate-800 p-3 text-center bg-slate-50/50 dark:bg-slate-800/40">
               <button
                 onClick={() => setStatusFilter('all')}
-                className="text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors"
+                className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 Ver todas las citas
               </button>

@@ -107,33 +107,33 @@ export const AdminScheduleModal: React.FC<AdminScheduleModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col" style={{ maxHeight: '90vh' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col" style={{ maxHeight: '90vh' }}>
         <div className="p-6 pb-4">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Configuración de Horarios</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Establezca los días y horas laborables disponibles para <span className="font-semibold text-slate-700">{adminName}</span>.
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Configuración de Horarios</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Establezca los días y horas laborables disponibles para <span className="font-semibold text-slate-700 dark:text-slate-200">{adminName}</span>.
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-6 py-2 border-t border-slate-100">
+        <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-6 py-2 border-t border-slate-100 dark:border-slate-800 custom-scrollbar">
           {loading ? (
-            <div className="py-16 flex flex-col items-center justify-center text-slate-400">
+            <div className="py-16 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
               <Loader2 className="w-7 h-7 animate-spin text-blue-600 mb-2" />
               <span className="text-sm">Cargando disponibilidad...</span>
             </div>
@@ -144,8 +144,8 @@ export const AdminScheduleModal: React.FC<AdminScheduleModalProps> = ({
                   key={day.day_of_week}
                   className={`p-3.5 rounded-xl border transition-all ${
                     day.is_active
-                      ? 'border-blue-200 bg-blue-50/20'
-                      : 'border-slate-200 bg-slate-50/50 opacity-70'
+                      ? 'border-blue-200 dark:border-blue-900/60 bg-blue-50/20 dark:bg-blue-950/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 opacity-70'
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -155,12 +155,12 @@ export const AdminScheduleModal: React.FC<AdminScheduleModalProps> = ({
                         id={`day-${day.day_of_week}`}
                         checked={day.is_active}
                         onChange={() => handleToggleDay(day.day_of_week)}
-                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        className="w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-700 focus:ring-blue-500 cursor-pointer"
                       />
                       <label
                         htmlFor={`day-${day.day_of_week}`}
                         className={`text-sm font-bold cursor-pointer ${
-                          day.is_active ? 'text-slate-800' : 'text-slate-400'
+                          day.is_active ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'
                         }`}
                       >
                         {DAY_NAMES[day.day_of_week]}
@@ -170,44 +170,44 @@ export const AdminScheduleModal: React.FC<AdminScheduleModalProps> = ({
                     {day.is_active ? (
                       <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 text-xs">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-slate-500">De:</span>
+                          <span className="text-slate-500 dark:text-slate-400">De:</span>
                           <input
                             type="time"
                             value={day.start_time}
                             onChange={(e) => handleUpdateField(day.day_of_week, 'start_time', e.target.value)}
-                            className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs"
+                            className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg text-xs"
                           />
                         </div>
 
                         <div className="flex items-center gap-1.5">
-                          <span className="text-slate-500">A:</span>
+                          <span className="text-slate-500 dark:text-slate-400">A:</span>
                           <input
                             type="time"
                             value={day.end_time}
                             onChange={(e) => handleUpdateField(day.day_of_week, 'end_time', e.target.value)}
-                            className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs"
+                            className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg text-xs"
                           />
                         </div>
 
                         <div className="flex items-center gap-1.5 col-span-2 sm:col-span-1">
-                          <span className="text-slate-500">Almuerzo:</span>
+                          <span className="text-slate-500 dark:text-slate-400">Almuerzo:</span>
                           <input
                             type="time"
                             value={day.break_start || ''}
                             onChange={(e) => handleUpdateField(day.day_of_week, 'break_start', e.target.value)}
-                            className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs w-20"
+                            className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg text-xs w-20"
                           />
-                          <span className="text-slate-400">-</span>
+                          <span className="text-slate-400 dark:text-slate-500">-</span>
                           <input
                             type="time"
                             value={day.break_end || ''}
                             onChange={(e) => handleUpdateField(day.day_of_week, 'break_end', e.target.value)}
-                            className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs w-20"
+                            className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg text-xs w-20"
                           />
                         </div>
                       </div>
                     ) : (
-                      <span className="text-xs text-slate-400 italic">No disponible (Día no laborable)</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500 italic">No disponible (Día no laborable)</span>
                     )}
                   </div>
                 </div>
@@ -216,24 +216,24 @@ export const AdminScheduleModal: React.FC<AdminScheduleModalProps> = ({
           )}
 
           {error && (
-            <div className="mt-3 p-3 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs">
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-xl text-xs">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="mt-3 p-3 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600" />
+            <div className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50 rounded-xl text-xs flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Horarios guardados exitosamente.</span>
             </div>
           )}
         </form>
 
-        <div className="p-4 px-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+        <div className="p-4 px-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-slate-600 hover:text-slate-800 text-sm font-semibold rounded-xl"
+            className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-sm font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             Cerrar
           </button>
