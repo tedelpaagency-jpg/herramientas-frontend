@@ -501,11 +501,16 @@ export function getPermissionModule(key: string): string {
 
   if (
     normalizedKey.startsWith('courses.') ||
+    normalizedKey.includes('course')
+  ) {
+    return 'Capacitación';
+  }
+
+  if (
     normalizedKey.startsWith('activities.') ||
-    normalizedKey.includes('course') ||
     normalizedKey.includes('activit')
   ) {
-    return 'Capacitación & Academia';
+    return 'Actividades';
   }
 
   if (
