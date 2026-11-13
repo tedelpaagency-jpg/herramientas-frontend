@@ -245,6 +245,31 @@ function PublicLandingContent() {
     };
   }, []);
 
+  // Favicon de la marca blanca o agencia que creó la landing.
+  // Se re-aplica si el branding global (useBranding) lo sobrescribe mientras la landing está abierta.
+  useEffect(() => {
+    const faviconUrl: string | undefined = landing?.favicon;
+    if (!faviconUrl || typeof document === 'undefined') return;
+
+    const apply = () => {
+      const links = Array.from(document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']"));
+      if (links.length === 0) {
+        const link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+        links.push(link);
+      }
+      links.forEach((link) => {
+        if (link.href !== faviconUrl) link.href = faviconUrl;
+      });
+    };
+
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, { subtree: true, childList: true, attributes: true, attributeFilter: ['href'] });
+    return () => observer.disconnect();
+  }, [landing?.favicon]);
+
   useEffect(() => {
     if (!rawId) {
       setLoading(false);

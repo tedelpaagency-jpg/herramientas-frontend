@@ -427,12 +427,13 @@ export async function getLandingMetadata(
           `${landingTitle}. Regístrate o conoce más información en línea.`;
         const rawImg = data.builder_schema?.hero_image || data.agency_logo;
         const imageUrl = toAbsoluteMediaUrl(rawImg, host);
-        const faviconUrl = toAbsoluteMediaUrl(data.agency_logo, host);
+        // Favicon de la marca blanca o agencia que creó la landing (resuelto en backend)
+        const faviconUrl = toAbsoluteMediaUrl(data.favicon || data.agency_logo, host);
 
         return {
           title: fullTitle,
           description,
-          icons: faviconUrl ? { icon: faviconUrl } : undefined,
+          icons: faviconUrl ? { icon: faviconUrl, apple: faviconUrl } : undefined,
           openGraph: {
             title: fullTitle,
             description,
