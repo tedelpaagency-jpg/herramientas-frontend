@@ -477,8 +477,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (basePerms.some((p) => p.startsWith('hunter') || p === 'view_hunter')) {
       macroExpanded.push('view_hunter', 'hunter.view', 'hunter');
     }
-    if (basePerms.some((p) => p.startsWith('courses') || p.startsWith('activities'))) {
+    if (basePerms.some((p) => (p.startsWith('activities') && p !== 'activities.my_view') || p === 'manage_activities' || p === 'view_activities')) {
       macroExpanded.push('activities.view', 'activities.create', 'activities.update', 'activities.delete', 'activities.assign', 'activities.resources', 'activities.progress');
+    }
+    if (basePerms.some((p) => (p.startsWith('courses') && p !== 'courses.my_view') || p === 'manage_courses' || p === 'view_courses')) {
+      macroExpanded.push('courses.view', 'courses.create', 'courses.edit', 'courses.update', 'courses.delete', 'courses.assign', 'courses.resources');
     }
     if (basePerms.some((p) => p.startsWith('roles') || p === 'manage_roles' || p.startsWith('permission_groups'))) {
       macroExpanded.push('roles.manage', 'manage_roles', 'roles.view', 'view_roles', 'roles', 'permission_groups.view', 'permission_groups.create', 'permission_groups.edit', 'permission_groups.delete', 'permission_groups.manage');

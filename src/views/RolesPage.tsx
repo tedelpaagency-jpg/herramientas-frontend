@@ -159,7 +159,10 @@ export const RolesPage: React.FC = () => {
       });
 
       setRoles(mergedRoles);
-      setAvailablePermissions(permsData || []);
+      const uniquePerms = (permsData || []).filter((p: Permission, idx: number, arr: Permission[]) => 
+        arr.findIndex((x) => (x.name || '').toLowerCase().trim() === (p.name || '').toLowerCase().trim()) === idx
+      );
+      setAvailablePermissions(uniquePerms);
     } catch (err) {
       console.error('Error al cargar roles:', err);
       setRoles(DEFAULT_SYSTEM_ROLES);
@@ -235,8 +238,13 @@ export const RolesPage: React.FC = () => {
   const availableGroupedPermissions = useMemo(() => {
     const groups: Record<string, Permission[]> = {};
     const q = modalPermSearch.toLowerCase().trim();
+    const seenNames = new Set<string>();
 
     availablePermissions.forEach((perm) => {
+      const pName = (perm.name || '').trim().toLowerCase();
+      if (!pName || seenNames.has(pName)) return;
+      seenNames.add(pName);
+
       const mod = getPermissionModule(perm.name);
       const label = getPermissionLabel(perm.name).toLowerCase();
       const desc = getPermissionDescription(perm.name).toLowerCase();
