@@ -10,11 +10,24 @@ import {
 import activityService from '../services/activityService';
 import { ActivityGroup } from '../types/activity';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 import ActivityGroupAssignmentsModal from './ActivityGroupAssignmentsModal';
 import ActivityGroupProgressModal from './ActivityGroupProgressModal';
 
 export const ActivitiesPage: React.FC = () => {
   const router = useRouter();
+  const { user, hasPermission } = useAuth();
+
+  const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
+  const isWhiteLabelAdmin = user?.role === 'white_label_admin' || user?.roles?.some((r: any) => r.name === 'white_label_admin');
+  const isAgencyAdmin = user?.role === 'admin' || user?.role === 'agency_admin' || user?.role === 'gerente' || user?.role === 'gerente_comercial';
+
+  const canCreate = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['activities.create', 'activities.manage']);
+  const canEdit = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['activities.create', 'activities.edit', 'activities.update', 'activities.manage']);
+  const canDelete = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['activities.delete', 'activities.manage']);
+  const canAssign = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['activities.assign', 'activities.manage']);
+  const canViewProgress = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['activities.progress', 'activities.view', 'activities.manage']);
+
   const [groups, setGroups] = useState<ActivityGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -118,13 +131,15 @@ export const ActivitiesPage: React.FC = () => {
           </p>
         </div>
 
-        <Link
-          href="/activities/create"
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-xs hover:from-blue-500 hover:to-indigo-500 transition-all shadow-lg shadow-blue-600/25 active:scale-95 shrink-0"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>Crear Grupo de Actividades</span>
-        </Link>
+        {canCreate && (
+          <Link
+            href="/activities/create"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-xs hover:from-blue-500 hover:to-indigo-500 transition-all shadow-lg shadow-blue-600/25 active:scale-95 shrink-0"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Crear Grupo de Actividades</span>
+          </Link>
+        )}
       </div>
 
       {/* Filters & Search */}
@@ -184,7 +199,7 @@ export const ActivitiesPage: React.FC = () => {
                 : 'Comienza creando tu primer grupo de actividades para asignar a tu equipo.'}
             </p>
           </div>
-          {!search && !statusFilter && (
+          {!search && !statusFilter && canCreate && (
             <Link
               href="/activities/create"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-500 transition-colors shadow-md shadow-blue-600/20"
@@ -256,38 +271,46 @@ export const ActivitiesPage: React.FC = () => {
                 {/* Card Actions */}
                 <div className="pt-3 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800/80">
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setAssignmentGroup(grp)}
-                      className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      title="Asignar usuarios"
-                    >
-                      <Users className="w-4 h-4 text-indigo-600" />
-                    </button>
+                    {canAssign && (
+                      <button
+                        onClick={() => setAssignmentGroup(grp)}
+                        className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Asignar usuarios"
+                      >
+                        <Users className="w-4 h-4 text-indigo-600" />
+                      </button>
+                    )}
 
-                    <button
-                      onClick={() => setProgressGroup(grp)}
-                      className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      title="Ver progreso de alumnos"
-                    >
-                      <BarChart3 className="w-4 h-4 text-emerald-600" />
-                    </button>
+                    {canViewProgress && (
+                      <button
+                        onClick={() => setProgressGroup(grp)}
+                        className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Ver progreso de alumnos"
+                      >
+                        <BarChart3 className="w-4 h-4 text-emerald-600" />
+                      </button>
+                    )}
 
-                    <Link
-                      href={`/activities/${grp.id}/edit`}
-                      className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      title="Editar grupo"
-                    >
-                      <Edit className="w-4 h-4 text-blue-600" />
-                    </Link>
+                    {canEdit && (
+                      <Link
+                        href={`/activities/${grp.id}/edit`}
+                        className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Editar grupo"
+                      >
+                        <Edit className="w-4 h-4 text-blue-600" />
+                      </Link>
+                    )}
                   </div>
 
-                  <button
-                    onClick={() => setDeleteGroupId(grp.id)}
-                    className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                    title="Eliminar grupo"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {canDelete && (
+                    <button
+                      onClick={() => setDeleteGroupId(grp.id)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                      title="Eliminar grupo"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

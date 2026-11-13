@@ -341,16 +341,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'CURSOS & CAPACITACIÓN',
       items: [
-        { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap, permission: ['courses.view', 'courses.create', 'courses.manage'] },
-        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: ['courses.view'] },
+        { label: 'Cursos & Capacitación', path: '/courses', icon: GraduationCap, permission: ['courses.view', 'courses.create', 'courses.edit', 'courses.manage'] },
+        { label: 'Mis Cursos', path: '/my-courses', icon: BookOpen, permission: ['courses.my_view', 'courses.view', 'courses.create', 'courses.manage'] },
         { label: 'Gamificación & Puntos', path: '/gamification', icon: Trophy, permission: ['view_spin_wheel', 'view_gamification', 'spin_wheel.view', 'gamification.view'] },
       ],
     },
     {
       title: 'MÓDULO DE ACTIVIDADES',
       items: [
-        { label: 'Grupos de Actividades', path: '/activities', icon: CheckSquare, permission: ['activities.view', 'activities.create', 'activities.update'] },
-        { label: 'Mis Actividades', path: '/my-activities', icon: FileText, permission: ['activities.view'] },
+        { label: 'Grupos de Actividades', path: '/activities', icon: CheckSquare, permission: ['activities.view', 'activities.create', 'activities.edit', 'activities.update', 'activities.manage'] },
+        { label: 'Mis Actividades', path: '/my-activities', icon: FileText, permission: ['activities.my_view', 'activities.view', 'activities.create', 'activities.manage'] },
       ],
     },
     {

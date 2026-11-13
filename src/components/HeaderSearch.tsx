@@ -296,7 +296,7 @@ const SYSTEM_MODULES: ModuleItem[] = [
     path: '/courses',
     icon: GraduationCap,
     category: 'CURSOS & CAPACITACIÓN',
-    permission: ['courses.view', 'courses.create', 'courses.manage'],
+    permission: ['courses.view', 'courses.create', 'courses.edit', 'courses.manage'],
     keywords: ['cursos', 'capacitacion', 'academia', 'lecciones', 'estudiantes', 'clases'],
   },
   {
@@ -305,7 +305,7 @@ const SYSTEM_MODULES: ModuleItem[] = [
     path: '/my-courses',
     icon: BookOpen,
     category: 'CURSOS & CAPACITACIÓN',
-    permission: ['courses.view'],
+    permission: ['courses.my_view', 'courses.view', 'courses.create', 'courses.manage'],
     keywords: ['mis cursos', 'mis clases', 'mis capacitaciones'],
   },
   {
@@ -323,7 +323,7 @@ const SYSTEM_MODULES: ModuleItem[] = [
     path: '/activities',
     icon: CheckSquare,
     category: 'ACTIVIDADES',
-    permission: ['activities.view', 'activities.create', 'activities.update'],
+    permission: ['activities.view', 'activities.create', 'activities.edit', 'activities.update', 'activities.manage'],
     keywords: ['actividades', 'grupos', 'tareas equipo', 'evaluaciones'],
   },
   {
@@ -332,7 +332,7 @@ const SYSTEM_MODULES: ModuleItem[] = [
     path: '/my-activities',
     icon: FileText,
     category: 'ACTIVIDADES',
-    permission: ['activities.view'],
+    permission: ['activities.my_view', 'activities.view', 'activities.create', 'activities.manage'],
     keywords: ['mis actividades', 'mis tareas'],
   },
 

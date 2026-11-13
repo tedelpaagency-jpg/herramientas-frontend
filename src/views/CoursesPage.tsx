@@ -10,12 +10,26 @@ import {
 import courseService from '../services/courseService';
 import { Course } from '../types/course';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 import CourseResourcesModal from './CourseResourcesModal';
 import CourseAssignmentsModal from './CourseAssignmentsModal';
 import CourseStudentProgressModal from './CourseStudentProgressModal';
 
 export const CoursesPage: React.FC = () => {
   const router = useRouter();
+  const { user, hasPermission } = useAuth();
+
+  const isSuperAdmin = user?.role === 'super_admin' || user?.roles?.some((r: any) => r.name === 'super_admin');
+  const isWhiteLabelAdmin = user?.role === 'white_label_admin' || user?.roles?.some((r: any) => r.name === 'white_label_admin');
+  const isAgencyAdmin = user?.role === 'admin' || user?.role === 'agency_admin' || user?.role === 'gerente' || user?.role === 'gerente_comercial';
+
+  const canCreate = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['courses.create', 'courses.manage']);
+  const canEdit = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['courses.create', 'courses.edit', 'courses.update', 'courses.manage']);
+  const canDelete = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['courses.delete', 'courses.manage']);
+  const canAssign = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['courses.assign', 'courses.manage']);
+  const canResources = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['courses.resources', 'courses.manage', 'courses.create']);
+  const canViewProgress = isSuperAdmin || isWhiteLabelAdmin || isAgencyAdmin || hasPermission(['courses.view', 'courses.manage', 'courses.assign']);
+
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -121,15 +135,17 @@ export const CoursesPage: React.FC = () => {
             Crea cursos, adjunta recursos educativos (videos y PDFs) y asigna colaboradores para dar seguimiento a su aprendizaje.
           </p>
         </div>
-        <div className="relative z-10 flex items-center gap-3">
-          <Link
-            href="/courses/create"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/30 active:scale-95"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Nuevo Curso</span>
-          </Link>
-        </div>
+        {canCreate && (
+          <div className="relative z-10 flex items-center gap-3">
+            <Link
+              href="/courses/create"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/30 active:scale-95"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Nuevo Curso</span>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Filter and Search Toolbar */}
@@ -249,13 +265,15 @@ export const CoursesPage: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setProgressCourse(course)}
-                      title="Ver Avance de Alumnos"
-                      className="p-2 rounded-xl text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors"
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                    </button>
+                    {canViewProgress && (
+                      <button
+                        onClick={() => setProgressCourse(course)}
+                        title="Ver Avance de Alumnos"
+                        className="p-2 rounded-xl text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors"
+                      >
+                        <BarChart3 className="w-4 h-4" />
+                      </button>
+                    )}
                     <Link
                       href={`/courses/${course.id}/preview`}
                       title="Vista Previa del Curso (Simulación Estudiante)"
@@ -263,34 +281,42 @@ export const CoursesPage: React.FC = () => {
                     >
                       <Eye className="w-4 h-4" />
                     </Link>
-                    <button
-                      onClick={() => setResourceCourse(course)}
-                      title="Administrar Recursos"
-                      className="p-2 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors"
-                    >
-                      <FolderOpen className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setAssignmentCourse(course)}
-                      title="Administrar Asignaciones"
-                      className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors"
-                    >
-                      <Users className="w-4 h-4" />
-                    </button>
-                    <Link
-                      href={`/courses/${course.id}/edit`}
-                      title="Editar Curso"
-                      className="p-2 rounded-xl text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-colors"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Link>
-                    <button
-                      onClick={() => setDeleteCourseId(course.id)}
-                      title="Eliminar Curso (Soft Delete)"
-                      className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {canResources && (
+                      <button
+                        onClick={() => setResourceCourse(course)}
+                        title="Administrar Recursos"
+                        className="p-2 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors"
+                      >
+                        <FolderOpen className="w-4 h-4" />
+                      </button>
+                    )}
+                    {canAssign && (
+                      <button
+                        onClick={() => setAssignmentCourse(course)}
+                        title="Administrar Asignaciones"
+                        className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors"
+                      >
+                        <Users className="w-4 h-4" />
+                      </button>
+                    )}
+                    {canEdit && (
+                      <Link
+                        href={`/courses/${course.id}/edit`}
+                        title="Editar Curso"
+                        className="p-2 rounded-xl text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Link>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => setDeleteCourseId(course.id)}
+                        title="Eliminar Curso (Soft Delete)"
+                        className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

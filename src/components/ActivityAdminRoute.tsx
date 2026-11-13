@@ -62,7 +62,9 @@ export const ActivityAdminRoute: React.FC<{ children: React.ReactNode }> = ({ ch
   const hasActivityPermission =
     hasPermission('activities.view') ||
     hasPermission('activities.create') ||
+    hasPermission('activities.edit') ||
     hasPermission('activities.update') ||
+    hasPermission('activities.manage') ||
     hasPermission('activities.assign');
 
   if (!isSuperAdmin && !isGerenteComercial && !isWhiteLabelAdmin && !isAgencyAdmin && !hasActivityPermission) {

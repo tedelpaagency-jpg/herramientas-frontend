@@ -56,7 +56,10 @@ export const CourseAdminRoute: React.FC<{ children: React.ReactNode }> = ({ chil
   const hasCoursePermission =
     hasPermission('courses.view') ||
     hasPermission('courses.create') ||
+    hasPermission('courses.edit') ||
     hasPermission('courses.update') ||
+    hasPermission('courses.manage') ||
+    hasPermission('courses.assign') ||
     hasPermission('courses.resources');
 
   if (!isSuperAdmin && !isGerenteComercial && !isWhiteLabelAdmin && !hasCoursePermission) {

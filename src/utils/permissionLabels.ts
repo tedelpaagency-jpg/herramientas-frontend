@@ -169,9 +169,14 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     description: 'Acceso al organizador y gestor de tareas',
     module: 'General & Tareas',
   },
+  'courses.my_view': {
+    label: 'Ver Mis Cursos Asignados',
+    description: 'Permite al usuario/estudiante consultar sus cursos asignados y completar lecciones',
+    module: 'Capacitación',
+  },
   'courses.view': {
-    label: 'Módulo de Capacitación & Cursos',
-    description: 'Acceso a la academia digital y material de formación',
+    label: 'Ver Cursos de la Agencia',
+    description: 'Acceso a la academia digital y catálogo de cursos de la agencia',
     module: 'Capacitación',
   },
   'courses.create': {
@@ -179,8 +184,13 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     description: 'Permite agregar nuevos programas educativos y módulos de formación',
     module: 'Capacitación',
   },
-  'courses.update': {
+  'courses.edit': {
     label: 'Editar Cursos & Contenidos',
+    description: 'Permite modificar temas, duraciones e información de cursos',
+    module: 'Capacitación',
+  },
+  'courses.update': {
+    label: 'Actualizar Cursos',
     description: 'Permite modificar temas, duraciones e información de cursos',
     module: 'Capacitación',
   },
@@ -199,9 +209,14 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     description: 'Permite adjuntar archivos en PDF, video y material descargable',
     module: 'Capacitación',
   },
+  'activities.my_view': {
+    label: 'Ver Mis Actividades Asignadas',
+    description: 'Permite al usuario consultar y completar las actividades que le han sido asignadas',
+    module: 'Actividades',
+  },
   'activities.view': {
-    label: 'Módulo de Actividades & Tareas',
-    description: 'Acceso a consultar grupos de actividades, asignaciones y entregas de estudiantes',
+    label: 'Ver Actividades de la Agencia',
+    description: 'Acceso a consultar grupos de actividades y tareas creadas en la agencia',
     module: 'Actividades',
   },
   'activities.create': {
@@ -209,8 +224,13 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     description: 'Permite diseñar nuevos grupos de actividades, cuestionarios y tareas formativas',
     module: 'Actividades',
   },
-  'activities.update': {
+  'activities.edit': {
     label: 'Editar Actividades & Tareas',
+    description: 'Permite modificar consignas, fechas límite y configuración de actividades',
+    module: 'Actividades',
+  },
+  'activities.update': {
+    label: 'Actualizar Actividades & Tareas',
     description: 'Permite modificar consignas, fechas límite y configuración de actividades',
     module: 'Actividades',
   },
@@ -220,8 +240,8 @@ export const PERMISSION_LABELS: Record<string, { label: string; description: str
     module: 'Actividades',
   },
   'activities.assign': {
-    label: 'Asignar Actividades a Estudiantes',
-    description: 'Permite asignar actividades a usuarios, agencias o cursos específicos',
+    label: 'Asignar Actividades a Usuarios',
+    description: 'Permite asignar actividades a usuarios, agentes o miembros del equipo',
     module: 'Actividades',
   },
   'activities.resources': {
