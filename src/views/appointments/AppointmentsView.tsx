@@ -30,6 +30,17 @@ export default function AppointmentsView() {
   const { user, currentAgency } = useAuth();
   const agencyId = currentAgency?.id || user?.agency_id || undefined;
 
+  // Determinar si es usuario estándar (rol 'user' o cliente)
+  const isRegularUser = useMemo(() => {
+    if (!user) return false;
+    const role = (user.role || '').toLowerCase();
+    const adminRoles = ['admin', 'agency_admin', 'agencia_admin', 'gerente', 'gerente_comercial', 'super_admin'];
+    if (adminRoles.includes(role)) return false;
+    const hasAdminRole = user.roles?.some((r: any) => adminRoles.includes((r.name || '').toLowerCase()));
+    if (hasAdminRole) return false;
+    return true;
+  }, [user]);
+
   // View state
   const [viewMode, setViewMode] = useState<'mes' | 'semana' | 'dia'>('semana');
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
@@ -282,15 +293,17 @@ export default function AppointmentsView() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Admin Schedule Settings Button */}
-          <button
-            onClick={() => setShowScheduleModal(true)}
-            className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl shadow-xs flex items-center gap-2 transition-all"
-            title="Configurar horarios laborables"
-          >
-            <Settings className="w-4 h-4 text-slate-500" />
-            <span className="hidden sm:inline">Mis Horarios</span>
-          </button>
+          {/* Admin Schedule Settings Button (Solo para administradores / asesores) */}
+          {!isRegularUser && (
+            <button
+              onClick={() => setShowScheduleModal(true)}
+              className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl shadow-xs flex items-center gap-2 transition-all"
+              title="Configurar horarios laborables"
+            >
+              <Settings className="w-4 h-4 text-slate-500" />
+              <span className="hidden sm:inline">Mis Horarios</span>
+            </button>
+          )}
 
           {/* + Nueva Cita Primary Button */}
           <button

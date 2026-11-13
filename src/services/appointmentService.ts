@@ -103,10 +103,11 @@ export const appointmentService = {
     };
   },
 
-  getAdmins: async (agencyId?: number, q?: string): Promise<AppointmentUser[]> => {
+  getAdmins: async (agencyId?: number, q?: string, onlyAdmins?: boolean): Promise<AppointmentUser[]> => {
     const params: Record<string, any> = {};
     if (agencyId) params.agency_id = agencyId;
     if (q) params.q = q;
+    if (onlyAdmins) params.only_admins = true;
     const res = await apiClient.get('/v1/appointments/admins', { params });
     return res.data.data;
   },

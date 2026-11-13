@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { 
   X, Search, ChevronLeft, ChevronRight, ArrowRight, ArrowLeft, 
   Check, Calendar as CalendarIcon, Clock, Info, Video, Building2, MapPin, Loader2
@@ -32,6 +33,18 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   agencyId
 }) => {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const { user } = useAuth();
+
+  // Si el usuario autenticado tiene rol 'user' (o es cliente), en el formulario solo le deben salir los admins de la agencia
+  const isRegularUser = useMemo(() => {
+    if (!user) return false;
+    const role = (user.role || '').toLowerCase();
+    const adminRoles = ['admin', 'agency_admin', 'agencia_admin', 'gerente', 'gerente_comercial', 'super_admin'];
+    if (adminRoles.includes(role)) return false;
+    const hasAdminRoleInList = user.roles?.some((r: any) => adminRoles.includes((r.name || '').toLowerCase()));
+    if (hasAdminRoleInList) return false;
+    return true;
+  }, [user]);
 
   // Step 1: Admin Selection
   const [admins, setAdmins] = useState<AppointmentUser[]>([]);
@@ -73,7 +86,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   const loadAdmins = async () => {
     try {
       setLoadingAdmins(true);
-      const data = await appointmentService.getAdmins(agencyId);
+      const data = await appointmentService.getAdmins(agencyId, undefined, isRegularUser);
       setAdmins(data || []);
     } catch (err: any) {
       console.error('Error fetching admins:', err);
@@ -85,14 +98,26 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   // Filter admins
   const filteredAdmins = useMemo(() => {
     const q = adminSearch.trim().toLowerCase();
-    if (!q) return admins;
-    return admins.filter(a => 
+    const adminRoles = ['admin', 'agency_admin', 'agencia_admin', 'gerente', 'gerente_comercial', 'super_admin'];
+    const nonAdminRoles = ['agent', 'agente', 'agencia_ejecutivo', 'closer', 'closers', 'hunter', 'user', 'cliente', 'client', 'supplier', 'proveedor'];
+
+    let list = admins;
+    if (isRegularUser) {
+      // Como user, en el formulario solo le deben salir los admins de la agencia, no los otros agentes
+      list = list.filter(a => {
+        const r = (a.role || '').toLowerCase();
+        return adminRoles.includes(r) || !nonAdminRoles.includes(r);
+      });
+    }
+
+    if (!q) return list;
+    return list.filter(a => 
       a.name.toLowerCase().includes(q) ||
       a.email.toLowerCase().includes(q) ||
       String(a.id).includes(q) ||
       (a.role && a.role.toLowerCase().includes(q))
     );
-  }, [admins, adminSearch]);
+  }, [admins, adminSearch, isRegularUser]);
 
   // Load slots when admin or date changes in Step 2
   useEffect(() => {
@@ -238,7 +263,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
           <div className="mt-5">
             <div className="flex justify-between text-xs font-semibold tracking-wider uppercase mb-2">
               <span className={currentStep === 1 ? 'text-blue-600' : 'text-slate-400'}>
-                ADMIN / ASESOR
+                {isRegularUser ? 'ADMINISTRADOR' : 'ADMIN / ASESOR'}
               </span>
               <span className={currentStep === 2 ? 'text-blue-600' : 'text-slate-400'}>
                 FECHA Y HORA
@@ -265,7 +290,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
           {currentStep === 1 && (
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Buscar Admin / Asesor
+                {isRegularUser ? 'Buscar Administrador de la Agencia' : 'Buscar Admin / Asesor'}
               </label>
 
               <div className="flex items-center gap-2 mb-4">
@@ -275,7 +300,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                     type="text"
                     value={adminSearch}
                     onChange={(e) => setAdminSearch(e.target.value)}
-                    placeholder="Nombre, ID o email..."
+                    placeholder={isRegularUser ? "Nombre o email del administrador..." : "Nombre, ID o email..."}
                     className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
                   />
                   {adminSearch && (
@@ -296,11 +321,13 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               {loadingAdmins ? (
                 <div className="py-12 flex flex-col items-center justify-center text-slate-400">
                   <Loader2 className="w-7 h-7 animate-spin text-blue-600 mb-2" />
-                  <span className="text-sm">Cargando personal...</span>
+                  <span className="text-sm">Cargando administradores...</span>
                 </div>
               ) : filteredAdmins.length === 0 ? (
                 <div className="py-10 text-center text-slate-400 text-sm">
-                  No se encontraron administradores o asesores disponibles.
+                  {isRegularUser
+                    ? 'No se encontraron administradores disponibles en esta agencia.'
+                    : 'No se encontraron administradores o asesores disponibles.'}
                 </div>
               ) : (
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -333,7 +360,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                           <div>
                             <div className="text-sm font-bold text-slate-800">{admin.name}</div>
                             <div className="text-xs text-slate-400 mt-0.5">
-                              ID: {admin.id} • {admin.role || 'Administrador'}
+                              ID: {admin.id} • {['admin', 'agency_admin', 'agencia_admin', 'gerente', 'gerente_comercial', 'super_admin'].includes((admin.role || '').toLowerCase()) ? 'Administrador' : (admin.role || 'Administrador')}
                             </div>
                           </div>
                         </div>
