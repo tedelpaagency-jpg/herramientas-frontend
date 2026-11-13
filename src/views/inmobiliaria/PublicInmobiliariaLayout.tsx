@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import { getEstateCategoryName } from '@/utils/estateCategories';
 import {
   Building2,
   Phone,
@@ -58,6 +59,18 @@ export const PROPERTY_TYPE_LABELS: Record<number, string> = {
   5: 'Oficina Corporativa',
 };
 
+/**
+ * Nombre del tipo de propiedad según la BD (estate_type).
+ * Usa property_type_name del backend; si falta, el catálogo espejo de estate_type.
+ */
+export const getPublicEstateTypeLabel = (estate: PublicEstateItem, fallback = 'Propiedad'): string => {
+  if (estate.property_type_name && estate.property_type_name.trim() !== '') {
+    return estate.property_type_name;
+  }
+  const name = getEstateCategoryName(estate.property_type);
+  return name && name !== 'Inmueble' ? name : fallback;
+};
+
 export const getEstatePrimaryImage = (estate: PublicEstateItem): string => {
   if (estate.image && typeof estate.image === 'string') {
     return estate.image;
@@ -79,7 +92,7 @@ export const PublicPropertyCard: React.FC<{
 }> = ({ estate, currency = 'USD', primaryColor = '#2067F5', domainParam }) => {
   const isRent = Number(estate.property_status) === 1;
   const statusLabel = isRent ? 'En Alquiler' : 'En Venta';
-  const typeLabel = PROPERTY_TYPE_LABELS[Number(estate.property_type)] || 'Propiedad';
+  const typeLabel = getPublicEstateTypeLabel(estate, 'Propiedad');
   const imageUrl = getEstatePrimaryImage(estate);
   const priceFormatted = Number(estate.price || 0).toLocaleString('en-US');
   const detailHref = `/properties/${encodeURIComponent(estate.slug || String(estate.id))}${

@@ -51,7 +51,7 @@ import PublicPortalLoader from '@/components/inmobiliaria/PublicPortalLoader';
 import { EstateImageLightboxModal } from '@/components/EstateImageLightboxModal';
 import {
   getEstatePrimaryImage,
-  PROPERTY_TYPE_LABELS,
+  getPublicEstateTypeLabel,
   PublicPropertyCard,
   PublicInmobiliariaFooter,
 } from './PublicInmobiliariaLayout';
@@ -443,7 +443,7 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   }
 
   const statusLabel = isRent ? 'En Alquiler' : 'En Venta';
-  const typeLabel = PROPERTY_TYPE_LABELS[Number(estate.property_type)] || 'Inmueble';
+  const typeLabel = getPublicEstateTypeLabel(estate, 'Inmueble');
   const currency = fallbackAgency.currency || 'USD';
   const priceFormatted = Number(estate.price || 0).toLocaleString('en-US');
 

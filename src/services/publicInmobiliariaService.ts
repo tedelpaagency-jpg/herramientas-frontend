@@ -98,6 +98,7 @@ export interface PublicEstateItem {
   longitude?: number | string | null;
   price: number;
   property_type: number;
+  property_type_name?: string | null;
   property_status: number;
   bedrooms?: number;
   bathrooms?: number;
