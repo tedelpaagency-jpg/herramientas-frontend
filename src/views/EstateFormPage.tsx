@@ -75,6 +75,48 @@ export const EstateFormPage: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadedImages, setUploadedImages] = useState<ImageItem[]>([]);
   const [dragOver, setDragOver] = useState(false);
+
+  // Drag and Drop para reordenar imágenes (la primera siempre es la principal)
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
+  const [dragOverImageIndex, setDragOverImageIndex] = useState<number | null>(null);
+
+  const handleImageDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedImageIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleImageDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverImageIndex !== index) {
+      setDragOverImageIndex(index);
+    }
+  };
+
+  const handleImageDragEnd = () => {
+    setDraggedImageIndex(null);
+    setDragOverImageIndex(null);
+  };
+
+  const handleImageDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedImageIndex === null || draggedImageIndex === targetIndex) {
+      setDraggedImageIndex(null);
+      setDragOverImageIndex(null);
+      return;
+    }
+
+    setUploadedImages((prev) => {
+      const updated = [...prev];
+      const [movedItem] = updated.splice(draggedImageIndex, 1);
+      updated.splice(targetIndex, 0, movedItem);
+      return updated;
+    });
+
+    setDraggedImageIndex(null);
+    setDragOverImageIndex(null);
+  };
   const [locationsData, setLocationsData] = useState<LocationsHierarchyData | null>(null);
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [propertyTypes, setPropertyTypes] = useState<{ id: number; name: string }[]>([]);
@@ -481,36 +523,80 @@ export const EstateFormPage: React.FC = () => {
             <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Galería de Imágenes</h3>
           </div>
           <div className="p-5">
-            <button
-              type="button"
-              onClick={() => setShowImageModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors mb-4"
-            >
-              <Upload className="w-4 h-4" />
-              Seleccionar / Subir Fotos
-            </button>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <button
+                type="button"
+                onClick={() => setShowImageModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                Seleccionar / Subir Fotos
+              </button>
+              {uploadedImages.length > 1 && (
+                <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <GripVertical className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                  <span>Arrastra las fotos para ordenar. <strong>La 1ª foto es siempre la principal.</strong></span>
+                </span>
+              )}
+            </div>
 
             {uploadedImages.length > 0 ? (
               <div className="flex flex-wrap gap-3">
-                {uploadedImages.map((img, idx) => (
-                  <div key={idx} className="relative group w-28 h-24 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
-                    <img src={img.url} alt="" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => removeUploadedImage(idx)}
-                        className="p-1 bg-rose-600 rounded-full text-white"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                {uploadedImages.map((img, idx) => {
+                  const isDragging = draggedImageIndex === idx;
+                  const isOver = dragOverImageIndex === idx && draggedImageIndex !== idx;
+
+                  return (
+                    <div
+                      key={`gallery-${img.filename}-${idx}`}
+                      draggable
+                      onDragStart={(e) => handleImageDragStart(e, idx)}
+                      onDragOver={(e) => handleImageDragOver(e, idx)}
+                      onDragEnd={handleImageDragEnd}
+                      onDrop={(e) => handleImageDrop(e, idx)}
+                      className={`relative group w-28 h-24 rounded-lg overflow-hidden border transition-all duration-150 cursor-grab active:cursor-grabbing select-none ${
+                        isDragging
+                          ? 'opacity-40 scale-95 border-dashed border-2 border-blue-500 bg-blue-50/50'
+                          : isOver
+                          ? 'ring-2 ring-blue-500 scale-105 border-blue-500 shadow-md bg-blue-50/20'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-blue-400 hover:shadow-sm'
+                      }`}
+                      title="Arrastra y suelta para cambiar el orden"
+                    >
+                      <img
+                        src={img.url}
+                        alt=""
+                        className="w-full h-full object-cover pointer-events-none select-none"
+                        draggable={false}
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                        <span className="px-1.5 py-0.5 bg-black/70 rounded text-white text-[10px] flex items-center gap-0.5">
+                          <GripVertical className="w-3 h-3" /> Mover
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeUploadedImage(idx);
+                          }}
+                          className="p-1 bg-rose-600 hover:bg-rose-700 rounded-full text-white transition-colors"
+                          title="Eliminar imagen"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                      {idx === 0 ? (
+                        <span className="absolute top-1 left-1 bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                          ★ Principal
+                        </span>
+                      ) : (
+                        <span className="absolute top-1 left-1 bg-black/60 text-white text-[9px] font-medium px-1.5 py-0.5 rounded opacity-80 group-hover:opacity-100">
+                          #{idx + 1}
+                        </span>
+                      )}
                     </div>
-                    {idx === 0 && (
-                      <span className="absolute top-1 left-1 bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                        Principal
-                      </span>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-slate-400 italic">No se han subido imágenes aún.</p>
@@ -901,23 +987,65 @@ export const EstateFormPage: React.FC = () => {
                     {/* Imágenes ya subidas */}
                     {uploadedImages.length > 0 && (
                       <div>
-                        <p className="text-xs font-bold text-slate-600 mb-2">Imágenes actuales ({uploadedImages.length}):</p>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                            Imágenes actuales ({uploadedImages.length}):
+                          </p>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <GripVertical className="w-3 h-3 text-blue-500" /> Arrastra para ordenar (1ª = Principal)
+                          </span>
+                        </div>
                         <div className="flex flex-wrap gap-3">
-                          {uploadedImages.map((img, idx) => (
-                            <div key={idx} className="relative group w-24 h-20 rounded-lg overflow-hidden border border-slate-200">
-                              <img src={img.url} alt="" className="w-full h-full object-cover" />
-                              <button
-                                type="button"
-                                onClick={() => removeUploadedImage(idx)}
-                                className="absolute top-1 right-1 p-0.5 bg-rose-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          {uploadedImages.map((img, idx) => {
+                            const isDragging = draggedImageIndex === idx;
+                            const isOver = dragOverImageIndex === idx && draggedImageIndex !== idx;
+
+                            return (
+                              <div
+                                key={`modal-img-${img.filename}-${idx}`}
+                                draggable
+                                onDragStart={(e) => handleImageDragStart(e, idx)}
+                                onDragOver={(e) => handleImageDragOver(e, idx)}
+                                onDragEnd={handleImageDragEnd}
+                                onDrop={(e) => handleImageDrop(e, idx)}
+                                className={`relative group w-24 h-20 rounded-lg overflow-hidden border transition-all duration-150 cursor-grab active:cursor-grabbing select-none ${
+                                  isDragging
+                                    ? 'opacity-40 scale-95 border-dashed border-2 border-blue-500'
+                                    : isOver
+                                    ? 'ring-2 ring-blue-500 scale-105 border-blue-500 shadow-md'
+                                    : 'border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                                }`}
+                                title="Arrastra para cambiar el orden"
                               >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                              {idx === 0 && (
-                                <span className="absolute bottom-0 inset-x-0 bg-blue-600 text-white text-[9px] text-center py-0.5">Principal</span>
-                              )}
-                            </div>
-                          ))}
+                                <img
+                                  src={img.url}
+                                  alt=""
+                                  className="w-full h-full object-cover pointer-events-none select-none"
+                                  draggable={false}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeUploadedImage(idx);
+                                  }}
+                                  className="absolute top-1 right-1 p-0.5 bg-rose-600 hover:bg-rose-700 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Eliminar imagen"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                                {idx === 0 ? (
+                                  <span className="absolute bottom-0 inset-x-0 bg-blue-600 text-white text-[9px] font-bold text-center py-0.5 shadow-sm">
+                                    ★ Principal
+                                  </span>
+                                ) : (
+                                  <span className="absolute top-1 left-1 bg-black/60 text-white text-[9px] font-medium px-1.5 py-0.5 rounded opacity-80 group-hover:opacity-100">
+                                    #{idx + 1}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
