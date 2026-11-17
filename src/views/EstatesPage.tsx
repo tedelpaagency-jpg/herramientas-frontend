@@ -51,7 +51,6 @@ import { EstateCanvaGalleryModal } from '@/components/EstateCanvaGalleryModal';
 import { EstateImageLightboxModal } from '@/components/EstateImageLightboxModal';
 import { AdvisorSearchSelect } from '@/components/AdvisorSearchSelect';
 import EstateApprovalSettingsPanel from '@/components/estates/EstateApprovalSettingsPanel';
-import Portal from '@/components/Portal';
 
 const EstatesMapView = dynamic(() => import('@/components/EstatesMapView'), { ssr: false });
 
@@ -204,11 +203,11 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
       setActionMenuCoords(null);
     } else {
       const rect = e.currentTarget.getBoundingClientRect();
-      const dropdownHeight = 250;
+      const dropdownHeight = 240;
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      // Si preferUpward o no hay suficiente espacio abajo pero sí arriba, abrir hacia arriba
-      const isUpward = (spaceBelow < dropdownHeight && spaceAbove > 180) || (preferUpward && spaceAbove > 200);
+      // Abrir hacia arriba si se prefiere o si hay poco espacio abajo y más espacio arriba
+      const isUpward = preferUpward || (spaceBelow < dropdownHeight && spaceAbove > spaceBelow);
 
       setActionMenuCoords({
         top: isUpward ? undefined : rect.bottom + 6,
