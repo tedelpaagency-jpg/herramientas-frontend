@@ -156,9 +156,10 @@ export const SubscriptionsPage: React.FC = () => {
       if (subsRes?.metrics) {
         setMetrics(subsRes.metrics);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error al cargar suscripciones:', err);
-      toast.error('Error al obtener la lista de suscripciones');
+      const errorMsg = err?.response?.data?.message || 'Error al obtener la lista de suscripciones';
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
