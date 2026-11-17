@@ -197,16 +197,18 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
     isUpward: boolean;
   } | null>(null);
 
-  const handleToggleActionMenu = (e: React.MouseEvent<HTMLButtonElement>, menuKey: string) => {
+  const handleToggleActionMenu = (e: React.MouseEvent<HTMLButtonElement>, menuKey: string, preferUpward = false) => {
     e.stopPropagation();
     if (activeMenuKey === menuKey) {
       setActiveMenuKey(null);
       setActionMenuCoords(null);
     } else {
       const rect = e.currentTarget.getBoundingClientRect();
-      const dropdownHeight = 240;
+      const dropdownHeight = 250;
       const spaceBelow = window.innerHeight - rect.bottom;
-      const isUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+      const spaceAbove = rect.top;
+      // Si preferUpward o no hay suficiente espacio abajo pero sí arriba, abrir hacia arriba
+      const isUpward = (spaceBelow < dropdownHeight && spaceAbove > 180) || (preferUpward && spaceAbove > 200);
 
       setActionMenuCoords({
         top: isUpward ? undefined : rect.bottom + 6,
@@ -910,9 +912,10 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {estates.map((estate) => {
+                    {estates.map((estate, idx) => {
                       const imgUrl = getEstateImageUrl(estate);
                       const isTableMenuOpen = activeMenuKey === `table-${estate.id}`;
+                      const isNearBottomRow = idx >= estates.length - 2;
 
                       return (
                         <tr key={estate.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
@@ -1104,7 +1107,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                               {/* Options Dropdown Menu Button (⋮) con el resto de acciones */}
                               <div className="relative">
                                 <button
-                                  onClick={(e) => handleToggleActionMenu(e, `table-${estate.id}`)}
+                                  onClick={(e) => handleToggleActionMenu(e, `table-${estate.id}`, isNearBottomRow)}
                                   className={`p-2 rounded-lg border transition-all active:scale-95 shadow-2xs cursor-pointer ${
                                     isTableMenuOpen ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                                   }`}
