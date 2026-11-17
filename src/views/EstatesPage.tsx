@@ -293,14 +293,16 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   };
 
   const handleExpandImage = (estate: Estate, initialIndex: number = 0) => {
-    setActiveMenuId(null);
+    setActiveMenuKey(null);
+    setActionMenuCoords(null);
     setLightboxEstate(estate);
     setLightboxIndex(initialIndex);
     setLightboxOpen(true);
   };
 
   const handleViewCanvaGallery = (estate: Estate) => {
-    setActiveMenuId(null);
+    setActiveMenuKey(null);
+    setActionMenuCoords(null);
     setSelectedEstateForCanva(estate);
     setCanvaGalleryModalOpen(true);
   };
@@ -491,7 +493,8 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
 
   // WhatsApp Action Handler
   const handleCopyWhatsApp = async (estate: Estate) => {
-    setActiveMenuId(null);
+    setActiveMenuKey(null);
+    setActionMenuCoords(null);
     const toastId = toast.loading('Obteniendo plantilla WhatsApp con imagen...');
     try {
       const res = await estateService.getWhatsAppInfo(estate.id);
@@ -523,7 +526,8 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
 
   // PDF Download Action Handler
   const handleDownloadPdf = async (estate: Estate) => {
-    setActiveMenuId(null);
+    setActiveMenuKey(null);
+    setActionMenuCoords(null);
     const toastId = toast.loading('Generando PDF del inmueble...');
     try {
       await estateService.downloadPdf(estate.id, estate.slug);
@@ -536,7 +540,8 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
 
   // Canvas View Action Handler
   const handleViewCanvas = async (estate: Estate) => {
-    setActiveMenuId(null);
+    setActiveMenuKey(null);
+    setActionMenuCoords(null);
     setActiveEstateForPdf(estate);
     const toastId = toast.loading('Cargando Canvas del inmueble...');
     try {
@@ -1515,14 +1520,6 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                     <span>Eliminar</span>
                                   </button>
                                 )}
-                              </div>
-                            </Portal>
-                          )}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    <span>Eliminar</span>
-                                  </button>
-                                )}
 
                                 {!canEditEstate(estate) && !canDeleteEstate(estate) && (
                                   <div className="px-4 py-2 text-[10px] text-slate-400 dark:text-slate-500 italic bg-slate-50/50 dark:bg-slate-800/30">
@@ -1530,7 +1527,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                   </div>
                                 )}
                               </div>
-                            </>
+                            </Portal>
                           )}
                         </div>
                       </div>
