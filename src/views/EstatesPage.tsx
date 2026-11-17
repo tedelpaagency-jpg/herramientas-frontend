@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TableSkeleton } from '@/components/Skeleton';
+import { Portal } from '@/components/Portal';
 import { EstateCanvasModal } from '@/components/EstateCanvasModal';
 import { EstateCanvaGalleryModal } from '@/components/EstateCanvaGalleryModal';
 import { EstateImageLightboxModal } from '@/components/EstateImageLightboxModal';
@@ -188,7 +189,48 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   }, [page, scrollToTopOfEstates]);
 
   // Action Menu & Modal States
-  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+  const [activeMenuKey, setActiveMenuKey] = useState<string | null>(null);
+  const [actionMenuCoords, setActionMenuCoords] = useState<{
+    top?: number;
+    bottom?: number;
+    right: number;
+    isUpward: boolean;
+  } | null>(null);
+
+  const handleToggleActionMenu = (e: React.MouseEvent<HTMLButtonElement>, menuKey: string) => {
+    e.stopPropagation();
+    if (activeMenuKey === menuKey) {
+      setActiveMenuKey(null);
+      setActionMenuCoords(null);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const dropdownHeight = 240;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const isUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+      setActionMenuCoords({
+        top: isUpward ? undefined : rect.bottom + 6,
+        bottom: isUpward ? window.innerHeight - rect.top + 6 : undefined,
+        right: Math.max(16, window.innerWidth - rect.right),
+        isUpward,
+      });
+      setActiveMenuKey(menuKey);
+    }
+  };
+
+  useEffect(() => {
+    if (!activeMenuKey) return;
+    const handleClose = () => {
+      setActiveMenuKey(null);
+      setActionMenuCoords(null);
+    };
+    window.addEventListener('scroll', handleClose, true);
+    window.addEventListener('resize', handleClose);
+    return () => {
+      window.removeEventListener('scroll', handleClose, true);
+      window.removeEventListener('resize', handleClose);
+    };
+  }, [activeMenuKey]);
   const [canvasModalOpen, setCanvasModalOpen] = useState(false);
   const [canvasData, setCanvasData] = useState<any | null>(null);
   const [activeEstateForPdf, setActiveEstateForPdf] = useState<Estate | null>(null);
@@ -853,7 +895,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
           {viewMode === 'table' ? (
             /* Table View Mode */
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/80 dark:border-slate-800 overflow-hidden">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto min-h-[260px]">
                 <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300 border-collapse">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-xs font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
@@ -870,7 +912,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {estates.map((estate) => {
                       const imgUrl = getEstateImageUrl(estate);
-                      const isMenuOpen = activeMenuId === estate.id;
+                      const isTableMenuOpen = activeMenuKey === `table-${estate.id}`;
 
                       return (
                         <tr key={estate.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
@@ -1062,29 +1104,41 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                               {/* Options Dropdown Menu Button (⋮) con el resto de acciones */}
                               <div className="relative">
                                 <button
-                                  onClick={() => setActiveMenuId(isMenuOpen ? null : estate.id)}
+                                  onClick={(e) => handleToggleActionMenu(e, `table-${estate.id}`)}
                                   className={`p-2 rounded-lg border transition-all active:scale-95 shadow-2xs cursor-pointer ${
-                                    isMenuOpen ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                                    isTableMenuOpen ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                                   }`}
                                   title="Más opciones (⋮)"
                                 >
                                   <MoreVertical className="w-4 h-4" />
                                 </button>
 
-                                {/* Dropdown Menu (⋮) */}
-                                {isMenuOpen && (
-                                  <>
+                                {/* Dropdown Menu (⋮) vía Portal para nunca quedar atrapado por overflow */}
+                                {isTableMenuOpen && actionMenuCoords && (
+                                  <Portal>
                                     <div
-                                      className="fixed inset-0 z-30"
-                                      onClick={() => setActiveMenuId(null)}
+                                      className="fixed inset-0 z-[9998]"
+                                      onClick={() => {
+                                        setActiveMenuKey(null);
+                                        setActionMenuCoords(null);
+                                      }}
                                     />
-                                    <div className="absolute right-0 top-full mt-1.5 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left animate-slide-up-fade">
+                                    <div
+                                      style={{
+                                        position: 'fixed',
+                                        top: actionMenuCoords.top !== undefined ? `${actionMenuCoords.top}px` : undefined,
+                                        bottom: actionMenuCoords.bottom !== undefined ? `${actionMenuCoords.bottom}px` : undefined,
+                                        right: `${actionMenuCoords.right}px`,
+                                      }}
+                                      className="w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-[9999] overflow-hidden py-1 text-left animate-slide-up-fade"
+                                    >
                                       <button
                                         onClick={() => {
-                                          setActiveMenuId(null);
+                                          setActiveMenuKey(null);
+                                          setActionMenuCoords(null);
                                           handleCopyWhatsApp(estate);
                                         }}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
                                       >
                                         <MessageSquare className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                                         <span>Copiar información para WhatsApp</span>
@@ -1092,10 +1146,11 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
 
                                       <button
                                         onClick={() => {
-                                          setActiveMenuId(null);
+                                          setActiveMenuKey(null);
+                                          setActionMenuCoords(null);
                                           handleViewCanvas(estate);
                                         }}
-                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
                                       >
                                         <Layout className="w-4 h-4 text-indigo-600 flex-shrink-0" />
                                         <span>Ver Canvas Clásico</span>
@@ -1106,10 +1161,11 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                       {canEditEstate(estate) && (
                                         <button
                                           onClick={() => {
-                                            setActiveMenuId(null);
+                                            setActiveMenuKey(null);
+                                            setActionMenuCoords(null);
                                             handleOpenEditModal(estate);
                                           }}
-                                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                                         >
                                           <Edit3 className="w-4 h-4 text-amber-600 flex-shrink-0" />
                                           <span>Editar Inmueble</span>
@@ -1119,10 +1175,11 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                       {canDeleteEstate(estate) && (
                                         <button
                                           onClick={() => {
-                                            setActiveMenuId(null);
+                                            setActiveMenuKey(null);
+                                            setActionMenuCoords(null);
                                             handleDelete(estate.id);
                                           }}
-                                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                                         >
                                           <Trash2 className="w-4 h-4 flex-shrink-0" />
                                           <span>Eliminar Inmueble</span>
@@ -1135,7 +1192,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                         </div>
                                       )}
                                     </div>
-                                  </>
+                                  </Portal>
                                 )}
                               </div>
                             </div>
@@ -1152,7 +1209,8 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {estates.map((estate) => {
                 const imgUrl = getEstateImageUrl(estate);
-                const isMenuOpen = activeMenuId === estate.id;
+                const isGridTopMenuOpen = activeMenuKey === `grid-top-${estate.id}`;
+                const isGridBottomMenuOpen = activeMenuKey === `grid-bottom-${estate.id}`;
 
                 return (
                   <div
@@ -1195,36 +1253,62 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                         {/* Top-Right Menu Button (⋮) in Grid View */}
                         <div className="absolute top-3 right-3">
                           <button
-                            onClick={() => setActiveMenuId(isMenuOpen ? null : estate.id)}
-                            className="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white flex items-center justify-center backdrop-blur-md shadow-md transition-all active:scale-95"
+                            onClick={(e) => handleToggleActionMenu(e, `grid-top-${estate.id}`)}
+                            className="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white flex items-center justify-center backdrop-blur-md shadow-md transition-all active:scale-95 cursor-pointer"
                             title="Opciones (⋮)"
                           >
                             <MoreVertical className="w-4 h-4" />
                           </button>
 
-                          {isMenuOpen && (
-                            <>
-                              <div className="fixed inset-0 z-30" onClick={() => setActiveMenuId(null)} />
-                              <div className="absolute right-0 top-full mt-1.5 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left text-xs animate-slide-up-fade">
+                          {isGridTopMenuOpen && actionMenuCoords && (
+                            <Portal>
+                              <div
+                                className="fixed inset-0 z-[9998]"
+                                onClick={() => {
+                                  setActiveMenuKey(null);
+                                  setActionMenuCoords(null);
+                                }}
+                              />
+                              <div
+                                style={{
+                                  position: 'fixed',
+                                  top: actionMenuCoords.top !== undefined ? `${actionMenuCoords.top}px` : undefined,
+                                  bottom: actionMenuCoords.bottom !== undefined ? `${actionMenuCoords.bottom}px` : undefined,
+                                  right: `${actionMenuCoords.right}px`,
+                                }}
+                                className="w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-[9999] overflow-hidden py-1 text-left text-xs animate-slide-up-fade"
+                              >
                                 <button
-                                  onClick={() => handleCopyWhatsApp(estate)}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                  onClick={() => {
+                                    setActiveMenuKey(null);
+                                    setActionMenuCoords(null);
+                                    handleCopyWhatsApp(estate);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
                                 >
                                   <MessageSquare className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                                   <span>Copiar información para WhatsApp</span>
                                 </button>
 
                                 <button
-                                  onClick={() => handleDownloadPdf(estate)}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-blue-700 hover:bg-blue-50 transition-colors"
+                                  onClick={() => {
+                                    setActiveMenuKey(null);
+                                    setActionMenuCoords(null);
+                                    handleDownloadPdf(estate);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
                                 >
                                   <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
                                   <span>Descargar PDF</span>
                                 </button>
 
                                 <button
-                                  onClick={() => handleViewCanvas(estate)}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-indigo-700 hover:bg-indigo-50 transition-colors"
+                                  onClick={() => {
+                                    setActiveMenuKey(null);
+                                    setActionMenuCoords(null);
+                                    handleViewCanvas(estate);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
                                 >
                                   <Layout className="w-4 h-4 text-indigo-600 flex-shrink-0" />
                                   <span>Ver Canvas</span>
@@ -1235,10 +1319,11 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                 {canEditEstate(estate) && (
                                   <button
                                     onClick={() => {
-                                      setActiveMenuId(null);
+                                      setActiveMenuKey(null);
+                                      setActionMenuCoords(null);
                                       handleOpenEditModal(estate);
                                     }}
-                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                                   >
                                     <Edit3 className="w-4 h-4 text-amber-600 flex-shrink-0" />
                                     <span>Editar Inmueble</span>
@@ -1248,10 +1333,11 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                 {canDeleteEstate(estate) && (
                                   <button
                                     onClick={() => {
-                                      setActiveMenuId(null);
+                                      setActiveMenuKey(null);
+                                      setActionMenuCoords(null);
                                       handleDelete(estate.id);
                                     }}
-                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                                   >
                                     <Trash2 className="w-4 h-4 flex-shrink-0" />
                                     <span>Eliminar Inmueble</span>
@@ -1264,7 +1350,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                   </div>
                                 )}
                               </div>
-                            </>
+                            </Portal>
                           )}
                         </div>
                       </div>
@@ -1347,28 +1433,40 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                         {/* Dropdown Menu (⋮) para el resto de acciones */}
                         <div className="relative">
                           <button
-                            onClick={() => setActiveMenuId(isMenuOpen ? null : estate.id)}
+                            onClick={(e) => handleToggleActionMenu(e, `grid-bottom-${estate.id}`)}
                             className={`p-1.5 rounded-lg border transition-all active:scale-95 cursor-pointer ${
-                              isMenuOpen ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                              isGridBottomMenuOpen ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                             }`}
                             title="Más opciones (⋮)"
                           >
                             <MoreVertical className="w-4 h-4" />
                           </button>
 
-                          {isMenuOpen && (
-                            <>
+                          {isGridBottomMenuOpen && actionMenuCoords && (
+                            <Portal>
                               <div
-                                className="fixed inset-0 z-30"
-                                onClick={() => setActiveMenuId(null)}
+                                className="fixed inset-0 z-[9998]"
+                                onClick={() => {
+                                  setActiveMenuKey(null);
+                                  setActionMenuCoords(null);
+                                }}
                               />
-                              <div className="absolute right-0 bottom-full mb-1.5 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden py-1 text-left animate-slide-up-fade">
+                              <div
+                                style={{
+                                  position: 'fixed',
+                                  top: actionMenuCoords.top !== undefined ? `${actionMenuCoords.top}px` : undefined,
+                                  bottom: actionMenuCoords.bottom !== undefined ? `${actionMenuCoords.bottom}px` : undefined,
+                                  right: `${actionMenuCoords.right}px`,
+                                }}
+                                className="w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-[9999] overflow-hidden py-1 text-left animate-slide-up-fade"
+                              >
                                 <button
                                   onClick={() => {
-                                    setActiveMenuId(null);
+                                    setActiveMenuKey(null);
+                                    setActionMenuCoords(null);
                                     handleCopyWhatsApp(estate);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
                                 >
                                   <MessageSquare className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                                   <span>Copiar WhatsApp</span>
@@ -1376,10 +1474,11 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
 
                                 <button
                                   onClick={() => {
-                                    setActiveMenuId(null);
+                                    setActiveMenuKey(null);
+                                    setActionMenuCoords(null);
                                     handleViewCanvas(estate);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
                                 >
                                   <Layout className="w-4 h-4 text-indigo-600 flex-shrink-0" />
                                   <span>Ver Canvas Clásico</span>
@@ -1390,10 +1489,11 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                 {canEditEstate(estate) && (
                                   <button 
                                     onClick={() => {
-                                      setActiveMenuId(null);
+                                      setActiveMenuKey(null);
+                                      setActionMenuCoords(null);
                                       handleOpenEditModal(estate);
                                     }} 
-                                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                                   >
                                     <Edit3 className="w-4 h-4 text-amber-600" />
                                     <span>Editar</span>
@@ -1403,10 +1503,19 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                                 {canDeleteEstate(estate) && (
                                   <button 
                                     onClick={() => {
-                                      setActiveMenuId(null);
+                                      setActiveMenuKey(null);
+                                      setActionMenuCoords(null);
                                       handleDelete(estate.id);
                                     }} 
-                                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Eliminar</span>
+                                  </button>
+                                )}
+                              </div>
+                            </Portal>
+                          )}
                                   >
                                     <Trash2 className="w-4 h-4" />
                                     <span>Eliminar</span>

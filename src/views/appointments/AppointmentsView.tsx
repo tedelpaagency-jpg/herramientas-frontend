@@ -18,6 +18,7 @@ import { NewAppointmentModal } from '@/components/appointments/NewAppointmentMod
 import { RejectAppointmentModal } from '@/components/appointments/RejectAppointmentModal';
 import { RescheduleAppointmentModal } from '@/components/appointments/RescheduleAppointmentModal';
 import { AdminScheduleModal } from '@/components/appointments/AdminScheduleModal';
+import { Portal } from '@/components/Portal';
 
 const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -47,6 +48,47 @@ export default function AppointmentsView() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+  const [menuCoords, setMenuCoords] = useState<{
+    top?: number;
+    bottom?: number;
+    right: number;
+    isUpward: boolean;
+  } | null>(null);
+
+  const handleToggleMenu = (e: React.MouseEvent<HTMLButtonElement>, apptId: number) => {
+    e.stopPropagation();
+    if (activeMenuId === apptId) {
+      setActiveMenuId(null);
+      setMenuCoords(null);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const dropdownHeight = 160;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const isUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+      setMenuCoords({
+        top: isUpward ? undefined : rect.bottom + 6,
+        bottom: isUpward ? window.innerHeight - rect.top + 6 : undefined,
+        right: Math.max(16, window.innerWidth - rect.right),
+        isUpward,
+      });
+      setActiveMenuId(apptId);
+    }
+  };
+
+  useEffect(() => {
+    if (!activeMenuId) return;
+    const handleClose = () => {
+      setActiveMenuId(null);
+      setMenuCoords(null);
+    };
+    window.addEventListener('scroll', handleClose, true);
+    window.addEventListener('resize', handleClose);
+    return () => {
+      window.removeEventListener('scroll', handleClose, true);
+      window.removeEventListener('resize', handleClose);
+    };
+  }, [activeMenuId]);
 
   // Data state
   const [appointments, setAppointments] = useState<AgencyAppointment[]>([]);
@@ -785,61 +827,85 @@ export default function AppointmentsView() {
 
                             {/* More Options Menu Button (...) */}
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveMenuId(activeMenuId === appt.id ? null : appt.id);
-                              }}
-                              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                              onClick={(e) => handleToggleMenu(e, appt.id)}
+                              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                               title="Más opciones"
                             >
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
 
-                            {/* Dropdown Menu */}
-                            {activeMenuId === appt.id && (
-                              <div className="absolute right-0 bottom-8 w-44 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
-                                {appt.status !== 'confirmed' && (
-                                  <button
-                                    onClick={() => handleApprove(appt)}
-                                    className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 flex items-center gap-2"
-                                  >
-                                    <Check className="w-3.5 h-3.5" />
-                                    <span>Aprobar Cita</span>
-                                  </button>
-                                )}
+                            {/* Dropdown Menu vía Portal para evitar recortes de overflow */}
+                            {activeMenuId === appt.id && menuCoords && (
+                              <Portal>
+                                <div
+                                  className="fixed inset-0 z-[9998]"
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    setMenuCoords(null);
+                                  }}
+                                />
+                                <div
+                                  style={{
+                                    position: 'fixed',
+                                    top: menuCoords.top !== undefined ? `${menuCoords.top}px` : undefined,
+                                    bottom: menuCoords.bottom !== undefined ? `${menuCoords.bottom}px` : undefined,
+                                    right: `${menuCoords.right}px`,
+                                  }}
+                                  className="w-48 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 py-1.5 z-[9999] overflow-hidden animate-slide-up-fade"
+                                >
+                                  {appt.status !== 'confirmed' && (
+                                    <button
+                                      onClick={() => {
+                                        setActiveMenuId(null);
+                                        setMenuCoords(null);
+                                        handleApprove(appt);
+                                      }}
+                                      className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 flex items-center gap-2 cursor-pointer"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Aprobar Cita</span>
+                                    </button>
+                                  )}
 
-                                {appt.status !== 'rejected' && (
+                                  {appt.status !== 'rejected' && (
+                                    <button
+                                      onClick={() => {
+                                        setActiveMenuId(null);
+                                        setMenuCoords(null);
+                                        setRejectingAppt(appt);
+                                      }}
+                                      className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 flex items-center gap-2 cursor-pointer"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                      <span>Rechazar Cita</span>
+                                    </button>
+                                  )}
+
                                   <button
                                     onClick={() => {
                                       setActiveMenuId(null);
-                                      setRejectingAppt(appt);
+                                      setMenuCoords(null);
+                                      setReschedulingAppt(appt);
                                     }}
-                                    className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 flex items-center gap-2"
+                                    className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
                                   >
-                                    <X className="w-3.5 h-3.5" />
-                                    <span>Rechazar Cita</span>
+                                    <CalendarIcon className="w-3.5 h-3.5" />
+                                    <span>Reprogramar</span>
                                   </button>
-                                )}
 
-                                <button
-                                  onClick={() => {
-                                    setActiveMenuId(null);
-                                    setReschedulingAppt(appt);
-                                  }}
-                                  className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
-                                >
-                                  <CalendarIcon className="w-3.5 h-3.5" />
-                                  <span>Reprogramar</span>
-                                </button>
-
-                                <button
-                                  onClick={() => handleSendReminder(appt)}
-                                  className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 flex items-center gap-2"
-                                >
-                                  <Send className="w-3.5 h-3.5" />
-                                  <span>Enviar Recordatorio</span>
-                                </button>
-                              </div>
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuId(null);
+                                      setMenuCoords(null);
+                                      handleSendReminder(appt);
+                                    }}
+                                    className="w-full text-left px-3.5 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 flex items-center gap-2 cursor-pointer"
+                                  >
+                                    <Send className="w-3.5 h-3.5" />
+                                    <span>Enviar Recordatorio</span>
+                                  </button>
+                                </div>
+                              </Portal>
                             )}
                           </div>
                         </div>
