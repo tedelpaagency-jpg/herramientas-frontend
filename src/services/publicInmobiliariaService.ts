@@ -204,11 +204,32 @@ export const resolveEffectiveDomain = (explicitDomain?: string): string => {
   return 'inmosoft.pro';
 };
 
-async function fetchPublicApi<T>(endpoint: string, domain?: string): Promise<T> {
+// Peticiones GET públicas en vuelo: evita enviar a Laravel la misma consulta dos veces
+// cuando varios componentes (o el doble montaje de StrictMode) la piden simultáneamente.
+const inFlightPublicGets = new Map<string, Promise<any>>();
+
+function fetchPublicApi<T>(endpoint: string, domain?: string): Promise<T> {
   const baseUrl = getApiBaseUrl();
   const effectiveDomain = resolveEffectiveDomain(domain);
   const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const key = `${effectiveDomain}|${url}`;
 
+  const existing = inFlightPublicGets.get(key);
+  if (existing) {
+    // Copia independiente para que dos componentes nunca compartan el mismo objeto mutable.
+    return existing.then((data) =>
+      typeof structuredClone === 'function' ? structuredClone(data) : JSON.parse(JSON.stringify(data))
+    ) as Promise<T>;
+  }
+
+  const request = doFetchPublicApi<T>(url, effectiveDomain).finally(() => {
+    inFlightPublicGets.delete(key);
+  });
+  inFlightPublicGets.set(key, request);
+  return request;
+}
+
+async function doFetchPublicApi<T>(url: string, effectiveDomain: string): Promise<T> {
   const res = await fetch(url, {
     method: 'GET',
     headers: {

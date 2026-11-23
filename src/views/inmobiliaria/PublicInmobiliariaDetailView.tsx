@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -109,8 +109,9 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
   const [contactMessage, setContactMessage] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [acceptPrivacy, setAcceptPrivacy] = useState(true);
-  const [submittingContact, setSubmittingContact] = useState(false);
+  const [submittingContact] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
+  const contactInFlightRef = useRef(false);
 
   // Legal Modal ('terms' | 'privacy' | null)
   const [activeLegalModal, setActiveLegalModal] = useState<'terms' | 'privacy' | null>(null);
@@ -224,7 +225,13 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
       return;
     }
 
-    setSubmittingContact(true);
+    if (contactInFlightRef.current) return;
+
+    // UI optimista: se muestra el éxito al instante y la petición viaja en segundo plano.
+    // Si Laravel responde con error, se revierte el estado para que el usuario reintente.
+    contactInFlightRef.current = true;
+    setContactSuccess(true);
+    toast.success('¡Consulta enviada con éxito! El asesor se comunicará contigo.');
     try {
       await publicInmobiliariaService.sendContactMessage(
         {
@@ -237,12 +244,11 @@ export const PublicInmobiliariaDetailView: React.FC<PublicInmobiliariaDetailView
         },
         domainParam || undefined
       );
-      setContactSuccess(true);
-      toast.success('¡Consulta enviada con éxito! El asesor se comunicará contigo.');
     } catch (err: any) {
+      setContactSuccess(false);
       toast.error(err.message || 'Error al enviar la consulta. Intenta nuevamente.');
     } finally {
-      setSubmittingContact(false);
+      contactInFlightRef.current = false;
     }
   };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -46,7 +46,8 @@ export const PublicInmobiliariaContactView: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [subject, setSubject] = useState('Comprar una propiedad');
   const [message, setMessage] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting] = useState(false);
+  const submitInFlightRef = useRef(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [responseMsg, setResponseMsg] = useState('');
 
@@ -97,33 +98,41 @@ export const PublicInmobiliariaContactView: React.FC = () => {
       return;
     }
 
-    setSubmitting(true);
-    setStatus('idle');
-    setResponseMsg('');
+    if (submitInFlightRef.current) return;
+
+    // UI optimista: mostrar éxito y limpiar el formulario al instante; si Laravel falla,
+    // se restauran los datos escritos para que el usuario pueda reintentar.
+    const snapshot = { name, email, phone, message };
+    submitInFlightRef.current = true;
+    setStatus('success');
+    setResponseMsg('¡Tu mensaje ha sido enviado exitosamente! Nos contactaremos contigo muy pronto.');
+    setName('');
+    setEmail('');
+    setPhone('');
+    setMessage('');
 
     try {
       const res = await publicInmobiliariaService.sendContactMessage(
         {
-          name: name.trim(),
-          email: email.trim() || undefined,
-          phone: phone.trim() || undefined,
+          name: snapshot.name.trim(),
+          email: snapshot.email.trim() || undefined,
+          phone: snapshot.phone.trim() || undefined,
           subject,
-          message: message.trim(),
+          message: snapshot.message.trim(),
         },
         domainParam || undefined
       );
 
-      setStatus('success');
-      setResponseMsg(res.message || '¡Tu mensaje ha sido enviado exitosamente! Nos contactaremos contigo muy pronto.');
-      setName('');
-      setEmail('');
-      setPhone('');
-      setMessage('');
+      if (res?.message) setResponseMsg(res.message);
     } catch (err: any) {
+      setName(snapshot.name);
+      setEmail(snapshot.email);
+      setPhone(snapshot.phone);
+      setMessage(snapshot.message);
       setStatus('error');
       setResponseMsg(err.message || 'Ocurrió un error al enviar el mensaje. Por favor intenta de nuevo.');
     } finally {
-      setSubmitting(false);
+      submitInFlightRef.current = false;
     }
   };
 

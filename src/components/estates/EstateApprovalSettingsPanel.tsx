@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ShieldCheck,
   Building2,
@@ -46,7 +46,8 @@ import { useAuth } from '@/context/AuthContext';
 
 interface EstateApprovalSettingsPanelProps {
   agencyId?: number;
-  onSaved?: () => void;
+  /** Recibe los ajustes guardados para que el padre no tenga que volver a pedirlos a Laravel. */
+  onSaved?: (settings: EstateApprovalSettings) => void;
   isModal?: boolean;
 }
 
@@ -100,7 +101,7 @@ export const EstateApprovalSettingsPanel: React.FC<EstateApprovalSettingsPanelPr
     ]);
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [saving, setSaving] = useState<boolean>(false);
+  const [saving] = useState<boolean>(false);
   const [agencyName, setAgencyName] = useState<string>('');
   const [activeMainTab, setActiveMainTab] = useState<'filters' | 'policies' | 'notifications'>('filters');
   const [filterScopeTab, setFilterScopeTab] = useState<'booking' | 'properties_list' | 'admin'>('booking');
@@ -118,30 +119,37 @@ export const EstateApprovalSettingsPanel: React.FC<EstateApprovalSettingsPanelPr
     filter_settings: DEFAULT_FILTER_SETTINGS,
   });
 
+  // Últimos ajustes confirmados por el servidor (para revertir si el guardado optimista falla).
+  const lastSavedSettingsRef = useRef<EstateApprovalSettings | null>(null);
+
+  const normalizeSettings = (data: EstateApprovalSettings): EstateApprovalSettings => {
+    const loadedFilters = data.filter_settings || {};
+    return {
+      require_admin_approval_to_publish: !!data.require_admin_approval_to_publish,
+      require_admin_approval_to_delete: !!data.require_admin_approval_to_delete,
+      notify_on_property_upload: !!data.notify_on_property_upload,
+      notify_property_upload_emails: data.notify_property_upload_emails || '',
+      notify_on_property_delete: !!data.notify_on_property_delete,
+      notify_property_delete_emails: data.notify_property_delete_emails || '',
+      notify_on_user_login: !!data.notify_on_user_login,
+      notify_user_login_emails: data.notify_user_login_emails || '',
+      webhook_url: data.webhook_url || '',
+      filter_settings: {
+        booking: { ...DEFAULT_FILTER_SETTINGS.booking, ...(loadedFilters.booking || {}) },
+        properties_list: { ...DEFAULT_FILTER_SETTINGS.properties_list, ...(loadedFilters.properties_list || {}) },
+        admin: { ...DEFAULT_FILTER_SETTINGS.admin, ...(loadedFilters.admin || {}) },
+      },
+    };
+  };
+
   const loadSettings = async () => {
     setLoading(true);
     try {
       const data = await estateService.getSettings(agencyId);
       if (data) {
-        const loadedFilters = data.filter_settings || {};
-        const mergedFilters: FilterSettingsConfig = {
-          booking: { ...DEFAULT_FILTER_SETTINGS.booking, ...(loadedFilters.booking || {}) },
-          properties_list: { ...DEFAULT_FILTER_SETTINGS.properties_list, ...(loadedFilters.properties_list || {}) },
-          admin: { ...DEFAULT_FILTER_SETTINGS.admin, ...(loadedFilters.admin || {}) },
-        };
-
-        setSettings({
-          require_admin_approval_to_publish: !!data.require_admin_approval_to_publish,
-          require_admin_approval_to_delete: !!data.require_admin_approval_to_delete,
-          notify_on_property_upload: !!data.notify_on_property_upload,
-          notify_property_upload_emails: data.notify_property_upload_emails || '',
-          notify_on_property_delete: !!data.notify_on_property_delete,
-          notify_property_delete_emails: data.notify_property_delete_emails || '',
-          notify_on_user_login: !!data.notify_on_user_login,
-          notify_user_login_emails: data.notify_user_login_emails || '',
-          webhook_url: data.webhook_url || '',
-          filter_settings: mergedFilters,
-        });
+        const normalized = normalizeSettings(data);
+        lastSavedSettingsRef.current = normalized;
+        setSettings(normalized);
       }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Error al cargar configuración de propiedades');
@@ -156,36 +164,27 @@ export const EstateApprovalSettingsPanel: React.FC<EstateApprovalSettingsPanelPr
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setSaving(true);
+    // UI optimista: confirmar al instante y propagar los ajustes al padre sin esperar al servidor.
+    const submitted = settings;
+    const previous = lastSavedSettingsRef.current;
+    toast.success('¡Configuración de filtros y políticas guardada exitosamente!');
+    if (onSaved) onSaved(submitted);
     try {
-      const updated = await estateService.updateSettings(settings, agencyId);
+      const updated = await estateService.updateSettings(submitted, agencyId);
       if (updated) {
-        const loadedFilters = updated.filter_settings || {};
-        const mergedFilters: FilterSettingsConfig = {
-          booking: { ...DEFAULT_FILTER_SETTINGS.booking, ...(loadedFilters.booking || {}) },
-          properties_list: { ...DEFAULT_FILTER_SETTINGS.properties_list, ...(loadedFilters.properties_list || {}) },
-          admin: { ...DEFAULT_FILTER_SETTINGS.admin, ...(loadedFilters.admin || {}) },
-        };
-
-        setSettings({
-          require_admin_approval_to_publish: !!updated.require_admin_approval_to_publish,
-          require_admin_approval_to_delete: !!updated.require_admin_approval_to_delete,
-          notify_on_property_upload: !!updated.notify_on_property_upload,
-          notify_property_upload_emails: updated.notify_property_upload_emails || '',
-          notify_on_property_delete: !!updated.notify_on_property_delete,
-          notify_property_delete_emails: updated.notify_property_delete_emails || '',
-          notify_on_user_login: !!updated.notify_on_user_login,
-          notify_user_login_emails: updated.notify_user_login_emails || '',
-          webhook_url: updated.webhook_url || '',
-          filter_settings: mergedFilters,
-        });
+        const normalized = normalizeSettings(updated);
+        lastSavedSettingsRef.current = normalized;
+        setSettings(normalized);
+        if (onSaved) onSaved(normalized);
+      } else {
+        lastSavedSettingsRef.current = submitted;
       }
-      toast.success('¡Configuración de filtros y políticas guardada exitosamente!');
-      if (onSaved) onSaved();
     } catch (err: any) {
+      if (previous) {
+        setSettings(previous);
+        if (onSaved) onSaved(previous);
+      }
       toast.error(err?.response?.data?.message || 'Error al guardar la configuración');
-    } finally {
-      setSaving(false);
     }
   };
 

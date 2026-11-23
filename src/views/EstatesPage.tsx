@@ -133,6 +133,8 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   const [categoriesList, setCategoriesList] = useState<EstateCategory[]>(ESTATE_CATEGORIES_CATALOG);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  // Valor de búsqueda con debounce: evita enviar una petición a Laravel por cada tecla.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | number>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [agentFilter, setAgentFilter] = useState('');
@@ -276,16 +278,18 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   const handleApproveAll = async () => {
     const unapprovedCount = estates.filter((e) => e.verify === 0).length;
     if (!confirm(`¿Confirma que desea aprobar todas las propiedades pendientes (${unapprovedCount > 0 ? unapprovedCount : 'todas'}) para su publicación web?`)) return;
+    // UI optimista: se marcan como aprobadas al instante; si falla, se restaura el listado previo.
+    const previousEstates = estates;
     setApprovingAll(true);
+    setEstates((prev) => prev.map((e) => ({ ...e, verify: 1 })));
     try {
       const effectiveAgId = agencyFilter 
         ? Number(agencyFilter) 
         : (user?.agency_id || (user as any)?.agency?.id || currentAgency?.id || undefined);
       const res = await estateService.approveAllEstates(effectiveAgId);
-      setEstates(estates.map((e) => ({ ...e, verify: 1 })));
       toast.success(res?.message || '¡Todas las propiedades han sido aprobadas exitosamente!');
-      fetchEstates();
     } catch (err: any) {
+      setEstates(previousEstates);
       toast.error(err?.response?.data?.message || 'Error al aprobar las propiedades');
     } finally {
       setApprovingAll(false);
@@ -348,14 +352,19 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
     }
   };
 
-  const fetchEstates = async () => {
-    setIsLoading(true);
+  // Identificadores de la última petición: descartan respuestas que llegan desordenadas.
+  const estatesRequestIdRef = useRef(0);
+  const mapRequestIdRef = useRef(0);
+
+  const fetchEstates = async (options?: { silent?: boolean }) => {
+    const requestId = ++estatesRequestIdRef.current;
+    if (!options?.silent) setIsLoading(true);
     try {
       const isOperationFilter = ['sale', 'rent', 'auction'].includes(statusFilter);
       const res = await estateService.getEstates({
         page,
         per_page: perPage,
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         property_type: typeFilter ? Number(typeFilter) : undefined,
         type: typeFilter ? String(typeFilter) : undefined,
         status: isOperationFilter ? undefined : (statusFilter || undefined),
@@ -364,6 +373,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
         agency_id: agencyFilter ? Number(agencyFilter) : undefined,
         my_estates: scopeTab === 'my_estates' ? 1 : undefined,
       });
+      if (requestId !== estatesRequestIdRef.current) return;
       setEstates(res.data);
       if (res.pagination) {
         setPagination(res.pagination);
@@ -371,16 +381,17 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
     } catch (err) {
       console.error('Error fetching estates:', err);
     } finally {
-      setIsLoading(false);
+      if (requestId === estatesRequestIdRef.current) setIsLoading(false);
     }
   };
 
   const fetchMapEstates = async () => {
+    const requestId = ++mapRequestIdRef.current;
     setLoadingMap(true);
     try {
       const isOperationFilter = ['sale', 'rent', 'auction'].includes(statusFilter);
       const data = await estateService.getEstatesMap({
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         property_type: typeFilter ? Number(typeFilter) : undefined,
         type: typeFilter ? String(typeFilter) : undefined,
         status: isOperationFilter ? undefined : (statusFilter || undefined),
@@ -389,13 +400,20 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
         agency_id: agencyFilter ? Number(agencyFilter) : undefined,
         my_estates: scopeTab === 'my_estates' ? 1 : undefined,
       });
+      if (requestId !== mapRequestIdRef.current) return;
       setMapEstates(data);
     } catch (err) {
       console.error('Error fetching map estates:', err);
     } finally {
-      setLoadingMap(false);
+      if (requestId === mapRequestIdRef.current) setLoadingMap(false);
     }
   };
+
+  useEffect(() => {
+    if (search === debouncedSearch) return;
+    const t = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search, debouncedSearch]);
 
   useEffect(() => {
     fetchAgencies();
@@ -412,13 +430,13 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
     if (viewMode !== 'reports') {
       fetchEstates();
     }
-  }, [page, perPage, search, typeFilter, statusFilter, agentFilter, agencyFilter, viewMode, scopeTab]);
+  }, [page, perPage, debouncedSearch, typeFilter, statusFilter, agentFilter, agencyFilter, viewMode, scopeTab]);
 
   useEffect(() => {
     if (viewMode === 'map') {
       fetchMapEstates();
     }
-  }, [viewMode, search, typeFilter, statusFilter, agentFilter, agencyFilter, scopeTab]);
+  }, [viewMode, debouncedSearch, typeFilter, statusFilter, agentFilter, agencyFilter, scopeTab]);
 
   const canEditEstate = (estate: Estate): boolean => {
     if (isAgencyAdmin) return true;
@@ -439,50 +457,111 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   const handleOpenCreateModal = () => router.push('/estates/new');
   const handleOpenEditModal = (estate: Estate) => router.push(`/estates/${estate.id}/edit`);
 
+  // ---- Actualizaciones optimistas -------------------------------------------------------
+  // La interfaz cambia al instante y la petición a Laravel viaja en segundo plano.
+  // Si el servidor responde con error, se restaura el elemento afectado en su posición original.
+  const removeEstateLocally = (id: number): { estate: Estate; index: number } | null => {
+    const index = estates.findIndex((e) => e.id === id);
+    if (index === -1) return null;
+    const estate = estates[index];
+    setEstates((prev) => prev.filter((e) => e.id !== id));
+    setMapEstates((prev) => prev.filter((e) => e.id !== id));
+    setPagination((prev) => ({ ...prev, total: Math.max(0, (prev.total || 0) - 1) }));
+    return { estate, index };
+  };
+
+  const restoreEstateLocally = (removed: { estate: Estate; index: number } | null) => {
+    if (!removed) return;
+    setEstates((prev) => {
+      if (prev.some((e) => e.id === removed.estate.id)) return prev;
+      const next = [...prev];
+      next.splice(Math.min(removed.index, next.length), 0, removed.estate);
+      return next;
+    });
+    setPagination((prev) => ({ ...prev, total: (prev.total || 0) + 1 }));
+    if (viewMode === 'map') fetchMapEstates();
+  };
+
+  const patchEstateLocally = (id: number, patch: Partial<Estate>): Estate | undefined => {
+    const original = estates.find((e) => e.id === id);
+    setEstates((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+    return original;
+  };
+
+  const revertEstatePatch = (original: Estate | undefined) => {
+    if (!original) return;
+    setEstates((prev) => prev.map((e) => (e.id === original.id ? original : e)));
+  };
+
   const handleDelete = async (id: number) => {
     if (!confirm('¿Desea eliminar este inmueble?')) return;
+
+    // Si la agencia exige aprobación para eliminar y el usuario no es admin, el backend sólo
+    // registra una solicitud de baja: se refleja así en la UI en vez de ocultar el inmueble.
+    const expectsDeletionRequest = Boolean(approvalSettings?.require_admin_approval_to_delete) && !isAgencyAdmin;
+    let removed: { estate: Estate; index: number } | null = null;
+    let original: Estate | undefined;
+    if (expectsDeletionRequest) {
+      original = patchEstateLocally(id, { deletion_requested: true } as Partial<Estate>);
+    } else {
+      removed = removeEstateLocally(id);
+    }
+
     try {
       const res: any = await estateService.deleteEstate(id);
       if (res && res.deletion_requested) {
         toast.success('Solicitud de baja registrada. Un administrador debe aprobar la eliminación.');
-        fetchEstates();
+        // La predicción no coincidió con el servidor: se resincroniza el listado en segundo plano.
+        if (!expectsDeletionRequest) {
+          restoreEstateLocally(removed);
+          fetchEstates({ silent: true });
+        }
       } else {
-        setEstates(estates.filter(e => e.id !== id));
+        if (expectsDeletionRequest) {
+          setEstates((prev) => prev.filter((e) => e.id !== id));
+          setMapEstates((prev) => prev.filter((e) => e.id !== id));
+          setPagination((prev) => ({ ...prev, total: Math.max(0, (prev.total || 0) - 1) }));
+        }
         toast.success('Inmueble eliminado con éxito');
       }
     } catch (err: any) {
       console.error('Error deleting estate:', err);
+      if (expectsDeletionRequest) revertEstatePatch(original);
+      else restoreEstateLocally(removed);
       toast.error(err?.response?.data?.message || 'Error al eliminar el inmueble');
     }
   };
 
   const handleApprovePublish = async (id: number) => {
+    const original = patchEstateLocally(id, { verify: 1 } as Partial<Estate>);
     try {
       await estateService.verifyEstate(id, true);
-      setEstates(estates.map(e => e.id === id ? { ...e, verify: 1 } : e));
       toast.success('¡Propiedad verificada y aprobada para publicación web!');
     } catch (err: any) {
+      revertEstatePatch(original);
       toast.error(err?.response?.data?.message || 'Error al aprobar propiedad');
     }
   };
 
   const handleApproveDeletion = async (id: number) => {
     if (!confirm('¿Confirma que desea aprobar la eliminación definitiva de este inmueble?')) return;
+    const removed = removeEstateLocally(id);
     try {
       await estateService.approveDeletion(id);
-      setEstates(estates.filter(e => e.id !== id));
       toast.success('Eliminación aprobada y ejecutada.');
     } catch (err: any) {
+      restoreEstateLocally(removed);
       toast.error(err?.response?.data?.message || 'Error al aprobar eliminación');
     }
   };
 
   const handleRejectDeletion = async (id: number) => {
+    const original = patchEstateLocally(id, { deletion_requested: false, deletion_request_notes: undefined } as Partial<Estate>);
     try {
       await estateService.rejectDeletion(id);
-      setEstates(estates.map(e => e.id === id ? { ...e, deletion_requested: false, deletion_request_notes: undefined } : e));
       toast.success('Solicitud rechazada. El inmueble se mantiene activo.');
     } catch (err: any) {
+      revertEstatePatch(original);
       toast.error(err?.response?.data?.message || 'Error al rechazar solicitud');
     }
   };
@@ -569,6 +648,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
   const hasActiveFilters = Boolean(search || typeFilter || statusFilter || agentFilter || agencyFilter);
   const handleClearFilters = () => {
     setSearch('');
+    setDebouncedSearch('');
     setTypeFilter('');
     setStatusFilter('');
     setAgentFilter('');
@@ -781,6 +861,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
                 value={agencyFilter}
                 onChange={(agId) => {
                   setAgencyFilter(String(agId || ''));
+                  setAgentFilter('');
                   setPage(1);
                 }}
                 allowAll={true}
@@ -851,6 +932,7 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
           selectedAgencyId={agencyFilter}
           onAgencyChange={(agId) => {
             setAgencyFilter(String(agId || ''));
+            setAgentFilter('');
             setPage(1);
           }}
         />
@@ -1668,9 +1750,9 @@ export const EstatesPage: React.FC<EstatesPageProps> = ({ initialScope }) => {
 
               <EstateApprovalSettingsPanel
                 agencyId={agencyFilter ? Number(agencyFilter) : (user?.agency_id || undefined)}
-                onSaved={() => {
-                  fetchApprovalSettings(agencyFilter);
-                  fetchEstates();
+                onSaved={(saved) => {
+                  // Los ajustes llegan ya guardados desde el panel: no hace falta volver a pedirlos a Laravel.
+                  setApprovalSettings(saved);
                 }}
                 isModal={true}
               />

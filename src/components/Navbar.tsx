@@ -67,11 +67,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, [user?.id, currentWhiteLabel?.id]);
 
   const handleMarkAllRead = async () => {
+    // UI optimista: marcar como leídas al instante y revertir si Laravel falla.
+    const previousNotifications = notifications;
+    const previousUnread = unreadCount;
+    setUnreadCount(0);
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     try {
       await visaWholesaleService.markAllNotificationsAsRead();
-      setUnreadCount(0);
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-    } catch (e) {}
+    } catch (e) {
+      setNotifications(previousNotifications);
+      setUnreadCount(previousUnread);
+    }
   };
 
   const handleNavClick = (path: string, e: React.MouseEvent) => {

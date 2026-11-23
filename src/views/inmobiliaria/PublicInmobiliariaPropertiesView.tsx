@@ -258,7 +258,8 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
   const [isAlertModalOpen, setIsAlertModalOpen] = useState<boolean>(false);
   const [alertName, setAlertName] = useState<string>('');
   const [alertContact, setAlertContact] = useState<string>('');
-  const [alertSubmitting, setAlertSubmitting] = useState<boolean>(false);
+  const [alertSubmitting] = useState<boolean>(false);
+  const alertInFlightRef = useRef<boolean>(false);
   const [alertError, setAlertError] = useState<string | null>(null);
   const [alertSuccess, setAlertSuccess] = useState<boolean>(false);
   const [tempPriceMin, setTempPriceMin] = useState<string>(priceMin);
@@ -658,8 +659,10 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
           size_max: searchParams?.get('size_max') || undefined,
           price_min: searchParams?.get('price_min') || undefined,
           price_max: searchParams?.get('price_max') || undefined,
-          sort: (searchParams?.get('sort') as any) || sort,
-          page: currentPage,
+          // Página y orden se leen de la URL (fuente de verdad): todos los cambios de página/orden
+          // hacen router.push, así que depender también del estado local disparaba 2 peticiones.
+          sort: (searchParams?.get('sort') as any) || 'recent',
+          page: Number(searchParams?.get('page')) || 1,
           per_page: 18,
         });
 
@@ -684,7 +687,7 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [searchParams, currentPage, sort, domainParam]);
+  }, [searchParams, domainParam]);
 
   const applyFilters = (customParams?: Record<string, string>) => {
     const params = new URLSearchParams();
@@ -727,8 +730,11 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
       setAlertError('Por favor ingresa tu correo electrónico o número de WhatsApp.');
       return;
     }
-    setAlertSubmitting(true);
+    if (alertInFlightRef.current) return;
+    // UI optimista: confirmar la alerta al instante; revertir si Laravel responde con error.
+    alertInFlightRef.current = true;
     setAlertError(null);
+    setAlertSuccess(true);
 
     try {
       const isEmail = contactVal.includes('@');
@@ -749,11 +755,11 @@ export const PublicInmobiliariaPropertiesView: React.FC = () => {
         message: `El cliente ha activado una alerta para nuevas propiedades con estos criterios:\n• ${criteriaLines}\n\nContacto registrado: ${contactVal}`,
       }, domainParam || undefined);
 
-      setAlertSuccess(true);
     } catch (err: any) {
+      setAlertSuccess(false);
       setAlertError(err.message || 'No se pudo activar la alerta. Inténtalo nuevamente.');
     } finally {
-      setAlertSubmitting(false);
+      alertInFlightRef.current = false;
     }
   };
 

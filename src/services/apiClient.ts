@@ -1,4 +1,11 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** Pon `false` para forzar una petición GET independiente aunque haya otra idéntica en vuelo. */
+    dedupe?: boolean;
+  }
+}
 
 // Resolución dinámica del API Base URL según entorno y dominio actual (Default: santun.tedelpa.com)
 export const getApiBaseUrl = (): string => {
@@ -110,6 +117,51 @@ export const apiClient = axios.create({
   },
   timeout: 60000,
 });
+
+// Deduplicación de peticiones GET idénticas en vuelo.
+// Si dos componentes (o el doble montaje de React StrictMode) piden exactamente el mismo recurso
+// con las mismas credenciales mientras la primera petición sigue pendiente, sólo se envía UNA
+// petición a Laravel y ambas reciben la misma respuesta. Cada llamador aplica su propio
+// transformResponse (JSON.parse), por lo que no comparten referencias mutables.
+const inFlightGetRequests = new Map<string, Promise<AxiosResponse>>();
+const baseAdapter = axios.getAdapter(apiClient.defaults.adapter);
+
+const readHeader = (headers: any, name: string): string => {
+  if (!headers) return '';
+  const value = typeof headers.get === 'function' ? headers.get(name) : headers[name];
+  return value ? String(value) : '';
+};
+
+apiClient.defaults.adapter = (config: InternalAxiosRequestConfig) => {
+  const method = (config.method || 'get').toLowerCase();
+  // Peticiones cancelables no se comparten: abortar una no debe abortar la otra.
+  if (method !== 'get' || config.dedupe === false || config.signal || config.cancelToken) {
+    return baseAdapter(config);
+  }
+
+  const key = [
+    apiClient.getUri(config),
+    config.responseType || '',
+    readHeader(config.headers, 'Authorization'),
+    readHeader(config.headers, 'X-White-Label-ID'),
+    readHeader(config.headers, 'X-Domain'),
+  ].join('|');
+
+  const existing = inFlightGetRequests.get(key);
+  if (existing) {
+    return existing.then((res) => ({ ...res, config }));
+  }
+
+  const request = baseAdapter(config).finally(() => {
+    inFlightGetRequests.delete(key);
+  });
+  // Copia superficial tomada ANTES de que axios aplique transformResponse sobre la respuesta
+  // original: así cada llamador parsea su propio `data` y nunca comparten el mismo objeto.
+  const rawSnapshot = request.then((res) => ({ ...res }));
+  rawSnapshot.catch(() => {}); // el error real lo recibe cada llamador; evita "unhandled rejection"
+  inFlightGetRequests.set(key, rawSnapshot);
+  return request;
+};
 
 // Interceptor de Petición: Inyectar Bearer token y el Header dinámico X-Domain
 apiClient.interceptors.request.use(

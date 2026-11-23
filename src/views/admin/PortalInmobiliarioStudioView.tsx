@@ -521,7 +521,7 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
     setSelectedAgencyId(id);
     const found = agencies.find((a: any) => a.id === id);
     if (found) populateAgency(found);
-    loadWorkspaces(id);
+    // loadWorkspaces(id) lo dispara el useEffect de selectedAgencyId; llamarlo aquí duplicaba la petición.
   };
 
   const loadWorkspaces = async (agencyId: number) => {
@@ -587,9 +587,13 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
       return;
     }
 
-    setSaving(true);
     setErrorMsg(null);
     setSuccessMsg(null);
+
+    // UI optimista: estado local y caché del portal se actualizan al instante; si Laravel
+    // rechaza el guardado, se restauran los valores anteriores y se muestra el error.
+    const previousAgencies = agencies;
+    const storageSnapshot: Array<[Storage, string, string | null]> = [];
 
     try {
       const payload: any = {
@@ -639,8 +643,6 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
         loader_duration: form.details?.loader_duration !== undefined ? Number(form.details.loader_duration) : 2.5,
       };
 
-      await adminService.updateAgency(selectedAgencyId, payload);
-
       // Guardar y refrescar caché local para que la vista pública y el loader carguen al instante sin consultas ni parpadeos
       if (typeof window !== 'undefined') {
         try {
@@ -661,6 +663,11 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
             'default',
             (form.domain || '').replace(/^https?:\/\//i, '').split('/')[0].split(':')[0].toLowerCase()
           ].filter(Boolean);
+
+          ['inmo_cfg_generic', 'inmo_cached_loader_img', 'inmo_cached_brand_color',
+            ...doms.flatMap((d) => [`inmo_cfg_${d}`, `inmo_cached_loader_img_${d}`])]
+            .forEach((k) => storageSnapshot.push([localStorage, k, localStorage.getItem(k)]));
+          doms.forEach((d) => storageSnapshot.push([sessionStorage, `inmo_cfg_${d}`, sessionStorage.getItem(`inmo_cfg_${d}`)]));
 
           doms.forEach(d => {
             localStorage.setItem(`inmo_cfg_${d}`, JSON.stringify(updatedAgencyConfig));
@@ -697,6 +704,20 @@ export const PortalInmobiliarioStudioView: React.FC = () => {
 
       setSuccessMsg('¡Portal Inmobiliario actualizado con éxito! Los cambios ya se reflejan en la vista pública.');
       setTimeout(() => setSuccessMsg(null), 5000);
+
+      try {
+        await adminService.updateAgency(selectedAgencyId, payload);
+      } catch (saveErr) {
+        setAgencies(previousAgencies);
+        storageSnapshot.forEach(([store, key, value]) => {
+          try {
+            if (value === null) store.removeItem(key);
+            else store.setItem(key, value);
+          } catch {}
+        });
+        setSuccessMsg(null);
+        throw saveErr;
+      }
     } catch (err: any) {
       console.error('Error guardando cambios del portal:', err);
       setErrorMsg(err.response?.data?.message || 'Error al guardar los cambios del portal.');
