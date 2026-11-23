@@ -20,6 +20,10 @@ export interface TemplateDataPayload {
   plain_amenities?: string;
   property_title?: string;
   location?: string;
+  country?: string;
+  province?: string;
+  city?: string;
+  parish?: string;
   operation_type?: string;
   property_type?: string;
   qr_code?: string;
@@ -144,6 +148,20 @@ export function buildEstatePayload(
   if (estate?.address && locParts.length === 0) locParts.push(estate.address);
   const location = locParts.length > 0 ? locParts.join(', ') : 'Ubicación Privilegiada';
 
+  // Ubicación desglosada (País / Provincia / Ciudad o Cantón / Parroquia).
+  // En Laravel el cantón se guarda en `neighborhood`; las relaciones *_rel son respaldo si vienen cargadas.
+  const pickName = (...values: any[]): string => {
+    for (const v of values) {
+      const text = typeof v === 'string' ? v : v?.name;
+      if (text && String(text).trim()) return String(text).trim();
+    }
+    return '';
+  };
+  const country = pickName(estate?.country, estate?.country_rel, estate?.countryRel);
+  const province = pickName(estate?.province, estate?.province_rel, estate?.provinceRel);
+  const city = pickName(estate?.neighborhood, estate?.canton, estate?.city, estate?.city_rel, estate?.cityRel);
+  const parish = pickName(estate?.parroquia, estate?.parish, estate?.parroquia_rel, estate?.parroquiaRel);
+
   // Generar amenidades
   const specs = estate?.specs || {};
   const bedrooms = estate?.bedrooms ?? specs.bedrooms;
@@ -210,6 +228,10 @@ export function buildEstatePayload(
     plain_amenities: plainAmenities,
     property_title: estate?.title || 'Propiedad Exclusiva',
     location,
+    country,
+    province,
+    city,
+    parish,
     operation_type: estate?.status_name || (estate?.property_status === 1 ? 'En Alquiler' : 'En Venta'),
     property_type: estate?.type || estate?.category_name || 'Inmueble Residencial',
     qr_code: estate?.qr_code_url || '',
@@ -300,6 +322,11 @@ export function substituteTemplateShortcuts(rawHtml: string, payload: TemplateDa
     .replace(/\{\{\s*title\s*\}\}/gi, payload.property_title || '')
     .replace(/\{\{\s*location\s*\}\}/gi, payload.location || '')
     .replace(/\{\{\s*ubicacion\s*\}\}/gi, payload.location || '')
+    // Ubicación desglosada
+    .replace(/\{\{\s*(country|pais|país)\s*\}\}/gi, payload.country || '')
+    .replace(/\{\{\s*(province|provincia)\s*\}\}/gi, payload.province || '')
+    .replace(/\{\{\s*(city|ciudad|canton|cantón)\s*\}\}/gi, payload.city || '')
+    .replace(/\{\{\s*(parish|parroquia)\s*\}\}/gi, payload.parish || '')
     .replace(/\{\{\s*operation_type\s*\}\}/gi, payload.operation_type || '')
     .replace(/\{\{\s*property_type\s*\}\}/gi, payload.property_type || '')
     .replace(/\{\{\s*qr_code\s*\}\}/gi, payload.qr_code || '');

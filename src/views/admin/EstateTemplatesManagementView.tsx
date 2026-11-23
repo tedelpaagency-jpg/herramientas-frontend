@@ -56,6 +56,10 @@ const SAMPLE_ESTATE_PAYLOAD: TemplateDataPayload = {
   `,
   property_title: 'Villa Moderna con Piscina & Jardín',
   location: 'Cumbayá, Quito',
+  country: 'Ecuador',
+  province: 'Pichincha',
+  city: 'Quito',
+  parish: 'Cumbayá',
   operation_type: 'En Venta',
   property_type: 'Casa Residencial',
 };
@@ -73,6 +77,10 @@ const SHORTCUTS_LIST = [
   { key: '{{amenities}}', label: 'Amenidades', desc: 'Hab, baños, estac. y m²' },
   { key: '{{property_title}}', label: 'Título del Inmueble', desc: 'Título principal de la propiedad' },
   { key: '{{location}}', label: 'Ubicación', desc: 'Ciudad y sector o provincia' },
+  { key: '{{pais}}', label: 'País', desc: 'País del inmueble (también {{country}})' },
+  { key: '{{provincia}}', label: 'Provincia', desc: 'Provincia o estado (también {{province}})' },
+  { key: '{{ciudad}}', label: 'Ciudad / Cantón', desc: 'Ciudad o cantón (también {{canton}} o {{city}})' },
+  { key: '{{parroquia}}', label: 'Parroquia', desc: 'Parroquia del inmueble (también {{parish}})' },
 ];
 
 export const EstateTemplatesManagementView: React.FC = () => {
