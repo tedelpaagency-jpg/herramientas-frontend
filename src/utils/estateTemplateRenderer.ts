@@ -24,6 +24,9 @@ export interface TemplateDataPayload {
   province?: string;
   city?: string;
   parish?: string;
+  address?: string;
+  short_location?: string;
+  full_location?: string;
   operation_type?: string;
   property_type?: string;
   qr_code?: string;
@@ -141,13 +144,6 @@ export function buildEstatePayload(
     ? `$${Number(rawPrice).toLocaleString()} USD`
     : String(rawPrice).includes('$') ? String(rawPrice) : `$${rawPrice} USD`;
 
-  // Ubicación
-  const locParts: string[] = [];
-  if (estate?.city) locParts.push(estate.city);
-  if (estate?.province) locParts.push(estate.province);
-  if (estate?.address && locParts.length === 0) locParts.push(estate.address);
-  const location = locParts.length > 0 ? locParts.join(', ') : 'Ubicación Privilegiada';
-
   // Ubicación desglosada (País / Provincia / Ciudad o Cantón / Parroquia).
   // En Laravel el cantón se guarda en `neighborhood`; las relaciones *_rel son respaldo si vienen cargadas.
   const pickName = (...values: any[]): string => {
@@ -161,6 +157,17 @@ export function buildEstatePayload(
   const province = pickName(estate?.province, estate?.province_rel, estate?.provinceRel);
   const city = pickName(estate?.neighborhood, estate?.canton, estate?.city, estate?.city_rel, estate?.cityRel);
   const parish = pickName(estate?.parroquia, estate?.parish, estate?.parroquia_rel, estate?.parroquiaRel);
+  const address = pickName(estate?.full_address, estate?.address);
+
+  // Ubicaciones compuestas a partir de las partes separadas (sin repetir valores iguales).
+  const joinParts = (...parts: string[]): string =>
+    parts
+      .filter(Boolean)
+      .filter((p, i, arr) => arr.findIndex((x) => x.toLowerCase() === p.toLowerCase()) === i)
+      .join(', ');
+  const location = joinParts(city, province) || address || 'Ubicación Privilegiada';
+  const shortLocation = joinParts(parish, city) || location;
+  const fullLocation = joinParts(parish, city, province, country) || location;
 
   // Generar amenidades
   const specs = estate?.specs || {};
@@ -232,6 +239,9 @@ export function buildEstatePayload(
     province,
     city,
     parish,
+    address,
+    short_location: shortLocation,
+    full_location: fullLocation,
     operation_type: estate?.status_name || (estate?.property_status === 1 ? 'En Alquiler' : 'En Venta'),
     property_type: estate?.type || estate?.category_name || 'Inmueble Residencial',
     qr_code: estate?.qr_code_url || '',
@@ -327,6 +337,9 @@ export function substituteTemplateShortcuts(rawHtml: string, payload: TemplateDa
     .replace(/\{\{\s*(province|provincia)\s*\}\}/gi, payload.province || '')
     .replace(/\{\{\s*(city|ciudad|canton|cantón)\s*\}\}/gi, payload.city || '')
     .replace(/\{\{\s*(parish|parroquia)\s*\}\}/gi, payload.parish || '')
+    .replace(/\{\{\s*(address|direccion|dirección)\s*\}\}/gi, payload.address || '')
+    .replace(/\{\{\s*(short_location|ubicacion_corta|ubicación_corta)\s*\}\}/gi, payload.short_location || payload.location || '')
+    .replace(/\{\{\s*(full_location|ubicacion_completa|ubicación_completa)\s*\}\}/gi, payload.full_location || payload.location || '')
     .replace(/\{\{\s*operation_type\s*\}\}/gi, payload.operation_type || '')
     .replace(/\{\{\s*property_type\s*\}\}/gi, payload.property_type || '')
     .replace(/\{\{\s*qr_code\s*\}\}/gi, payload.qr_code || '');
