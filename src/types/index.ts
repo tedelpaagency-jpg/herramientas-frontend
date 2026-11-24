@@ -761,4 +761,64 @@ export interface ShortcutModuleDefinition {
   category?: string;
 }
 
+export interface ModuleTutorial {
+  id: number;
+  white_label_id: number;
+  module_key: string;
+  title?: string | null;
+  description?: string | null;
+  video_url?: string | null;
+  manual_url?: string | null;
+  manual_content?: string | null;
+  is_active: boolean;
+  created_by?: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ModuleCatalogItem {
+  key: string;
+  name: string;
+  path: string;
+  category: string;
+  icon: string;
+  description: string;
+}
+
+export interface ModuleAdminTutorialItem extends ModuleCatalogItem {
+  tutorial?: ModuleTutorial | null;
+  has_video: boolean;
+  has_manual: boolean;
+  is_configured: boolean;
+  is_active: boolean;
+}
+
+export interface CurrentModuleTutorialData {
+  module_key: string;
+  module_meta?: ModuleCatalogItem | null;
+  tutorial?: ModuleTutorial | null;
+  has_tutorial: boolean;
+  is_fallback: boolean;
+  white_label_id: number;
+  can_manage: boolean;
+}
+
+export interface ModuleTutorialsAdminData {
+  white_label?: {
+    id: number;
+    name: string;
+    custom_domain?: string | null;
+    logo?: string | null;
+  };
+  metrics: {
+    total_modules: number;
+    configured_modules: number;
+    with_video: number;
+    with_manual: number;
+    pending: number;
+  };
+  modules: ModuleAdminTutorialItem[];
+}
+
 export * from './landing';
+export * from './whiteLabel';

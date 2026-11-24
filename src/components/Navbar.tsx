@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { HeaderShortcuts } from './HeaderShortcuts';
 import { HeaderSearch } from './HeaderSearch';
+import { ModuleHelpButton } from './tutorials/ModuleHelpButton';
 import visaWholesaleService, { VisaNotification } from '../services/visaWholesaleService';
 import { normalizeFileUrl } from '../services/apiClient';
 
@@ -140,6 +141,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 flex-shrink-0">
         {/* Accesos Directos Configurados por Marca Blanca */}
         <HeaderShortcuts />
+
+        {/* Botón de Ayuda y Tutorial (?) del Módulo Actual (Configurado por Marca Blanca) */}
+        <ModuleHelpButton />
 
         {/* Dark / Light Mode Toggle Button */}
         <button 

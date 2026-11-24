@@ -375,6 +375,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ? [
               { label: 'Administrar Planes', path: '/admin/plans', icon: Layers, permission: ['manage_plans', 'manage_agencies'] },
               { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key, permission: ['manage_subscriptions', 'manage_agencies'] },
+              { label: 'Tutoriales de Módulos', path: '/admin/tutorials', icon: HelpCircle, permission: ['manage_agencies'] },
             ]
           : []),
       ],
@@ -394,6 +395,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               { label: 'Importar Estudiantes', path: '/white-label/import-students', icon: FileSpreadsheet },
               { label: 'Planes de mi Marca', path: '/admin/plans', icon: Layers },
               { label: 'Suscripciones', path: '/admin/subscriptions', icon: Key },
+              { label: 'Tutoriales de Módulos', path: '/admin/tutorials', icon: HelpCircle },
             ],
           },
         ]
