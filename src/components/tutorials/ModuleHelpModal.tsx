@@ -3,12 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Video, BookOpen, ExternalLink, HelpCircle, Edit3, Save, 
-  CheckCircle2, AlertCircle, Play, Info, Sparkles, RefreshCw, Eye
+  CheckCircle2, AlertCircle, Play, Info, Sparkles, RefreshCw, Eye,
+  FolderOpen, FileText, Download, File
 } from 'lucide-react';
 import { Portal } from '@/components/Portal';
-import { parseVideoUrl } from '@/utils/videoEmbedHelper';
+import { parseVideoUrl, isPdfUrl } from '@/utils/videoEmbedHelper';
 import moduleTutorialService from '@/services/moduleTutorialService';
 import { CurrentModuleTutorialData, ModuleTutorial } from '@/types';
+import { Media } from '@/types/media';
+import { MediaLibraryModal } from '@/components/media/MediaLibraryModal';
 import toast from 'react-hot-toast';
 
 interface ModuleHelpModalProps {
@@ -41,6 +44,22 @@ export const ModuleHelpModal: React.FC<ModuleHelpModalProps> = ({
   const [formManualUrl, setFormManualUrl] = useState('');
   const [formManualContent, setFormManualContent] = useState('');
   const [formIsActive, setFormIsActive] = useState(true);
+
+  // Media Library Modal Integration
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [mediaTarget, setMediaTarget] = useState<'video' | 'manual'>('video');
+
+  const handleSelectMedia = (media: Media) => {
+    const chosenUrl = media.full_url || media.url;
+    if (mediaTarget === 'video') {
+      setFormVideoUrl(chosenUrl);
+      toast.success(`Video "${media.file_name}" vinculado desde la biblioteca`);
+    } else {
+      setFormManualUrl(chosenUrl);
+      toast.success(`Documento "${media.file_name}" vinculado desde la biblioteca`);
+    }
+    setIsMediaModalOpen(false);
+  };
 
   const fetchCurrentTutorial = async () => {
     setLoading(true);
@@ -262,44 +281,119 @@ export const ModuleHelpModal: React.FC<ModuleHelpModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Enlace de Video (YouTube, Vimeo, Loom o MP4)
-                    </label>
+                  {/* Video field with Media Library selector */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <Video className="w-4 h-4 text-sky-500" />
+                        <span>Video del Módulo</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMediaTarget('video');
+                          setIsMediaModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/50 dark:hover:bg-sky-900/50 border border-sky-200 dark:border-sky-800 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5" />
+                        <span>Biblioteca de Archivos</span>
+                      </button>
+                    </div>
+
                     <div className="relative">
                       <input
-                        type="url"
+                        type="text"
                         value={formVideoUrl}
                         onChange={(e) => setFormVideoUrl(e.target.value)}
-                        placeholder="https://www.youtube.com/watch?v=... o Loom"
-                        className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 dark:text-white"
+                        placeholder="YouTube, Vimeo, Loom o elige archivo de la biblioteca..."
+                        className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 dark:text-white"
                       />
                       <Video className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      {formVideoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setFormVideoUrl('')}
+                          className="absolute right-2.5 top-2.5 text-slate-400 hover:text-rose-500 transition-colors"
+                          title="Limpiar"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
+
                     {formVideoUrl && (
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
-                        Formato detectado: <strong className="uppercase text-sky-600 dark:text-sky-400">{previewVideoInfo.type}</strong>
-                      </p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                        <span>
+                          Origen: <strong className="uppercase font-bold text-sky-600 dark:text-sky-400">{previewVideoInfo.type === 'direct' ? 'Archivo Directo / Medios' : previewVideoInfo.type}</strong>
+                        </span>
+                        {previewVideoInfo.type === 'direct' && (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Reproductor nativo</span>
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Enlace a Manual Online (Google Docs, Notion, PDF)
-                    </label>
+                  {/* Manual field with Media Library selector */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <BookOpen className="w-4 h-4 text-indigo-500" />
+                        <span>Manual / Documento Online</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMediaTarget('manual');
+                          setIsMediaModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5" />
+                        <span>Biblioteca de Archivos</span>
+                      </button>
+                    </div>
+
                     <div className="relative">
                       <input
-                        type="url"
+                        type="text"
                         value={formManualUrl}
                         onChange={(e) => setFormManualUrl(e.target.value)}
-                        placeholder="https://docs.google.com/... o enlace de tu manual"
-                        className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 dark:text-white"
+                        placeholder="Google Docs, Notion, PDF o elige de la biblioteca..."
+                        className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 dark:text-white"
                       />
                       <ExternalLink className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      {formManualUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setFormManualUrl('')}
+                          className="absolute right-2.5 top-2.5 text-slate-400 hover:text-rose-500 transition-colors"
+                          title="Limpiar"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      Se abrirá en una nueva pestaña al hacer clic.
-                    </p>
+
+                    {formManualUrl && (
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                        <span>
+                          Formato: <strong className="font-bold text-indigo-600 dark:text-indigo-400">{isPdfUrl(formManualUrl) ? 'PDF • Documento' : 'Enlace Web'}</strong>
+                        </span>
+                        <a
+                          href={formManualUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1"
+                        >
+                          <span>Probar enlace</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -492,30 +586,58 @@ export const ModuleHelpModal: React.FC<ModuleHelpModalProps> = ({
                 {(activeTab === 'manual' || !tutorial?.video_url) && (
                   <div className="space-y-4">
                     {tutorial?.manual_url && (
-                      <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-500/10 via-sky-500/10 to-transparent border border-indigo-200 dark:border-indigo-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3.5">
-                          <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md flex-shrink-0">
-                            <BookOpen className="w-6 h-6" />
+                      <div className="space-y-3">
+                        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-500/10 via-sky-500/10 to-transparent border border-indigo-200 dark:border-indigo-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md flex-shrink-0">
+                              {isPdfUrl(tutorial.manual_url) ? (
+                                <FileText className="w-6 h-6" />
+                              ) : (
+                                <BookOpen className="w-6 h-6" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                                  {isPdfUrl(tutorial.manual_url) ? 'Manual de Usuario (Documento PDF)' : 'Manual de Usuario Oficial'}
+                                </h4>
+                                {isPdfUrl(tutorial.manual_url) && (
+                                  <span className="text-[10px] uppercase font-black bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800">
+                                    PDF
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                {isPdfUrl(tutorial.manual_url) 
+                                  ? 'Documento oficial adjunto desde la biblioteca de archivos.'
+                                  : 'Consulta la guía en línea con capturas de pantalla, procedimientos y preguntas frecuentes.'}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                              Manual de Usuario Oficial
-                            </h4>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                              Consulta la guía en línea con capturas de pantalla, procedimientos y preguntas frecuentes.
-                            </p>
+
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <a
+                              href={tutorial.manual_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex-shrink-0 cursor-pointer"
+                            >
+                              <span>{isPdfUrl(tutorial.manual_url) ? 'Abrir / Descargar PDF' : 'Abrir Manual Online'}</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
                           </div>
                         </div>
 
-                        <a
-                          href={tutorial.manual_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex-shrink-0 cursor-pointer"
-                        >
-                          <span>Abrir Manual Online</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
+                        {/* Embedded PDF Viewer if PDF */}
+                        {isPdfUrl(tutorial.manual_url) && (
+                          <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm bg-slate-100 dark:bg-slate-950">
+                            <iframe
+                              src={tutorial.manual_url}
+                              title="Manual PDF"
+                              className="w-full h-[400px] border-0"
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -541,13 +663,24 @@ export const ModuleHelpModal: React.FC<ModuleHelpModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors"
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
             >
               Cerrar
             </button>
           </div>
         </div>
       </div>
+
+      {/* Media Library Selector Modal */}
+      {isMediaModalOpen && (
+        <MediaLibraryModal
+          isOpen={isMediaModalOpen}
+          onClose={() => setIsMediaModalOpen(false)}
+          onSelect={handleSelectMedia}
+          filterType={mediaTarget === 'video' ? 'video' : 'document'}
+          title={mediaTarget === 'video' ? 'Biblioteca: Seleccionar Video del Módulo' : 'Biblioteca: Seleccionar Manual o Documento'}
+        />
+      )}
     </Portal>
   );
 };

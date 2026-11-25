@@ -47,8 +47,15 @@ export const parseVideoUrl = (rawUrl?: string | null): VideoEmbedInfo => {
     };
   }
 
-  // 4. Direct video file (mp4, webm, ogg)
-  if (/\.(mp4|webm|ogg)($|\?)/i.test(url)) {
+  // 4. Direct video file (mp4, webm, ogg, mov, m4v, ogv) or storage/media URL
+  if (
+    /\.(mp4|webm|ogg|mov|m4v|ogv)($|\?)/i.test(url) ||
+    url.includes('/storage/media/') ||
+    url.includes('/storage/uploads/') ||
+    url.includes('/api/v1/public/storage/') ||
+    url.startsWith('blob:') ||
+    url.startsWith('data:video/')
+  ) {
     return {
       type: 'direct',
       embedUrl: url,
@@ -70,6 +77,11 @@ export const parseVideoUrl = (rawUrl?: string | null): VideoEmbedInfo => {
     embedUrl: null,
     rawUrl: url,
   };
+};
+
+export const isPdfUrl = (rawUrl?: string | null): boolean => {
+  if (!rawUrl || typeof rawUrl !== 'string') return false;
+  return /\.pdf($|\?)/i.test(rawUrl);
 };
 
 export default parseVideoUrl;
