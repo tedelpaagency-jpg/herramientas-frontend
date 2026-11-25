@@ -7,7 +7,7 @@ import ModuleTutorialsAdminPage from '@/views/admin/ModuleTutorialsAdminPage';
 
 export default function ModuleTutorialsAdminRoute() {
   return (
-    <ProtectedRoute permission={['manage_agencies', 'custom_agency_branding', 'manage_plans']}>
+    <ProtectedRoute>
       <Layout>
         <ModuleTutorialsAdminPage />
       </Layout>

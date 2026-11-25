@@ -18,6 +18,7 @@ export const ModuleTutorialsAdminPage: React.FC = () => {
   const { user, currentWhiteLabel } = useAuth();
   const [data, setData] = useState<ModuleTutorialsAdminData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [whiteLabels, setWhiteLabels] = useState<WhiteLabel[]>([]);
   const [selectedWhiteLabelId, setSelectedWhiteLabelId] = useState<number | undefined>(undefined);
 
@@ -60,12 +61,16 @@ export const ModuleTutorialsAdminPage: React.FC = () => {
 
   const fetchTutorials = async () => {
     setIsLoading(true);
+    setErrorMsg(null);
     try {
-      const res = await moduleTutorialService.getAllTutorials(selectedWhiteLabelId);
+      const targetWlId = isSuperAdmin ? selectedWhiteLabelId : (selectedWhiteLabelId || currentWhiteLabel?.id);
+      const res = await moduleTutorialService.getAllTutorials(targetWlId);
       setData(res);
     } catch (err: any) {
       console.error('Error fetching module tutorials:', err);
-      toast.error('Error al cargar la lista de tutoriales de módulos');
+      const msg = err?.response?.data?.message || err?.message || 'Error al cargar la lista de tutoriales de módulos';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +78,7 @@ export const ModuleTutorialsAdminPage: React.FC = () => {
 
   useEffect(() => {
     fetchTutorials();
-  }, [selectedWhiteLabelId]);
+  }, [selectedWhiteLabelId, currentWhiteLabel?.id]);
 
   const handleOpenEdit = (mod: ModuleAdminTutorialItem) => {
     setEditingModule(mod);
@@ -268,6 +273,26 @@ export const ModuleTutorialsAdminPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Error Alert Banner */}
+      {errorMsg && !isLoading && (
+        <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 p-4 rounded-xl flex items-center justify-between gap-3 text-rose-800 dark:text-rose-200">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+            <div>
+              <p className="text-xs font-bold">Inconveniente al cargar los tutoriales</p>
+              <p className="text-xs text-rose-600 dark:text-rose-300 mt-0.5">{errorMsg}</p>
+            </div>
+          </div>
+          <button
+            onClick={fetchTutorials}
+            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      )}
 
       {/* Modules Table */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
